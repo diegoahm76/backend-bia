@@ -11,6 +11,7 @@ from django.shortcuts import redirect
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.sites.shortcuts import get_current_site
 from gestion_documental.serializers.ventanilla_serializers import AutorizacionNotificacionesSerializer
+from gestion_documental.views.bandeja_tareas_views import BandejaTareasPersonaCreate
 
 from seguridad.serializers.user_serializers import RegisterExternoSerializer
 from django.shortcuts import render
@@ -550,7 +551,11 @@ class RegisterPersonaJuridicaAdmin(generics.CreateAPIView):
             
         if response_bandeja.status_code!=status.HTTP_201_CREATED:
             raise ValidationError(response_bandeja)
-        
+        #CREACION DE BANDEJA DE TAREAS
+        vista_bandeja = BandejaTareasPersonaCreate()
+        respuesta_bandeja = vista_bandeja.crear_bandeja({"id_persona":serializador.id_persona})
+        if respuesta_bandeja.status_code != status.HTTP_201_CREATED:
+            return respuesta_bandeja
         return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 class RegisterPersonaNaturalAdmin(generics.CreateAPIView):
@@ -608,7 +613,12 @@ class RegisterPersonaNaturalAdmin(generics.CreateAPIView):
             
         if response_bandeja.status_code!=status.HTTP_201_CREATED:
             raise ValidationError(response_bandeja)
-        
+        #CREACION DE BANDEJA DE TAREAS
+        vista_bandeja = BandejaTareasPersonaCreate()
+        respuesta_bandeja = vista_bandeja.crear_bandeja({"id_persona":serializador.id_persona})
+        if respuesta_bandeja.status_code != status.HTTP_201_CREATED:
+            return respuesta_bandeja
+
         return Response({'success':True, 'detail':'Se creo la persona jurídica correctamente', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 
 
@@ -1190,14 +1200,18 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         template = "activación-de-usuario.html"
 
         Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
-
+        #CREACION DE BANDEJA DE ALERTAS
         crear_bandeja=BandejaAlertaPersonaCreate()
 
         response_bandeja=crear_bandeja.crear_bandeja_persona({"id_persona":serializador.id_persona})
             
         if response_bandeja.status_code!=status.HTTP_201_CREATED:
             raise ValidationError(response_bandeja)
-
+        #CREACION DE BANDEJA DE TAREAS
+        vista_bandeja = BandejaTareasPersonaCreate()
+        respuesta_bandeja = vista_bandeja.crear_bandeja({"id_persona":serializador.id_persona})
+        if respuesta_bandeja.status_code != status.HTTP_201_CREATED:
+                return respuesta_bandeja
         return Response({'success':True, 'detail':'Se creo la persona jurídica y el usuario correctamente'},status=status.HTTP_200_OK)
 
 
@@ -1315,7 +1329,13 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             if response_bandeja.status_code!=status.HTTP_201_CREATED:
                 raise ValidationError(response_bandeja)
             #print(response_bandeja.status_code)
+            #CREACION DE BANDEJA DE TAREAS
+            vista_bandeja = BandejaTareasPersonaCreate()
+            respuesta_bandeja = vista_bandeja.crear_bandeja({"id_persona":serializador.id_persona})
+            if respuesta_bandeja.status_code != status.HTTP_201_CREATED:
+                return respuesta_bandeja
 
+            #FIN CREACION DE BANDEJA DE TAREAS
             Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
         
             return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)

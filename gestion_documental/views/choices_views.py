@@ -1,4 +1,6 @@
 from gestion_documental.choices.central_digitalizacion_choices import ESTADO_SOLICITUD_CHOICES, TIPO_SOLICITUD_CHOICES
+from gestion_documental.choices.estado_asignacion_choices import ESTADO_ASIGNACION_CHOICES
+from gestion_documental.choices.estado_solicitud_choices import ESTADO_SOLICITUD_TAREA_CHOICES
 from gestion_documental.choices.rango_edad_choices import RANGO_EDAD_LIST
 from gestion_documental.choices.tipo_clasificacion_choices import tipo_clasificacion_CHOICES
 from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
@@ -15,7 +17,7 @@ from gestion_documental.choices.tipo_origen_doc_choices import tipo_origen_doc_C
 from gestion_documental.choices.tipo_subsistema_creado_choices import tipo_subsistema_creado_CHOICES
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from gestion_documental.choices.operacion_realizada_choices import operacion_realizada_CHOICES
-from gestion_documental.choices.pqrsdf_choices import cond_tipos_pqr_list
+from gestion_documental.choices.pqrsdf_choices import ESTADO_SOLICITUD_PQRSDF, TIPO_SOLICITUD_PQRSDF, cond_tipos_pqr_list
 from gestion_documental.choices.tipo_dato_alojar_choices import tipo_dato_alojar_CHOICES
 from gestion_documental.choices.tipo_acceso_choices import tipo_acceso_list
 from gestion_documental.choices.tipo_elemento_choices import tipo_elemento_CHOICES
@@ -33,6 +35,10 @@ from gestion_documental.choices.codigo_forma_presentacion_choices import cod_for
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+
+from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
+from gestion_documental.choices.tipos_transferencia_choices import TIPOS_TRANSFERENCIA
+from gestion_documental.choices.pqrsdf_choices import TIPOS_PQR
 
 
 class TipoClasificacion(APIView):
@@ -193,3 +199,46 @@ class CodFormaPresentacion(APIView):
     def get(self, request):
         choices = cod_forma_presentacion_CHOICES
         return Response(choices)
+    
+#BANDEJA DE TAREAS
+class TipoTarea(APIView):
+    def get(self, request):
+        choices = TIPOS_TAREA_CHOICES
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+       
+    
+class EstadoAsignacionTarea(APIView):
+    def get(self, request):
+        choices = ESTADO_ASIGNACION_CHOICES 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+#ESTADO_SOLICITUD_CHOICES
+class EstadoSolicitudTarea(APIView):
+    def get(self, request):
+        choices = ESTADO_SOLICITUD_TAREA_CHOICES 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+class TiposTransferencias(APIView):
+    def get(self, request):
+        choices = TIPOS_TRANSFERENCIA 
+
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+    
+#TIPO_PQRSDF
+class TipoPqrsdf(APIView):
+    def get(self, request):
+        choices = TIPOS_PQR
+        return Response(choices)
+    
+#TIPO_SOLICITUD_PQRSDF
+class TipoSolicitudPQRSDF(APIView):
+    def get(self, request):
+        choices = TIPO_SOLICITUD_PQRSDF
+        return Response(choices)
+    
+#TIPO_SOLICITUD_PQRSDF
+class EstadoSolicitud(APIView):
+    def get(self, request):
+        choices = ESTADO_SOLICITUD_PQRSDF
+        return Response(choices)
+    

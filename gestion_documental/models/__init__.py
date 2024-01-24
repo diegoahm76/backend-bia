@@ -10,3 +10,5 @@ from .encuencas_models import *
 from .plantillas_models import *
 from .configuracion_tiempos_respuesta_models import *
 from .conf__tipos_exp_models import *
+from .bandeja_tareas_models import *
+from .transferencias_documentales_models import *

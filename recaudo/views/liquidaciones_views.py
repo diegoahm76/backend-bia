@@ -27,6 +27,7 @@ from rest_framework.exceptions import NotFound
 from django.shortcuts import render
 from docxtpl import DocxTemplate
 from django.conf import settings
+import calendar
 
 
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
@@ -250,10 +251,40 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
         return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':expedientes}, status=status.HTTP_200_OK)
 
 
+def obtener_dias_por_mes(anio):
+    dias_por_mes = {}
+    for mes in range(1, 13):
+        dias_por_mes[mes] = calendar.monthrange(anio, mes)[1]
+    return dias_por_mes
+
+
 def liquidacionPdf(request, pk):
     ley = LeyesLiquidacion.objects.all().first()
     liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
     info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
+    anio = liquidacion.fecha_liquidacion.year
+    tua = info.calculos['tarifa_tasa']
+    caudalc = float(info.calculos['caudal_consecionado'])
+    fop = float(info.calculos['factor_costo_oportunidad'])
+
+    volumenMeses = []
+    montopagarMeses = []
+    totalliquidacion = 0
+    liquidacionuno = 0
+    liquidaciondos = 0
+
+    dias_por_mes_actual = obtener_dias_por_mes(anio)
+
+    for mes, dias in dias_por_mes_actual.items():
+        volumen = round(float(caudalc * dias), 2)
+        volumenMeses.append(volumen)
+        valorPagar = round(float(tua * volumen * fop), 2)
+        montopagarMeses.append(valorPagar)
+        if mes < 7:
+            liquidacionuno += valorPagar
+        else:
+            liquidaciondos += valorPagar
+    totalliquidacion = liquidacionuno + liquidaciondos
 
     context = {
         'rp': liquidacion.id, #referencia pago
@@ -261,7 +292,7 @@ def liquidacionPdf(request, pk):
         'doc_cobro': '',
         'ley': ley.ley if ley.ley is not None else '',
         'fecha_impresion': liquidacion.fecha_liquidacion,
-        'anio': liquidacion.fecha_liquidacion.year,
+        'anio': anio,
         'cedula': liquidacion.id_deudor.identificacion,
         'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
         'representante_legal': '',
@@ -272,17 +303,19 @@ def liquidacionPdf(request, pk):
         'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
         'predio': str(info.calculos['predio']).upper(),
         'municipio': str(info.calculos['municipio']).upper(),
-        'caudal_consecionado': info.calculos['caudal_consecionado'],
+        'caudal_consecionado': caudalc,
         'uso': str(info.calculos['uso']).upper(),
         'fr': info.calculos['factor_regional'], #factor regional
-        'tt': info.calculos['tarifa_tasa'], #tarifa de la tasa
-
+        'tt': tua, #tarifa de la tasa
         'numero_cuota': liquidacion.periodo_liquidacion,
         'valor_cuota': liquidacion.valor,
-
-        'codigo_barras': '',
-
-        'factor_costo_oportunidad': info.calculos['factor_costo_oportunidad']
+        'liquidacionuno': liquidacionuno,
+        'liquidaciondos': liquidaciondos,
+        'liquidaciontotal': totalliquidacion,
+        'volumenMeses': volumenMeses,
+        'montopagarMeses': montopagarMeses,
+        'fco': fop,
+        'codigo_barras': ''
     }
 
     pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/TUA.docx'

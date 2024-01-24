@@ -8,13 +8,135 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.models.radicados_models import Anexos, ConfigTiposRadicadoAgno, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
 from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
+from gestion_documental.views.pqr_views import RadicadoCreate
+from seguridad.utils import Util
+from django.db.models import Max
 
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
-from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
+from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
 from transversal.models.base_models import Municipio
 from transversal.models.personas_models import Personas
+
+class GeneralTramitesCreateView(generics.CreateAPIView):
+    serializer_class = InicioTramiteCreateSerializer
+    serializer_anexos_class = AnexosUpdateSerializer
+    serializer_get_tramite_class = GeneralTramitesGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request):
+        data = request.data
+        data_tramite = json.loads(data['data_tramite'])
+        archivos = request.FILES.getlist('archivos')
+        current_date = datetime.now()
+        
+        data_tramite['fecha_inicio_tramite'] = datetime.now()
+        data_tramite['id_persona_interpone'] = request.user.persona.id_persona
+        data_tramite['id_persona_registra'] = request.user.persona.id_persona
+        data_tramite['id_medio_solicitud'] = 2
+        data_tramite['id_estado_actual_solicitud'] = 1
+        data_tramite['fecha_ini_estado_actual'] = datetime.now()
+        
+        serializer = self.serializer_class(data=data_tramite)
+        serializer.is_valid(raise_exception=True)
+        tramite_creado = serializer.save()
+        
+        # CREAR ANEXOS
+        for index, (archivo) in enumerate(archivos):
+            cont = index + 1
+            
+            # VALIDAR FORMATO ARCHIVO 
+            archivo_nombre = archivo.name
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.all().values_list('nombre', flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del anexo {archivo_nombre} no es válido')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in archivo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            # CREAR ARCHIVO EN T238
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            archivo_digital_instance = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+            
+            # CREAR ANEXO EN T258
+            anexo_creado = Anexos.objects.create(
+                nombre_anexo = nombre_sin_extension,
+                orden_anexo_doc = cont,
+                cod_medio_almacenamiento = 'Na',
+                numero_folios = 0,
+                ya_digitalizado = False
+            )
+            
+            # CREAR ANEXO EN T260
+            MetadatosAnexosTmp.objects.create(
+                id_anexo = anexo_creado,
+                nombre_original_archivo = nombre_sin_extension,
+                fecha_creacion_doc = current_date.date(),
+                id_archivo_sistema = archivo_digital_instance
+            )
+            
+            # CREAR DOCUMENTO EN 
+            data_anexo = {}
+            data_anexo['id_solicitud_tramite'] = tramite_creado.id_solicitud_tramite
+            data_anexo['id_anexo'] = anexo_creado.id_anexo
+            
+            serializer_anexos_crear = self.serializer_anexos_class(data=data_anexo)
+            serializer_anexos_crear.is_valid(raise_exception=True)
+            serializer_anexos_crear.save()
+        
+        # RADICAR TRAMITE
+        data_radicar = {}
+        data_radicar['fecha_actual'] = current_date
+        data_radicar['id_usuario'] = request.user.id_usuario
+        data_radicar['tipo_radicado'] = data_tramite['tipo_radicado']
+        data_radicar['modulo_radica'] = "Trámites y servicios"
+        
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data_radicar)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        estado_solicitud = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        
+        tramite_creado.id_radicado = radicado
+        tramite_creado.fecha_radicado = current_date
+        tramite_creado.id_estado_actual_solicitud = estado_solicitud
+        tramite_creado.save()
+        
+        tramite_instance_updated = SolicitudesTramites.objects.filter(id_solicitud_tramite=tramite_creado.id_solicitud_tramite).first()
+        serializer_tramite = self.serializer_get_tramite_class(tramite_instance_updated)
+        serializer_tramite_data = serializer_tramite.data
+        serializer_tramite_data['radicado_nuevo'] = radicado_nuevo
+        
+        return Response({'success': True, 'detail':'Se realizó la creación del del trámite correctamente', 'data': serializer_tramite_data}, status=status.HTTP_201_CREATED)   
 
 class ListTramitesGetView(generics.ListAPIView):
     serializer_class = ListTramitesGetSerializer
@@ -139,6 +261,9 @@ class InicioTramiteUpdateView(generics.UpdateAPIView):
         if not solicitud:
             raise NotFound('No se encontró la solicitud')
         
+        if solicitud.id_radicado:
+            raise ValidationError('No puede actualizar un trámite que ya ha sido radicado')
+        
         permiso_amb_solicitud = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         
         id_permiso_ambiental = data.get('id_permiso_ambiental')
@@ -196,10 +321,14 @@ class AnexosUpdateView(generics.UpdateAPIView):
         data = request.data
         data_anexos = json.loads(data['data_anexos'])
         archivos = request.FILES.getlist('archivos')
+        current_date = datetime.now()
         
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud_tramite:
             raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if solicitud_tramite.id_radicado:
+            raise ValidationError('No puede actualizar un trámite que ya ha sido radicado')
         
         anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
         
@@ -212,11 +341,19 @@ class AnexosUpdateView(generics.UpdateAPIView):
         
         # ELIMINAR ANEXOS
         for anexo in anexos_eliminar:
-            anexo.id_archivo.delete()
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo.id_anexo).first()
+            metadata_instance.id_archivo_sistema.delete()
+            metadata_instance.delete()
+            anexo.id_anexo.delete()
             anexo.delete()
         
+        last_orden = anexos_instances.aggregate(Max('id_anexo__orden_anexo_doc'))
+        last_orden = last_orden['id_anexo__orden_anexo_doc__max'] if last_orden['id_anexo__orden_anexo_doc__max'] else 0
+        
         # CREAR ANEXOS
-        for data, archivo in zip(anexos_crear, archivos):
+        for index, (data, archivo) in enumerate(zip(anexos_crear, archivos)):
+            cont = index + 1
+            
             # VALIDAR FORMATO ARCHIVO 
             archivo_nombre = archivo.name
             nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
@@ -247,14 +384,33 @@ class AnexosUpdateView(generics.UpdateAPIView):
                 'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
             }
             
+            # CREAR ARCHIVO EN T238
             archivo_class = ArchivosDgitalesCreate()
             respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            archivo_digital_instance = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+            
+            # CREAR ANEXO EN T258
+            anexo_creado = Anexos.objects.create(
+                nombre_anexo = nombre_sin_extension,
+                orden_anexo_doc = last_orden + cont,
+                cod_medio_almacenamiento = 'Na',
+                numero_folios = 0,
+                ya_digitalizado = False
+            )
+            
+            # CREAR ANEXO EN T260
+            MetadatosAnexosTmp.objects.create(
+                id_anexo = anexo_creado,
+                nombre_original_archivo = nombre_sin_extension,
+                fecha_creacion_doc = current_date.date(),
+                descripcion = data['descripcion'],
+                id_archivo_sistema = archivo_digital_instance
+            )
             
             # CREAR DOCUMENTO EN T287
             data['id_solicitud_tramite'] = id_solicitud_tramite
             data['id_permiso_amb_solicitud_tramite'] = solicitud_tramite.permisosambsolicitudestramite_set.first().id_permiso_amb_solicitud_tramite
-            data['nombre'] = archivo_nombre
-            data['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
+            data['id_anexo'] = anexo_creado.id_anexo
             
             serializer_crear = self.serializer_class(data=data)
             serializer_crear.is_valid(raise_exception=True)
@@ -262,10 +418,10 @@ class AnexosUpdateView(generics.UpdateAPIView):
         
         # ACTUALIZAR ANEXOS
         for anexo in anexos_actualizar:
-            anexo_instance = anexos_instances.filter(id_anexo_tramite=anexo['id_anexo_tramite']).first()
-            if anexo['descripcion'] != anexo_instance.descripcion:
-                anexo_instance.descripcion = anexo['descripcion']
-                anexo_instance.save()
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo['id_anexo_tramite']).first()
+            if metadata_instance and anexo['descripcion'] != metadata_instance.descripcion:
+                metadata_instance.descripcion = anexo['descripcion']
+                metadata_instance.save()
         
         anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
         serializer_get = self.serializer_get_class(anexos_instances, many=True, context={'request': request})
@@ -286,11 +442,98 @@ class AnexosGetView(generics.ListAPIView):
         
         return Response({'success':True, 'detail':'Se encontraron los siguientes anexos del trámite', 'data':serializer_get.data}, status=status.HTTP_200_OK)
 
-# class RadicarCreateView(generics.CreateAPIView):
-#     serializer_class = AnexosGetSerializer
-#     permission_classes = [IsAuthenticated]
+class RadicarCreateView(generics.CreateAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
     
-#     def create(self, request):
-#         data = request.data
+    def create(self, request, id_solicitud_tramite):
+        data = request.data
+        current_date = datetime.now()
         
-#         return Response({'success': True, 'detail':'Se realizó la creación del inicio del trámite correctamente'}, status=status.HTTP_201_CREATED)   
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if solicitud.id_radicado:
+            raise ValidationError('El trámite ya ha sido radicado')
+        
+        data['fecha_actual'] = current_date
+        data['id_usuario'] = request.user.id_usuario
+        data['tipo_radicado'] = "E" # VALIDAR
+        data['modulo_radica'] = "Trámites y servicios" # VALIDAR
+        
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
+        
+        # ACTUALIZAR SOLICITUD
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        if not radicado:
+            raise NotFound('No se encontró el radicado generado')
+        
+        estado_solicitud = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        if not estado_solicitud:
+            raise NotFound('No se encontró el estado de la solicitud')
+        
+        solicitud.id_radicado = radicado
+        solicitud.fecha_radicado = current_date
+        solicitud.id_estado_actual_solicitud = estado_solicitud
+        solicitud.save()
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "OPA radicado con éxito - "
+        template = "envio-radicado-opas.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
+        
+        return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)   
+
+class RadicarGetView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        serializer_data = serializer.data
+        serializer_data['radicado_nuevo'] = radicado_nuevo
+        
+        return Response({'success': True, 'detail':'Se encontró la información de la radicación', 'data':serializer_data}, status=status.HTTP_200_OK)
+
+class RadicarVolverEnviarGetView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(instance_config_tipo_radicado.consecutivo_actual).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "OPA radicado con éxito - "
+        template = "envio-radicado-opas.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        serializer_data = serializer.data
+        serializer_data['radicado_nuevo'] = radicado_nuevo
+        
+        return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer_data}, status=status.HTTP_200_OK)   

@@ -2,14 +2,16 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPAGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPAGetSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 from seguridad.utils import Util
 from gestion_documental.utils import UtilsGestor
 from datetime import date, datetime
@@ -523,6 +525,28 @@ class PersonaLiderUnidadGet(generics.ListAPIView):
         #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
     
+class AsignacionPQRUpdate(generics.UpdateAPIView):
+
+    serializer_class = AsignacionPQRPostSerializer
+    permission_classes = [IsAuthenticated]
+    queryset =AsignacionPQR.objects.all()
+
+    def actualizar_asignacion(self,data,pk):
+        data_in = data
+        instance = AsignacionPQR.objects.filter(id_asignacion_pqr=pk).first()
+
+        if not instance:
+            raise NotFound("No existen registros")
+        serializer = AsignacionPQRPostSerializer(instance,data=data_in,partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return Response	({'succes': True, 'detail':'Se actualizo el registro', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        data_in = request.data
+        respuesta = self.actualizar_asignacion(data_in,pk)
+        return respuesta
+       
 
 class AsignacionPQRCreate(generics.CreateAPIView):
     serializer_class = AsignacionPQRPostSerializer
@@ -572,8 +596,8 @@ class AsignacionPQRCreate(generics.CreateAPIView):
 
                 break
             aux = aux.id_unidad_org_padre
-        if contador == 0:
-            raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
+        # if contador == 0:
+        #     raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
         data_in['consecutivo_asign_x_pqrsdf'] = ultimo_consec 
         data_in['fecha_asignacion'] = datetime.now()
         data_in['id_persona_asigna'] = request.user.persona.id_persona
@@ -595,7 +619,37 @@ class AsignacionPQRCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado}, status=status.HTTP_200_OK)
+        #Crear tarea y asignacion de tarea
+       
+        id_persona_asiganada = serializer.data['id_persona_asignada']
+
+ 
+        #Creamos la tarea 315
+        data_tarea = {}
+        data_tarea['cod_tipo_tarea'] = 'Rpqr'
+        data_tarea['id_asignacion'] = serializer.data['id_asignacion_pqr']
+        data_tarea['fecha_asignacion'] = datetime.now()
+
+        data_tarea['cod_estado_solicitud'] = 'Ep'
+        vista_tareas = TareasAsignadasCreate()    
+        respuesta_tareas = vista_tareas.crear_asignacion_tarea(data_tarea)
+        if respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            return respuesta_tareas
+        data_tarea_respuesta= respuesta_tareas.data['data']
+        #Teniendo la bandeja de tareas,la tarea ahora tenemos que asignar esa tarea a la bandeja de tareas
+        id_tarea_asiganada = data_tarea_respuesta['id_tarea_asignada']
+        vista_asignacion = TareaBandejaTareasPersonaCreate()
+
+        data_tarea_bandeja_asignacion = {}
+        data_tarea_bandeja_asignacion['id_persona'] = id_persona_asiganada
+        data_tarea_bandeja_asignacion['id_tarea_asignada'] = id_tarea_asiganada
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = True
+        respuesta_relacion = vista_asignacion.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
+        
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
 
 
 
@@ -961,8 +1015,63 @@ class InfoDenuncias_PQRSDFGetByPQRSDF(generics.ListAPIView):
         serializador = self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
 
+#Continuar con asignacion a grupo  entrega 108
+    
 
-#SolicitudesTramites OPAS
+class ComplementosUsu_PQRPut(generics.UpdateAPIView):
+    serializer_class = ComplementosUsu_PQRPutSerializer
+    serializer_adicion_tarea= AdicionalesDeTareasCreateSerializer
+    queryset = ComplementosUsu_PQR.objects.all()
+    permission_classes = [IsAuthenticated]
+    def put(self, request,pk):
+        instance = self.get_queryset().filter(idComplementoUsu_PQR=pk).first()
+
+
+        if not instance:
+            raise NotFound("No existen registros")
+        pqrsdf_asociada = instance.id_PQRSDF
+        #print(pqrsdf_asociada)
+
+        asignacion = AsignacionPQR.objects.filter(id_pqrsdf=pqrsdf_asociada.id_PQRSDF,cod_estado_asignacion='Ac').first()
+        if not asignacion:
+            raise ValidationError("No se encontro una asignacion")
+        #print(asignacion)
+        #print(asignacion.cod_estado_asignacion)
+        data_in = request.data
+        serializer = self.serializer_class(instance, data=data_in, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        tarea = TareasAsignadas.objects.filter(id_asignacion=asignacion.id_asignacion_pqr).first()
+        if not tarea:
+            raise ValidationError("No se encontro una tarea asignada")
+
+        data_adicion_tarea = {}
+        data_adicion_tarea['id_complemento_usu_pqr'] = instance.idComplementoUsu_PQR
+        data_adicion_tarea['id_tarea_asignada'] = tarea.id_tarea_asignada
+        data_adicion_tarea['fecha_de_adicion'] = datetime.now()
+        serializador_adicion = self.serializer_adicion_tarea(data=data_adicion_tarea)
+        serializador_adicion.is_valid(raise_exception=True)
+        serializador_adicion.save()
+
+    # id_complemento_usu_pqr = models.ForeignKey(
+    #     ComplementosUsu_PQR,
+    #     null=True,
+    #     on_delete=models.CASCADE,
+    #     db_column='T317IdComplementoUsuPQR',
+    #     related_name='adicionales_tareas'
+    # )
+    # id_tarea_asignada = models.ForeignKey(
+    #     TareasAsignadas,
+    #     on_delete=models.CASCADE,
+    #     db_column='T317IdTareaAsignada',
+    #     related_name='adicionales_tareas'
+    # )
+    # fecha_de_adicion = models.DateTimeField(db_column='T317fechaDeAdicion')
+        return Response({'success': True, 'detail':'Se asigno correctamente el complemento', 'data': serializer.data,'adicion':serializador_adicion.data}, status=status.HTTP_200_OK)
+        raise ValidationError("No se puede actualizar")
+
+
+        
 
 
 class TramiteListOpasGetView(generics.ListAPIView):

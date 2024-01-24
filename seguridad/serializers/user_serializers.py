@@ -79,7 +79,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserPutSerializer(serializers.ModelSerializer):
     password = serializers.CharField(required=False)
-    profile_img = serializers.ImageField(required=False)
+    profile_img = serializers.ReadOnlyField(source='id_archivo_foto.ruta_archivo.url', default=None)
 
     def validate_password(self, value):
         if not re.search(r'[A-Z]', value):
@@ -95,22 +95,13 @@ class UserPutSerializer(serializers.ModelSerializer):
         data['password'] = make_password(password)
         return data
     
-    def update(self, instance, validated_data):
-        profile_img = validated_data.pop('profile_img', None)
-        instance = super().update(instance, validated_data)
-
-        if profile_img:
-            instance.profile_img = profile_img
-            instance.save()
-        return instance
-    
     class Meta:
         model = User
-        fields =['password','profile_img']
+        fields =['password', 'id_archivo_foto', 'profile_img']
 
 class UserPutAdminSerializer(serializers.ModelSerializer):
     tipo_usuario = serializers.CharField(max_length=1, write_only=True)
-    profile_img = serializers.ImageField(required=False)
+    profile_img = serializers.ReadOnlyField(source='id_archivo_foto.ruta_archivo.url', default=None)
     is_active = serializers.BooleanField(required=False)
     is_blocked = serializers.BooleanField(write_only=True)
     justificacion = serializers.CharField(max_length=255, write_only=True, required=False)
@@ -118,7 +109,7 @@ class UserPutAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'profile_img', 'justificacion', 'sucursal_defecto']
+        fields = ['is_active', 'is_blocked', 'tipo_usuario', 'id_archivo_foto', 'profile_img', 'justificacion', 'sucursal_defecto']
 
 class UsuarioRolesLookSerializers(serializers.ModelSerializer):
     nombre_usuario = serializers.ReadOnlyField(source='id_usuario.nombre_de_usuario', default=None)
@@ -150,6 +141,8 @@ class RolesSerializers(serializers.ModelSerializer):
         fields=['id_rol', 'nombre_rol']
 
 class RegisterSerializer(serializers.ModelSerializer):
+    profile_img = serializers.ReadOnlyField(source='id_archivo_foto.ruta_archivo.url', default=None)
+    
     def validate_nombre_de_usuario(self, value):
         # if not value.isalnum():
         #     raise serializers.ValidationError("El nombre de usuario solo debe tener caracteres alfanumericos")
@@ -167,7 +160,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['persona', 'nombre_de_usuario', 'profile_img', 'tipo_usuario', 'id_usuario_creador']
+        fields = ['persona', 'nombre_de_usuario', 'id_archivo_foto', 'profile_img', 'tipo_usuario', 'id_usuario_creador']
 
 class RegisterExternoSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length= 68, min_length = 8, write_only=True)
@@ -222,6 +215,8 @@ class LoginSerializer(serializers.ModelSerializer):
 
     email = serializers.CharField(max_length=255, min_length=3,read_only=True)
     telefono_celular = serializers.CharField(max_length=15, read_only=True)
+    tipo_documento = serializers.CharField(max_length=2, read_only=True)
+    numero_documento = serializers.CharField(max_length=20, read_only=True)
     password= serializers.CharField(max_length=68, min_length=6, write_only=True)
     nombre_de_usuario = serializers.CharField(max_length=68, min_length=6)
     nombre = serializers.CharField(read_only=True)
@@ -234,13 +229,14 @@ class LoginSerializer(serializers.ModelSerializer):
     id_unidad_organizacional_actual = serializers.IntegerField(read_only=True)
     nombre_unidad_organizacional = serializers.CharField(read_only=True)
     activated_at = serializers.DateTimeField(read_only=True)
+    id_archivo_foto = serializers.IntegerField(read_only=True)
     profile_img = serializers.CharField(read_only=True)
     permisos = serializers.DictField(read_only=True)
     representante_legal =serializers.DictField(read_only=True)
     
     class Meta:
         model=Login
-        fields= ['email', 'telefono_celular', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'profile_img', 'permisos', 'representante_legal']
+        fields= ['email', 'telefono_celular', 'tipo_documento', 'numero_documento', 'password', 'nombre_de_usuario', 'nombre', 'tokens', 'is_superuser', 'id_usuario', 'tipo_usuario', 'id_persona', 'tipo_persona', 'id_unidad_organizacional_actual', 'nombre_unidad_organizacional', 'activated_at', 'id_archivo_foto', 'profile_img', 'permisos', 'representante_legal']
     
     def validate(self, attrs):
         nombre_de_usuario = attrs.get('nombre_de_usuario', '').lower()
@@ -273,6 +269,8 @@ class LoginSerializer(serializers.ModelSerializer):
         return {
             'email': user.persona.email,
             'telefono_celular': user.persona.telefono_celular,
+            'tipo_documento': user.persona.tipo_documento.cod_tipo_documento,
+            'numero_documento': user.persona.numero_documento,
             'nombre_de_usuario': user.nombre_de_usuario,
             'nombre':nombre,
             'tokens': tokens,
@@ -284,7 +282,8 @@ class LoginSerializer(serializers.ModelSerializer):
             'id_unidad_organizacional_actual': user.persona.id_unidad_organizacional_actual.id_unidad_organizacional if user.persona.id_unidad_organizacional_actual else None,
             'nombre_unidad_organizacional': user.persona.id_unidad_organizacional_actual.nombre if user.persona.id_unidad_organizacional_actual else None,
             'activated_at': user.activated_at,
-            'profile_img': user.profile_img
+            'id_archivo_foto': user.id_archivo_foto.id_archivo_digital if user.id_archivo_foto else None,
+            'profile_img': user.id_archivo_foto.ruta_archivo.url if user.id_archivo_foto else None
         }
  
 class LoginPostSerializers(serializers.ModelSerializer):
@@ -494,6 +493,7 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
     justificacion_ultimo_cambio_bloqueo = serializers.SerializerMethodField()
     id_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.id_sucursal_empresa',default=None)
     descripcion_sucursal_empresa = serializers.ReadOnlyField(source='sucursal_defecto.descripcion_sucursal',default=None)
+    profile_img = serializers.ReadOnlyField(source='id_archivo_foto.ruta_archivo.url', default=None)
     
     #RETORNAR NOMBRE COMPLETO
     def get_nombre_completo(self, obj):
@@ -588,6 +588,7 @@ class UsuarioFullSerializer(serializers.ModelSerializer):
             'fecha_ultimo_cambio_bloqueo',
             'justificacion_ultimo_cambio_bloqueo',
             'tipo_usuario',
+            'id_archivo_foto',
             'profile_img',
             'creado_por_portal',
             'created_at',

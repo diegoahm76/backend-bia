@@ -73,6 +73,7 @@ urlpatterns = [
     path('api/transversal/lideres/',include('transversal.urls.lideres_urls')),
     path('api/transversal/alertas/',include('transversal.urls.alertas_urls')),
     path('api/transversal/email/', include('transversal.urls.email_urls')),
+    path('api/transversal/sms/', include('transversal.urls.sms_urls')),
     
     
 
@@ -101,7 +102,8 @@ urlpatterns = [
     path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
     path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
     path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
-    
+    path('api/gestor/bandeja-tareas/',include('gestion_documental.urls.bandeja_tareas_urls')),
+    path('api/gestor/transferencias_documentales/',include('gestion_documental.urls.transferencias_documentales_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
@@ -173,6 +175,7 @@ urlpatterns = [
     # TRAMITES
     path('api/tramites/',include('tramites.urls.tramites_urls')),
     path('api/tramites/choices/',include('tramites.urls.choices_urls')),
+    path('api/tramites/listas/',include('tramites.urls.listas_urls')),
 
 
     
