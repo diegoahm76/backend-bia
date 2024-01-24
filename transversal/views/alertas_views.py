@@ -15,6 +15,8 @@ from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeP
 from transversal.funtions.alertas import alerta_proyectos_vigentes_porh, generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasGeneradas, AlertasProgramadas, BandejaAlertaPersona, ConfiguracionClaseAlerta, FechaClaseAlerta, PersonasAAlertar
 from seguridad.models import Personas
+from transversal.models.entidades_models import ConfiguracionEntidad
+from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPersonaPostSerializer, AlertasGeneradasPostSerializer, AlertasProgramadasPostSerializer, AlertasProgramadasUpdateSerializer, ConfiguracionClaseAlertaGetSerializer, ConfiguracionClaseAlertaUpdateSerializer, FechaClaseAlertaDeleteSerializer, FechaClaseAlertaGetSerializer, FechaClaseAlertaPostSerializer, PersonasAAlertarDeleteSerializer, PersonasAAlertarGetSerializer, PersonasAAlertarPostSerializer
 from django.db import transaction 
 from django.db.models import Q
@@ -423,6 +425,31 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
 
+    def buscar_persona_lider(self,id_unidad):
+        ids_personas =[]
+        lideres_unidad_orga=LideresUnidadesOrg.objects.filter(id_unidad_organizacional=id_unidad)
+        for lider in lideres_unidad_orga:
+            ids_personas.append(lider.id_persona.id_persona)
+        return ids_personas
+    
+    def buscar_persona_perfil(self,cod_perfil):
+        perfiles_actuales=ConfiguracionEntidad.objects.first()
+        if cod_perfil == 'Dire':
+            if perfiles_actuales.id_persona_director_actual:
+                id_responsable=(perfiles_actuales.id_persona_director_actual.id_persona)
+        elif cod_perfil == 'CAlm':
+            if perfiles_actuales.id_persona_coord_almacen_actual:
+                id_responsable=(perfiles_actuales.id_persona_coord_almacen_actual.id_persona)
+        elif cod_perfil == 'RTra':
+            if perfiles_actuales.id_persona_respon_transporte_actual:
+                id_responsable=(perfiles_actuales.id_persona_respon_transporte_actual.id_persona)
+        elif cod_perfil == 'CViv':
+            if perfiles_actuales.id_persona_coord_viveros_actual:
+                id_responsable=(perfiles_actuales.id_persona_coord_viveros_actual.id_persona)
+        elif cod_perfil == 'Alma':
+            if perfiles_actuales.id_persona_almacenista:
+                id_responsable=(perfiles_actuales.id_persona_almacenista.id_persona)
+        return id_responsable
     def crear_alerta_evento_inmediato(self,data_in):
    
         #configuracion = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta']).first()
@@ -433,10 +460,15 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
 
         if not programada:
             raise NotFound("No existe la alerta") 
+        
+        if not programada.activa:
+            return Response({'success':True,'detail':'La alerta se encuentra desactivada','data':{}},status=status.HTTP_200_OK) 
         data_alerga_generada['nombre_clase_alerta']=programada.nombre_clase_alerta
    
   
         data_alerga_generada['mensaje'] = programada.mensaje_base_dia#VALIDAR CAMPO <1000
+        if 'informacion_complemento_mensaje' in data_in:
+            data_alerga_generada['mensaje']=programada.mensaje_base_dia +'\n'+ data_in['informacion_complemento_mensaje']
 
 
         data_alerga_generada['cod_categoria_alerta']=programada.cod_categoria_clase_alerta
@@ -445,6 +477,7 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
         data_alerga_generada['id_modulo_generador'] = programada.id_modulo_generador.id_modulo
 
         data_alerga_generada['envio_email']=programada.envios_email
+        data_alerga_generada['es_ultima_repeticion'] = True
 
 
         if  'id_elemento_implicado' in data_in:
@@ -453,42 +486,65 @@ class AlertaEventoInmediadoCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         instance=serializer.save()
 
+        #BUSCAMOS LAS PERSONAS A ALERTAR
+        personas_a_alertar=PersonasAAlertar.objects.filter(cod_clase_alerta=data_in['cod_clase_alerta'])
+        personas = []
+        for persona in personas_a_alertar:
+            print(persona)
+            if persona.id_persona:
+                personas.append(persona.id_persona.id_persona)
+            if persona.perfil_sistema:
+                id_persona = self.buscar_persona_perfil(persona.perfil_sistema)
+                personas.append(id_persona)
+            if persona.id_unidad_org_lider:
+                ids_persona = self.buscar_persona_lider(persona.id_unidad_org_lider)
+                personas +=(ids_persona)
+            #BUSCAMOS LOS LIDERES DE GRUPO
+        
+        print(personas)
+        if 'id_persona' in data_in:
+            personas.append(data_in['id_persona']) #PENDIENTE VALIDAR SI SE REPITEN LAS PERSONAS
+       
+        #raise ValidationError("VIOLENTE")
 
-        bandejas_notificaciones=BandejaAlertaPersona.objects.filter(id_persona=data_in['id_persona']).first()
-        if bandejas_notificaciones:
-            #print(bandejas_notificaciones.id_persona.id_persona)
-                alerta_bandeja={}
-                alerta_bandeja['leido']=False
-                alerta_bandeja['archivado']=False
-                email_persona=bandejas_notificaciones.id_persona
-          
-                if programada.envios_email:
-                    if  email_persona and email_persona.email:
-                        alerta_bandeja['email_usado'] = email_persona.email
-                        subject = programada.nombre_clase_alerta
-                        template = "alerta.html"
-                        context = {'Nombre_alerta':programada.nombre_clase_alerta,'primer_nombre': email_persona.primer_nombre,"mensaje":data_alerga_generada['mensaje']}
-                        template = render_to_string((template), context)
-                        email_data = {'template': template, 'email_subject': subject, 'to_email':email_persona.email}
-                        Util.send_email(email_data)
-                        alerta_bandeja['fecha_envio_email']=datetime.now()
+        respuesta = []
+        for person in personas:
+            bandejas_notificaciones=BandejaAlertaPersona.objects.filter(id_persona=person).first()
+            if bandejas_notificaciones:
+                #print(bandejas_notificaciones.id_persona.id_persona)
+                    alerta_bandeja={}
+                    alerta_bandeja['leido']=False
+                    alerta_bandeja['archivado']=False
+                    email_persona=bandejas_notificaciones.id_persona
+            
+                    if programada.envios_email:
+                        if  email_persona and email_persona.email:
+                            alerta_bandeja['email_usado'] = email_persona.email
+                            subject = programada.nombre_clase_alerta
+                            template = "alerta.html"
+                            context = {'Nombre_alerta':programada.nombre_clase_alerta,'primer_nombre': email_persona.primer_nombre,"mensaje":data_alerga_generada['mensaje']}
+                            template = render_to_string((template), context)
+                            email_data = {'template': template, 'email_subject': subject, 'to_email':email_persona.email}
+                            Util.send_email(email_data)
+                            alerta_bandeja['fecha_envio_email']=datetime.now()
 
+                        else:
+                            alerta_bandeja['email_usado'] = None
                     else:
                         alerta_bandeja['email_usado'] = None
-                else:
-                    alerta_bandeja['email_usado'] = None
 
-                alerta_bandeja['id_alerta_generada']=instance.id_alerta_generada
-                alerta_bandeja['id_bandeja_alerta_persona']=bandejas_notificaciones.id_bandeja_alerta
-                
-                #print(alerta_bandeja)
-                
-                serializer_alerta_bandeja=AlertasBandejaAlertaPersonaPostSerializer(data=alerta_bandeja)
-                bandejas_notificaciones.pendientes_leer=True
-                bandejas_notificaciones.save()
-                serializer_alerta_bandeja.is_valid(raise_exception=True)
-                instance_alerta_bandeja=serializer_alerta_bandeja.save()
-                print(serializer_alerta_bandeja.data)
+                    alerta_bandeja['id_alerta_generada']=instance.id_alerta_generada
+                    alerta_bandeja['id_bandeja_alerta_persona']=bandejas_notificaciones.id_bandeja_alerta
+                    
+                    #print(alerta_bandeja)
+                    
+                    serializer_alerta_bandeja=AlertasBandejaAlertaPersonaPostSerializer(data=alerta_bandeja)
+                    bandejas_notificaciones.pendientes_leer=True
+                    bandejas_notificaciones.save()
+                    serializer_alerta_bandeja.is_valid(raise_exception=True)
+                    instance_alerta_bandeja=serializer_alerta_bandeja.save()
+                    print(serializer_alerta_bandeja.data)
+                    respuesta.append(serializer_alerta_bandeja.data)
 
         return Response({'success':True,'detail':'Se creo la alerta correctamente.','data':serializer.data},status=status.HTTP_200_OK)
 

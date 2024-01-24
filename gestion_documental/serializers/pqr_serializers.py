@@ -2,7 +2,7 @@ from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
-from transversal.models.personas_models import Personas
+from transversal.models.personas_models import Personas, UnidadesOrganizacionales
 
 class TiposPQRGetSerializer(serializers.ModelSerializer):
     cod_tipo_pqr_legible = serializers.SerializerMethodField()
@@ -369,6 +369,7 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
     nombres_apellidos_persona_titular = serializers.SerializerMethodField()
     tipo_documento_persona_titular = serializers.SerializerMethodField()
     numero_documento_persona_titular = serializers.SerializerMethodField()
+    id_persona_titular = serializers.SerializerMethodField()
 
     def get_anexos(self, obj):
         # Agrega tu lógica para obtener anexos aquí
@@ -404,8 +405,13 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
         if id_titular:
             persona_titular = Personas.objects.filter(id_persona=id_titular).first()
             if persona_titular:
-                nombres_apellidos = f"{persona_titular.primer_nombre} {persona_titular.segundo_nombre} {persona_titular.primer_apellido} {persona_titular.segundo_apellido}"
-                return nombres_apellidos.strip()
+                nombres_apellidos = ' '.join(filter(None, [
+                    persona_titular.primer_nombre,
+                    persona_titular.segundo_nombre,
+                    persona_titular.primer_apellido,
+                    persona_titular.segundo_apellido
+                ]))
+                return nombres_apellidos.strip() if nombres_apellidos else None
         return None
 
     def get_nombre_estado_actual_solicitud(self, obj):
@@ -428,6 +434,17 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
             fecha_radicado_entrada = pqrsdf_instance.fecha_radicado
             return fecha_radicado_entrada
         return None
+    
+    def get_id_persona_titular(self, obj):
+        id_titular = obj.id_pqrsdf.id_persona_titular_id
+        return id_titular if id_titular else None
+    
+    def get_nombre_estado_actual_solicitud(self, obj):
+        estado_actual_id = obj.id_pqrsdf.id_estado_actual_solicitud_id
+        estado_actual_nombre = EstadosSolicitudes.objects.filter(id_estado_solicitud=estado_actual_id).values('nombre').first()
+        estado_actual_nombre = estado_actual_nombre['nombre'] if estado_actual_nombre else None
+        return estado_actual_nombre
+
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -440,10 +457,11 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
             'cantidad_anexos': representation.get('cantidad_anexos'),
             'nro_folios_totales': representation.get('nro_folios_totales'),
             'id_persona_responde': representation.get('id_persona_responde'),
+            'id_persona_titular': representation.get('id_persona_titular'),  
             'tipo_documento_persona_titular': representation.get('tipo_documento_persona_titular'),
             'numero_documento_persona_titular': representation.get('numero_documento_persona_titular'),
             'nombres_apellidos_persona_titular': representation.get('nombres_apellidos_persona_titular'),
-            'id_radicado_salida': representation.get('id_radicado_salida'),
+            'estado_actual_nombre': self.get_nombre_estado_actual_solicitud(instance),  
             'fecha_radicado_salida': representation.get('fecha_radicado_salida'),
             'id_doc_archivo_exp': representation.get('id_doc_archivo_exp'),
             'nombre_estado_actual_solicitud': representation.get('nombre_estado_actual_solicitud'),
@@ -477,7 +495,23 @@ class PQRSDFGetSerializer(serializers.ModelSerializer):
             radicado = T262Radicados.objects.get(pk=pqrsdf.id_radicado.id_radicado)
             return f"{radicado.prefijo_radicado}-{radicado.agno_radicado}-{radicado.nro_radicado}"
         return None
-    
+
+class PersonaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = fields = [
+            'id_persona',
+            'tipo_documento',
+            'numero_documento',
+            'primer_nombre',
+            'primer_apellido'
+        ]
+
+
+class UnidadOrganizacionalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = '__all__'
 class EstadosSolicitudesSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadosSolicitudes

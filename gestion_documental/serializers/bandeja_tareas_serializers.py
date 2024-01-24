@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 from transversal.models.lideres_models import LideresUnidadesOrg
@@ -62,18 +62,51 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
         #fields = '__all__'
         fields =['id_tarea_asignada','id_pqrsdf','tipo_tarea','asignado_por','asignado_para','fecha_asignacion',
                  'comentario_asignacion','radicado','fecha_radicado','dias_para_respuesta',
-                 'requerimientos_pendientes_respuesta','estado_tarea','fecha_respondido','respondida_por','tarea_reasignada_a','unidad_org_destino','estado_reasignacion_tarea']
+                 'requerimientos_pendientes_respuesta','estado_tarea','fecha_respondido','respondida_por','tarea_reasignada_a','unidad_org_destino','estado_reasignacion_tarea','id_tarea_asignada_padre_inmediata']
     def get_tarea_reasignada_a(self,obj):
+
+        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).order_by('-fecha_reasignacion').first()
+
+        #print(reasignacion)
+        if not reasignacion:
+            return None
+        persona = None
+
+        if reasignacion.id_persona_a_quien_se_reasigna:
+            persona = reasignacion.id_persona_a_quien_se_reasigna
+        else:
+            return None
+        
+        nombre_completo = None
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                        persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+
+
+
         return None
     def get_estado_reasignacion_tarea(self,obj):
+        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).order_by('-fecha_reasignacion').first()
+        if not reasignacion:
+            return None
+        return reasignacion.get_cod_estado_reasignacion_display()
         return None
+    
     def get_unidad_org_destino(self,obj):
         return None
     def get_asignado_por(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
-        if not asignacion:
-            return None
+        validador = 0
+        while not asignacion:
+            
+            tarea_padre = obj.id_tarea_asignada_padre_inmediata
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea_padre.id_asignacion).first()
+            validador +=1
+            if validador == 10:
+                return None
 
         persona = None
 
@@ -92,6 +125,14 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
     def get_asignado_para(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
+        validador = 0
+        while not asignacion:
+            
+            tarea_padre = obj.id_tarea_asignada_padre_inmediata
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea_padre.id_asignacion).first()
+            validador +=1
+            if validador == 10:
+                return None
    
         persona = None
         if not asignacion:
@@ -108,19 +149,45 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
         nombre_completo = nombre_completo if nombre_completo != "" else None
         return nombre_completo
     
+
     def get_radicado(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
+        validador = 0
+        while not asignacion:
+            
+            tarea_padre = obj.id_tarea_asignada_padre_inmediata
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea_padre.id_asignacion).first()
+            validador +=1
+            if validador == 10:
+                return None
+            
         pqrsdf = asignacion.id_pqrsdf
         cadena = ""
+
+
+        cadena = ""
         if pqrsdf.id_radicado:
-            cadena= str(pqrsdf.id_radicado.prefijo_radicado)+'-'+str(pqrsdf.id_radicado.agno_radicado)+'-'+str(pqrsdf.id_radicado.nro_radicado)
-            return cadena
-        else: return cadena
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=pqrsdf.id_radicado.agno_radicado,cod_tipo_radicado=pqrsdf.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(pqrsdf.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        return cadena
+        
 
     def get_fecha_radicado(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
+
+        validador = 0
+        while not asignacion:
+            
+            tarea_padre = obj.id_tarea_asignada_padre_inmediata
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea_padre.id_asignacion).first()
+            validador +=1
+            if validador == 10:
+                return None
+            
         pqrsdf = asignacion.id_pqrsdf
         fecha_radicado = pqrsdf.fecha_radicado
         return fecha_radicado
@@ -129,6 +196,15 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
         #buscamos la asignacion
         fecha_actual = datetime.now()
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
+        validador = 0
+        while not asignacion:
+            
+            tarea_padre = obj.id_tarea_asignada_padre_inmediata
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea_padre.id_asignacion).first()
+            validador +=1
+            if validador == 10:
+                return None
+            
         pqrsdf = asignacion.id_pqrsdf
         dias = pqrsdf.dias_para_respuesta
         fecha_radicado = pqrsdf.fecha_radicado
@@ -143,6 +219,15 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
     def get_id_pqrsdf(self,obj):
         #buscamos la asignacion
         asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=obj.id_asignacion).first()
+
+        validador = 0
+        while not asignacion:
+            
+            tarea_padre = obj.id_tarea_asignada_padre_inmediata
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea_padre.id_asignacion).first()
+            validador +=1
+            if validador == 10:
+                return None
 
         if asignacion:
             pqrsdf = asignacion.id_pqrsdf
@@ -462,3 +547,65 @@ class ReasignacionesTareasgetByIdSerializer(serializers.ModelSerializer):
                 serializador_unidad = UnidadOrganizacionalBandejaTareasSerializer(unidad)
                 return serializador_unidad.data
         return None
+    
+
+class ReasignacionesTareasgetByIdTareaSerializer(serializers.ModelSerializer):
+    persona_reasignada = serializers.SerializerMethodField()
+    cargo =serializers.ReadOnlyField(source='id_persona_a_quien_se_reasigna.id_cargo.nombre',default=None)
+    unidad_organizacional = serializers.SerializerMethodField()
+    estado_asignacion = serializers.ReadOnlyField(source='get_cod_estado_reasignacion_display',default=None)
+    persona_reasigno = serializers.SerializerMethodField()
+    class Meta:
+        model = ReasignacionesTareas
+        fields = ['id_reasignacion_tarea','persona_reasigno','fecha_reasignacion','persona_reasignada','cargo','unidad_organizacional','comentario_reasignacion','estado_asignacion','justificacion_reasignacion_rechazada']
+
+    def get_persona_reasignada(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    def  get_unidad_organizacional(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        if persona:
+            unidad = persona.id_unidad_organizacional_actual
+            if unidad:
+                serializador_unidad = UnidadOrganizacionalBandejaTareasSerializer(unidad)
+                return serializador_unidad.data
+        return None
+    
+    def get_persona_reasigno (self, obj):
+
+        asignacion_bandeja = TareaBandejaTareasPersona.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).first()
+        if not asignacion_bandeja:
+            return None
+        bandeja = asignacion_bandeja.id_bandeja_tareas_persona
+        persona = bandeja.id_persona
+
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+        return None
+    
+
+
+
+class RespuestasPQRGetSeralizer(serializers.ModelSerializer):
+    persona_responde = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaPQR
+        fields = ['id_respuesta_pqr','fecha_respuesta','persona_responde']
+
+    def get_persona_responde(self, obj):
+        persona = obj.id_persona_responde
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()

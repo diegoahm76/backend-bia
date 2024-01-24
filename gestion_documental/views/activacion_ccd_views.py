@@ -184,7 +184,7 @@ class TRDCambioActualPut(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'Tabla de retencion documental activado'}, status=status.HTTP_200_OK)
         
 
-@transaction.atomic
+
 class CCDCambioActualPut(generics.UpdateAPIView):
     serializer_class = CCDSerializer
     permission_classes = [IsAuthenticated]
@@ -238,7 +238,7 @@ class CCDCambioActualPut(generics.UpdateAPIView):
 
         return Response({'success':True, 'detail':'Cuadro de clasificacion docuemntal activado'}, status=status.HTTP_200_OK)
 
-
+    @transaction.atomic
     def put(self, request):
         data = request.data
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
@@ -278,8 +278,30 @@ class CCDCambioActualPut(generics.UpdateAPIView):
             response_ccd = self.activar_ccd(ccd_seleccionado, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
         else:
+            if ccd_actual.id_ccd == ccd_seleccionado.id_ccd:
+                raise PermissionDenied("El CCD seleccionado ya está activo")
+            
+            instancia_subproceso_1 = ActCCDActualizarControlAcceso()
+            instancia_subproceso_2 = ActCCDActualizarControlAccesoAgrupaciones()
+            instancia_subproceso_3 = ActCCDActualizarPermisosUnidades()
+            instancia_subproceso_4 = ActCCDActualizarConsecutivosActOrgView()
+
+            response_subproceso_1 = instancia_subproceso_1.actualizar_control_acceso(ccd_seleccionado.id_ccd, data_auditoria)
+            response_subproceso_2 = instancia_subproceso_2.actualizar_control_acceso_agrupaciones(ccd_seleccionado.id_ccd, data_auditoria)
+            response_subproceso_3 = instancia_subproceso_3.actualizar_permisos_unidad_agrupaciones(ccd_seleccionado.id_ccd, data_auditoria)
+            response_subproceso_4 = instancia_subproceso_4.actualizar_consecutivos(ccd_seleccionado.id_ccd, data_auditoria)
+
             response_ccd = self.activar_ccd(ccd_seleccionado, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
+            if response_subproceso_1.status_code != status.HTTP_200_OK:
+                return response_subproceso_1
+            if response_subproceso_2.status_code != status.HTTP_200_OK:
+                return response_subproceso_2
+            if response_subproceso_3.status_code != status.HTTP_200_OK:
+                return response_subproceso_3
+            if response_subproceso_4.status_code != status.HTTP_200_OK:
+                return response_subproceso_4
+            
         if response_ccd.status_code != status.HTTP_200_OK:
             return response_ccd
 

@@ -87,7 +87,6 @@ class OrganigramasPosiblesGetListView(generics.ListAPIView):
         return Response({'success':True, 'detail':'Los organigramas posibles para activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
-@transaction.atomic
 class OrganigramaCambioActualPutView(generics.UpdateAPIView):
     serializer_class = OrganigramaCambioActualSerializer
     permission_classes = [IsAuthenticated]
@@ -132,7 +131,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
         return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
 
-
+    @transaction.atomic
     def put(self, request):
         data = request.data
         ccd_actual = CuadrosClasificacionDocumental.objects.filter(actual=True).first()
@@ -183,6 +182,49 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
             if validar_delegacion == []:
 
+                #Cambios al momento de activar el organigrama
+                instancia_subproceso_1 = ActualizarUnidadesSeccionResponsableActOrgView()
+                instancia_subproceso_2 = ActualizarExpedientesDocumentosActOrgView()
+                instancia_subproceso_3 = ActualizarPermisosUnidadesActOrgView()
+                instancia_subproceso_4 = ActualizarAlertasActOrgView()
+                instancia_subproceso_5 = ActualizarControlAccesoActOrgView()
+                instancia_subproceso_6 = ActualizarControlAccesoAgrupacionesActOrgView()
+                instancia_subproceso_7 = ActualizarPermisosUnidadesAgrupacionesActOrgView()
+                instancia_subproceso_8 = ActualizarConsecutivosActOrgView()
+                instancia_subproceso_9 = CrearTipologiasActOrgView()
+                instancia_subproceso_10 = TemporalPersonaUnidadCrearActOrgView()
+
+                # Subproceso 1
+                instancia_subproceso_1.actualizar_agrupacion_documental(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 2
+                instancia_subproceso_2.actualizar_expedientes_documentos(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 3
+                instancia_subproceso_3.actualizar_permisos_unidades(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 4
+                instancia_subproceso_4.actualizar_alertas(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 5
+                instancia_subproceso_5.actualizar_control_acceso(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 6
+                instancia_subproceso_6.actualizar_control_acceso_agrupaciones(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 7
+                instancia_subproceso_7.actualizar_permisos_unidad_agrupaciones(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 8
+                instancia_subproceso_8.actualizar_consecutivos(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 9
+                instancia_subproceso_9.actualizar_tipologias(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Subproceso 10
+                instancia_subproceso_10.crear_personas_temporales(organigrama_seleccionado.id_organigrama, data_auditoria)
+
+                # Activar Organigrama
                 data_activar['justificacion_nueva_version'] = data['justificacion']
                 response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
 

@@ -177,6 +177,7 @@ class Estados_PQR(models.Model):
     PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,db_column='T255Id_PQRSDF', null=True)
     solicitud_usu_sobre_PQR = models.ForeignKey('SolicitudAlUsuarioSobrePQRSDF',on_delete=models.CASCADE,db_column='T255Id_SolicitudAlUsuSobrePQR', null=True)#PENDIENTE MODELO T266
     id_otros = models.ForeignKey(Otros,on_delete=models.SET_NULL, blank=True, null=True,db_column='T255Id_Otros')
+    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T255Id_SolicitudTramite', blank=True, null=True)
     estado_solicitud = models.ForeignKey(EstadosSolicitudes,on_delete=models.CASCADE,db_column='T255Id_EstadoSolicitud')
     fecha_iniEstado = models.DateTimeField(db_column='T255fechaIniEstado')
     persona_genera_estado = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T255Id_PersonaGeneraEstado', null=True)
@@ -306,14 +307,16 @@ class ComplementosUsu_PQR(models.Model):
 
 class SolicitudDeDigitalizacion(models.Model):
     id_solicitud_de_digitalizacion = models.AutoField(primary_key=True, db_column='T263IdSolicitudDeDigitalizacion')
-    id_pqrsdf = models.ForeignKey('Pqrsdf', models.CASCADE, db_column='T263Id_PQRSDF', blank=True, null=True)
-    id_complemento_usu_pqr = models.ForeignKey(ComplementosUsu_PQR, models.CASCADE, db_column='T263Id_ComplementoUsu_PQR', blank=True, null=True)
+    id_pqrsdf = models.ForeignKey('Pqrsdf', models.SET_NULL, db_column='T263Id_PQRSDF', blank=True, null=True)
+    id_complemento_usu_pqr = models.ForeignKey(ComplementosUsu_PQR, models.SET_NULL, db_column='T263Id_ComplementoUsu_PQR', blank=True, null=True)
+    id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otro', blank=True, null=True)
+    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T263Id_SolicitudTramite', blank=True, null=True)
     fecha_solicitud = models.DateTimeField(db_column='T263fechaSolicitud')
     fecha_rta_solicitud = models.DateTimeField(db_column='T263fechaRtaSolicitud', blank=True, null=True)
     observacion_digitalizacion = models.CharField(max_length=255, db_column='T263observacionDigitalizacion',null=True, blank=True)
     digitalizacion_completada = models.BooleanField(db_column='T263digitalizacionCompletada')
     devuelta_sin_completar = models.BooleanField(db_column='T263devueltaSinCompletar')
-    id_persona_digitalizo = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T263Id_PersonaDigitalizo', blank=True, null=True)
+    id_persona_digitalizo = models.ForeignKey('transversal.Personas', models.SET_NULL, db_column='T263Id_PersonaDigitalizo', blank=True, null=True)
 
     class Meta:
         db_table = 'T263SolicitudesDeDigitalizacion'
@@ -360,6 +363,25 @@ class AsignacionPQR(models.Model):
     class Meta:
         db_table = 'T268Asignacion_PQR'
         unique_together = (('id_pqrsdf', 'consecutivo_asign_x_pqrsdf'), )
+
+
+class AsignacionTramites(models.Model):
+    id_asignacion_tramite = models.AutoField(db_column='T279IdAsignacion_Tramite', primary_key=True)
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites',on_delete=models.CASCADE,db_column='T279Id_SolicitudTramite')
+    consecutivo_asign_x_tramite = models.SmallIntegerField(db_column='T279consecutivoAsignXTramite', null=True, blank=True)
+    fecha_asignacion = models.DateTimeField(db_column='T279fechaAsignacion', null=True, blank=True)
+    id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsigna',related_name='persona_asigna_tramite')
+    id_persona_asignada =  models.ForeignKey('transversal.Personas',on_delete = models.CASCADE,db_column='T279Id_PersonaAsignada',related_name='persona_asignada_tramites')
+    cod_estado_asignacion = models.CharField(max_length=2,
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')], db_column='T279codEstadoAsignacion',null=True,blank=True)
+    fecha_eleccion_estado = models.DateTimeField(db_column='T279fechaEleccionEstado',null=True,blank=True)
+    justificacion_rechazo = models.CharField(db_column='T279justificacionRechazo', max_length=250, null=True, blank=True)
+    asignacion_de_ventanilla = models.BooleanField(db_column='T279asignacionDeVentanilla')
+    id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_tramites')
+    id_und_org_oficina_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgOficina_Asignada')
+    class Meta:
+        db_table = 'T279Asignacion_Tramites'
+        unique_together = (('id_solicitud_tramite', 'consecutivo_asign_x_tramite'),)
 
 
 
