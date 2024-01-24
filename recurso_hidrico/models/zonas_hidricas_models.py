@@ -50,6 +50,8 @@ class SubZonaHidrica(models.Model):
     id_zona_hidrica = models.ForeignKey(ZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_ZonaHidrica")
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")    
     id_tipo_agua_zona_hidrica = models.ForeignKey(TipoAguaZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoAguaZonaHidrica")
+    valor_regional_sub = models.CharField(max_length=255, null=True, blank=True, db_column="T623valorRegional")
+
     
     class Meta:
         db_table = 'T623SubZonasHidricas'
