@@ -95,6 +95,7 @@ urlpatterns = [
      path('expedientes/eliminacion/historial/get/',views.EliminacionHistorialGetView.as_view(), name='eliminacion-historial-get'),
      path('expedientes/eliminacion/publicar/create/',views.PublicarCreateView.as_view(), name='publicar-create'),
      path('expedientes/eliminacion/publicar/update/<str:id_eliminacion_documental>/',views.PublicarUpdateView.as_view(), name='publicar-update'),
+     path('expedientes/eliminacion/delete/<str:id_eliminacion_documental>/',views.EliminacionDeleteView.as_view(), name='eliminacion-delete'),
      
 
 
