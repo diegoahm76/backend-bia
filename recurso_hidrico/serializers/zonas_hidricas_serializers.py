@@ -33,6 +33,7 @@ class SubZonaHidricaSerializer(serializers.ModelSerializer):
         model = SubZonaHidrica
         fields = '__all__'
 
+
 class SubZonaHidricaSerializerr(serializers.ModelSerializer):
     class Meta:
         model = SubZonaHidrica
