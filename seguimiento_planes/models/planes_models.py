@@ -273,6 +273,7 @@ class Indicador(models.Model):
         max_length=3, choices=[
             ('NUM', 'Numero'),
             ('POR', 'Porcentaje'),
+            ("TMP", "Tiempo")
         ], db_column='T512medida')
     tipo_indicador = models.CharField(
         max_length=3, choices=[
