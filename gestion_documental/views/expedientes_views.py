@@ -20,13 +20,14 @@ from django.shortcuts import get_object_or_404
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
 from gestion_documental.serializers.conf__tipos_exp_serializers import ConfiguracionTipoExpedienteAgnoGetSerializer
+from gestion_documental.serializers.transferencias_documentales_serializers import ExpedienteSerializer
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EliminacionHistorialGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, IndiceElectronicoXMLSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EliminacionGetSerializer, EliminacionHistorialGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, IndiceElectronicoXMLSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
 from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -3165,10 +3166,10 @@ class PublicarCreateView(generics.CreateAPIView):
                 fecha_folio_inicial=expediente_doc.fecha_folio_inicial,
                 fecha_folio_final=expediente_doc.fecha_folio_final,
                 nro_folios=total_folios,
-                id_eliminacion_exp=eliminacion
+                id_eliminacion_documental=eliminacion
             )
         
-        return Response({'success':True, 'detail':'Se encontraron los siguientes registros de eliminaciones', 'data': serializer_eliminacion.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se creó la siguiente publicación de eliminación de expedientes', 'data': serializer_eliminacion.data}, status=status.HTTP_201_CREATED)
 
 class PublicarUpdateView(generics.UpdateAPIView):
     serializer_class = EliminacionHistorialGetSerializer
@@ -3197,8 +3198,12 @@ class PublicarUpdateView(generics.UpdateAPIView):
             eliminacion_documental.nro_expedientes_eliminados = eliminacion_documental.nro_expedientes_eliminados - 1
             eliminacion_documental.save()
             
-            inventario_doc = InventarioDocumental.objects.filter(id_eliminacion_exp=eliminacion_documental, nombre_expediente=expediente_doc.titulo_expediente).first()
+            inventario_doc = InventarioDocumental.objects.filter(id_eliminacion_documental=eliminacion_documental.id_eliminacion_documental, nombre_expediente=expediente_doc.titulo_expediente).first()
             inventario_doc.delete()
+            
+        eliminacion_documental.observaciones = observaciones
+        eliminacion_documental.tiene_observaciones = True
+        eliminacion_documental.save()
         
         return Response({'success':True, 'detail':'Actualización realizada con éxito'}, status=status.HTTP_201_CREATED)
 
@@ -3221,4 +3226,69 @@ class EliminacionDeleteView(generics.DestroyAPIView):
         if dias_restantes > 0:
             raise ValidationError('No puede eliminar la eliminación documental porque aún no ha pasado el tiempo limite para la eliminación')
         
-        return Response({'success':True, 'detail':'Eliminación realizada con éxito'}, status=status.HTTP_200_OK)
+        documentos_tienen_replica = []
+        
+        expedientes_eliminar = ExpedientesDocumentales.objects.filter(id_eliminacion_exp=eliminacion_documental.id_eliminacion_documental)
+        for expediente in expedientes_eliminar:
+            documentos_exp = expediente.documentosdearchivoexpediente_set.all()
+            for documento in documentos_exp:
+                archivo_sistema_usado = DocumentosDeArchivoExpediente.objects.filter(id_archivo_sistema=documento.id_archivo_sistema).exclude(id_documento_de_archivo_exped=documento.id_documento_de_archivo_exped)
+                if not archivo_sistema_usado:
+                    documento.id_archivo_sistema.delete()
+                if documento.tiene_replica_fisica:
+                    documentos_tienen_replica.append(documento.nombre_asignado_documento)
+                documento.delete()
+            expediente.delete()
+            
+        eliminacion_documental.estado = 'E'
+        eliminacion_documental.fecha_eliminacion = datetime.now()
+        eliminacion_documental.save()
+        
+        response = {'success':True, 'detail':'Eliminación realizada con éxito'}
+        if documentos_tienen_replica:
+            msg_replica = 'Los siguientes documentos tienen una replica física, no olvide eliminarlos: ' + ', '.join(documentos_tienen_replica)
+            response['tienen_replica'] = msg_replica
+        
+        return Response(response, status=status.HTTP_200_OK)
+
+class EliminacionPublicadosGetView(generics.ListAPIView):
+    serializer_class = ExpedienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_eliminacion_documental):
+        try:
+            eliminacion_documental = EliminacionDocumental.objects.filter(id_eliminacion_documental=id_eliminacion_documental).first()
+            if not eliminacion_documental:
+                raise NotFound('No se encontró la eliminación documental')
+            
+            if eliminacion_documental.estado == 'E':
+                raise ValidationError('No puede consultar aquí una eliminación que ya fue ejecutada')
+            
+            expedientes = ExpedientesDocumentales.objects.filter(id_eliminacion_exp=eliminacion_documental.id_eliminacion_documental)
+            serializador = self.serializer_class(expedientes, many=True)
+            
+            return Response({'success':True, 'detail':'Se encontraron los siguientes expedientes', 'data':serializador.data},status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+class EliminacionEliminadosGetView(generics.ListAPIView):
+    serializer_class = EliminacionGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_eliminacion_documental):
+        try:
+            eliminacion_documental = EliminacionDocumental.objects.filter(id_eliminacion_documental=id_eliminacion_documental).first()
+            if not eliminacion_documental:
+                raise NotFound('No se encontró la eliminación documental')
+            
+            if eliminacion_documental.estado == 'P':
+                raise ValidationError('No puede consultar aquí una eliminación que aún no fue ejecutada')
+                
+            expedientes = InventarioDocumental.objects.filter(id_eliminacion_documental=eliminacion_documental.id_eliminacion_documental)
+            serializador = self.serializer_class(expedientes, many=True)
+            
+            return Response({'success':True, 'detail':'Se encontraron los siguientes expedientes', 'data':serializador.data},status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
