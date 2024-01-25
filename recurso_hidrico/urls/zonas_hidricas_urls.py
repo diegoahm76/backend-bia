@@ -15,6 +15,7 @@ urlpatterns = [
         path('sub_zona_hidrica/delete/<str:pk>/', views.BorrarSubZonaHidricaVista.as_view(), name='zonas-hidricas-actualizar'),
 
 
+
         path('zona_hidrica/update/<str:pk>/', views.ActualizarZonaHidricaVista.as_view(), name='zonas-hidricas-actualizar'),
         path('sub_zona_hidrica/update/<str:pk>/', views.ActualizarSubZonaHidricaVista.as_view(), name='sub-zonas-hidricas-actualizar'),
     
@@ -22,11 +23,6 @@ urlpatterns = [
 
         path('enviar_sms/', views.EnviarSMSView.as_view(), name='enviar_sms'),
         path('enviar_correo/', views.EnviarCORREOView.as_view(), name='enviar_correo'),
-
-
-
-        path('SubZonaHidricaListViewwww/', views.SubZonaHidricaListViewwww.as_view(), name='enviar_correo'),
-
-        
 ]
+    
 

@@ -34,8 +34,4 @@ class SubZonaHidricaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class SubZonaHidricaSerializerr(serializers.ModelSerializer):
-    class Meta:
-        model = SubZonaHidrica
-        fields = '__all__'
 

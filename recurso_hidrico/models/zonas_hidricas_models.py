@@ -49,9 +49,7 @@ class SubZonaHidrica(models.Model):
     codigo_rio = models.CharField(max_length=10, db_column="T623codigoRio")
     id_zona_hidrica = models.ForeignKey(ZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_ZonaHidrica")
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")    
-    id_tipo_agua_zona_hidrica = models.ForeignKey(TipoAguaZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoAguaZonaHidrica")
-    valor_regional_sub = models.CharField(max_length=255, null=True, blank=True, db_column="T623valorRegional")
-
+    id_tipo_agua_zona_hidrica = models.ForeignKey(TipoAguaZonaHidrica,blank=True,null=True,on_delete=models.SET_NULL, db_column="T623Id_TipoAguaZonaHidrica")
     
     class Meta:
         db_table = 'T623SubZonasHidricas'

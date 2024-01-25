@@ -134,3 +134,4 @@ class ReporteFacilidadesPagosDetalleSerializer(serializers.ModelSerializer):
         model = DetallesFacilidadPago
         fields = ('tipo_cobro', 'identificacion', 'nombre_deudor', 'concepto_deuda','cod_expediente', 'numero_resolucion',
                   'numero_factura', 'valor_sancion')
+
