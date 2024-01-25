@@ -114,7 +114,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         # RADICAR TRAMITE
         data_radicar = {}
         data_radicar['fecha_actual'] = current_date
-        data_radicar['id_usuario'] = request.user.id_usuario
+        data_radicar['id_persona'] = request.user.persona.id_persona
         data_radicar['tipo_radicado'] = data_tramite['tipo_radicado']
         data_radicar['modulo_radica'] = "Trámites y servicios"
         
@@ -458,7 +458,7 @@ class RadicarCreateView(generics.CreateAPIView):
             raise ValidationError('El trámite ya ha sido radicado')
         
         data['fecha_actual'] = current_date
-        data['id_usuario'] = request.user.id_usuario
+        data['id_persona'] = request.user.persona.id_persona
         data['tipo_radicado'] = "E" # VALIDAR
         data['modulo_radica'] = "Trámites y servicios" # VALIDAR
         

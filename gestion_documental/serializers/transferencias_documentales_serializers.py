@@ -214,6 +214,7 @@ class ExpedienteSerializer(serializers.ModelSerializer):
         ]
 
 class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
+    ruta_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.ruta_archivo.url', default=None)
     nombre_origen_archivo = serializers.ReadOnlyField(source='get_cod_origen_archivo_display')
     nombre_categoria_archivo = serializers.ReadOnlyField(source='get_cod_categoria_archivo_display')
     nombre_tipologia_documental = serializers.SerializerMethodField()
@@ -253,10 +254,13 @@ class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
             'nro_folios_del_doc',
             'asunto',
             'descripcion',
+            'ruta_archivo',
             'anexos'
         ]
 
 class AnexosDocumentosSerializer(serializers.ModelSerializer):
+    ruta_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.ruta_archivo.url', default=None)
+    
     class Meta:
         model =  DocumentosDeArchivoExpediente
         fields = '__all__'

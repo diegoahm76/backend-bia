@@ -16,6 +16,8 @@ class TipoCobroSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class TipoRentaSerializer(serializers.ModelSerializer):
+    nombre_cobro = serializers.ReadOnlyField(source='tipo_cobro_asociado.nombre_tipo_cobro')
+
     class Meta:
         model = TipoRenta
         fields = '__all__'
