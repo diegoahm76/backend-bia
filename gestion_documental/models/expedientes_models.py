@@ -274,3 +274,19 @@ class EliminacionDocumental(models.Model):
         db_table = 'T304EliminacionDocumental'
         verbose_name = 'Eliminacion Documental'
         verbose_name_plural = 'Eliminaciones Documentales'
+        
+class InventarioDocumental(models.Model):
+    id_inventario_documental = models.AutoField(primary_key=True, db_column='T305IdInventarioDocumental')
+    nro_orden = models.IntegerField(db_column='T305nroOrden')
+    nombre_expediente = models.CharField(max_length=50, db_column='T305nombreExpediente')
+    nombre_serie = models.CharField(max_length=50, db_column='T305nombreSerie')
+    nombre_subserie = models.CharField(max_length=50, blank=True, null=True, db_column='T305nombreSubserie')
+    fecha_folio_inicial = models.DateTimeField(db_column='T305fechaFolioInicial')
+    fecha_folio_final = models.DateTimeField(db_column='T305fechaFolioFinal')
+    nro_folios = models.IntegerField(db_column='T305nroFolios')
+    id_eliminacion_documental = models.ForeignKey(EliminacionDocumental, on_delete=models.CASCADE, db_column='T305Id_EliminacionDocumental')
+
+    class Meta:
+        db_table = 'T305InventarioDocumental'
+        verbose_name = 'Inventario Documental'
+        verbose_name_plural = 'Inventarios Documentales'

@@ -1,11 +1,40 @@
 from rest_framework import serializers
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from seguridad.models import (User)
-from gestion_documental.models.radicados_models import Anexos, Anexos_PQR, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, Otros, MediosSolicitud
+from gestion_documental.models.radicados_models import Anexos, Anexos_PQR, ConfigTiposRadicadoAgno, EstadosSolicitudes, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, Otros, MediosSolicitud
 from transversal.models.personas_models import Personas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
+class RadicadosGetHistoricoSerializer(serializers.ModelSerializer):
 
+    nombre_modulo = serializers.ReadOnlyField(source='id_modulo_que_radica.nombre',default=None)
+    nombre_tipo_radicado = serializers.ReadOnlyField(source='get_cod_tipo_radicado_display',default=None)
+    nombre_completo_radica = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    class Meta:
+        model = T262Radicados
+        fields = '__all__'
+
+
+    def get_nombre_completo_radica(self, obj):
+        nombre_completo = None
+        nombre_list = [obj.id_persona_radica.primer_nombre, obj.id_persona_radica.segundo_nombre,
+                        obj.id_persona_radica.primer_apellido, obj.id_persona_radica.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+    
+    def get_radicado(self, obj):
+        cadena = ""
+        radicado = obj
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        else: 
+            return 'SIN RADICAR'
 class RadicadosImprimirSerializer(serializers.ModelSerializer):
     nombre_tipo_radicado = serializers.SerializerMethodField()
     numero_radicado_completo = serializers.SerializerMethodField()
