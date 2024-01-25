@@ -43,6 +43,7 @@ from django.db.models import Value as V
 from gestion_documental.utils import UtilsGestor
 
 from transversal.models.personas_models import Personas
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 ########################## CRUD DE APERTURA DE EXPEDIENTES DOCUMENTALES ##########################
 
@@ -3147,6 +3148,23 @@ class PublicarCreateView(generics.CreateAPIView):
         serializer_eliminacion = self.serializer_class(data=data_eliminacion)
         serializer_eliminacion.is_valid(raise_exception=True)
         eliminacion = serializer_eliminacion.save()
+        #GENERACION DE ALERTA
+        crear_alerta=AlertasProgramadasCreate()
+        # fecha_respuesta = eliminacion.fecha_publicacion + timedelta(days=eliminacion.dias_publicacion)
+        # data_alerta = {
+        #     'cod_clase_alerta':'Ges_EliDoc',
+        #     'dia_cumplimiento':fecha_respuesta.day,
+        #     'mes_cumplimiento':fecha_respuesta.month,
+        #     'age_cumplimiento':fecha_respuesta.year,
+        #     #'complemento_mensaje':mensaje,
+        #     'id_elemento_implicado':eliminacion.id_eliminacion_documental,
+        #     'id_persona_implicada':None,
+        #     "tiene_implicado":False
+        #     }
+        
+        # response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+        # if response_alerta.status_code!=status.HTTP_201_CREATED:
+        #     return response_alerta
         
         # Actualizar cada expediente
         for count, expediente in enumerate(expedientes, start=1):
