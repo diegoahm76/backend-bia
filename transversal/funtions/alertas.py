@@ -2,6 +2,7 @@ from datetime import date
 from django.db.models import Q
 from django.forms import ValidationError
 from django.forms.models import model_to_dict
+from gestion_documental.models.radicados_models import PQRSDF, ConfigTiposRadicadoAgno
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer
 from seguridad.utils import Util
@@ -39,7 +40,27 @@ def alerta_proyectos_vigentes_porh():
             mensaje+="<li>Proyecto "+str(dato['id_proyecto'])+" ("+str(dato['nombre'])+")"+" del Programa "+str(dato['id_programa'])+" ("+str(dato['nombre_programa'])+")"+"  del Plan de Ordenamiento de Recurso Hídrico "+str(dato['id_porh'])+" ("+str(dato['nombre_porh'])+")"+".</li>"
         mensaje+="</ul>"
         return(mensaje)
+def complemento_mensaje_Gest_TRPqr(id_elemento):
+    fecha_actual = datetime.now()
+    pqrsdf = PQRSDF.objects.filter(id_PQRSDF=id_elemento).first()
+    radicado = ""
 
+    if not pqrsdf:
+
+        return ""
+
+    if pqrsdf.id_radicado:
+        instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=pqrsdf.id_radicado.agno_radicado,cod_tipo_radicado=pqrsdf.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(pqrsdf.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+
+    fecha_radicado = pqrsdf.fecha_radicado
+    fecha_respuesta = fecha_actual + timedelta(days=pqrsdf.dias_para_respuesta)
+    fecha_diferencia = fecha_respuesta - fecha_actual
+    dias_respuesta = fecha_diferencia.days
+
+    texto_html = f"Radicado: {radicado}<br>Fecha de radicado: {fecha_radicado}<br>Días para responder: {dias_respuesta}"
+    return texto_html
 
 
 #@background(schedule=None) 
@@ -135,8 +156,12 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
         print(programada)
         id_responsable=None
         if funcion:
-            cadena=funcion()
-            #print(cadena)
+            if programada.cod_clase_alerta.cod_clase_alerta == 'Gest_TRPqr':
+                cadena=funcion(programada.id_elemento_implicado)
+            else:
+                
+                cadena=funcion()
+                #print(cadena)
         else:
             print("La función no fue encontrada.")
 
@@ -158,7 +183,9 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
         #FIN
         data_alerga_generada['cod_categoria_alerta']=programada.cod_categoria_alerta
         data_alerga_generada['nivel_prioridad']=programada.nivel_prioridad
-        data_alerga_generada['id_modulo_destino']=programada.id_modulo_destino.id_modulo
+        if programada.id_modulo_destino:
+
+            data_alerga_generada['id_modulo_destino']=programada.id_modulo_destino.id_modulo
         data_alerga_generada['id_modulo_generador']=programada.id_modulo_generador.id_modulo
         data_alerga_generada['id_elemento_implicado']=programada.id_elemento_implicado
         data_alerga_generada['id_alerta_programada_origen']=programada.id_alerta_programada
