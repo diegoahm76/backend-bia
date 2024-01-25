@@ -3521,14 +3521,14 @@ class IndicadorVencimientoPQRSDF(generics.ListAPIView):
 #Radicacion_Email
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-class CustomPageNumberPagination(PageNumberPagination):
-    page_size = 5  
-    page_size_query_param = 'page_size'
-    max_page_size = 1000
+# class CustomPageNumberPagination(PageNumberPagination):
+#     page_size = 5  
+#     page_size_query_param = 'page_size'
+#     max_page_size = 1000
 
 class ObtenerCorreosView(generics.ListAPIView):
-    # Utiliza la clase de paginación personalizada
-    pagination_class = CustomPageNumberPagination
+    # # Utiliza la clase de paginación personalizada
+    # pagination_class = CustomPageNumberPagination
 
     def save_attachment(self, filename, file_content, save_dir):
         # Crear el directorio si no existe
@@ -3568,11 +3568,20 @@ class ObtenerCorreosView(generics.ListAPIView):
 
         base_dir = os.path.join("/media", "home", "BIA", "Correos")
         save_dir = os.path.join(base_dir, str(current_year))
+        
+        page = int(self.request.query_params.get('page', 1))
+        rango = 5
+        lim_final = rango*page
+        lim_inicial = lim_final - rango 
+        
 
         status_email, data = imap_server.search(None, 'ALL')
-        email_ids = data[0].split()[::-1]
-
+        email_ids = data[0].split()[::-1]      
+        total = len(email_ids)
+        email_ids=email_ids[lim_inicial:lim_final]
+        print(email_ids)
         all_emails_info = []
+        print(data)
 
         for email_id in email_ids:
             status_email, email_data = imap_server.fetch(email_id, "(RFC822)")
@@ -3620,6 +3629,7 @@ class ObtenerCorreosView(generics.ListAPIView):
                             })
 
             all_emails_info.append({
+                'ID': email_id, 
                 'Asunto': subject,
                 'Remitente': sender,
                 'Fecha': date,
@@ -3629,15 +3639,16 @@ class ObtenerCorreosView(generics.ListAPIView):
 
         imap_server.logout()
 
-        # Obtener la configuración de paginación de la vista
-        paginator = CustomPageNumberPagination()
-        paginated_data = paginator.paginate_queryset(all_emails_info, request)
+        # # Obtener la configuración de paginación de la vista
+        # paginator = CustomPageNumberPagination()
+        # paginated_data = paginator.paginate_queryset(all_emails_info, request)
 
         # Devolver la respuesta paginada
-        return paginator.get_paginated_response({
+        return Response({
             'success': True,
             'detail': 'BANDEJA DE ENTRADA DE CORREOS ELECTRONICOS.',
-            'data': paginated_data
+            'total_correos': total,
+            'data': all_emails_info,
         })
 
 
