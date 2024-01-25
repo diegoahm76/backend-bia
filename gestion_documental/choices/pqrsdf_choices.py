@@ -66,6 +66,11 @@ ESTADO_SOLICITUD_PQRSDF = (
     ('VC', 'VENCIDO'),
 )
 
+RADICACION_CORREOS = (
+    ('PQ', 'PQRSDF'),
+    ('OT', 'OTROS'),
+)
+
 def choices_to_list(choices):
     choices_list = []
     for choice in choices:

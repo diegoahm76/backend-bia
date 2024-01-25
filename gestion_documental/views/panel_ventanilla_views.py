@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
 from django.db.models import F, Value, CharField
 from django.db.models.functions import Concat
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
@@ -1116,7 +1116,9 @@ class TramiteListOpasGetView(generics.ListAPIView):
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
         
         for key, value in request.query_params.items():
-
+            if key =='estado_actual_solicitud':
+                if value != '':
+                    filter['id_solicitud_tramite__id_estado_actual_solicitud__nombre__icontains'] = value 
         
             if key == 'fecha_inicio':
                 if value != '':
@@ -1125,18 +1127,25 @@ class TramiteListOpasGetView(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['id_solicitud_tramite__fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
-
+            if key == 'nombre_proyecto':
+                if value != '':
+                    filter['id_solicitud_tramite__nombre_proyecto__icontains']= value
         #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
         instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')
         serializer = self.serializer_class(instance, many=True)
 
         radicado_value = request.query_params.get('radicado')
+        nombre_titular_value = request.query_params.get('nombre_titular')
         data_respuesta = serializer.data
         data_validada =[]
         if radicado_value and radicado_value != '':
             data_validada = [item for item in serializer.data if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta
+
+        if nombre_titular_value and nombre_titular_value != '':
+            data_validada = [item for item in data_validada if nombre_titular_value in item.get('nombre_completo_titular', '')]
+        
         
         return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': data_validada}, status=status.HTTP_200_OK)
 class VistaCreadoraArchivo3(generics.CreateAPIView):
@@ -1383,6 +1392,75 @@ class EstadosSolicitudesTramitesGet(generics.ListAPIView):
 
         serializador = self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+
+class OpaAnexoInfoGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset =PermisosAmbSolicitudesTramite.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,tra):
+        data=[]
+        instance =PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tra).first()
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        tramite = instance.id_solicitud_tramite
+        tabla_intermedia_anexos_tramites = AnexosTramite.objects.filter(id_solicitud_tramite=tramite)
+
+
+        print(tabla_intermedia_anexos_tramites)
+        #raise ValidationError("AQUI VAMOS")
+        #anexos_pqrs = Anexos_PQR.objects.filter(id_PQRSDF=instance)
+        for x in tabla_intermedia_anexos_tramites:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+class OPASAnexoDocumentoDigitalGet(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+        archivo = meta_data.id_archivo_sistema
+        serializer= self.serializer_class(archivo)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+class OPAAnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
 
 # OTROS
 

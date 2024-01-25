@@ -6,7 +6,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from django.db.models import Max, F
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.depositos_models import CarpetaCaja 
-from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, EliminacionDocumental, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura
+from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, EliminacionDocumental, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura, InventarioDocumental
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental, TipologiasDoc
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -1594,10 +1594,11 @@ class IndiceElectronicoXMLSerializer(serializers.ModelSerializer):
 class EliminacionHistorialGetSerializer(serializers.ModelSerializer):
     desc_estado = serializers.CharField(source='get_estado_display', read_only=True)
     dias_restantes = serializers.SerializerMethodField()
+    nombre_persona_elimino = serializers.SerializerMethodField()
     
     def get_dias_restantes(self, obj):
         dias_restantes = 0
-        if obj.id_estado == 'P':
+        if obj.estado == 'P':
             fecha_max_eliminacion = obj.fecha_publicacion + timedelta(days=obj.dias_publicacion)
             dias_restantes = (fecha_max_eliminacion - datetime.now()).days
             dias_restantes = dias_restantes if dias_restantes > 0 else 0
@@ -1616,27 +1617,7 @@ class EliminacionHistorialGetSerializer(serializers.ModelSerializer):
         model =  EliminacionDocumental
         fields = '__all__'
         
-# class InventarioCreateSerializer(serializers.ModelSerializer):
-#     desc_estado = serializers.CharField(source='get_estado_display', read_only=True)
-#     dias_restantes = serializers.SerializerMethodField()
-    
-#     def get_dias_restantes(self, obj):
-#         dias_restantes = 0
-#         if obj.id_estado == 'P':
-#             fecha_max_eliminacion = obj.fecha_publicacion + timedelta(days=obj.dias_publicacion)
-#             dias_restantes = (fecha_max_eliminacion - datetime.now()).days
-#             dias_restantes = dias_restantes if dias_restantes > 0 else 0
-#         return dias_restantes
-
-#     def get_nombre_persona_elimino(self, obj):
-#         nombre_persona_titular_exp_complejo = None
-#         if obj.id_persona_elimino:
-#             nombre_list = [obj.id_persona_elimino.primer_nombre, obj.id_persona_elimino.segundo_nombre,
-#                             obj.id_persona_elimino.primer_apellido, obj.id_persona_elimino.segundo_apellido]
-#             nombre_persona_titular_exp_complejo = ' '.join(item for item in nombre_list if item is not None)
-#             nombre_persona_titular_exp_complejo = nombre_persona_titular_exp_complejo if nombre_persona_titular_exp_complejo != "" else None
-#         return nombre_persona_titular_exp_complejo
-    
-#     class Meta:
-#         model =  InventarioDocume
-#         fields = '__all__'
+class EliminacionGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventarioDocumental
+        fields = '__all__'

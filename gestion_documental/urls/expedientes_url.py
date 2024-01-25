@@ -95,6 +95,9 @@ urlpatterns = [
      path('expedientes/eliminacion/historial/get/',views.EliminacionHistorialGetView.as_view(), name='eliminacion-historial-get'),
      path('expedientes/eliminacion/publicar/create/',views.PublicarCreateView.as_view(), name='publicar-create'),
      path('expedientes/eliminacion/publicar/update/<str:id_eliminacion_documental>/',views.PublicarUpdateView.as_view(), name='publicar-update'),
+     path('expedientes/eliminacion/delete/<str:id_eliminacion_documental>/',views.EliminacionDeleteView.as_view(), name='eliminacion-delete'),
+     path('expedientes/eliminacion/publicados/get/<str:id_eliminacion_documental>/', views.EliminacionPublicadosGetView.as_view(), name='eliminacion-publicados-get'),
+     path('expedientes/eliminacion/eliminados/get/<str:id_eliminacion_documental>/', views.EliminacionEliminadosGetView.as_view(), name='eliminacion-eliminados-get'),
      
 
 

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import os
 import subprocess
+
 from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import F, ExpressionWrapper, fields, Count, Func,DateTimeField
@@ -27,10 +28,19 @@ from gestion_documental.views.configuracion_tipos_radicados_views import ConfigT
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
 from django.core.exceptions import ObjectDoesNotExist
 from seguridad.utils import Util
+########################################################################
+import imaplib
+import email
+import os
+from email.header import decode_header
+import base64
+import hashlib
+from rest_framework.pagination import PageNumberPagination
+# import magic
+########################################################################
 
 from django.db.models import Q
 from django.db import transaction
-
 from transversal.models.personas_models import Personas
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
 class TiposPQRGet(generics.ListAPIView):
@@ -506,7 +516,7 @@ class RadicarPQRSDF(generics.CreateAPIView):
         #Crea el radicado
         data_for_create = {}
         data_for_create['fecha_actual'] = fecha_actual
-        data_for_create['id_usuario'] = id_persona_guarda
+        data_for_create['id_persona'] = id_persona_guarda
         data_for_create['tipo_radicado'] = "E"
         data_for_create['modulo_radica'] = "PQRSDF"
         radicadoCreate = RadicadoCreate()
@@ -3506,3 +3516,262 @@ class IndicadorVencimientoPQRSDF(generics.ListAPIView):
                 'rango_cumplimiento': rango_cumplimiento
             }
         }, status=status.HTTP_200_OK)
+    
+
+#Radicacion_Email
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+
+# class CustomPageNumberPagination(PageNumberPagination):
+#     page_size = 5  
+#     page_size_query_param = 'page_size'
+#     max_page_size = 1000
+
+class ObtenerCorreosView(generics.ListAPIView):
+    # # Utiliza la clase de paginación personalizada
+    # pagination_class = CustomPageNumberPagination
+
+    def save_attachment(self, filename, file_content, save_dir):
+        # Crear el directorio si no existe
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Calcular el hash MD5 del archivo
+        md5_hash = hashlib.md5()
+        md5_hash.update(file_content)
+        md5_hexdigest = md5_hash.hexdigest()
+
+        # Obtener la extensión del archivo (formato)
+        _, file_extension = os.path.splitext(filename)
+        formato = file_extension.lower() if file_extension else 'desconocido'
+
+        # Construir el nuevo nombre de archivo con el hash y la extensión
+        new_filename = f"{md5_hexdigest}{formato}"
+
+        # Guardar el archivo adjunto en el sistema de archivos local con el nuevo nombre
+        file_path = os.path.join(save_dir, new_filename)
+        with open(file_path, 'wb') as f:
+            f.write(file_content)
+
+        # Reemplazar barras invertidas con barras diagonales en la ruta del archivo
+        file_path = file_path.replace("\\", "/")
+
+        return file_path, md5_hexdigest, formato
+
+    def get(self, request, *args, **kwargs):
+        imap_server = imaplib.IMAP4_SSL('imap.gmail.com')
+
+        # Reemplazar con tus credenciales
+        imap_server.login('bia@cormacarena.gov.co', 'sbrc bqls wvta jvfm')
+        imap_server.select('INBOX')
+
+        current_date = datetime.now()
+        current_year = current_date.year
+
+        base_dir = os.path.join("/media", "home", "BIA", "Correos")
+        save_dir = os.path.join(base_dir, str(current_year))
+        
+        page = int(self.request.query_params.get('page', 1))
+        rango = 5
+        lim_final = rango*page
+        lim_inicial = lim_final - rango 
+        
+
+        status_email, data = imap_server.search(None, 'ALL')
+        email_ids = data[0].split()[::-1]      
+        total = len(email_ids)
+        email_ids=email_ids[lim_inicial:lim_final]
+        print(email_ids)
+        all_emails_info = []
+        print(data)
+
+        for email_id in email_ids:
+            status_email, email_data = imap_server.fetch(email_id, "(RFC822)")
+
+            raw_email = email_data[0][1]
+            email_message = email.message_from_bytes(raw_email)
+
+            subject = decode_header(email_message["Subject"])[0][0]
+            sender = decode_header(email_message["From"])[0][0]
+            date = email_message["Date"]
+            message = ""
+            attachments = []
+
+            if email_message.is_multipart():
+                for part in email_message.walk():
+                    content_type = part.get_content_type()
+                    if content_type == "text/plain":
+                        try:
+                            message = part.get_payload(decode=True).decode("utf-8")
+                        except UnicodeDecodeError:
+                            # Manejar errores de decodificación usando otra codificación o estrategia
+                            message = part.get_payload(decode=True).decode("latin-1", errors="replace")
+                    elif "application" in content_type or "image" in content_type or "audio" in content_type or "video" in content_type:
+                        # Archivo adjunto detectado
+                        filename = part.get_filename()
+                        if filename:
+                            decoded_filename, encoding = decode_header(filename)[0]
+                            if isinstance(decoded_filename, bytes):
+                                try:
+                                    decoded_filename = decoded_filename.decode(encoding or 'utf-8')
+                                except UnicodeDecodeError:
+                                    # Manejar errores de decodificación usando otra codificación o estrategia
+                                    decoded_filename = decoded_filename.decode("latin-1", errors="replace")
+
+                            file_content = part.get_payload(decode=True)
+
+                            # Guardar el archivo adjunto con el hash en el nombre y la extensión
+                            file_path, md5_hexdigest, formato = self.save_attachment(decoded_filename, file_content, save_dir)
+
+                            attachments.append({
+                                'Nombre_archivo': decoded_filename,
+                                'ruta': file_path,
+                                'md5_hexdigest': md5_hexdigest,
+                                'formato': formato
+                            })
+
+            all_emails_info.append({
+                'ID': email_id, 
+                'Asunto': subject,
+                'Remitente': sender,
+                'Fecha': date,
+                'Mensaje': message,
+                'ArchivosAdjuntos': attachments
+            })
+
+        imap_server.logout()
+
+        # # Obtener la configuración de paginación de la vista
+        # paginator = CustomPageNumberPagination()
+        # paginated_data = paginator.paginate_queryset(all_emails_info, request)
+
+        # Devolver la respuesta paginada
+        return Response({
+            'success': True,
+            'detail': 'BANDEJA DE ENTRADA DE CORREOS ELECTRONICOS.',
+            'total_correos': total,
+            'data': all_emails_info,
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# class ObtenerCorreosView(generics.ListAPIView):
+
+#     def save_attachment(self, filename, file_content, save_dir):
+#         # Crear el directorio si no existe
+#         os.makedirs(save_dir, exist_ok=True)
+
+#         # Calcular el hash MD5 del archivo
+#         md5_hash = hashlib.md5()
+#         md5_hash.update(file_content)
+#         md5_hexdigest = md5_hash.hexdigest()
+
+#         # Obtener la extensión del archivo (formato)
+#         _, file_extension = os.path.splitext(filename)
+#         formato = file_extension.lower() if file_extension else 'desconocido'
+
+#         # Construir el nuevo nombre de archivo con el hash y la extensión
+#         new_filename = f"{md5_hexdigest}{formato}"
+
+#         # Guardar el archivo adjunto en el sistema de archivos local con el nuevo nombre
+#         file_path = os.path.join(save_dir, new_filename)
+#         with open(file_path, 'wb') as f:
+#             f.write(file_content)
+
+#         # Reemplazar barras invertidas con barras diagonales en la ruta del archivo
+#         file_path = file_path.replace("\\", "/")
+
+#         return file_path, md5_hexdigest, formato
+
+#     def get(self, request, *args, **kwargs):
+#         imap_server = imaplib.IMAP4_SSL('imap.gmail.com')
+
+#         imap_server.login('ingkevinandrescas98@gmail.com', 'eecw lfuu bjlj wqez')  
+#         imap_server.select('INBOX')
+
+#         # Obtener la fecha y hora actuales
+#         current_date = datetime.now()
+
+#         # Obtener el año actual
+#         current_year = current_date.year
+
+#         # Construir la ruta del directorio
+#         base_dir = os.path.join("/media", "home", "BIA", "Correos")
+#         save_dir = os.path.join(base_dir, str(current_year))
+
+#         status_email, data = imap_server.search(None, 'ALL')
+#         email_ids = data[0].split()[::-1]
+
+#         latest_email_id = email_ids[0]
+#         status_email, email_data = imap_server.fetch(latest_email_id, "(RFC822)")
+
+#         raw_email = email_data[0][1]
+#         email_message = email.message_from_bytes(raw_email)
+
+#         subject = decode_header(email_message["Subject"])[0][0]
+#         sender = decode_header(email_message["From"])[0][0]
+#         date = email_message["Date"]
+#         message = ""
+#         attachments = []
+
+#         if email_message.is_multipart():
+#             for part in email_message.walk():
+#                 content_type = part.get_content_type()
+#                 if content_type == "text/plain":
+#                     message = part.get_payload(decode=True).decode("utf-8")
+#                 elif "application" in content_type or "image" in content_type or "audio" in content_type or "video" in content_type:
+#                     # Archivo adjunto detectado
+#                     filename = part.get_filename()
+#                     if filename:
+#                         decoded_filename, encoding = decode_header(filename)[0]
+#                         if isinstance(decoded_filename, bytes):
+#                             decoded_filename = decoded_filename.decode(encoding or 'utf-8')
+
+#                         file_content = part.get_payload(decode=True)
+
+#                         # Guardar el archivo adjunto con el hash en el nombre y la extensión
+#                         file_path, md5_hexdigest, formato = self.save_attachment(decoded_filename, file_content, save_dir)
+
+#                         attachments.append({
+#                             'Nombre_archivo': decoded_filename,
+#                             'ruta': file_path,
+#                             'md5_hexdigest': md5_hexdigest,
+#                             'formato': formato
+#                         })
+
+#         imap_server.logout()
+
+#         return Response({
+#             'success': True,
+#             'detail': 'BANDEJA DE ENTRADA DE CORREOS ELECTRONICOS.',
+#             'data': {
+#                 'Asunto': subject,
+#                 'Remitente': sender,
+#                 'Fecha': date,
+#                 'Mensaje': message,
+#                 'ArchivosAdjuntos': attachments
+#             }
+#         }, status=status.HTTP_200_OK)
