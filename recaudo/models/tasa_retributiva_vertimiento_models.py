@@ -127,9 +127,10 @@ class T0444Formulario(models.Model):
     numConcesion = models.PositiveIntegerField()
     fechaCreacion = models.DateTimeField(auto_now_add=True)
     informacionFuentesAbastecimiento = models.ManyToManyField(InformacionFuente)
-    # coordenadasSitioCaptacion = models.OneToOneField(CoordenadasSitioCaptacion, on_delete=models.CASCADE)
     factoresUtilizacion = models.OneToOneField(FactoresUtilizacion, on_delete=models.CASCADE)
     captacionesMensualesAgua = models.ManyToManyField(CaptacionMensualAgua)
+    aprobado = models.BooleanField(default=False)
+
 
     def __str__(self):
         return f"T456_{self.id} - {self.razonSocial}"
