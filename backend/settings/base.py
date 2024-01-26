@@ -20,6 +20,7 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+FILES_DIR = os.path.abspath(os.path.join(os.sep, 'data'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -217,7 +218,7 @@ STATICFILES_DIRS = [
 ]
 
 
-MEDIA_ROOT = BASE_DIR / 'static/media'
+MEDIA_ROOT = FILES_DIR + '/bia/gestor'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 USE_X_FORWARDED_HOST = True
@@ -243,6 +244,8 @@ PASSWORD_RESET_TIMEOUT = 86400
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'seguridad.User'
 FRONTEND_URL = os.environ.get('FRONTEND_URL')
+
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 
 if os.getcwd() == '/app':
