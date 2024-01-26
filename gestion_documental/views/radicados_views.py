@@ -31,6 +31,7 @@ class GetHistoricoRadicados(generics.ListAPIView):
     def get(self,request):
         filter={}
         
+        
         for key, value in request.query_params.items():
 
             # if key == 'radicado':

@@ -43,6 +43,7 @@ from django.db.models import Value as V
 from gestion_documental.utils import UtilsGestor
 
 from transversal.models.personas_models import Personas
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 ########################## CRUD DE APERTURA DE EXPEDIENTES DOCUMENTALES ##########################
 
@@ -3147,6 +3148,23 @@ class PublicarCreateView(generics.CreateAPIView):
         serializer_eliminacion = self.serializer_class(data=data_eliminacion)
         serializer_eliminacion.is_valid(raise_exception=True)
         eliminacion = serializer_eliminacion.save()
+        #GENERACION DE ALERTA
+        crear_alerta=AlertasProgramadasCreate()
+        # fecha_respuesta = eliminacion.fecha_publicacion + timedelta(days=eliminacion.dias_publicacion)
+        # data_alerta = {
+        #     'cod_clase_alerta':'Ges_EliDoc',
+        #     'dia_cumplimiento':fecha_respuesta.day,
+        #     'mes_cumplimiento':fecha_respuesta.month,
+        #     'age_cumplimiento':fecha_respuesta.year,
+        #     #'complemento_mensaje':mensaje,
+        #     'id_elemento_implicado':eliminacion.id_eliminacion_documental,
+        #     'id_persona_implicada':None,
+        #     "tiene_implicado":False
+        #     }
+        
+        # response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+        # if response_alerta.status_code!=status.HTTP_201_CREATED:
+        #     return response_alerta
         
         # Actualizar cada expediente
         for count, expediente in enumerate(expedientes, start=1):
@@ -3169,6 +3187,25 @@ class PublicarCreateView(generics.CreateAPIView):
                 id_eliminacion_documental=eliminacion
             )
         
+        # Auditoria Crear Publicación
+        usuario = request.user.id_usuario
+        descripcion = {
+            "IdEliminacionDocumental":str(eliminacion.id_eliminacion_documental),
+            "IdPersonaElimino": str(eliminacion.id_persona_elimino.id_persona),
+            "FechaPublicacion": str(eliminacion.fecha_publicacion),
+            "FechaEliminacion": str(eliminacion.fecha_eliminacion)
+        }
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario": usuario,
+            "id_modulo": 258,
+            "cod_permiso": "CR",
+            "subsistema": "GEST",
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Se creó la siguiente publicación de eliminación de expedientes', 'data': serializer_eliminacion.data}, status=status.HTTP_201_CREATED)
 
 class PublicarUpdateView(generics.UpdateAPIView):
@@ -3184,6 +3221,7 @@ class PublicarUpdateView(generics.UpdateAPIView):
             raise ValidationError('Debe ingresar una observación')
         
         eliminacion_documental = EliminacionDocumental.objects.filter(id_eliminacion_documental=id_eliminacion_documental).first()
+        previous_eliminacion_documental = copy.copy(eliminacion_documental)
         if not eliminacion_documental:
             raise NotFound('No se encontró la eliminación documental')
         
@@ -3205,6 +3243,27 @@ class PublicarUpdateView(generics.UpdateAPIView):
         eliminacion_documental.tiene_observaciones = True
         eliminacion_documental.save()
         
+        # Auditoria Actualizar Publicación
+        usuario = request.user.id_usuario
+        descripcion = {
+            "IdEliminacionDocumental":str(eliminacion_documental.id_eliminacion_documental),
+            "IdPersonaElimino": str(eliminacion_documental.id_persona_elimino.id_persona),
+            "FechaPublicacion": str(eliminacion_documental.fecha_publicacion),
+            "FechaEliminacion": str(eliminacion_documental.fecha_eliminacion)
+        }
+        direccion = Util.get_client_ip(request)
+        valores_actualizados = {"previous":previous_eliminacion_documental, "current":eliminacion_documental}
+        auditoria_data = {
+            "id_usuario": usuario,
+            "id_modulo": 258,
+            "cod_permiso": "AC",
+            "subsistema": "GEST",
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
+        
         return Response({'success':True, 'detail':'Actualización realizada con éxito'}, status=status.HTTP_201_CREATED)
 
 class EliminacionDeleteView(generics.DestroyAPIView):
@@ -3213,11 +3272,15 @@ class EliminacionDeleteView(generics.DestroyAPIView):
     
     def delete(self, request, id_eliminacion_documental):
         eliminacion_documental = EliminacionDocumental.objects.filter(id_eliminacion_documental=id_eliminacion_documental).first()
+        previous_eliminacion_documental = copy.copy(eliminacion_documental)
         if not eliminacion_documental:
             raise NotFound('No se encontró la eliminación documental')
         
         if eliminacion_documental.estado == 'E':
             raise ValidationError('No puede actualizar una eliminación que ya fue ejecutada')
+        
+        usuario = request.user.id_usuario
+        direccion = Util.get_client_ip(request)
         
         fecha_max_eliminacion = eliminacion_documental.fecha_publicacion + timedelta(days=eliminacion_documental.dias_publicacion)
         dias_restantes = (fecha_max_eliminacion - datetime.now()).days
@@ -3238,11 +3301,49 @@ class EliminacionDeleteView(generics.DestroyAPIView):
                 if documento.tiene_replica_fisica:
                     documentos_tienen_replica.append(documento.nombre_asignado_documento)
                 documento.delete()
+            
+            # Auditoria Eliminar Expedientes
+            descripcion_eliminacion = {
+                "CodigoExpUndSerieSubserie": str(expediente.codigo_exp_und_serie_subserie),
+                "CodigoExpAgno": str(expediente.codigo_exp_Agno)
+            }
+            if expediente.codigo_exp_consec_por_agno:
+                descripcion_eliminacion['CodigoExpConsecPorAgno'] = str(expediente.codigo_exp_consec_por_agno)
+            
+            auditoria_eliminacion_data = {
+                "id_usuario" : usuario,
+                "id_modulo" : 258,
+                "cod_permiso": "BO",
+                "subsistema": "GEST",
+                "dirip": direccion,
+                "descripcion": descripcion_eliminacion,
+            }
+            Util.save_auditoria(auditoria_eliminacion_data)  
+            
             expediente.delete()
             
         eliminacion_documental.estado = 'E'
         eliminacion_documental.fecha_eliminacion = datetime.now()
         eliminacion_documental.save()
+        
+        # Auditoria Actualizar Publicación
+        descripcion = {
+            "IdEliminacionDocumental":str(eliminacion_documental.id_eliminacion_documental),
+            "IdPersonaElimino": str(eliminacion_documental.id_persona_elimino.id_persona),
+            "FechaPublicacion": str(eliminacion_documental.fecha_publicacion),
+            "FechaEliminacion": str(eliminacion_documental.fecha_eliminacion)
+        }
+        valores_actualizados = {"previous":previous_eliminacion_documental, "current":eliminacion_documental}
+        auditoria_data = {
+            "id_usuario": usuario,
+            "id_modulo": 258,
+            "cod_permiso": "AC",
+            "subsistema": "GEST",
+            "dirip": direccion,
+            "descripcion": descripcion,
+            "valores_actualizados": valores_actualizados
+        }
+        Util.save_auditoria(auditoria_data)
         
         response = {'success':True, 'detail':'Eliminación realizada con éxito'}
         if documentos_tienen_replica:
