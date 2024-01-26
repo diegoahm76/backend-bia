@@ -85,12 +85,10 @@ class T0444FormularioSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         informacion_fuentes_data = validated_data.pop('informacionFuentesAbastecimiento')
-        # coordenadas_sitio_data = validated_data.pop('coordenadasSitioCaptacion')
         factores_utilizacion_data = validated_data.pop('factoresUtilizacion')
         captaciones_mensuales_data = validated_data.pop('captacionesMensualesAgua')
 
         informacion_fuentes = [InformacionFuente.objects.create(**item) for item in informacion_fuentes_data]
-        # coordenadas_sitio = CoordenadasSitioCaptacion.objects.create(**coordenadas_sitio_data)
         factores_utilizacion = FactoresUtilizacion.objects.create(**factores_utilizacion_data)
         captaciones_mensuales = [CaptacionMensualAgua.objects.create(**item) for item in captaciones_mensuales_data]
 

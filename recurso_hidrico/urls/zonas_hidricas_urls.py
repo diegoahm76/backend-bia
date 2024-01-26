@@ -23,6 +23,9 @@ urlpatterns = [
 
         path('enviar_sms/', views.EnviarSMSView.as_view(), name='enviar_sms'),
         path('enviar_correo/', views.EnviarCORREOView.as_view(), name='enviar_correo'),
+
+
+        path('data_rios_completa/', views.SubZonaHidricaListViewwww.as_view(), name='subzonashidricas-list'),
 ]
     
 
