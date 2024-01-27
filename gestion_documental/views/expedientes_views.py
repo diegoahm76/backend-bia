@@ -3150,23 +3150,23 @@ class PublicarCreateView(generics.CreateAPIView):
         eliminacion = serializer_eliminacion.save()
         #GENERACION DE ALERTA
         crear_alerta=AlertasProgramadasCreate()
-        # fecha_respuesta = eliminacion.fecha_publicacion + timedelta(days=eliminacion.dias_publicacion)
-        # data_alerta = {
-        #     'cod_clase_alerta':'Ges_EliDoc',
-        #     'dia_cumplimiento':fecha_respuesta.day,
-        #     'mes_cumplimiento':fecha_respuesta.month,
-        #     'age_cumplimiento':fecha_respuesta.year,
-        #     #'complemento_mensaje':mensaje,
-        #     'id_elemento_implicado':eliminacion.id_eliminacion_documental,
-        #     'id_persona_implicada':None,
-        #     "tiene_implicado":False
-        #     }
+        fecha_respuesta = eliminacion.fecha_publicacion + timedelta(days=eliminacion.dias_publicacion)
+        data_alerta = {
+            'cod_clase_alerta':'Ges_EliDoc',
+            'dia_cumplimiento':fecha_respuesta.day,
+            'mes_cumplimiento':fecha_respuesta.month,
+            'age_cumplimiento':fecha_respuesta.year,
+            #'complemento_mensaje':mensaje,
+            'id_elemento_implicado':eliminacion.id_eliminacion_documental,
+            'id_persona_implicada':None,
+            "tiene_implicado":False
+            }
         
-        # response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
-        # if response_alerta.status_code!=status.HTTP_201_CREATED:
-        #     return response_alerta
+        response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+        if response_alerta.status_code!=status.HTTP_201_CREATED:
+            return response_alerta
         
-        # Actualizar cada expediente
+       # Actualizar cada expediente
         for count, expediente in enumerate(expedientes, start=1):
             expediente_doc = ExpedientesDocumentales.objects.filter(id_expediente_documental=expediente).first()
             expediente_doc.id_eliminacion_exp = eliminacion

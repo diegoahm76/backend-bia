@@ -784,7 +784,8 @@ class AlertasProgramadasUpdate(generics.UpdateAPIView):
             data_alerta_programada['id_personas_alertar'] = cadena_personas
             data_alerta_programada['cod_clase_alerta'] = configuracion.cod_clase_alerta
             data_alerta_programada['nombre_clase_alerta'] = configuracion.nombre_clase_alerta
-            data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
+            if configuracion.id_modulo_destino:
+                data_alerta_programada['id_modulo_destino'] = configuracion.id_modulo_destino.id_modulo
             data_alerta_programada['id_modulo_generador'] = configuracion.id_modulo_generador.id_modulo
             data_alerta_programada['cod_categoria_alerta'] = configuracion.cod_categoria_clase_alerta
             data_alerta_programada['tiene_implicado'] = configuracion.asignar_responsable
