@@ -2,6 +2,8 @@ from datetime import date
 from django.db.models import Q
 from django.forms import ValidationError
 from django.forms.models import model_to_dict
+from gestion_documental.choices.cod_estado_eliminacion_choices import COD_ESTADO_ELIMINACION_CHOICES
+from gestion_documental.models.expedientes_models import EliminacionDocumental
 from gestion_documental.models.radicados_models import PQRSDF, ConfigTiposRadicadoAgno
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer
@@ -62,6 +64,23 @@ def complemento_mensaje_Gest_TRPqr(id_elemento):
     texto_html = f"Radicado: {radicado}<br>Fecha de radicado: {fecha_radicado}<br>Días para responder: {dias_respuesta}"
     return texto_html
 
+def complemento_mensaje_Ges_EliDoc(id_elemento):
+    mensaje = ""
+    eliminacion = EliminacionDocumental.objects.filter(id_eliminacion_documental=id_elemento).first()
+    cod_estado = eliminacion.estado
+    nombre_estado =""
+    if not eliminacion:
+        return ""
+    for  x in COD_ESTADO_ELIMINACION_CHOICES:
+        if cod_estado== x[0]:
+            nombre_estado = x[1]
+    fecha = eliminacion.fecha_publicacion
+    fecha_actual = datetime.now()
+    fecha_respuesta = fecha_actual + timedelta(days=eliminacion.dias_publicacion)
+    fecha_dias_respuesta = fecha_respuesta - fecha_actual
+    entero_dias = fecha_dias_respuesta.days
+    texto_html= f"Estado: {nombre_estado} <br> Fecha publicacion: {fecha} <br>Dias Respuesta: {entero_dias}"
+    return texto_html
 
 #@background(schedule=None) 
 def generar_alerta_segundo_plano():
@@ -156,7 +175,7 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
         print(programada)
         id_responsable=None
         if funcion:
-            if programada.cod_clase_alerta.cod_clase_alerta == 'Gest_TRPqr':
+            if programada.cod_clase_alerta.cod_clase_alerta == 'Gest_TRPqr' or programada.cod_clase_alerta.cod_clase_alerta == 'Ges_EliDoc' :
                 cadena=funcion(programada.id_elemento_implicado)
             else:
                 
@@ -330,6 +349,7 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
                         template = render_to_string((template), context)
                         email_data = {'template': template, 'email_subject': subject, 'to_email':email_persona.email}
                         Util.send_email(email_data)
+                        #print(email_data)
                         alerta_bandeja['fecha_envio_email']=datetime.now()
 
                     else:
