@@ -782,7 +782,7 @@ class AnexosCreate(generics.CreateAPIView):
         if not extension_sin_punto:
             raise ValidationError("No fue posible registrar el archivo")
         
-        formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True).first()
+        formatos=FormatosTiposMedio.objects.filter(nombre__iexact=extension_sin_punto,activo=True).first()
         if not formatos:
             raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
 
