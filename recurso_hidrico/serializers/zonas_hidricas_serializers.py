@@ -44,3 +44,10 @@ class SubZonaHidricaSerializerr(serializers.ModelSerializer):
     class Meta:
         model = SubZonaHidrica
         fields = '__all__'
+
+class SubZonaHidricaValorRegionalSerializer(serializers.ModelSerializer):
+    valor_regional = serializers.CharField()  # Permitir editar solo este campo
+
+    class Meta:
+        model = SubZonaHidrica
+        fields = ['valor_regional']
