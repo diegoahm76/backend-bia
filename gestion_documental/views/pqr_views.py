@@ -19,7 +19,7 @@ from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, PersonaSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
@@ -43,6 +43,7 @@ from django.db.models import Q
 from django.db import transaction
 from transversal.models.personas_models import Personas
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
+from transversal.views.alertas_views import AlertasProgramadasCreate
 class TiposPQRGet(generics.ListAPIView):
     serializer_class = TiposPQRGetSerializer
     queryset = TiposPQR.objects.all()
@@ -508,7 +509,7 @@ class RadicarPQRSDF(generics.CreateAPIView):
         fecha_actual = datetime.now()
         data_PQRSDF_instance = PQRSDF.objects.filter(id_PQRSDF = id_PQRSDF).first()
         previous_instance = copy.copy(data_PQRSDF_instance)
-
+        crear_alerta=AlertasProgramadasCreate()
         #Obtiene los dias para la respuesta del PQRSDF
         tipo_pqr = self.get_tipos_pqr(data_PQRSDF_instance.cod_tipo_PQRSDF)
         dias_respuesta = tipo_pqr.tiempo_respuesta_en_dias
@@ -538,6 +539,35 @@ class RadicarPQRSDF(generics.CreateAPIView):
         descripciones = self.set_descripcion_auditoria(previous_instance, data_PQRSDF_instance)
         self.auditoria(request, descripciones['descripcion'], isCreateForWeb, descripciones['data_auditoria_update'])
         
+        #CRECIACON DE ALERTA
+        print("TIEMPO DE RESPUESTA")
+        print(data_PQRSDF_instance.dias_para_respuesta)
+        cadena = ""
+        # if data_PQRSDF_instance.id_radicado:
+        #     instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=data_PQRSDF_instance.id_radicado.agno_radicado,cod_tipo_radicado=data_PQRSDF_instance.id_radicado.cod_tipo_radicado).first()
+        #     numero_con_ceros = str(data_PQRSDF_instance.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        #     cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+    
+       
+        fecha_respuesta = fecha_actual + timedelta(days=data_PQRSDF_instance.dias_para_respuesta)
+        print(fecha_respuesta)
+        data_alerta = {
+            'cod_clase_alerta':'Gest_TRPqr',
+            'dia_cumplimiento':fecha_respuesta.day,
+            'mes_cumplimiento':fecha_respuesta.month,
+            'age_cumplimiento':fecha_respuesta.year,
+            #'complemento_mensaje':mensaje,
+            'id_elemento_implicado':data_PQRSDF_instance.id_PQRSDF,
+            #'id_persona_implicada':persona.id_persona,
+            "tiene_implicado":False
+            }
+        
+        response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+        if response_alerta.status_code!=status.HTTP_201_CREATED:
+            return response_alerta
+
+        #raise ValidationError(data_PQRSDF_instance.dias_para_respuesta)
+
         return {
             'radicado': data_radicado,
             'pqrsdf': data_PQRSDF_creado
