@@ -81,6 +81,35 @@ class T0444444FormularioView(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class T0444FormularioListView(APIView):
+    def get(self, request, *args, **kwargs):
+        formularios = T0444Formulario.objects.all()
+        serializer = T0444FormularioSerializer(formularios, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class T0444444FormularioPut(APIView):
+    def put(self, request, pk, *args, **kwargs):
+        try:
+            formulario = T0444Formulario.objects.get(pk=pk)
+        except T0444Formulario.DoesNotExist:
+            return Response({'detail': 'El formulario no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Obtener el valor del campo aprobado del cuerpo de la solicitud
+        aprobado = request.data.get('aprobado', None)
+
+        # Verificar si se proporciona el valor de 'aprobado'
+        if aprobado is not None:
+            # Actualizar el campo 'aprobado' con el nuevo valor
+            formulario.aprobado = aprobado
+            formulario.save()
+
+            # Serializar y devolver la respuesta
+            serializer = T0444FormularioSerializer(formulario)
+            return Response({'success': True, 'detail': 'Campo aprobado actualizado correctamente', 'data': serializer.data})
+        else:
+            return Response({'detail': 'Se debe proporcionar un valor para el campo aprobado'}, status=status.HTTP_400_BAD_REQUEST)
+        
+
 
 class TipoUsuarioOptionsView(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
