@@ -263,6 +263,7 @@ class AnexosUpdateSerializer(serializers.ModelSerializer):
 class AnexosGetSerializer(serializers.ModelSerializer):
     nombre = serializers.SerializerMethodField()
     descripcion = serializers.SerializerMethodField()
+    id_archivo_digital = serializers.SerializerMethodField()
     formato = serializers.SerializerMethodField()
     tamagno_kb = serializers.SerializerMethodField()
     ruta_archivo = serializers.SerializerMethodField()
@@ -272,6 +273,9 @@ class AnexosGetSerializer(serializers.ModelSerializer):
     
     def get_descripcion(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().descripcion
+    
+    def get_id_archivo_digital(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.id_archivo_digital
     
     def get_formato(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.formato
@@ -291,6 +295,7 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'id_anexo',
             'nombre',
             'descripcion',
+            'id_archivo_digital',
             'formato',
             'tamagno_kb',
             'ruta_archivo'
