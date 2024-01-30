@@ -2,6 +2,8 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from rest_framework import status, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
@@ -1345,7 +1347,7 @@ class AsignacionOPACreate(generics.CreateAPIView):
             nombre_completo_persona = ' '.join(item for item in nombre_list if item is not None)
             nombre_completo_persona = nombre_completo_persona if nombre_completo_persona != "" else None
        
-        mensaje = "Tipo de solicitud : PQRSDF \n Unidad Organizacional : "+unidad_asignar.nombre+" \n Lider de Unidad Organizacional: "+nombre_completo_persona+" \n Fecha de asignacion : "+str(serializer.data['fecha_asignacion'])
+        mensaje = "Tipo de solicitud : OPAS \n Unidad Organizacional : "+unidad_asignar.nombre+" \n Lider de Unidad Organizacional: "+nombre_completo_persona+" \n Fecha de asignacion : "+str(serializer.data['fecha_asignacion'])
         vista_alertas_programadas = AlertaEventoInmediadoCreate()
         data_alerta = {}
         data_alerta['cod_clase_alerta'] = 'Gst_SlALid'
@@ -1719,3 +1721,80 @@ class OtrosGetHistorico(generics.ListAPIView):
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
+
+
+
+
+
+#ASIGNACION DE OPAS A SECCCION ,SUBSECCION O GRUPO
+class SeccionSubseccionAsignacionGet(generics.ListAPIView):
+    serializer_class = UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Obtener el organigrama actual
+        organigrama = Organigramas.objects.filter(actual=True)
+        if not organigrama:
+            raise NotFound('No existe ningún organigrama activado')
+        if len(organigrama) > 1:
+            raise PermissionDenied('Existe más de un organigrama actual, contacte a soporte')
+        organigrama_actual = organigrama.first()
+
+        # Filtrar unidades organizacionales para obtener la subsección de Gestión Ambiental
+        unidad_gestion_ambiental = UnidadesOrganizacionales.objects.filter(
+            cod_agrupacion_documental='SUB',
+            # id_organigrama=organigrama_actual.id_organigrama,
+            nombre__iexact='Gestión Ambiental'
+        ).first()
+
+        # Verificar si hay subsección de Gestión Ambiental
+        if not unidad_gestion_ambiental:
+            raise NotFound('No hay subsección de Gestión Ambiental')
+
+        # Serializar la subsección de Gestión Ambiental
+        serializer = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(
+            [unidad_gestion_ambiental],  
+            many=True
+        )
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontró la subsección de Gestión Ambiental',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+
+class SubseccionGestionAmbientalGruposGet(generics.ListAPIView):
+    serializer_class = UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, subseccion_id):
+        # Obtener la subsección de Gestión Ambiental por su ID
+        subseccion_gestion_ambiental = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=subseccion_id)
+
+        # Verificar si la subsección de Gestión Ambiental tiene grupos
+        grupos = UnidadesOrganizacionales.objects.filter(
+            cod_agrupacion_documental='',
+            id_unidad_org_padre=subseccion_id
+        )
+
+        # Si no hay grupos, solo mostrar la subsección de Gestión Ambiental
+        if not grupos.exists():
+            serializer = self.serializer_class([subseccion_gestion_ambiental], many=True)
+        else:
+            # Si hay grupos, incluir la subsección de Gestión Ambiental y los grupos y sus subgrupos
+            unidades_organizacionales = [subseccion_gestion_ambiental] + list(grupos)
+            subgrupos = UnidadesOrganizacionales.objects.filter(
+                cod_agrupacion_documental='',
+                id_unidad_org_padre__in=[grupo.id_unidad_organizacional for grupo in grupos]
+            )
+            unidades_organizacionales += list(subgrupos)
+
+            # Serializar los datos
+            serializer = self.serializer_class(unidades_organizacionales, many=True)
+
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron las siguientes unidades organizacionales',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
