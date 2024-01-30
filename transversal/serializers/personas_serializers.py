@@ -665,6 +665,7 @@ class ApoderadoPersonaSerializer(serializers.ModelSerializer):
         
 class ApoderadoPersonaGetSerializer(serializers.ModelSerializer):
     id_persona = serializers.ReadOnlyField(source='persona_poderdante.id_persona', default=None)
+    tipo_documento = serializers.ReadOnlyField(source='persona_poderdante.tipo_documento.cod_tipo_documento', default=None)
     numero_documento = serializers.ReadOnlyField(source='persona_poderdante.numero_documento', default=None)
     nombre_persona_poderdante = serializers.SerializerMethodField()
     cod_relacion_con_el_titular = serializers.SerializerMethodField()
@@ -697,6 +698,7 @@ class ApoderadoPersonaGetSerializer(serializers.ModelSerializer):
         fields = [
             'id_apoderados_persona',
             'id_persona',
+            'tipo_documento',
             'numero_documento',
             'nombre_persona_poderdante',
             'cod_relacion_con_el_titular',
@@ -704,6 +706,7 @@ class ApoderadoPersonaGetSerializer(serializers.ModelSerializer):
         ]
         
 class RepresentanteLegalGetSerializer(serializers.ModelSerializer):
+    tipo_documento = serializers.ReadOnlyField(source='tipo_documento.cod_tipo_documento', default=None)
     cod_relacion_con_el_titular = serializers.SerializerMethodField()
     id_usuario = serializers.SerializerMethodField()
     
@@ -724,6 +727,7 @@ class RepresentanteLegalGetSerializer(serializers.ModelSerializer):
         fields = [
             'id_persona',
             'razon_social',
+            'tipo_documento',
             'numero_documento',
             'cod_relacion_con_el_titular',
             'id_usuario'
@@ -825,8 +829,13 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
     
     def get_nombre_completo(self, obj):
         nombre_completo = None
-        nombre_list = [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]
-        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        if obj.tipo_persona == 'J':
+            nombre_completo = obj.razon_social
+        else:
+            nombre_list = [obj.primer_nombre, obj.segundo_nombre,
+                            obj.primer_apellido, obj.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo = nombre_completo if nombre_completo != "" else None
         return nombre_completo.upper()
     
     def get_primer_nombre(self,obj):
