@@ -104,7 +104,8 @@ urlpatterns = [
     path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
     path('api/gestor/bandeja-tareas/',include('gestion_documental.urls.bandeja_tareas_urls')),
     path('api/gestor/transferencias_documentales/',include('gestion_documental.urls.transferencias_documentales_urls')),
-    
+    #consecutivo_unidad_urls
+    path('api/gestor/consecutivos-unidades/',include('gestion_documental.urls.consecutivo_unidad_urls')),
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
     path('api/almacen/bienes/', include('almacen.urls.bienes_urls')),
