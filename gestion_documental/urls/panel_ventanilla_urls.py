@@ -75,4 +75,9 @@ urlpatterns = [
     path('asignar-otros/get/<str:id_otros>/',views.AsignacionOtrosGet.as_view(),name='listar-asignacion-grupo-otros'),
     path('otros/historico/get/',views.OtrosGetHistorico.as_view(),name='listar-historico-opas'),
 
+    #ASIGNACION_DE_OPAS
+    path('asginar-opas/seccion-subseccion/get/',views.SeccionSubseccionAsignacionGet.as_view(),name='listar-unidades'),
+    path('asginar-opas/seccion-subseccion-grupos/<int:subseccion_id>/', views.SubseccionGestionAmbientalGruposGet.as_view(), name='subseccion_gestion_ambiental_grupos'),
+
+
 ]
