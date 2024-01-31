@@ -43,6 +43,8 @@ urlpatterns = [
     path('tipo-solicitud-pqrsdf/',views.TipoSolicitudPQRSDF.as_view(), name='tipo-pqrsdf'),
     path('estado-solicitud-pqrsdf/',views.EstadoSolicitud.as_view(), name='estado-pqrsdf'),
     path('cod-estado-eliminacion/',views.CodEstadoEliminacion.as_view(), name='cod-estado-eliminacion'),
+    path('radicacion-correos/',views.RadicacionCorreo.as_view(), name='radicacion-correos'),
+    path('cod-tipo-proceso/',views.CodTipoProceso.as_view(), name='cod-tipo-proceso'),
     
     
 ]

@@ -81,22 +81,11 @@ class RegistrosConfiguracion(models.Model):
         verbose_name_plural = 'Registros configuración'
 
 
-class TipoCobro(models.Model):
-    id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
-    nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
-    # valor_tipo_cobro = models.DecimalField(max_digits=10, decimal_places=2, db_column='T441valor_tipo_cobro')
-
-
-    class Meta:
-        db_table = 'T441TipoCobro'
-        verbose_name = 'Tipo Cobro'
-        verbose_name_plural = 'Tipo Cobro'
 
 
 class TipoRenta(models.Model):
     id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
     nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta')
-    tipo_cobro_asociado = models.ForeignKey(TipoCobro, on_delete=models.CASCADE, db_column='T442IdTipoCobroAsociado', related_name='tiporenta_tipo_cobro')
 
     # valor_tipo_renta = models.DecimalField(max_digits=10, decimal_places=2, db_column='T442valor_tipo_renta')
     class Meta:
@@ -104,6 +93,18 @@ class TipoRenta(models.Model):
         verbose_name = 'Tipo Renta'
         verbose_name_plural = 'Tipos de Renta'
 
+class TipoCobro(models.Model):
+    id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
+    nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro')
+    tipo_renta_asociado = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T442IdTipoAsociado', related_name='tiporenta_tipo_cobro')
+
+    # valor_tipo_cobro = models.DecimalField(max_digits=10, decimal_places=2, db_column='T441valor_tipo_cobro')
+
+
+    class Meta:
+        db_table = 'T441TipoCobro'
+        verbose_name = 'Tipo Cobro'
+        verbose_name_plural = 'Tipo Cobro'
 
 class Variables(models.Model):
     id_variables = models.AutoField(primary_key=True, db_column='T443IdVariables')
@@ -122,7 +123,7 @@ class Variables(models.Model):
 class ValoresVariables(models.Model):
     id_valores_variables = models.AutoField(primary_key=True, db_column='T444IdValoresVariables')
     variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
-    fecha_inicio = models.DateTimeField(auto_now_add=True, db_column='T444FechaInicio')  
+    fecha_inicio  =models.DateField(db_column='T444FechaInicio')
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
     descripccion = models.CharField(max_length=255, db_column='T444Descripcion')  # Corregir el nombre de la columna
@@ -141,4 +142,34 @@ class LeyesLiquidacion(models.Model):
         db_table = 'T451Leyes'
         verbose_name = 'Ley'
         verbose_name_plural = 'Leyes'
+
+
+class Twwwprincipal(models.Model):
+    Twwwfecha = models.DateTimeField(db_column='Twwwfecha')
+    Twwwt908codcia = models.FloatField(db_column='Twwwt908codcia', null=True)
+    Twwwtiporenta = models.TextField(db_column='Twwwtiporenta', null=True)
+    Twwwcuentacontable = models.TextField(db_column='Twwwcuentacontable', null=True)
+    Twwwnombredeudor = models.TextField(db_column='Twwwnombredeudor', null=True)
+    Twwwfechafact = models.DateTimeField(db_column='Twwwfechafact', null=True)
+    Twwwfechanotificacion = models.DateTimeField(db_column='Twwwfechanotificacion', null=True)
+    Twwwfechaenfirme = models.DateTimeField(db_column='Twwwfechaenfirme', null=True)
+    Twwwcortedesde = models.TextField(db_column='Twwwcortedesde', null=True)
+    Twwwcortehasta = models.TextField(db_column='Twwwcortehasta', null=True)
+    Twwwnumfactura = models.TextField(db_column='Twwwnumfactura', null=True)
+    Twwwnumliquidacion = models.FloatField(db_column='Twwwnumliquidacion', null=True)
+    Twwwperiodo = models.TextField(db_column='Twwwperiodo', null=True)
+    Twwwaño = models.FloatField(db_column='Twwwaño', null=True)
+    Twwwexpediente = models.TextField(db_column='Twwwexpediente', null=True)
+    Twwwnumresolucion = models.TextField(db_column='Twwwnumresolucion', null=True)
+    Twwwrecurso = models.TextField(db_column='Twwwrecurso', null=True)
+    Twwwdocauto = models.TextField(db_column='Twwwdocauto', null=True)
+    Twwwsaldocapital = models.FloatField(db_column='Twwwsaldocapital', null=True)
+    Twwwsaldointeres = models.FloatField(db_column='Twwwsaldointeres', null=True)
+    Twwwdiasmora = models.FloatField(db_column='Twwwdiasmora', null=True)
+    Twwwnit = models.TextField(db_column='Twwwnit', null=True)
+
+    class Meta:
+        db_table = 'TwwwPrincipal'
+        verbose_name = 'Principal'
+        verbose_name_plural = 'Principal'
 

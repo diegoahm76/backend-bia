@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
@@ -24,7 +24,48 @@ from gestion_documental.views.configuracion_tipos_radicados_views import ConfigT
 
 
 
+class GetHistoricoRadicados(generics.ListAPIView):
+    serializer_class = RadicadosGetHistoricoSerializer
+    queryset = T262Radicados.objects.all()
 
+    def get(self,request):
+        filter={}
+        
+        
+        for key, value in request.query_params.items():
+
+            # if key == 'radicado':
+            #     if value !='':
+            #         filter['mezcla__icontains'] = value
+            if key =='prefijo':
+                if value != '':
+                    filter['prefijo_radicado__icontains'] = value    
+            if key == 'agno':
+                if value != '':
+                     filter['agno_radicado__icontains'] = value   
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'modulo':
+                if value != '':
+                    filter['id_modulo_que_radica__nombre__icontains'] = value
+            if key =='tipo_radicado':
+                if value != '':
+                    filter['cod_tipo_radicado'] = value
+
+            if key == 'id_persona':
+                if value != '':
+                    filter['id_persona_radica'] = value
+
+        instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+
+        serializer = self.serializer_class(instance, many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes registros.', 'data':serializer.data}, status=status.HTTP_200_OK)
 class GetRadicadosImprimir(generics.ListAPIView):
     serializer_class = RadicadosImprimirSerializer
     queryset = T262Radicados.objects.all()

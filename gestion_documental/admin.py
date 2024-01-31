@@ -1,4 +1,5 @@
 from django.contrib import admin
+from gestion_documental.models.consecutivo_unidad_models import ConfigTipoConsecAgno
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
 from gestion_documental.models.trd_models import (
     TablaRetencionDocumental,
@@ -65,3 +66,7 @@ admin.site.register(Anexos_PQR)
 admin.site.register(Anexos)
 admin.site.register(MetadatosAnexosTmp)
 admin.site.register(ComplementosUsu_PQR)
+
+
+#TIPOS DE CONSECUTIVOS POR INIDAD
+admin.site.register(ConfigTipoConsecAgno)

@@ -1936,13 +1936,21 @@ class GetActualSeccionSubsecciones(generics.ListAPIView):
 class AsignarNuevoConsecutivo(generics.CreateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
 
-
     def post(self, request, *args, **kwargs):
         # Obtener parámetros del cuerpo de la solicitud
         id_tipologia_documental = request.data.get('id_tipologia_documental')
-        id_unidad_organizacional = request.data.get('id_unidad_organizacional')
-        id_persona = request.data.get('id_persona')
         fecha_actual = request.data.get('fecha_actual')
+
+        # Obtener la persona logueada
+        user = request.user
+        persona_logueada = user.persona
+
+        if not persona_logueada:
+            raise ValidationError('No se encontró una persona asociada al usuario logueado.')
+
+        # Obtener el id de la unidad organizacional desde la persona logueada
+        id_unidad_organizacional = persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional
+        id_persona = persona_logueada.id_persona
 
         # Validar si la tipología está activa
         try:
@@ -1988,7 +1996,6 @@ class AsignarNuevoConsecutivo(generics.CreateAPIView):
                               'Por favor, diríjase al módulo de "Configuración de Tipologías Documentales" para continuar el proceso.'
                 }, status=status.HTTP_400_BAD_REQUEST)
 
-            # Caso 1: No existe registro de configuración en el año enviado para la tipología solicitada
             # Caso 1: No existe registro de configuración en el año enviado para la tipología solicitada
             with transaction.atomic():
                 config_tipologia_actual = ConfigTipologiasDocAgno.objects.create(
