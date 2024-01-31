@@ -1743,7 +1743,7 @@ class SeccionSubseccionAsignacionGet(generics.ListAPIView):
         # Filtrar unidades organizacionales para obtener la subsección de Gestión Ambiental
         unidad_gestion_ambiental = UnidadesOrganizacionales.objects.filter(
             cod_agrupacion_documental='SUB',
-            # id_organigrama=organigrama_actual.id_organigrama,
+            id_organigrama=organigrama_actual.id_organigrama,
             nombre__iexact='Gestión Ambiental'
         ).first()
 
@@ -1769,13 +1769,23 @@ class SubseccionGestionAmbientalGruposGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, subseccion_id):
-        # Obtener la subsección de Gestión Ambiental por su ID
-        subseccion_gestion_ambiental = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=subseccion_id)
+        # Obtener el organigrama actual
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+        if not organigrama_actual:
+            raise NotFound('No existe ningún organigrama activado')
+
+        # Obtener la subsección de Gestión Ambiental por su ID y validar que pertenezca al organigrama actual
+        subseccion_gestion_ambiental = get_object_or_404(
+            UnidadesOrganizacionales,
+            id_unidad_organizacional=subseccion_id,
+            id_organigrama=organigrama_actual.id_organigrama
+        )
 
         # Verificar si la subsección de Gestión Ambiental tiene grupos
         grupos = UnidadesOrganizacionales.objects.filter(
-            cod_agrupacion_documental='',
-            id_unidad_org_padre=subseccion_id
+            cod_agrupacion_documental=None,
+            id_unidad_org_padre=subseccion_id,
+            id_organigrama=organigrama_actual.id_organigrama,
         )
 
         # Si no hay grupos, solo mostrar la subsección de Gestión Ambiental
@@ -1785,8 +1795,9 @@ class SubseccionGestionAmbientalGruposGet(generics.ListAPIView):
             # Si hay grupos, incluir la subsección de Gestión Ambiental y los grupos y sus subgrupos
             unidades_organizacionales = [subseccion_gestion_ambiental] + list(grupos)
             subgrupos = UnidadesOrganizacionales.objects.filter(
-                cod_agrupacion_documental='',
-                id_unidad_org_padre__in=[grupo.id_unidad_organizacional for grupo in grupos]
+                cod_agrupacion_documental=None,
+                id_unidad_org_padre__in=[grupo.id_unidad_organizacional for grupo in grupos],
+                id_organigrama=organigrama_actual.id_organigrama
             )
             unidades_organizacionales += list(subgrupos)
 
