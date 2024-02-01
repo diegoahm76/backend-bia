@@ -78,6 +78,7 @@ urlpatterns = [
     #ASIGNACION_DE_OPAS
     path('asginar-opas/seccion-subseccion/get/',views.SeccionSubseccionAsignacionGet.as_view(),name='listar-unidades'),
     path('asginar-opas/seccion-subseccion-grupos/<int:subseccion_id>/', views.SubseccionGestionAmbientalGruposGet.as_view(), name='subseccion_gestion_ambiental_grupos'),
+    path('asginar-opas/seccion-subseccion-serie/', views.UnidadesOrganizacionalesRelacionadasListView.as_view(), name='subseccion-serie'),
 
 
 ]

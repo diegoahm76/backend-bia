@@ -11,7 +11,7 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, TramitePutSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, TramitePutSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 from seguridad.utils import Util
@@ -1260,12 +1260,34 @@ class AsignacionOPACreate(generics.CreateAPIView):
     queryset =AsignacionTramites.objects.all()
     permission_classes = [IsAuthenticated]
     creador_estados = Estados_PQRCreate
-    def post(self, request):
 
+    def post(self, request):
         data_in = request.data
 
-        if not 'id_solicitud_tramite' in data_in:
-            raise ValidationError("No se envio la pqrsdf")
+        # Verificar si se envió el ID de solicitud de OPA
+        if 'id_solicitud_tramite' not in data_in:
+            raise ValidationError("No se envió la solicitud de OPA")
+
+        # Verificar si la solicitud ya fue aceptada
+        instance = AsignacionTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'])
+        for asignacion in instance:
+            if asignacion.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud ya fue aceptada.")
+            if not asignacion.cod_estado_asignacion:
+                raise ValidationError("La solicitud está pendiente por respuesta.")
+
+        # Obtener el líder de la Subsección Gestión Ambiental
+        subseccion_id = data_in.get('id_und_org_seccion_asignada')
+        lider_subseccion = self.obtener_lider_subseccion(subseccion_id)
+
+        # Validar si hay líder asignado
+        if lider_subseccion:
+            # Habilitar el control "Líder de la Subsección"
+            data_in['lider_subseccion'] = lider_subseccion
+            # Habilitar el botón "Asignar"
+            data_in['asignacion_de_ventanilla'] = True
+        else:
+            raise ValidationError("No se puede asignar la OPA a una subsección que no tiene líder asignado.")
         
         instance= AsignacionTramites.objects.filter(id_solicitud_tramite = data_in['id_solicitud_tramite'])
 
@@ -1362,6 +1384,17 @@ class AsignacionOPACreate(generics.CreateAPIView):
 
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estado':data_estado,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
     
+    def obtener_lider_subseccion(self, subseccion_id):
+        # Consultar el líder de la Subsección Gestión Ambiental
+        lider_subseccion = LideresUnidadesOrg.objects.filter(id_unidad_organizacional=subseccion_id).first()
+
+        if lider_subseccion:
+            # Obtener información del líder desde la tabla Personas
+            persona_lider = lider_subseccion.id_persona
+            nombre_completo_lider = f"{persona_lider.primer_nombre} {persona_lider.segundo_nombre} {persona_lider.primer_apellido} {persona_lider.segundo_apellido}"
+            return nombre_completo_lider if nombre_completo_lider.strip() else None
+        else:
+            return None
 
 class AsignacionOPASGet(generics.ListAPIView):
     serializer_class = AsignacionTramiteOpaGetSerializer
@@ -1768,6 +1801,20 @@ class SubseccionGestionAmbientalGruposGet(generics.ListAPIView):
     serializer_class = UnidadesOrganizacionalesSecSubVentanillaGetSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_children_recursive(self, parent_id, organigrama_id):
+        children = UnidadesOrganizacionales.objects.filter(
+            cod_agrupacion_documental=None,
+            id_unidad_org_padre=parent_id,
+            id_organigrama=organigrama_id
+        )
+
+        result = []
+        for child in children:
+            result.append(child)
+            # Llamada recursiva para obtener los hijos de este hijo
+            result += self.get_children_recursive(child.id_unidad_organizacional, organigrama_id)
+        return result
+
     def get(self, request, subseccion_id):
         # Obtener el organigrama actual
         organigrama_actual = Organigramas.objects.filter(actual=True).first()
@@ -1781,31 +1828,47 @@ class SubseccionGestionAmbientalGruposGet(generics.ListAPIView):
             id_organigrama=organigrama_actual.id_organigrama
         )
 
-        # Verificar si la subsección de Gestión Ambiental tiene grupos
-        grupos = UnidadesOrganizacionales.objects.filter(
-            cod_agrupacion_documental=None,
-            id_unidad_org_padre=subseccion_id,
-            id_organigrama=organigrama_actual.id_organigrama,
-        )
+        # Obtener los hijos recursivamente
+        unidades_organizacionales = [subseccion_gestion_ambiental]
+        unidades_organizacionales += self.get_children_recursive(subseccion_id, organigrama_actual.id_organigrama)
 
-        # Si no hay grupos, solo mostrar la subsección de Gestión Ambiental
-        if not grupos.exists():
-            serializer = self.serializer_class([subseccion_gestion_ambiental], many=True)
-        else:
-            # Si hay grupos, incluir la subsección de Gestión Ambiental y los grupos y sus subgrupos
-            unidades_organizacionales = [subseccion_gestion_ambiental] + list(grupos)
-            subgrupos = UnidadesOrganizacionales.objects.filter(
-                cod_agrupacion_documental=None,
-                id_unidad_org_padre__in=[grupo.id_unidad_organizacional for grupo in grupos],
-                id_organigrama=organigrama_actual.id_organigrama
-            )
-            unidades_organizacionales += list(subgrupos)
-
-            # Serializar los datos
-            serializer = self.serializer_class(unidades_organizacionales, many=True)
+        # Serializar los datos
+        serializer = self.serializer_class(unidades_organizacionales, many=True)
 
         return Response({
             'success': True,
             'detail': 'Se encontraron las siguientes unidades organizacionales',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+    
+class UnidadesOrganizacionalesRelacionadasListView(generics.ListAPIView):
+    serializer_class = UnidadesOrganizacionalesSerializer
+
+    def get_queryset(self):
+        # Obtener el organigrama actual
+        organigrama_actual = Organigramas.objects.filter(actual=True).first()
+
+        if not organigrama_actual:
+            raise NotFound('No existe ningún organigrama activado')
+
+        # Obtener las series relacionadas con el organigrama actual
+        series_relacionadas = CatalogosSeriesUnidad.objects.filter(
+            id_unidad_organizacional__id_organigrama=organigrama_actual
+        ).values_list('id_catalogo_serie', flat=True).distinct()
+
+        # Obtener todas las unidades organizacionales relacionadas con las series del organigrama actual
+        unidades_relacionadas = UnidadesOrganizacionales.objects.filter(
+            catalogosseriesunidad__id_catalogo_serie__in=series_relacionadas
+        ).distinct()
+
+        return unidades_relacionadas
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({
+            'success': True,
+            'detail': f'Se encontraron {queryset.count()} unidades organizacionales relacionadas al organigrama actual',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
