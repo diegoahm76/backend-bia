@@ -1110,8 +1110,10 @@ class AsignacionTramitesPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = AsignacionTramites
         fields = '__all__'
-# OTROS
 
+
+
+# OTROS
 class OtrosGetSerializer(serializers.ModelSerializer):
     tipo_solicitud = serializers.SerializerMethodField()
     nombre_completo_titular = serializers.SerializerMethodField()
@@ -1423,3 +1425,8 @@ class OtrosGetHistoricoSerializer(serializers.ModelSerializer):
         model = Otros
         fields = ['cabecera','detalle']
     
+
+class UnidadesOrganizacionalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesOrganizacionales
+        fields = '__all__'

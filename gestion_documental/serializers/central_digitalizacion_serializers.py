@@ -25,7 +25,7 @@ class SolicitudesSerializer(serializers.ModelSerializer):
         return nombre_tipo_solicitud
 
     def get_numero_radicado(self, obj):
-        return f"{obj['radicado'].prefijo_radicado}-{obj['radicado'].agno_radicado}-{obj['radicado'].nro_radicado}"
+        return obj['radicado']
     
     def get_asunto(self, obj):
         return obj['asunto']

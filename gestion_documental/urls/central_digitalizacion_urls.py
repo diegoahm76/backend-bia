@@ -10,5 +10,9 @@ urlpatterns = [
     path('crear-digitalizacion/', views.DigitalizacionCreate.as_view(), name='crear-digitalizacion'),
     path('actualizar-digitalizacion/', views.DigitalizacionUpdate.as_view(), name='actualizar-digitalizacion'),
     path('eliminar-digitalizacion/', views.DigitalizacionDelete.as_view(), name='eliminar-digitalizacion'),
-    path('responder-digitalizacion/', views.ResponderDigitalizacion.as_view(), name='responder-digitalizacion')
+    path('responder-digitalizacion/', views.ResponderDigitalizacion.as_view(), name='responder-digitalizacion'),
+    
+    # OTROS
+    path('otros/get-solicitudes-pendientes/', views.OtrosSolicitudesPendientesGet.as_view(), name='otros-get-solicitudes-pendientes'),
+    path('otros/crear-digitalizacion/', views.OtrosDigitalizacionCreate.as_view(), name='otros-crear-digitalizacion'),
 ]
