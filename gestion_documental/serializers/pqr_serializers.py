@@ -313,6 +313,18 @@ class MetadatosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadatosAnexosTmp
         fields = '__all__'
+        
+class OtrosMetadatosPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = '__all__'
+        extra_kwargs = {
+            'nro_folios_documento': {'required': True, 'allow_null': False},
+            'asunto': {'required': True, 'allow_null': False, 'allow_blank': False},
+            'tiene_replica_fisica': {'required': True, 'allow_null': False},
+            'cod_origen_archivo': {'required': True, 'allow_null': False, 'allow_blank': False},
+            'cod_categoria_archivo': {'required': True, 'allow_null': False, 'allow_blank': False},
+        }
 
 class MetadatosPutSerializer(serializers.ModelSerializer):
     class Meta:
