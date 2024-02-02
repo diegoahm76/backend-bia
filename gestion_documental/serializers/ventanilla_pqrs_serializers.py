@@ -310,16 +310,28 @@ class SolicitudDeDigitalizacionGetSerializer(serializers.ModelSerializer):
 class PQRSDFCabezeraGetSerializer(serializers.ModelSerializer):
     
     
-    radicado = serializers.SerializerMethodField()
+    
+    detalle = serializers.SerializerMethodField()
+    cabecera = serializers.SerializerMethodField()
     #solicitudes = SolicitudDeDigitalizacionGetSerializer()
     class Meta:
         model = PQRSDF
-        fields = ['id_PQRSDF','radicado']
-    def get_radicado(self, obj):
-        cadena = ""
-        if obj.id_radicado:
-            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
-            return cadena
+        fields = ['cabecera','detalle']
+
+
+    def get_cabecera(self, obj):
+        radicado = obj.id_radicado
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return {'id_PQRSDF':obj.id_PQRSDF,'radicado':cadena}
+        else: 
+            return 'SIN RADICAR'
+    def get_detalle(self, obj):
+         return PQRSDFHistoricoGetSerializer(obj).data
+
 
 class Estados_PQR_Actual_GetSerializer(serializers.ModelSerializer):
     nombre_estado = serializers.ReadOnlyField(source='estado_solicitud.nombre',default=None)
@@ -1078,6 +1090,22 @@ class OPAGetHistoricoSerializer(serializers.ModelSerializer):
         
     def get_cabecera(self, obj):
         cadena = ""
+
+  
+        cadena = ""
+        radicado = obj.id_solicitud_tramite.id_radicado
+       
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_solicitud_tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            #print(instance_config_tipo_radicado.cantidad_digitos)
+            return {'id_solicitud_tramite':obj.id_solicitud_tramite.id_solicitud_tramite,'radicado':cadena}
+           
+        else: 
+            return 'SIN RADICAR'
+        
+
         if obj.id_solicitud_tramite.id_radicado:
             cadena= str(obj.id_solicitud_tramite.id_radicado.prefijo_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.agno_radicado)+'-'+str(obj.id_solicitud_tramite.id_radicado.nro_radicado)
             #return cadena
