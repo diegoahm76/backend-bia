@@ -875,6 +875,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
     estado_asignacion_grupo = serializers.SerializerMethodField()
     unidad_asignada = serializers.SerializerMethodField()
     tiene_anexos = serializers.SerializerMethodField()
+    nombre_opa = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
 
 
     def get_tiene_anexos(self, obj):
@@ -982,7 +983,7 @@ class OPAGetRefacSerializer(serializers.ModelSerializer):
                     return None
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['id_solicitud_tramite','tipo_solicitud','nombre_proyecto','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada','tiene_anexos']
+        fields = ['id_solicitud_tramite','tipo_solicitud','nombre_proyecto','nombre_opa','nombre_completo_titular','costo_proyecto','pagado','cantidad_predios','cantidad_anexos','radicado','fecha_radicado','id_sede','sede','requiere_digitalizacion','estado_actual','estado_asignacion_grupo','persona_asignada','unidad_asignada','tiene_anexos']
 
 class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
     accion = serializers.SerializerMethodField()
@@ -1036,13 +1037,14 @@ class OPADetalleHistoricoSerializer(serializers.ModelSerializer):
     id_tramite = serializers.ReadOnlyField(source='id_solicitud_tramite.id_solicitud_tramite')
     titular = serializers.SerializerMethodField()
     nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
+    nombre_opa = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
     costo_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.costo_proyecto', default=None)
     cantidad_predios = serializers.ReadOnlyField(source='id_solicitud_tramite.cantidad_predios', default=None)
     solicitud_actual = serializers.SerializerMethodField()
     registros = serializers.SerializerMethodField()
     class Meta:
         model = PermisosAmbSolicitudesTramite
-        fields = ['id_tramite','titular','nombre_proyecto','costo_proyecto','cantidad_predios','solicitud_actual','registros']
+        fields = ['id_tramite','titular','nombre_proyecto','nombre_opa','costo_proyecto','cantidad_predios','solicitud_actual','registros']
     
 
     def get_solicitud_actual(self, obj):

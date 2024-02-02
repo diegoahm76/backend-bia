@@ -1253,6 +1253,7 @@ class OPAFGetHitorico(generics.ListAPIView):
         filter['id_solicitud_tramite__id_medio_solicitud'] = 2
         filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
+        radicado = None
         for key, value in request.query_params.items():
 
             if key == 'radicado':
@@ -1783,6 +1784,7 @@ class OtrosGetHistorico(generics.ListAPIView):
     def get (self, request):
         filter = {}
         filter['id_radicados__isnull'] = False
+        radicado = None
         for key, value in request.query_params.items():
 
             if key == 'radicado':
