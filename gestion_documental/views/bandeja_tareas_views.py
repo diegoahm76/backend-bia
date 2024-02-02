@@ -377,7 +377,19 @@ class ComplementoTareaGetByTarea(generics.ListAPIView):
     queryset = AdicionalesDeTareas.objects.all()
 
     def get(self, request,tarea):
-        complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=tarea)
+
+        instance = TareasAsignadas.objects.filter(id_tarea_asignada=tarea).first()
+        
+        if not instance.id_asignacion:
+            aux = instance
+            while aux:
+                aux=aux.id_tarea_asignada_padre_inmediata
+                if  aux and aux.id_asignacion:
+                    instance = aux 
+                    break
+            
+            #raise ValidationError('No se encontro la asignacion')
+        complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=instance)
         
         print(complemento)
         if not complemento:

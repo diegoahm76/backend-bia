@@ -279,45 +279,56 @@ class SolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView):
 class CabezerasPQRSDFGet(generics.ListAPIView):
     serializer_class = PQRSDFCabezeraGetSerializer
     queryset =PQRSDF.objects.all()
-    queryset_prueba = PQRSDF.objects.annotate(combinacion=Concat(F('id_radicado__prefijo_radicado'), Value('-'), F('id_radicado__agno_radicado'), Value('-'), F('id_radicado__nro_radicado'), output_field=CharField())
-)
     permission_classes = [IsAuthenticated]
 
-
-        
     def get (self, request):
-        tipo_busqueda = 'PQRSDF'
+        
         data_respuesta = []
         filter={}
-        historico =Historico_Solicitud_PQRSDFGet()
-        data_histo = []
+        filter['id_radicado__isnull'] = False
+        radicado = None
         for key, value in request.query_params.items():
 
             if key == 'radicado':
                 if value !='':
-                    filter['combinacion__icontains'] = value
+                   
+                    radicado = value
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
  
             if key =='estado_actual_solicitud':
                 if value != '':
-                    filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value    
+                    filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value  
+            if key == 'fecha_radicado':
+                if value != '':
+                    filter['fecha_radicado'] = datetime.strptime(value, '%Y-%m-%d').date()  
 
         
         
-        instance = self.queryset_prueba.filter(**filter).order_by('fecha_radicado')
+        instance = self.queryset.filter(**filter).order_by('fecha_radicado')
 
-        if not instance:
-            raise NotFound("No existen registros")
-        for x in instance:
-            #print(x.combinacion)
-            respuesta = historico.get(self,x.id_PQRSDF)
-            #print()
-            data_histo.append({'cabecera':self.serializer_class(x).data,'detalle':respuesta.data['data']})
+        ##
+        serializador = self.serializer_class(instance,many=True)
+        data_respuesta = serializador.data
 
-                #data_respuesta.append(historico.get(self,x.id_PQRSDF).data['data'])
 
-            #serializador = self.serializer_class(instance,many=True)
-            #data_respuesta = serializador.data
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_histo,}, status=status.HTTP_200_OK)
+        serializador = self.serializer_class(instance,many=True)
+        data_respuesta = serializador.data
+        data_validada =[]
+       
+        if radicado and radicado != '':
+            data_validada = [item for item in serializador.data if radicado in item.get('cabecera', {}).get('radicado', '')]
+        else :
+            data_validada = data_respuesta
+
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
 
 
 class Historico_Solicitud_PQRSDFGet(generics.ListAPIView):
@@ -1228,9 +1239,10 @@ class SolicitudDeDigitalizacionOPACreate(generics.CreateAPIView):
 class OPAFGetHitorico(generics.ListAPIView):
     serializer_class = OPAGetHistoricoSerializer
     #queryset =PQRSDF.objects.all()
-    queryset = PermisosAmbSolicitudesTramite.objects.annotate(mezcla=Concat(F('id_solicitud_tramite__id_radicado__prefijo_radicado'), Value('-'), F('id_solicitud_tramite__id_radicado__agno_radicado'),
-                                                      Value('-'), F('id_solicitud_tramite__id_radicado__nro_radicado'), output_field=CharField()))
-                                              
+    # queryset = PermisosAmbSolicitudesTramite.objects.annotate(mezcla=Concat(F('id_solicitud_tramite__id_radicado__prefijo_radicado'), Value('-'), F('id_solicitud_tramite__id_radicado__agno_radicado'),
+    #                                                   Value('-'), F('id_solicitud_tramite__id_radicado__nro_radicado'), output_field=CharField()))
+
+    queryset = PermisosAmbSolicitudesTramite.objects.all()
     permission_classes = [IsAuthenticated]
 
 
@@ -1241,18 +1253,39 @@ class OPAFGetHitorico(generics.ListAPIView):
         filter['id_solicitud_tramite__id_medio_solicitud'] = 2
         filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
+        radicado = None
         for key, value in request.query_params.items():
 
             if key == 'radicado':
                 if value !='':
-                    filter['mezcla__icontains'] = value
+                    radicado = value
+            if key =='fecha_radicado':
+                if value != '':
+                    filter['id_solicitud_tramite__fecha_radicado'] = datetime.strptime(value, '%Y-%m-%d').date()
            
     
         instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')
         serializer = self.serializer_class(instance, many=True)
         #serializer2 = self.serializer_class(instance, many=True)
 
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+        ##FILTRO POR RADICADO
+        filter['id_radicado__isnull'] = False
+        #instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+       
+   
+        if not instance:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance,many=True)
+        data_respuesta = serializador.data
+        data_validada =[]
+        if radicado and radicado != '':
+            data_validada = [item for item in serializador.data if radicado in item.get('cabecera', {}).get('radicado', '')]
+        else :
+            data_validada = data_respuesta
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
+
+        
     
     
 class AsignacionOPACreate(generics.CreateAPIView):
@@ -1749,10 +1782,39 @@ class OtrosGetHistorico(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get (self, request):
-        instance = self.get_queryset().exclude(id_radicados=None).order_by('fecha_radicado')
-        serializer = self.serializer_class(instance, many=True)
+        filter = {}
+        filter['id_radicados__isnull'] = False
+        radicado = None
+        for key, value in request.query_params.items():
 
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+            if key == 'radicado':
+                if value !='':
+                   
+                    radicado = value
+            if key == 'fecha_radicado':
+                if value != '':
+                    filter['fecha_radicado'] = datetime.strptime(value, '%Y-%m-%d').date()
+ 
+            # if key =='estado_actual_solicitud':
+            #     if value != '':
+            #         filter['id_estado_actual_solicitud__estado_solicitud__nombre__icontains'] = value    
+
+        
+        
+        instance = self.queryset.filter(**filter).order_by('fecha_radicado')
+        serializer = self.serializer_class(instance, many=True)
+        
+        data_validada =[]
+       
+        if radicado and radicado != '':
+            data_validada = [item for item in serializer.data if radicado in item.get('radicado', '')]
+        else :
+            data_validada = serializer.data
+
+        #instance = self.get_queryset().exclude(id_radicados=None).order_by('fecha_radicado')
+        
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
     
 
 
