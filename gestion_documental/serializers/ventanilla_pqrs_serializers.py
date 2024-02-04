@@ -1460,3 +1460,44 @@ class UnidadesOrganizacionalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnidadesOrganizacionales
         fields = '__all__'
+
+#PANEL DE VENTANILLA TRAMITES
+        
+class SolicitudesTramitesGetSerializer(serializers.ModelSerializer):
+    nombre_cod_tipo_operacion_tramite = serializers.ReadOnlyField(source='get_cod_tipo_operacion_tramite_display',default=None)
+    nombre_cod_relacion_con_el_titular = serializers.ReadOnlyField(source='get_cod_relacion_con_el_titular_display', default=None)
+    nombre_completo_titular = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    tipo_solicitud = serializers.SerializerMethodField()
+    class Meta:
+        model = SolicitudesTramites
+        fields = '__all__'
+
+
+    def get_tipo_solicitud(self, obj):
+        
+        return 'TRAMITE'
+    
+    def get_nombre_completo_titular(self, obj):
+
+        if obj.id_persona_titular:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            if obj.es_anonima:
+                return "Anonimo"
+            else:
+                return 'No Identificado'
+            
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
