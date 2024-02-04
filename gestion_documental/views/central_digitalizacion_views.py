@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import json
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 
 from django.db.models import Q
@@ -11,7 +11,7 @@ from django.db import transaction
 from django.forms import model_to_dict
 
 from gestion_documental.serializers.central_digitalizacion_serializers import SolicitudesAlUsuarioPostSerializer, SolicitudesPostSerializer, SolicitudesSerializer
-from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer, MetadatosPutSerializer, PQRSDFPutSerializer
+from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer, MetadatosPutSerializer, OtrosMetadatosPostSerializer, PQRSDFPutSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRPutSerializer
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from gestion_documental.views.pqr_views import AnexosCreate, ArchivoDelete, MetadatosPQRDelete
@@ -609,41 +609,44 @@ class OtrosSolicitudesPendientesGet(generics.ListAPIView):
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class OtrosDigitalizacionCreate(generics.CreateAPIView):
-    serializer_class = MetadatosPostSerializer
-    serializer_anexos_class = AnexosPostSerializer
-    serializer_solicitud_class = SolicitudesPostSerializer
+    serializer_class = OtrosMetadatosPostSerializer
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
-        try:
-            with transaction.atomic():
-                fecha_actual = datetime.now()
-                data_digitalizacion = json.loads(request.data.get('data_digitalizacion', ''))
+        with transaction.atomic():
+            fecha_actual = datetime.now()
+            data_digitalizacion = json.loads(request.data.get('data_digitalizacion', ''))
+            
+            #Validar si ya fue digitalizado
+            anexo = Anexos.objects.filter(id_anexo=data_digitalizacion['id_anexo']).first()
+            if anexo.ya_digitalizado:
+                raise PermissionDenied("El anexo ya fue digitalizado antes. No puede volverlo a digitalizar")
 
-                #Guardar el archivo en la tabla T238
-                archivo = request.data.get('archivo', None)
-                if archivo:
-                    archivo_creado = self.create_archivo_adjunto(archivo, fecha_actual)
-                else:
-                    raise ValidationError("Se debe tener un archivo para digitalizar el anexo")
+            #Guardar el archivo en la tabla T238
+            archivo = request.data.get('archivo', None)
+            if archivo:
+                if data_digitalizacion['cod_origen_archivo'] == 'F':
+                    raise ValidationError("Debe descartar el archivo adjunto, se generará uno de referencia")
                 
-                #Crea el metadato en la DB
-                data_to_create = self.set_data_metadato(data_digitalizacion, fecha_actual, archivo_creado.data.get('data').get('id_archivo_digital'))
-                serializer = self.serializer_class(data=data_to_create)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-                
-                id_persona_digitalizo = request.user.persona.id_persona
+                archivo_creado = self.create_archivo_adjunto(archivo, fecha_actual)
+            else:
+                if data_digitalizacion['cod_origen_archivo'] == 'F' and data_digitalizacion['nro_folios_documento'] != 1:
+                    raise ValidationError("El número de folios debe ser uno porque el archivo que va a generar el sistema solamente es de una hoja")
+            
+            #Crea el metadato en la DB
+            data_to_create = self.set_data_metadato(data_digitalizacion, fecha_actual, archivo_creado.data.get('data').get('id_archivo_digital'))
+            serializer = self.serializer_class(data=data_to_create)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            id_persona_digitalizo = request.user.persona
 
-                #Actualiza las tablas de anexos y solicitudes
-                self.update_anexo(data_digitalizacion['observacion_digitalizacion'], data_digitalizacion['id_anexo'])
-                self.update_solicitud(data_digitalizacion['id_solicitud_de_digitalizacion'], id_persona_digitalizo)
-                
-                return Response({'success':True, 'detail':'Se digitalizo correctamente el anexo', 'data':serializer.data}, status=status.HTTP_201_CREATED)
-        
-        except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            #Actualiza las tablas de anexos y solicitudes
+            self.update_anexo(data_digitalizacion['observacion_digitalizacion'], anexo)
+            self.update_solicitud(data_digitalizacion['id_solicitud_de_digitalizacion'], id_persona_digitalizo)
+            
+            return Response({'success':True, 'detail':'Se digitalizo correctamente el anexo', 'data':serializer.data}, status=status.HTTP_201_CREATED)
         
     def create_archivo_adjunto(self, archivo, fecha_actual):
         # PENDIENTE AÑADIR GENERACIÓN DE DOCUMENTO CUANDO ES FÍSICO
@@ -671,13 +674,12 @@ class OtrosDigitalizacionCreate(generics.CreateAPIView):
         
         return data_metadatos
     
-    def update_anexo(self, observacion_digitalizacion, id_anexo):
-        anexo_db = Anexos.objects.filter(id_anexo = id_anexo).first()
+    def update_anexo(self, observacion_digitalizacion, anexo_db):
         anexo_db.ya_digitalizado = True
         anexo_db.observacion_digitalizacion = observacion_digitalizacion
         anexo_db.save()
 
     def update_solicitud(self, id_solicitud_de_digitalizacion, id_persona_digitalizo):
-        solicitud_db = SolicitudDeDigitalizacion.objects.filter(id_solicitud_de_digitalizacion = id_solicitud_de_digitalizacion).first()
+        solicitud_db = SolicitudDeDigitalizacion.objects.filter(id_solicitud_de_digitalizacion=id_solicitud_de_digitalizacion).first()
         solicitud_db.id_persona_digitalizo = id_persona_digitalizo
         solicitud_db.save()
