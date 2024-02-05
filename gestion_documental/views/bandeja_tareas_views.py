@@ -336,9 +336,31 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         #cambio de estado en asignacion en la t268
         id_asignacion = instance.id_asignacion
         print(id_asignacion)
-        #asignacion = AsignacionPQR.objects.filter(id_asignacion=id_pqrsdf)
-        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion, cod_estado_asignacion__isnull=True).first()
+        #VALIDACION ENTREGA 116
 
+        if not id_asignacion:
+            
+            tarea = instance
+            if tarea.id_asignacion:
+                    id_asignacion = tarea.id_asignacion
+
+            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
+                while not  tarea.id_asignacion:
+                    tarea = tarea.id_tarea_asignada_padre_inmediata
+                   
+                    if tarea.id_asignacion:
+                
+                        break
+                id_asignacion = tarea.id_asignacion
+                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+                if reasignacion:
+                    reasignacion.cod_estado_reasignacion = 'Ac'
+                    reasignacion.save()
+
+
+                          
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
+        # raise ValidationError(asignacion.id_pqrsdf)
         if not asignacion:
             raise NotFound("No se encontro la asignacion")
         asignacion.cod_estado_asignacion = 'Ac'
