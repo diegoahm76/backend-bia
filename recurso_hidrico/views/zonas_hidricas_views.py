@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica
-from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaSerializerr, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
+from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer
 import copy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
@@ -128,7 +128,7 @@ class ActualizarZonaHidricaVista(generics.UpdateAPIView):
 
 class ActualizarSubZonaHidricaVista(generics.UpdateAPIView):
     queryset = SubZonaHidrica.objects.all()
-    serializer_class = SubZonaHidricaSerializer
+    serializer_class = SubZonaHidricaValorRegionalSerializer  # Utiliza un serializador específico
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -136,8 +136,7 @@ class ActualizarSubZonaHidricaVista(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)  # Valida los datos
         serializer.save()  # Guarda la instancia con los datos actualizados
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        return Response({'succes': True, 'detail':'Se actualizo correctamente', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
 class TipoAguaZonaHidricaListView (generics.ListAPIView):
     queryset = TipoAguaZonaHidrica.objects.all()
