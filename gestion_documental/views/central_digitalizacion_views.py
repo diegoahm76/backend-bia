@@ -4,15 +4,18 @@ import json
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from django.db.models import Q
 from django.db import transaction
 from django.forms import model_to_dict
+from gestion_documental.models.trd_models import TipologiasDoc
 
 from gestion_documental.serializers.central_digitalizacion_serializers import SolicitudesAlUsuarioPostSerializer, SolicitudesPostSerializer, SolicitudesSerializer
-from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer, MetadatosPutSerializer, OtrosMetadatosPostSerializer, PQRSDFPutSerializer
+from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer, MetadatosPutSerializer, OtrosMetadatosPostSerializer, OtrosMetadatosPutSerializer, PQRSDFPutSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ComplementosUsu_PQRPutSerializer
+from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from gestion_documental.views.pqr_views import AnexosCreate, ArchivoDelete, MetadatosPQRDelete
 from seguridad.signals.roles_signals import IsAuthenticated
@@ -523,7 +526,6 @@ class ProcesaSolicitudesOtros:
 
     def procesa_solicitudes(self, solicitudes_otros, estado_solicitud, peticion_estado):
         solicitudes = []
-        
         for solicitud_otro in solicitudes_otros:
             data_anexos_otros = self.consulta_anexos_otros(solicitud_otro, estado_solicitud, peticion_estado)
             if data_anexos_otros:
@@ -631,12 +633,28 @@ class OtrosDigitalizacionCreate(generics.CreateAPIView):
                 
                 archivo_creado = self.create_archivo_adjunto(archivo, fecha_actual)
             else:
-                if data_digitalizacion['cod_origen_archivo'] == 'F' and data_digitalizacion['nro_folios_documento'] != 1:
-                    raise ValidationError("El número de folios debe ser uno porque el archivo que va a generar el sistema solamente es de una hoja")
+                if data_digitalizacion['cod_origen_archivo'] == 'F':
+                    if data_digitalizacion['nro_folios_documento'] != 1:
+                        raise ValidationError("El número de folios debe ser uno porque el archivo que va a generar el sistema solamente es de una hoja")
+                    
+                    choices_dict_categoria_archivo = dict(tipo_archivo_CHOICES)
+                    categoria_archivo = choices_dict_categoria_archivo[data_digitalizacion['cod_categoria_archivo']]
+                    tipologia_documental = data_digitalizacion["tipologia_no_creada_TRD"] if data_digitalizacion.get("tipologia_no_creada_TRD") else TipologiasDoc.objects.filter(id_tipologia_documental=data_digitalizacion["id_tipologia_doc"]).first().nombre
+                    
+                    info_archivo = {
+                        "Nombre del Anexo": "Mapa de Proceso",
+                        "Medio de Almacenamiento": "Papel",
+                        "Asunto": data_digitalizacion["asunto"],
+                        "Categoria del Archivo": categoria_archivo,
+                        "Tipología Documental": tipologia_documental
+                    }
+                    archivo_creado =  UtilsGestor.generar_archivo_blanco(info_archivo, "Mapa de Proceso.pdf", "home,BIA,Otros,GDEA,Anexos_PQR")
+            
+            metadato_db = MetadatosAnexosTmp.objects.filter(id_anexo=data_digitalizacion['id_anexo']).first()
             
             #Crea el metadato en la DB
             data_to_create = self.set_data_metadato(data_digitalizacion, fecha_actual, archivo_creado.data.get('data').get('id_archivo_digital'))
-            serializer = self.serializer_class(data=data_to_create)
+            serializer = self.serializer_class(data=data_to_create) if not metadato_db else self.serializer_class(metadato_db, data=data_to_create, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             
@@ -683,3 +701,233 @@ class OtrosDigitalizacionCreate(generics.CreateAPIView):
         solicitud_db = SolicitudDeDigitalizacion.objects.filter(id_solicitud_de_digitalizacion=id_solicitud_de_digitalizacion).first()
         solicitud_db.id_persona_digitalizo = id_persona_digitalizo
         solicitud_db.save()
+        
+class OtrosDigitalizacionUpdate(generics.RetrieveUpdateAPIView):
+    serializer_class = OtrosMetadatosPutSerializer
+    queryset = MetadatosAnexosTmp.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request):
+        with transaction.atomic():
+            fecha_actual = datetime.now()
+            data_digitalizacion = json.loads(request.data.get('data_digitalizacion', ''))
+            archivo = request.data.get('archivo', None)
+            
+            #Validar si ya fue digitalizado
+            anexo = Anexos.objects.filter(id_anexo=data_digitalizacion['id_anexo']).first()
+            if not anexo.ya_digitalizado:
+                raise PermissionDenied("El anexo no ha sido digitalizado aún")
+
+            metadato_db = self.queryset.filter(id_metadatos_anexo_tmp = data_digitalizacion['id_metadatos_anexo_tmp']).first()
+            if metadato_db:
+                #Guardar el archivo en la tabla T238
+                if archivo:
+                    #Validar si es un archivo físico
+                    if metadato_db.cod_origen_archivo == 'F':
+                        raise PermissionDenied("No puede reemplazar el archivo generado para el anexo físico seleccionado")
+                    
+                    archivo_creado = self.actualizar_archivo(request.data['archivo'], fecha_actual, data_digitalizacion['id_archivo_sistema'])
+                    data_digitalizacion['id_archivo_sistema'] = archivo_creado.data.get('data').get('id_archivo_digital')
+                
+                serializer = self.serializer_class(metadato_db, data=data_digitalizacion, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+            
+                id_persona_digitalizo = request.user.persona
+                observacion_digitalizacion = data_digitalizacion.get('observacion_digitalizacion')
+
+                #Actualiza las tablas de anexos y solicitudes
+                self.update_anexo(observacion_digitalizacion, anexo)
+                self.update_solicitud(data_digitalizacion['id_solicitud_de_digitalizacion'], id_persona_digitalizo)
+
+                return Response({'success':True, 'detail':'Se edito la digitalización del anexo correctamente', 'data':serializer.data}, status=status.HTTP_200_OK)
+            else:
+                raise NotFound('No se encontró el metadato que intenta actualizar')
+    
+    def actualizar_archivo(self, archivo, fecha_actual, id_archivo_anterior):
+        #Borra archivo anterior del metadato
+        archivoDelete = ArchivoDelete()
+        archivoDelete.delete(id_archivo_anterior)
+
+        #Crea el nuevo archivo
+        anexosCreate = AnexosCreate()
+        archivo_creado = anexosCreate.crear_archivos(archivo, fecha_actual)
+        return archivo_creado
+    
+    def update_anexo(self, observacion_digitalizacion, anexo_db):
+        anexo_db.ya_digitalizado = True
+        anexo_db.observacion_digitalizacion = observacion_digitalizacion if observacion_digitalizacion else anexo_db.observacion_digitalizacion
+        anexo_db.save()
+
+    def update_solicitud(self, id_solicitud_de_digitalizacion, id_persona_digitalizo):
+        solicitud_db = SolicitudDeDigitalizacion.objects.filter(id_solicitud_de_digitalizacion = id_solicitud_de_digitalizacion).first()
+        solicitud_db.id_persona_digitalizo = id_persona_digitalizo
+        solicitud_db.save()
+
+class OtrosDigitalizacionDelete(generics.RetrieveDestroyAPIView):
+    serializer_class = SolicitudesPostSerializer
+    queryset = MetadatosAnexosTmp.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def delete(self, request):
+        with transaction.atomic():
+            id_anexo = request.query_params.get('id_anexo', 0)
+            id_solicitud_de_digitalizacion = request.query_params.get('id_solicitud_de_digitalizacion', 0)
+            id_persona_digitalizo = request.user.persona
+            
+            #Parametros para eliminacion
+            if id_anexo == 0 or id_solicitud_de_digitalizacion == 0:
+                raise ValidationError('No se ingresaron parámetros necesarios para eliminar la digitalización del anexo')
+            
+            id_anexo = int(id_anexo)
+            id_solicitud_de_digitalizacion = int(id_solicitud_de_digitalizacion)
+            
+            #Validar si ya fue digitalizado
+            anexo = Anexos.objects.filter(id_anexo=id_anexo).first()
+            if not anexo.ya_digitalizado:
+                raise PermissionDenied("El anexo no ha sido digitalizado aún")
+
+            #Invoca el metodo de borrado de metadatos que borra el metadato por el id del anexo y a su ves borra el archivo
+            metadatosPQRDelete = MetadatosPQRDelete()
+            metadatosPQRDelete.delete(id_anexo)
+            
+            #Actualiza los datos ya_Digitalizado y observacionDigitalizacion del anexo y la persona que borro la digitalizacion en la solicitud
+            self.update_anexo(anexo)
+            self.update_solicitud(id_solicitud_de_digitalizacion, id_persona_digitalizo)
+
+            return Response({'success':True, 'detail':'Se elimino la digitalización del anexo correctamente'}, status=status.HTTP_200_OK)
+    
+    def update_anexo(self, anexo_db):
+        anexo_db.ya_digitalizado = False
+        anexo_db.observacion_digitalizacion = None
+        anexo_db.save()
+
+    def update_solicitud(self, id_solicitud_de_digitalizacion, id_persona_digitalizo):
+        solicitud_db = SolicitudDeDigitalizacion.objects.filter(id_solicitud_de_digitalizacion=id_solicitud_de_digitalizacion).first()
+        solicitud_db.id_persona_digitalizo = id_persona_digitalizo
+        solicitud_db.save()
+        
+class OtrosResponderDigitalizacion(generics.RetrieveUpdateAPIView):
+    serializer_class = SolicitudesPostSerializer
+    queryset = SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def put(self, request):
+        with transaction.atomic():
+            fecha_actual = datetime.now()
+            id_persona_digitalizo = request.user.persona
+            digitalizacion_completada = request.data['digitalizacion_completada']
+            observacion_digitalizacion = request.data['observacion_digitalizacion']
+            solicitud_responder = self.queryset.filter(id_solicitud_de_digitalizacion = request.data['id_solicitud_de_digitalizacion']).first()
+            if solicitud_responder:
+                solicitud_responder.fecha_rta_solicitud = fecha_actual
+                solicitud_responder.observacion_digitalizacion = observacion_digitalizacion
+                solicitud_responder.digitalizacion_completada = digitalizacion_completada
+                solicitud_responder.devuelta_sin_completar = not digitalizacion_completada
+                solicitud_responder.id_persona_digitalizo = id_persona_digitalizo
+                solicitud_responder.save()
+                
+                solicitud_responder_serializer = self.serializer_class(solicitud_responder)
+
+                self.crear_historico_estados(solicitud_responder.id_otro, fecha_actual, id_persona_digitalizo, digitalizacion_completada)
+
+                return Response({'success':True, 'detail':'La solicitud ha sido respondida correctamente', 'data': solicitud_responder_serializer.data}, status=status.HTTP_200_OK)
+            else:
+                raise NotFound('No se encontró la solicitud que intenta responder')
+        
+    def crear_historico_estados(self, id_otro, fecha_actual, id_persona_digitalizo, digitalizacion_completada):
+        estado_otro_inicial = Estados_PQR.objects.filter(Q(id_otros=id_otro.id_otros, estado_solicitud=3)).first()
+        
+        data_estado_crear = self.set_data_estado_otros(id_otro.id_otros, fecha_actual, id_persona_digitalizo, estado_otro_inicial.id_estado_PQR, 10)
+        creador_estados = Estados_PQRCreate()
+        creador_estados.crear_estado(data_estado_crear)
+
+        sin_pendientes = self.crear_estado_sin_pendientes(id_otro.id_otros, fecha_actual, id_persona_digitalizo, estado_otro_inicial.id_estado_PQR)
+        estado_sin_pendientes_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=4).first()
+
+        otro_db = Otros.objects.filter(id_otros=id_otro.id_otros).first()
+        otro_db.fecha_envio_definitivo_digitalizacion = otro_db.fecha_envio_definitivo_digitalizacion if digitalizacion_completada else None
+        otro_db.fecha_digitalizacion_completada = fecha_actual if digitalizacion_completada else otro_db.fecha_digitalizacion_completada
+        otro_db.id_estado_actual_solicitud = estado_sin_pendientes_instance if sin_pendientes else otro_db.id_estado_actual_solicitud
+        otro_db.fecha_inicial_estado_actual = fecha_actual if sin_pendientes else otro_db.fecha_inicial_estado_actual
+        otro_db.save()
+
+    def crear_estado_sin_pendientes(self, id_otros, fecha_actual, id_persona_digitalizo, estado_PQR_asociado):
+        sin_pendientes = False
+        estados_pqrsdf_pendientes = Estados_PQR.objects.filter(Q(id_otros=id_otros, estado_PQR_asociado=estado_PQR_asociado))
+        
+        #Obtiene todos los tipos de solicitud creadas
+        solicitudes_dig_enviadas = len(estados_pqrsdf_pendientes.filter(estado_solicitud=9))
+        solicitudes_dig_respondidas = len(estados_pqrsdf_pendientes.filter(estado_solicitud=10))
+
+        if solicitudes_dig_enviadas == solicitudes_dig_respondidas:
+            data_estado_crear = self.set_data_estado_otros(id_otros, fecha_actual, id_persona_digitalizo, None, 4)
+            creador_estados = Estados_PQRCreate()
+            creador_estados.crear_estado(data_estado_crear)
+            sin_pendientes = True
+        
+        return sin_pendientes
+
+    def set_data_estado_otros(self, id_otros, fecha_actual, id_persona_digitalizo, estado_PQR_asociado, estado_solicitud):
+        data_estado = {}
+        data_estado['fecha_iniEstado'] = fecha_actual
+        data_estado['id_otros'] = id_otros
+        data_estado['estado_PQR_asociado'] = estado_PQR_asociado
+        data_estado['estado_solicitud'] = estado_solicitud
+        data_estado['persona_genera_estado'] = id_persona_digitalizo.id_persona
+        
+        return data_estado
+    
+class OtrosSolicitudesRespondidasGet(generics.ListAPIView):
+    serializer_class = SolicitudesSerializer
+    queryset = SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        #Obtiene los filtros de busqueda
+        fecha_desde = request.query_params.get('fecha_desde', None)
+        fecha_hasta = request.query_params.get('fecha_hasta', None)
+
+        #Filtra las solicitudes de la T263 que coincidan con el tipo de solicitud y que no este completada
+        condiciones = self.set_conditions_filters(fecha_desde, fecha_hasta)
+        solicitudes_respondidas_otros = self.queryset.filter(condiciones).exclude(id_otro=None).order_by('fecha_rta_solicitud')
+
+        #Obtiene los datos de la solicitud y anexos para serializar
+        procesaSolicitudes = ProcesaSolicitudesOtros()
+        solicitudes_respondidas = procesaSolicitudes.procesa_solicitudes(solicitudes_respondidas_otros, None, 'R')
+
+        serializer = self.serializer_class(solicitudes_respondidas, many=True)
+        return Response({'success':True, 'detail':'Se encontraron las siguientes solicitudes pendientes que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
+        
+    def set_conditions_filters(self, fecha_desde, fecha_hasta):
+        condiciones = Q()
+        if fecha_desde and fecha_hasta:
+            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_hasta)
+        else:
+            fecha_actual = datetime.now()
+            fecha_desde = fecha_actual - timedelta(days=7)
+            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_actual)
+
+        condiciones &= Q(Q(digitalizacion_completada = True) or Q(devuelta_sin_completar = True))
+        return condiciones
+
+class OtrosSolicitudByIdGet(generics.GenericAPIView):
+    serializer_class = SolicitudesSerializer
+    queryset = SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_solicitud):
+        solicitud = self.queryset.filter(id_solicitud_de_digitalizacion=id_solicitud)
+        if solicitud:
+            #Obtiene los datos de la solicitud y anexos para serializar
+            procesaSolicitudes = ProcesaSolicitudesOtros()
+            peticion_estado = "P" if not solicitud.first().devuelta_sin_completar and not solicitud.first().digitalizacion_completada else "R"
+            solicitudes_respondidas = procesaSolicitudes.procesa_solicitudes(solicitud, None, peticion_estado)
+
+            serializer = self.serializer_class(solicitudes_respondidas, many=True)
+            return Response({'success':True, 'detail':'Se encontro la solicitud por el id asociado', 'data':serializer.data[0]}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'No se encontro la solicitud por el id asociado'},status=status.HTTP_200_OK)
