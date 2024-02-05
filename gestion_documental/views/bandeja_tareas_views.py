@@ -336,9 +336,31 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         #cambio de estado en asignacion en la t268
         id_asignacion = instance.id_asignacion
         print(id_asignacion)
-        #asignacion = AsignacionPQR.objects.filter(id_asignacion=id_pqrsdf)
-        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion, cod_estado_asignacion__isnull=True).first()
+        #VALIDACION ENTREGA 116
 
+        if not id_asignacion:
+            
+            tarea = instance
+            if tarea.id_asignacion:
+                    id_asignacion = tarea.id_asignacion
+
+            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
+                while not  tarea.id_asignacion:
+                    tarea = tarea.id_tarea_asignada_padre_inmediata
+                   
+                    if tarea.id_asignacion:
+                
+                        break
+                id_asignacion = tarea.id_asignacion
+                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+                if reasignacion:
+                    reasignacion.cod_estado_reasignacion = 'Ac'
+                    reasignacion.save()
+
+
+                          
+        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
+        # raise ValidationError(asignacion.id_pqrsdf)
         if not asignacion:
             raise NotFound("No se encontro la asignacion")
         asignacion.cod_estado_asignacion = 'Ac'
@@ -377,7 +399,19 @@ class ComplementoTareaGetByTarea(generics.ListAPIView):
     queryset = AdicionalesDeTareas.objects.all()
 
     def get(self, request,tarea):
-        complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=tarea)
+
+        instance = TareasAsignadas.objects.filter(id_tarea_asignada=tarea).first()
+        
+        if not instance.id_asignacion:
+            aux = instance
+            while aux:
+                aux=aux.id_tarea_asignada_padre_inmediata
+                if  aux and aux.id_asignacion:
+                    instance = aux 
+                    break
+            
+            #raise ValidationError('No se encontro la asignacion')
+        complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=instance)
         
         print(complemento)
         if not complemento:

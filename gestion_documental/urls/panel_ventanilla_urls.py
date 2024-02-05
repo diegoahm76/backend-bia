@@ -39,7 +39,6 @@ urlpatterns = [
     
     #ENTREGA 99 
     path('pqrsdf/titular/get/<str:pqr>/',views.PQRSDFPersonaTitularGet.as_view(),name='listar-persona-titular-pqrsdf'),
-
     path('pqrsdf/solicita/get/',views.PQRSDFPersonaSolicitaGet.as_view(),name='listar-persona-solicita-pqrsdf'),
     path('pqrsdf/detalle-solicitud/get/<str:pqr>/',views.PQRSDFDetalleSolicitudGet.as_view(),name='listar-detalle-pqrsdf'),
     path('pqrsdf/solicitud-al-usuario/create/',views.SolicitudAlUsuarioSobrePQRSDFCreate.as_view(),name='crear-solicitud-al-usuario-pqrsdf'),
@@ -50,7 +49,6 @@ urlpatterns = [
     path('pqrsdf/solicitud/get/id/<str:pk>/',views.SolicitudAlUsuarioSobrePQRSDFGetById.as_view(),name='listar-solicitud-id'),
     #MetadatosAnexosTmpFGetByIdAnexo
     path('pqrsdf/solicitud/anexos/meta-data/get/<str:pk>/',views.MetadatosAnexosTmpFGetByIdAnexo.as_view(),name='listar-meta-data_anexo'),
-    
     path('pqrsdf/archivo/create/',views.VistaCreadoraArchivo3.as_view(),name='crear-archivo'),
 
     #ARREGLOS ENTREGA 107
@@ -74,5 +72,13 @@ urlpatterns = [
     path('asignar-otros/create/',views.AsignacionOtrosCreate.as_view(),name='crear-asignacion-grupo-otros'),
     path('asignar-otros/get/<str:id_otros>/',views.AsignacionOtrosGet.as_view(),name='listar-asignacion-grupo-otros'),
     path('otros/historico/get/',views.OtrosGetHistorico.as_view(),name='listar-historico-opas'),
+    #PANEL DE VENTANILLA TRAMITES
+    #SolicitudesTramitesGet
+    path('tramites/get/', views.SolicitudesTramitesGet.as_view(), name='listar-tramites'),
+    #ASIGNACION_DE_OPAS
+    path('asginar-opas/seccion-subseccion/get/',views.SeccionSubseccionAsignacionGet.as_view(),name='listar-unidades'),
+    path('asginar-opas/seccion-subseccion-grupos/<int:subseccion_id>/', views.SubseccionGestionAmbientalGruposGet.as_view(), name='subseccion_gestion_ambiental_grupos'),
+    path('asginar-opas/seccion-subseccion-serie/', views.UnidadesOrganizacionalesRelacionadasListView.as_view(), name='subseccion-serie'),
+
 
 ]
