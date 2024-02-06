@@ -1,5 +1,5 @@
 ESTADO_SOLICITUD_TAREA_CHOICES = [
         ('De', 'Delegada'),
-        ('Re', 'Respondida'),
-        ('Ep', 'En proceso'),
+        ('Re', 'Respondida por el propietario de la bandeja de tareas'),
+        ('Ep', 'En proceso de pespuesta'),
     ]
