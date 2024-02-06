@@ -163,7 +163,7 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
                 if tarea.id_asignacion:
                     print('ES HIJA Y SU PAPÁ ES' +str(tarea))
                     break
-                
+        print('la id asignacio')      
         reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada,cod_estado_reasignacion='Ep').first()
         
 
