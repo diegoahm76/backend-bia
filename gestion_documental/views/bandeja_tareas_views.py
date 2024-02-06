@@ -278,25 +278,35 @@ class TareasAsignadasRechazarUpdate(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         #EN CASO DE SER UN REGISTRO FRUTO DE DE UNA REASIGNACION EL PROCESO 
-        if instance.id_tarea_asignada_padre_inmediata:
-            reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = instance.id_tarea_asignada_padre_inmediata,cod_estado_reasignacion='Ep').first()
-            if not reasignacion:
-                raise NotFound("No se encontro la reasignacion")
-            #raise ValidationError(reasignacion.comentario_reasignacion)
-        
-            reasignacion.cod_estado_reasignacion = 'Re'
-            reasignacion.justificacion_reasignacion_rechazada = data_in['justificacion_rechazo']
-            reasignacion.save()
-        else:
-        #cambia el estado de la tarea en la t268
-            id_asignacion = instance.id_asignacion
-            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion).first()
+        id_asignacion = instance.id_asignacion
+        if not id_asignacion:
+            
+            tarea = instance
+            if tarea.id_asignacion:
+                    id_asignacion = tarea.id_asignacion
 
+            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
+                while not  tarea.id_asignacion:
+                    tarea = tarea.id_tarea_asignada_padre_inmediata
+                   
+                    if tarea.id_asignacion:
+                
+                        break
+                id_asignacion = tarea.id_asignacion
+                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+                if reasignacion:
+                    reasignacion.cod_estado_reasignacion = 'Re'
+                    reasignacion.justificacion_reasignacion_rechazada = data_in['justificacion_rechazo']
+                    reasignacion.save()
+        else:
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
+                # raise ValidationError(asignacion.id_pqrsdf)
             if not asignacion:
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Re'
             asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
             asignacion.save()
+
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
 
@@ -305,10 +315,10 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
-   
+    @transaction.atomic
     def put(self,request,pk):
         
-        
+        #ACTUALIZA T315
         data_in = request.data
         instance = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
         
@@ -339,7 +349,8 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
         #VALIDACION ENTREGA 116
 
         if not id_asignacion:
-            
+            print('NO SE ENCONTRO ASIGNACION')
+            print('TAREA PADRE ES ' +str(instance.id_tarea_asignada_padre_inmediata))
             tarea = instance
             if tarea.id_asignacion:
                     id_asignacion = tarea.id_asignacion
@@ -347,26 +358,33 @@ class TareasAsignadasAceptarUpdate(generics.UpdateAPIView):
             else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
                 while not  tarea.id_asignacion:
                     tarea = tarea.id_tarea_asignada_padre_inmediata
-                   
+                    print(tarea.id_asignacion)
                     if tarea.id_asignacion:
-                
+                        id_asignacion = tarea.id_asignacion
+                        #print(id_asignacion)
+                        tarea.cod_estado_solicitud = 'De'
+                        tarea.save()
+                        #raise ValidationError(str(tarea))
                         break
-                id_asignacion = tarea.id_asignacion
+                
+                ##CAMBIAMOS EL ESTADO DE LA TAREA PADRE A DELEGADA
+
+
                 reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
                 if reasignacion:
                     reasignacion.cod_estado_reasignacion = 'Ac'
                     reasignacion.save()
 
-
-                          
-        asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
-        # raise ValidationError(asignacion.id_pqrsdf)
-        if not asignacion:
-            raise NotFound("No se encontro la asignacion")
-        asignacion.cod_estado_asignacion = 'Ac'
-        asignacion.save()
+        else:    
+            asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
         
-        print(asignacion.id_pqrsdf)
+    
+            if not asignacion:
+                raise NotFound("No se encontro la asignacion")
+            asignacion.cod_estado_asignacion = 'Ac'
+            asignacion.save()
+            
+            print(asignacion.id_pqrsdf)
 
         return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
@@ -411,6 +429,7 @@ class ComplementoTareaGetByTarea(generics.ListAPIView):
                     break
             
             #raise ValidationError('No se encontro la asignacion')
+        print(instance)
         complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=instance)
         
         print(complemento)
@@ -920,7 +939,7 @@ class ReasignacionesTareasCreate(generics.CreateAPIView):
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA
+        ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA T316
         data_tarea = {}
         data_tarea['cod_tipo_tarea'] = 'Rpqr'
         data_tarea['id_asignacion'] = None
@@ -943,6 +962,7 @@ class ReasignacionesTareasCreate(generics.CreateAPIView):
         if respuesta_relacion.status_code != status.HTTP_201_CREATED:
             return respuesta_relacion
 
+        #CAMBIO EL ESTADO DE LA TAREA PADRE EN ESPERA
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
 class ReasignacionesTareasgetById(generics.ListAPIView):
