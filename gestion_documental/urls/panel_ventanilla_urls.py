@@ -81,4 +81,12 @@ urlpatterns = [
     path('asginar-opas/seccion-subseccion-serie/', views.UnidadesOrganizacionalesRelacionadasListView.as_view(), name='subseccion-serie'),
 
 
+    #ASIGNACION_DE_TRAMITES_ENTREGA_125
+    path('asignar-tramites/seccion-subseccion/get/', views.SeccionSubseccionPlaneacionAsignacionGet.as_view(), name='subseccion_planeacion_grupos'),
+    path('asignar-tramites/asignacion/create/',views.AsignacionTramiteSubseccionOGrupo.as_view(),name='crear-asignacion-tramites'),
+
+
+
+
+
 ]
