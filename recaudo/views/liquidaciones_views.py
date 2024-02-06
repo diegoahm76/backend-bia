@@ -365,7 +365,7 @@ class  liquidacionPdfpruebaMigueluno(generics.ListAPIView):
             'fecha_impresion': liquidacion.fecha_liquidacion,
             'anio': liquidacion.fecha_liquidacion.year,
             'cedula': liquidacion.id_deudor.identificacion,
-            'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
+            'titular': liquidacion.id_deudor.nombres + ' ' + liquidacion.id_deudor.apellidos,
             'representante_legal': '',
             'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
             'telefono': liquidacion.id_deudor.telefono,
