@@ -19,7 +19,7 @@ from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, PersonaSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
@@ -36,6 +36,7 @@ from email.header import decode_header
 import base64
 import hashlib
 from rest_framework.pagination import PageNumberPagination
+from rest_framework import status as drf_status
 # import magic
 ########################################################################
 
@@ -43,6 +44,7 @@ from django.db.models import Q
 from django.db import transaction
 from transversal.models.personas_models import Personas
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
+from transversal.views.alertas_views import AlertasProgramadasCreate
 class TiposPQRGet(generics.ListAPIView):
     serializer_class = TiposPQRGetSerializer
     queryset = TiposPQR.objects.all()
@@ -508,7 +510,7 @@ class RadicarPQRSDF(generics.CreateAPIView):
         fecha_actual = datetime.now()
         data_PQRSDF_instance = PQRSDF.objects.filter(id_PQRSDF = id_PQRSDF).first()
         previous_instance = copy.copy(data_PQRSDF_instance)
-
+        crear_alerta=AlertasProgramadasCreate()
         #Obtiene los dias para la respuesta del PQRSDF
         tipo_pqr = self.get_tipos_pqr(data_PQRSDF_instance.cod_tipo_PQRSDF)
         dias_respuesta = tipo_pqr.tiempo_respuesta_en_dias
@@ -538,6 +540,35 @@ class RadicarPQRSDF(generics.CreateAPIView):
         descripciones = self.set_descripcion_auditoria(previous_instance, data_PQRSDF_instance)
         self.auditoria(request, descripciones['descripcion'], isCreateForWeb, descripciones['data_auditoria_update'])
         
+        #CRECIACON DE ALERTA
+        print("TIEMPO DE RESPUESTA")
+        print(data_PQRSDF_instance.dias_para_respuesta)
+        cadena = ""
+        # if data_PQRSDF_instance.id_radicado:
+        #     instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=data_PQRSDF_instance.id_radicado.agno_radicado,cod_tipo_radicado=data_PQRSDF_instance.id_radicado.cod_tipo_radicado).first()
+        #     numero_con_ceros = str(data_PQRSDF_instance.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        #     cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+    
+       
+        fecha_respuesta = fecha_actual + timedelta(days=data_PQRSDF_instance.dias_para_respuesta)
+        print(fecha_respuesta)
+        data_alerta = {
+            'cod_clase_alerta':'Gest_TRPqr',
+            'dia_cumplimiento':fecha_respuesta.day,
+            'mes_cumplimiento':fecha_respuesta.month,
+            'age_cumplimiento':fecha_respuesta.year,
+            #'complemento_mensaje':mensaje,
+            'id_elemento_implicado':data_PQRSDF_instance.id_PQRSDF,
+            #'id_persona_implicada':persona.id_persona,
+            "tiene_implicado":False
+            }
+        
+        response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+        if response_alerta.status_code!=status.HTTP_201_CREATED:
+            return response_alerta
+
+        #raise ValidationError(data_PQRSDF_instance.dias_para_respuesta)
+
         return {
             'radicado': data_radicado,
             'pqrsdf': data_PQRSDF_creado
@@ -751,7 +782,7 @@ class AnexosCreate(generics.CreateAPIView):
         if not extension_sin_punto:
             raise ValidationError("No fue posible registrar el archivo")
         
-        formatos=FormatosTiposMedio.objects.filter(nombre=extension_sin_punto,activo=True).first()
+        formatos=FormatosTiposMedio.objects.filter(nombre__iexact=extension_sin_punto,activo=True).first()
         if not formatos:
             raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
 
@@ -3527,8 +3558,7 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 #     max_page_size = 1000
 
 class ObtenerCorreosView(generics.ListAPIView):
-    # # Utiliza la clase de paginación personalizada
-    # pagination_class = CustomPageNumberPagination
+    # ...
 
     def save_attachment(self, filename, file_content, save_dir):
         # Crear el directorio si no existe
@@ -3568,20 +3598,22 @@ class ObtenerCorreosView(generics.ListAPIView):
 
         base_dir = os.path.join("/media", "home", "BIA", "Correos")
         save_dir = os.path.join(base_dir, str(current_year))
-        
-        page = int(self.request.query_params.get('page', 1))
-        rango = 5
-        lim_final = rango*page
-        lim_inicial = lim_final - rango 
-        
 
         status_email, data = imap_server.search(None, 'ALL')
-        email_ids = data[0].split()[::-1]      
+        email_ids = data[0].split()[::-1]
         total = len(email_ids)
-        email_ids=email_ids[lim_inicial:lim_final]
-        print(email_ids)
+
+        page = int(self.request.query_params.get('page', 1))
+        rango = 5
+        lim_final = rango * page
+        lim_inicial = lim_final - rango
+
+        lim_final = min(lim_final, total)
+        lim_inicial = max(lim_inicial, 0)
+
+        email_ids = email_ids[lim_inicial:lim_final]
+
         all_emails_info = []
-        print(data)
 
         for email_id in email_ids:
             status_email, email_data = imap_server.fetch(email_id, "(RFC822)")
@@ -3629,7 +3661,7 @@ class ObtenerCorreosView(generics.ListAPIView):
                             })
 
             all_emails_info.append({
-                'ID': email_id, 
+                'ID': email_id,
                 'Asunto': subject,
                 'Remitente': sender,
                 'Fecha': date,
@@ -3639,139 +3671,44 @@ class ObtenerCorreosView(generics.ListAPIView):
 
         imap_server.logout()
 
-        # # Obtener la configuración de paginación de la vista
-        # paginator = CustomPageNumberPagination()
-        # paginated_data = paginator.paginate_queryset(all_emails_info, request)
-
-        # Devolver la respuesta paginada
+        # Devolver la respuesta con información de paginación
         return Response({
             'success': True,
             'detail': 'BANDEJA DE ENTRADA DE CORREOS ELECTRONICOS.',
             'total_correos': total,
+            'página_actual': page,
+            'total_páginas': (total + rango - 1) // rango,
+            'correos_por_página': rango,
             'data': all_emails_info,
         })
+    
 
+#Eliminar_Correo
+class EliminarCorreoView(generics.DestroyAPIView):
+    
+    def delete(self, request, *args, **kwargs):
+        try:
+            email_id = kwargs.get('email_id')  # Obtén el ID del correo de los parámetros de la URL
+            if email_id:
+                # Conéctate al servidor IMAP y autentica
+                imap_server = imaplib.IMAP4_SSL('imap.gmail.com')
+                imap_server.login('bia@cormacarena.gov.co', 'sbrc bqls wvta jvfm')
+                imap_server.select('INBOX')
 
+                # Elimina el correo utilizando su ID
+                imap_status, _ = imap_server.store(email_id, '+FLAGS', '(\\Deleted)')
+                imap_server.expunge()
 
+                # Cierra la conexión
+                imap_server.logout()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# class ObtenerCorreosView(generics.ListAPIView):
-
-#     def save_attachment(self, filename, file_content, save_dir):
-#         # Crear el directorio si no existe
-#         os.makedirs(save_dir, exist_ok=True)
-
-#         # Calcular el hash MD5 del archivo
-#         md5_hash = hashlib.md5()
-#         md5_hash.update(file_content)
-#         md5_hexdigest = md5_hash.hexdigest()
-
-#         # Obtener la extensión del archivo (formato)
-#         _, file_extension = os.path.splitext(filename)
-#         formato = file_extension.lower() if file_extension else 'desconocido'
-
-#         # Construir el nuevo nombre de archivo con el hash y la extensión
-#         new_filename = f"{md5_hexdigest}{formato}"
-
-#         # Guardar el archivo adjunto en el sistema de archivos local con el nuevo nombre
-#         file_path = os.path.join(save_dir, new_filename)
-#         with open(file_path, 'wb') as f:
-#             f.write(file_content)
-
-#         # Reemplazar barras invertidas con barras diagonales en la ruta del archivo
-#         file_path = file_path.replace("\\", "/")
-
-#         return file_path, md5_hexdigest, formato
-
-#     def get(self, request, *args, **kwargs):
-#         imap_server = imaplib.IMAP4_SSL('imap.gmail.com')
-
-#         imap_server.login('ingkevinandrescas98@gmail.com', 'eecw lfuu bjlj wqez')  
-#         imap_server.select('INBOX')
-
-#         # Obtener la fecha y hora actuales
-#         current_date = datetime.now()
-
-#         # Obtener el año actual
-#         current_year = current_date.year
-
-#         # Construir la ruta del directorio
-#         base_dir = os.path.join("/media", "home", "BIA", "Correos")
-#         save_dir = os.path.join(base_dir, str(current_year))
-
-#         status_email, data = imap_server.search(None, 'ALL')
-#         email_ids = data[0].split()[::-1]
-
-#         latest_email_id = email_ids[0]
-#         status_email, email_data = imap_server.fetch(latest_email_id, "(RFC822)")
-
-#         raw_email = email_data[0][1]
-#         email_message = email.message_from_bytes(raw_email)
-
-#         subject = decode_header(email_message["Subject"])[0][0]
-#         sender = decode_header(email_message["From"])[0][0]
-#         date = email_message["Date"]
-#         message = ""
-#         attachments = []
-
-#         if email_message.is_multipart():
-#             for part in email_message.walk():
-#                 content_type = part.get_content_type()
-#                 if content_type == "text/plain":
-#                     message = part.get_payload(decode=True).decode("utf-8")
-#                 elif "application" in content_type or "image" in content_type or "audio" in content_type or "video" in content_type:
-#                     # Archivo adjunto detectado
-#                     filename = part.get_filename()
-#                     if filename:
-#                         decoded_filename, encoding = decode_header(filename)[0]
-#                         if isinstance(decoded_filename, bytes):
-#                             decoded_filename = decoded_filename.decode(encoding or 'utf-8')
-
-#                         file_content = part.get_payload(decode=True)
-
-#                         # Guardar el archivo adjunto con el hash en el nombre y la extensión
-#                         file_path, md5_hexdigest, formato = self.save_attachment(decoded_filename, file_content, save_dir)
-
-#                         attachments.append({
-#                             'Nombre_archivo': decoded_filename,
-#                             'ruta': file_path,
-#                             'md5_hexdigest': md5_hexdigest,
-#                             'formato': formato
-#                         })
-
-#         imap_server.logout()
-
-#         return Response({
-#             'success': True,
-#             'detail': 'BANDEJA DE ENTRADA DE CORREOS ELECTRONICOS.',
-#             'data': {
-#                 'Asunto': subject,
-#                 'Remitente': sender,
-#                 'Fecha': date,
-#                 'Mensaje': message,
-#                 'ArchivosAdjuntos': attachments
-#             }
-#         }, status=status.HTTP_200_OK)
+                if imap_status == 'OK':
+                    return Response({'success': True, 'detail': 'Correo eliminado correctamente.'}, status=status.HTTP_200_OK)
+                elif imap_status == 'NO':
+                    raise ValidationError("No se encontró el correo con el ID proporcionado.")
+                else:
+                    raise ValidationError("No se pudo eliminar el correo.")
+            else:
+                raise ValidationError("ID de correo no proporcionado.")
+        except Exception as e:
+            raise ValidationError(str(e))

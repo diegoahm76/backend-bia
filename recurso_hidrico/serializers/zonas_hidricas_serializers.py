@@ -35,3 +35,19 @@ class SubZonaHidricaSerializer(serializers.ModelSerializer):
 
 
 
+class SubZonaHidricaSerializerr(serializers.ModelSerializer):
+    nombre_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
+    id_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.id_macro_cuenca')
+    nombre_zona_hidirca= serializers.ReadOnlyField(source='id_zona_hidrica.nombre_zona_hidrica')
+
+
+    class Meta:
+        model = SubZonaHidrica
+        fields = '__all__'
+
+class SubZonaHidricaValorRegionalSerializer(serializers.ModelSerializer):
+    valor_regional = serializers.CharField()  # Permitir editar solo este campo
+
+    class Meta:
+        model = SubZonaHidrica
+        fields = ['valor_regional']
