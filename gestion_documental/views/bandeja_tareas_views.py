@@ -158,7 +158,10 @@ class TareasAsignadasGetByPersona(generics.ListAPIView):
                     filter['id_tarea_asignada__cod_tipo_tarea'] = value
             if key == 'estado_asignacion':
                 if value != '':
-                    filter['id_tarea_asignada__cod_estado_asignacion'] = value
+                    if value =='None':
+                          filter['id_tarea_asignada__cod_estado_asignacion__isnull'] = True
+                    else:
+                        filter['id_tarea_asignada__cod_estado_asignacion'] = value
             if key == 'estado_tarea':
                 if value != '':
                     filter['id_tarea_asignada__cod_estado_solicitud'] = value
