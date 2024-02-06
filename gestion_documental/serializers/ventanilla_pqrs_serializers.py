@@ -1501,3 +1501,43 @@ class SolicitudesTramitesGetSerializer(serializers.ModelSerializer):
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
+        
+class AsignacionTramiteGetSerializer(serializers.ModelSerializer):
+    accion = serializers.SerializerMethodField()
+    asignado_para = serializers.SerializerMethodField()
+    estado_asignado = serializers.SerializerMethodField()
+    grupo = serializers.SerializerMethodField()
+    sec_sub = serializers.SerializerMethodField()
+    class Meta:
+        model = AsignacionTramites
+        fields = ['id_solicitud_tramite','consecutivo_asign_x_tramite','accion','fecha_asignacion','fecha_eleccion_estado','asignado_para','sec_sub','grupo','estado_asignado','justificacion_rechazo']
+    def get_accion(self,obj):
+        return "ASIGNACION DE TRAMITE"
+    def get_asignado_para(self,obj):
+          if obj.id_persona_asignada:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_asignada.primer_nombre, obj.id_persona_asignada.segundo_nombre,
+                            obj.id_persona_asignada.primer_apellido, obj.id_persona_asignada.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+          else:
+              
+              return None
+    def get_estado_asignado(self,obj):
+        estado = obj.cod_estado_asignacion
+        if not estado:
+            return "EN ESPERA"
+        if estado == 'Ac':
+            return "ACEPTADO"
+        if estado == 'Re':
+            return "RECHAZADO"
+    def get_grupo(self,obj):
+        return ''
+    
+    def get_sec_sub(self,obj):
+        if obj.id_und_org_seccion_asignada:
+           unidad = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(obj.id_und_org_seccion_asignada)
+           data = unidad.data
+           return data['nombre_unidad']
+        
