@@ -91,13 +91,13 @@ class GetRadicadosImprimir(generics.ListAPIView):
             serializer = self.serializer_class(data_to_serializer, many=True)
             return Response({'success':True, 'detail':'Se encontraron los siguientes radicados que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
-            raise({'success': False, 'detail': str(e)}) 
+            raise ValidationError(str(e)) 
 
     def procesa_radicados_filtrados(self, radicados):
         data_radicados = []
         for radicado in radicados:
             pqrsdf_instance = PQRSDF.objects.all()
-            modulo_radica = modulos_radican.objects.filter(id_ModuloQueRadica=radicado.id_modulo_que_radica).first()
+            modulo_radica = radicado.id_modulo_que_radica
             if modulo_radica:
                 if modulo_radica.nombre == "PQRSDF":
                     pqrsdf = pqrsdf_instance.filter(id_radicado = radicado.id_radicado).first()
@@ -794,7 +794,7 @@ class AnexosCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo

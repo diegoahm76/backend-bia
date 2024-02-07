@@ -142,6 +142,10 @@ class ProcesaSolicitudes:
         pqrsdf = PQRSDF.objects.filter(id_PQRSDF = solicitud_pqr.id_pqrsdf_id).first()
         radicado = self.get_radicado(radicados, pqrsdf.id_radicado_id)
         if radicado:
+            instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            radicado_nuevo = instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            
             # Obtiene los anexos
             anexos_pqr = Anexos_PQR.objects.filter(id_PQRSDF = pqrsdf.id_PQRSDF)
             ids_anexos = [anexo_pqr.id_anexo_id for anexo_pqr in anexos_pqr]
@@ -150,7 +154,7 @@ class ProcesaSolicitudes:
 
             if validate_anexos:
                 #Obtiene el modelo de solicitud a serializar
-                solicitud_model = self.set_data_solicitudes(solicitud_pqr, "PQR", pqrsdf.asunto,  pqrsdf.id_persona_titular_id, pqrsdf.cantidad_anexos, radicado, anexos, peticion_estado)
+                solicitud_model = self.set_data_solicitudes(solicitud_pqr, "PQR", pqrsdf.asunto,  pqrsdf.id_persona_titular_id, pqrsdf.cantidad_anexos, radicado_nuevo, anexos, peticion_estado)
         
         return solicitud_model
 
@@ -159,6 +163,10 @@ class ProcesaSolicitudes:
         complemento_usu_pqrsdf = ComplementosUsu_PQR.objects.filter(idComplementoUsu_PQR = solicitud_pqr.id_complemento_usu_pqr_id).first()
         radicado = self.get_radicado(radicados, complemento_usu_pqrsdf.id_radicado_id)
         if radicado:
+            instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            radicado_nuevo = instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
             # Obtiene los anexos
             anexos_pqr = Anexos_PQR.objects.filter(id_complemento_usu_PQR = complemento_usu_pqrsdf.idComplementoUsu_PQR)
             ids_anexos = [anexo_pqr.id_anexo_id for anexo_pqr in anexos_pqr]
@@ -176,7 +184,7 @@ class ProcesaSolicitudes:
 
             if validate_anexos:
                 #Obtiene el modelo de solicitud a serializar
-                solicitud_model = self.set_data_solicitudes(solicitud_pqr, "CDPQR", complemento_usu_pqrsdf.asunto,  pqrsdf.id_persona_titular_id, complemento_usu_pqrsdf.cantidad_anexos, radicado, anexos, peticion_estado)
+                solicitud_model = self.set_data_solicitudes(solicitud_pqr, "CDPQR", complemento_usu_pqrsdf.asunto,  pqrsdf.id_persona_titular_id, complemento_usu_pqrsdf.cantidad_anexos, radicado_nuevo, anexos, peticion_estado)
         
         return solicitud_model
 
@@ -538,11 +546,11 @@ class ProcesaSolicitudesOtros:
         otro = solicitud_otro.id_otro
         radicado = otro.id_radicados
         
-        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
-        numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
-        
         if radicado:
+            instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
             # Obtiene los anexos
             anexos_otros = Anexos_PQR.objects.filter(id_otros = solicitud_otro.id_otro)
             ids_anexos = [anexo_otro.id_anexo_PQR for anexo_otro in anexos_otros]

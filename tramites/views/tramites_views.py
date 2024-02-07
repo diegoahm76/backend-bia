@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-from gestion_documental.models.radicados_models import Anexos, ConfigTiposRadicadoAgno, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
+from gestion_documental.models.radicados_models import Anexos, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -34,17 +34,27 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         data_tramite = json.loads(data['data_tramite'])
         archivos = request.FILES.getlist('archivos')
         current_date = datetime.now()
+        persona_logueada = request.user.persona
         
         data_tramite['fecha_inicio_tramite'] = datetime.now()
         data_tramite['id_persona_interpone'] = request.user.persona.id_persona
         data_tramite['id_persona_registra'] = request.user.persona.id_persona
         data_tramite['id_medio_solicitud'] = 2
-        data_tramite['id_estado_actual_solicitud'] = 1
+        data_tramite['id_estado_actual_solicitud'] = 13
         data_tramite['fecha_ini_estado_actual'] = datetime.now()
         
         serializer = self.serializer_class(data=data_tramite)
         serializer.is_valid(raise_exception=True)
         tramite_creado = serializer.save()
+        
+        # Insertar en T255 con estado PENDIENTE POR RADICAR
+        estado_solicitud_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=13).first()
+        Estados_PQR.objects.create(
+            id_tramite = tramite_creado,
+            estado_solicitud = estado_solicitud_instance,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = persona_logueada
+        )
         
         # CREAR ANEXOS
         for index, (archivo) in enumerate(archivos):
@@ -131,6 +141,15 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         tramite_creado.id_estado_actual_solicitud = estado_solicitud
         tramite_creado.save()
         
+        # Insertar en T255 con estado RADICADO
+        estado_solicitud_radicado_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        Estados_PQR.objects.create(
+            id_tramite = tramite_creado,
+            estado_solicitud = estado_solicitud_radicado_instance,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = persona_logueada
+        )
+        
         tramite_instance_updated = SolicitudesTramites.objects.filter(id_solicitud_tramite=tramite_creado.id_solicitud_tramite).first()
         serializer_tramite = self.serializer_get_tramite_class(tramite_instance_updated)
         serializer_tramite_data = serializer_tramite.data
@@ -183,7 +202,7 @@ class InicioTramiteCreateView(generics.CreateAPIView):
     
     def create(self, request):
         data = request.data
-        
+        current_date = datetime.now()
         direccion = request.data.get('direccion', '')
         descripcion_direccion = request.data.get('descripcion_direccion', '')
         coordenada_x = data.get('coordenada_x')
@@ -222,12 +241,21 @@ class InicioTramiteCreateView(generics.CreateAPIView):
         data['fecha_inicio_tramite'] = datetime.now()
         # data['id_medio_solicitud'] = 2 # QUE LO MANDE FRONTEND
         data['id_persona_registra'] = request.user.persona.id_persona
-        data['id_estado_actual_solicitud'] = 1
+        data['id_estado_actual_solicitud'] = 13
         data['fecha_ini_estado_actual'] = datetime.now()
         
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         tramite_creado = serializer.save()
+        
+        # Insertar en T255 con estado PENDIENTE POR RADICAR
+        estado_solicitud_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=13).first()
+        Estados_PQR.objects.create(
+            id_tramite = tramite_creado,
+            estado_solicitud = estado_solicitud_instance,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = request.user.persona
+        )
         
         # CREAR EN T280
         PermisosAmbSolicitudesTramite.objects.create(
@@ -481,6 +509,14 @@ class RadicarCreateView(generics.CreateAPIView):
         solicitud.fecha_radicado = current_date
         solicitud.id_estado_actual_solicitud = estado_solicitud
         solicitud.save()
+        
+        # Insertar en T255 con estado RADICADO
+        Estados_PQR.objects.create(
+            id_tramite = solicitud,
+            estado_solicitud = estado_solicitud,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = request.user.persona
+        )
         
         # ENVIAR CORREO CON RADICADO
         subject = "OPA radicado con éxito - "
