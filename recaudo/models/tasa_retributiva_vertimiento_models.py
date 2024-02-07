@@ -3,17 +3,17 @@ from django.db import models
 # from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 class documento_formulario_recuado(models.Model):
-    id_documento = models.AutoField(primary_key=True,db_column='TXXXIdDocumentoFormularioRecaudo')
+    id_documento = models.AutoField(primary_key=True,db_column='T459IdDocumentoFormularioRecaudo')
     id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE,db_column='TXXXId_Persona')	
-    radicado = models.CharField(max_length=225, db_column='TXXXRadicado')
-    id_archivo_sistema	= models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='TXXXId_ArchivoEnSistema')
-    ids_destinatarios_personas = models.CharField(max_length=225, db_column='TXXXIds_Destinatarios_Personas')
-    ids_destinatarios_unidades = models.CharField(max_length=225, db_column='TXXXIds_Destinatarios_Unidades')
+    radicado = models.CharField(max_length=225, db_column='T459Radicado')
+    id_archivo_sistema	= models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T459Id_ArchivoEnSistema')
+    ids_destinatarios_personas = models.CharField(max_length=225, db_column='T459Ids_Destinatarios_Personas')
+    ids_destinatarios_unidades = models.CharField(max_length=225, db_column='T459Ids_Destinatarios_Unidades')
 
 
 
     class Meta:
-        db_table = 'TXXXDocumentoFormularioRecuado'
+        db_table = 'T459DocumentoFormularioRecuado'
         verbose_name = 'Documento de Formulario de Recuado'
         verbose_name_plural = 'Documentos de Formularios de Recuado'
         #unique_together = ('codigo_exp_und_serie_subserie', 'codigo_exp_Agno', 'codigo_exp_consec_por_agno')
@@ -130,6 +130,7 @@ class T0444Formulario(models.Model):
     factoresUtilizacion = models.OneToOneField(FactoresUtilizacion, on_delete=models.CASCADE)
     captacionesMensualesAgua = models.ManyToManyField(CaptacionMensualAgua)
     aprobado = models.BooleanField(default=False)
+    id_archivo_sistema	= models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, blank=True, null=True)
 
 
     def __str__(self):
@@ -141,6 +142,34 @@ class T0444Formulario(models.Model):
 
 
 
+class T458PrincipalLiquidacion(models.Model):
+    T458fecha = models.DateTimeField(db_column='T458fecha')
+    T458t908codcia = models.FloatField(db_column='T458t908codcia', null=True)
+    T458tiporenta = models.TextField(db_column='T458tiporenta', null=True)
+    T458cuentacontable = models.TextField(db_column='T458cuentacontable', null=True)
+    T458nombredeudor = models.TextField(db_column='T458nombredeudor', null=True)
+    T458fechafact = models.DateTimeField(db_column='T458fechafact', null=True)
+    T458fechanotificacion = models.DateTimeField(db_column='T458fechanotificacion', null=True)
+    T458fechaenfirme = models.DateTimeField(db_column='T458fechaenfirme', null=True)
+    T458cortedesde = models.TextField(db_column='T458cortedesde', null=True)
+    T458cortehasta = models.TextField(db_column='T458cortehasta', null=True)
+    T458numfactura = models.TextField(db_column='T458numfactura', null=True)
+    T458numliquidacion = models.FloatField(db_column='T458numliquidacion', null=True)
+    T458periodo = models.TextField(db_column='T458periodo', null=True)
+    T458año = models.FloatField(db_column='T458año', null=True)
+    T458expediente = models.TextField(db_column='T458expediente', null=True)
+    T458numresolucion = models.TextField(db_column='T458numresolucion', null=True)
+    T458recurso = models.TextField(db_column='T458recurso', null=True)
+    T458docauto = models.TextField(db_column='T458docauto', null=True)
+    T458saldocapital = models.FloatField(db_column='T458saldocapital', null=True)
+    T458saldointeres = models.FloatField(db_column='T458saldointeres', null=True)
+    T458diasmora = models.FloatField(db_column='T458diasmora', null=True)
+    T458nit = models.TextField(db_column='T458nit', null=True)
+
+    class Meta:
+        db_table = 'T458Principal'
+        verbose_name = 'Principal'
+        verbose_name_plural = 'Principal'
 
 
 
