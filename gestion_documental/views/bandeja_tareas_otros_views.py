@@ -15,7 +15,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas,
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_otros_serializers import DetalleOtrosGetSerializer, TareasAsignadasOtrosGetSerializer
+from gestion_documental.serializers.bandeja_tareas_otros_serializers import AnexosOtrosGetSerializer, DetalleOtrosGetSerializer, MetadatosAnexosOtrosTmpSerializerGet, TareasAsignadasOtrosGetSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -107,3 +107,49 @@ class TareasAsignadasGetOtrosByPersona(generics.ListAPIView):
         else :
             data_validada = serializer.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
+
+
+class OtrosInfoAnexosGet(generics.ListAPIView):
+    serializer_class = AnexosOtrosGetSerializer
+    queryset =Otros.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+        data=[]
+        instance =self.queryset.filter(id_otros=pk).first()
+
+
+        if not instance:
+                raise NotFound("No existen registros")
+        anexos_pqrs = Anexos_PQR.objects.filter(id_otros=instance)
+        for x in anexos_pqrs:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+
+class OtrosAnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosOtrosTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+    
