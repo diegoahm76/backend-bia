@@ -10,7 +10,8 @@ urlpatterns = [
 
     
      path('get-historico-radicados/', views.GetHistoricoRadicados.as_view(), name='get-historico-radicados'),
-
+     #GetRadicadoById
+     path('get-radicado-by-id/<str:id>/', views.GetRadicadoById.as_view(), name='get-radicado-by-id'),
 
      #OTROS
      path('otros/buscar-personas-documento/',views.FilterPersonasDocumento.as_view(), name='buscar-personas-documento'),

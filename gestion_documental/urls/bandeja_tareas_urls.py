@@ -41,5 +41,7 @@ urlpatterns = [
     path('seguimiento-tarea/tareas/get/<str:pk>/',views.ReasignacionTareasGetByIdTarea.as_view(),name='listar-reasignaciones-tareas-id'),
     path('seguimiento-tarea/respuesta/pqrsdf/get/<str:pqr>/',views.RespuestaPQRSDFByPQR.as_view(),name='listar-respuesta-pqrsdf'),
     #TareasAsignadasGetOtrosByPersona
-    path('tareas-asignadas/get-otros-by-persona/<str:id>/', views_otros.TareasAsignadasGetOtrosByPersona.as_view(), name='get-tareas-asignadas-otros-by-person')
+    path('tareas-asignadas/get-otros-by-persona/<str:id>/', views_otros.TareasAsignadasGetOtrosByPersona.as_view(), name='get-tareas-asignadas-otros-by-person'),
+    #DetalleOtrosGet
+    path('detalle-otros/get/<str:id>/', views_otros.DetalleOtrosGet.as_view(), name='get-detalle-otros-by-id'),
 ]

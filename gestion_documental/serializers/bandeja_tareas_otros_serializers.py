@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
 from transversal.models.lideres_models import LideresUnidadesOrg
@@ -28,7 +28,7 @@ class TareasAsignadasOtrosGetSerializer(serializers.ModelSerializer):
     
     estado_tarea = serializers.ReadOnlyField(source='get_cod_estado_solicitud_display',default=None)
     estado_asignacion_tarea = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)#cod_estado_solicitud
-    # id_pqrsdf = serializers.SerializerMethodField(default=None)
+    id_otro = serializers.SerializerMethodField(default=None)
     # respondida_por = serializers.ReadOnlyField(source='nombre_persona_que_responde',default=None)
     tarea_reasignada_a = serializers.SerializerMethodField(default=None)
     unidad_org_destino = serializers.SerializerMethodField(default=None)
@@ -37,8 +37,34 @@ class TareasAsignadasOtrosGetSerializer(serializers.ModelSerializer):
     class Meta:#
         model = TareasAsignadas
         fields = '__all__'
-        fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea','tarea_reasignada_a']
+        fields = ['id_tarea_asignada','id_otro','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea','tarea_reasignada_a']
         
+
+
+    def get_id_otro(self,obj):
+        #buscamos la asignacion
+        
+      
+           
+        tarea = obj
+        otro = None
+
+        if tarea.id_asignacion:
+                asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=tarea.id_asignacion).first()
+                otro = asignacion.id_otros
+        else:
+
+            while tarea:
+                tarea = tarea.id_tarea_asignada_padre_inmediata
+
+                if tarea.id_asignacion:
+                    asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=tarea.id_asignacion).first()
+
+                    otro = asignacion.id_otros
+                    break
+        if not otro:
+            return None
+        return otro.id_otros
     def get_tarea_reasignada_a(self,obj):
 
         reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).order_by('-fecha_reasignacion').first()
@@ -215,85 +241,11 @@ class TareasAsignadasOtrosGetSerializer(serializers.ModelSerializer):
         return otro.fecha_radicado           
 
         
-    # def get_fecha_radicado(self,obj):
-    #     #buscamos la asignacion
-    #     tarea = obj
-    #     pqrsdf = None
-
-    #     if tarea.id_asignacion:
-    #             asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea.id_asignacion).first()
-    #             pqrsdf = asignacion.id_pqrsdf
-    #     else:
-
-    #         while tarea:
-    #             tarea = tarea.id_tarea_asignada_padre_inmediata
-
-    #             if tarea.id_asignacion:
-    #                 asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea.id_asignacion).first()
-
-    #                 pqrsdf = asignacion.id_pqrsdf
-    #                 break
-            
-    #     #pqrsdf = asignacion.id_pqrsdf
-    #     if not pqrsdf:
-    #         return None
-    #     fecha_radicado = pqrsdf.fecha_radicado
-    #     return fecha_radicado
-
-    # def get_dias_para_respuesta(self,obj):
-    #     #buscamos la asignacion
-    #     fecha_actual = datetime.now()
-
-    #     tarea = obj
-    #     pqrsdf = None
-
-    #     if tarea.id_asignacion:
-    #             asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea.id_asignacion).first()
-    #             pqrsdf = asignacion.id_pqrsdf
-    #     else:
-
-    #         while tarea:
-    #             tarea = tarea.id_tarea_asignada_padre_inmediata
-
-    #             if tarea.id_asignacion:
-    #                 asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea.id_asignacion).first()
-
-    #                 pqrsdf = asignacion.id_pqrsdf
-    #                 break
 
 
 
-    #     dias = pqrsdf.dias_para_respuesta
-    #     fecha_radicado = pqrsdf.fecha_radicado
-    #     if fecha_radicado:
-    #         fecha_maxima = fecha_radicado + timedelta(days=dias)
 
-    #         dias = (fecha_maxima - fecha_actual)
-    #         dias = dias.days
-    #         return dias
-    #     return None 
-        
-    # def get_id_pqrsdf(self,obj):
-    #     #buscamos la asignacion
-    #     tarea = obj
-    #     pqrsdf = None
-
-    #     if tarea.id_asignacion:
-    #             asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea.id_asignacion).first()
-    #             pqrsdf = asignacion.id_pqrsdf
-    #     else:
-
-    #         while tarea:
-    #             tarea = tarea.id_tarea_asignada_padre_inmediata
-
-    #             if  tarea and tarea.id_asignacion:
-    #                 asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=tarea.id_asignacion).first()
-
-    #                 pqrsdf = asignacion.id_pqrsdf
-    #                 break
-
-    #     if asignacion:
-    #         pqrsdf = asignacion.id_pqrsdf
-    #         id_pqrsdf = pqrsdf.id_PQRSDF
-    #         return id_pqrsdf
-    #     return None
+class DetalleOtrosGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Otros
+        fields ='__all__'
