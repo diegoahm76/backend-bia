@@ -9,14 +9,14 @@ class RadicadosGetRadicadoIdSerializer(serializers.ModelSerializer):
 
     nombre_modulo = serializers.ReadOnlyField(source='id_modulo_que_radica.nombre',default=None)
     nombre_tipo_radicado = serializers.ReadOnlyField(source='get_cod_tipo_radicado_display',default=None)
-    nombre_completo_radica = serializers.SerializerMethodField()
-    radicado = serializers.SerializerMethodField()
+    persona_titular = serializers.SerializerMethodField()
+    radicado_nuevo = serializers.SerializerMethodField()
     class Meta:
         model = T262Radicados
         fields = '__all__'
 
 
-    def get_nombre_completo_radica(self, obj):
+    def get_persona_titular(self, obj):
         nombre_completo = None
         nombre_list = [obj.id_persona_radica.primer_nombre, obj.id_persona_radica.segundo_nombre,
                         obj.id_persona_radica.primer_apellido, obj.id_persona_radica.segundo_apellido]
@@ -24,7 +24,7 @@ class RadicadosGetRadicadoIdSerializer(serializers.ModelSerializer):
         nombre_completo = nombre_completo if nombre_completo != "" else None
         return nombre_completo
     
-    def get_radicado(self, obj):
+    def get_radicado_nuevo(self, obj):
         cadena = ""
         radicado = obj
         if radicado:
