@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosGetRadicadoIdSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
@@ -22,7 +22,17 @@ from gestion_documental.views.panel_ventanilla_views import Estados_OTROSDelete,
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 
 
+class GetRadicadoById(generics.ListAPIView):
+    serializer_class = RadicadosGetRadicadoIdSerializer
+    queryset = T262Radicados.objects.all()
+    def get(self, request, id):
 
+        instance = self.get_queryset().filter(id_radicado=id).first()
+
+        if not instance:
+            raise NotFound('No se encontro el radicado')
+        serializer = self.serializer_class(instance)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes registros.', 'data':serializer.data}, status=status.HTTP_200_OK) 
 
 class GetHistoricoRadicados(generics.ListAPIView):
     serializer_class = RadicadosGetHistoricoSerializer
