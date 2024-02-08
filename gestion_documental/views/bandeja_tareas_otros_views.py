@@ -13,9 +13,9 @@ from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_otros_serializers import TareasAsignadasOtrosGetSerializer
+from gestion_documental.serializers.bandeja_tareas_otros_serializers import DetalleOtrosGetSerializer, TareasAsignadasOtrosGetSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -26,6 +26,22 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
+
+
+
+class DetalleOtrosGet(generics.ListAPIView):
+
+    serializer_class = DetalleOtrosGetSerializer
+    queryset = Otros.objects.all()
+
+
+    def get(self, request, id):
+
+        instance = self.get_queryset().filter(id_otros=id).first()
+        if not instance:
+            raise NotFound('No se encontro el otro')
+        serializer = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
 
 class TareasAsignadasGetOtrosByPersona(generics.ListAPIView):
