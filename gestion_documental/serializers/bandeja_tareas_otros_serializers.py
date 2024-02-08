@@ -246,6 +246,80 @@ class TareasAsignadasOtrosGetSerializer(serializers.ModelSerializer):
 
 
 class DetalleOtrosGetSerializer(serializers.ModelSerializer):
+    nombre_completo_titular = serializers.SerializerMethodField(default=None)
+    medio_solicitud = serializers.ReadOnlyField(source='id_medio_solicitud.nombre',default=None)
+    forma_presentacion = serializers.CharField(source='get_cod_forma_presentacion_display', default=None)
+    persona_recibe = serializers.SerializerMethodField(default=None)
+    nombre_sucursal_recepciona_fisica = serializers.SerializerMethodField(default=None)
+    radicado = serializers.SerializerMethodField(default=None)
     class Meta:
         model = Otros
-        fields ='__all__'
+        fields =['nombre_completo_titular','fecha_registro','medio_solicitud','forma_presentacion','cantidad_anexos','nro_folios_totales','persona_recibe','nombre_sucursal_recepciona_fisica','radicado','fecha_radicado','asunto','descripcion']
+    
+    def get_nombre_sucursal_recepciona_fisica(self, obj):
+        if not obj.id_sucursal_recepciona_fisica:
+            return None
+        return obj.id_sucursal_recepciona_fisica.descripcion_sucursal
+    
+    def get_persona_recibe(self,obj):
+        if not obj.id_persona_recibe:
+            return None
+        nombre_completo = None
+        nombre_list = [obj.id_persona_recibe.primer_nombre, obj.id_persona_recibe.segundo_nombre,
+                        obj.id_persona_recibe.primer_apellido, obj.id_persona_recibe.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+    def get_nombre_completo_titular(self,obj):
+        if not obj.id_persona_titular:
+            return None
+        nombre_completo = None
+        nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                        obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+    
+    def get_radicado(self,obj):
+        #buscamos la asignacion
+        
+      
+           
+        otro = obj
+
+        cadena = ""
+        if  otro and otro.id_radicados:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=otro.id_radicados.agno_radicado,cod_tipo_radicado=otro.id_radicados.cod_tipo_radicado).first()
+            numero_con_ceros = str(otro.id_radicados.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        return cadena
+    
+
+class AnexosOtrosGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+  
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+
+
+class MetadatosAnexosOtrosTmpSerializerGet(serializers.ModelSerializer):
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', default=None)
+    categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', default=None)
+    nombre_tipologia_documental = serializers.CharField(source='id_tipologia_doc.nombre', default=None)
+    numero_folios = serializers.SerializerMethodField()
+    fecha_creacion_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.fecha_creacion_doc',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = ['id_metadatos_anexo_tmp','asunto','numero_folios','fecha_creacion_archivo','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+    def get_numero_folios(self, obj):
+        return obj.nro_folios_documento
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None

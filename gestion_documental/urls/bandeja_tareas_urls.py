@@ -40,8 +40,10 @@ urlpatterns = [
     path('reasignaciones/tareas/jus/get/<str:pk>/',views.ReasignacionTareasAsignadasJusTarea.as_view(),name='listar-reasignaciones-tareas-jus'),
     path('seguimiento-tarea/tareas/get/<str:pk>/',views.ReasignacionTareasGetByIdTarea.as_view(),name='listar-reasignaciones-tareas-id'),
     path('seguimiento-tarea/respuesta/pqrsdf/get/<str:pqr>/',views.RespuestaPQRSDFByPQR.as_view(),name='listar-respuesta-pqrsdf'),
-    #TareasAsignadasGetOtrosByPersona
+    #OTROS
     path('tareas-asignadas/get-otros-by-persona/<str:id>/', views_otros.TareasAsignadasGetOtrosByPersona.as_view(), name='get-tareas-asignadas-otros-by-person'),
-    #DetalleOtrosGet
     path('detalle-otros/get/<str:id>/', views_otros.DetalleOtrosGet.as_view(), name='get-detalle-otros-by-id'),
+    path('otros/anexo/get/<str:pk>/',views_otros.OtrosInfoAnexosGet.as_view(),name='get-otros-anexo'),
+    path('otros/anexo/metadatos/get/<str:pk>/', views_otros.OtrosAnexoMetaDataGet.as_view(), name='get-otros-anexo-metadatos'),
+    
 ]
