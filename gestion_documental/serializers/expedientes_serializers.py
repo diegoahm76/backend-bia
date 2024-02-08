@@ -7,6 +7,7 @@ from django.db.models import Max, F
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.depositos_models import CarpetaCaja 
 from gestion_documental.models.expedientes_models import ConcesionesAccesoAExpsYDocs, EliminacionDocumental, ExpedientesDocumentales,ArchivosDigitales,DocumentosDeArchivoExpediente,IndicesElectronicosExp,Docs_IndiceElectronicoExp,CierresReaperturasExpediente,ArchivosSoporte_CierreReapertura, InventarioDocumental
+from gestion_documental.models.transferencias_documentales_models import AnexosEliminacionTransferencia
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental, TipologiasDoc
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -1595,6 +1596,7 @@ class EliminacionHistorialGetSerializer(serializers.ModelSerializer):
     desc_estado = serializers.CharField(source='get_estado_display', read_only=True)
     dias_restantes = serializers.SerializerMethodField()
     nombre_persona_elimino = serializers.SerializerMethodField()
+    anexos = serializers.SerializerMethodField()
     
     def get_dias_restantes(self, obj):
         dias_restantes = 0
@@ -1613,8 +1615,21 @@ class EliminacionHistorialGetSerializer(serializers.ModelSerializer):
             nombre_persona_titular_exp_complejo = nombre_persona_titular_exp_complejo if nombre_persona_titular_exp_complejo != "" else None
         return nombre_persona_titular_exp_complejo
     
+    def get_anexos(self, obj):
+        anexos_eliminacion = AnexosEliminacionTransferencia.objects.filter(id_eliminacion_documental=obj.id_eliminacion_documental)
+        serializer_anexos = EliminacionAnexosSerializer(anexos_eliminacion, many=True)
+        return serializer_anexos.data
+    
     class Meta:
         model =  EliminacionDocumental
+        fields = '__all__'
+        
+class EliminacionAnexosSerializer(serializers.ModelSerializer):
+    nombre_asignado_documento = serializers.ReadOnlyField(source='id_documento_archivo_exp.nombre_asignado_documento')
+    fecha_creacion_doc = serializers.ReadOnlyField(source='id_documento_archivo_exp.fecha_creacion_doc')
+    
+    class Meta:
+        model =  AnexosEliminacionTransferencia
         fields = '__all__'
         
 class EliminacionGetSerializer(serializers.ModelSerializer):

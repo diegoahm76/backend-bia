@@ -161,12 +161,14 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
                
                 tarea = tarea.id_tarea_asignada_padre_inmediata
                 if tarea.id_asignacion:
-                    print('ES HIJA Y SU PAPÁ ES' +str(tarea))
+                    #print('ES HIJA Y SU PAPÁ ES' +str(tarea))
                     break
-        print('la id asignacio')      
+        #print('la id asignacio')      
         reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada,cod_estado_reasignacion='Ep').first()
+        
+
         #print(reasignacion)
-        #print('ACABAMOS')
+        #print('ACABAMOS YA NO MAAAS')
 
         persona = None
 
@@ -174,8 +176,8 @@ class TareasAsignadasGetSerializer(serializers.ModelSerializer):
             persona = reasignacion.id_persona_a_quien_se_reasigna
         if not persona:
             return None
-        print('PERSONA REASIGNADA ES')
-        print(persona)
+        #print('PERSONA REASIGNADA ES')
+        #print(persona)
         nombre_completo = None
         nombre_list = [persona.primer_nombre, persona.segundo_nombre,
                         persona.primer_apellido, persona.segundo_apellido]
