@@ -1,7 +1,7 @@
 
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recaudo.models.tasa_retributiva_vertimiento_models import  CaptacionMensualAgua, T0444Formulario, T458PrincipalLiquidacion, documento_formulario_recuado
-from recaudo.serializers.tasa_retributiva_vertimiento_serializers import  PrincipalLiquidacionSerializer, T0444FormularioSerializer, documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
+from recaudo.models.tasa_retributiva_vertimiento_models import  CaptacionMensualAgua, T0444Formulario, T458PrincipalLiquidacion, T459TablaTercerosss, documento_formulario_recuado
+from recaudo.serializers.tasa_retributiva_vertimiento_serializers import  PrincipalLiquidacionSerializer, T0444FormularioSerializer, T459TablaTercerosssSerializer, documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import generics,status
@@ -162,8 +162,17 @@ class T458PrincipalLiquidacionPorExpediente(generics.ListAPIView):
     serializer_class = PrincipalLiquidacionSerializer
 
     def get_queryset(self):
-        expediente = self.kwargs['expediente']
-        return T458PrincipalLiquidacion.objects.filter(T458expediente=expediente)
+        expediente = self.request.query_params.get('expediente', None)
+        nit = self.request.query_params.get('nit', None)
+        queryset = T458PrincipalLiquidacion.objects.all()
+        
+        if expediente:
+            queryset = queryset.filter(T458expediente=expediente)
+        
+        if nit:
+            queryset = queryset.filter(T458nit=nit)
+        
+        return queryset
 
     def get(self, request, *args, **kwargs):
         try:
@@ -171,4 +180,30 @@ class T458PrincipalLiquidacionPorExpediente(generics.ListAPIView):
             serializer = self.serializer_class(queryset, many=True)
             return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
         except T458PrincipalLiquidacion.DoesNotExist:
-            return Response({'success': False, 'detail': 'No se encontraron registros para el expediente proporcionado'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No se encontraron registros para los parámetros proporcionados'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class viewsT459TablaTercerosssView(generics.ListAPIView):
+    serializer_class = T459TablaTercerosssSerializer
+
+    def get_queryset(self):
+        nro_documento = self.request.query_params.get('nro_documento', None)
+        razon_social = self.request.query_params.get('razon_social', None)
+        queryset = T459TablaTercerosss.objects.all()
+        
+        if nro_documento:
+            queryset = queryset.filter(T459nroDocumentoID=nro_documento)
+        
+        if razon_social:
+            queryset = queryset.filter(T459razonSocial__icontains=razon_social)
+        
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            serializer = self.serializer_class(queryset, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+        except T459TablaTercerosss.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron registros para los parámetros proporcionados'}, status=status.HTTP_404_NOT_FOUND)

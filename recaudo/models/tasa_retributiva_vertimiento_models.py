@@ -13,7 +13,7 @@ class documento_formulario_recuado(models.Model):
 
 
     class Meta:
-        db_table = 'T459DocumentoFormularioRecuado'
+        db_table = 'T460DocumentoFormularioRecuado'
         verbose_name = 'Documento de Formulario de Recuado'
         verbose_name_plural = 'Documentos de Formularios de Recuado'
         #unique_together = ('codigo_exp_und_serie_subserie', 'codigo_exp_Agno', 'codigo_exp_consec_por_agno')
@@ -33,6 +33,7 @@ class InformacionFuente(models.Model):
         return f"aT452_{self.numero} - {self.nombreFuente}"
 
     class Meta:
+        db_table = '464TInformaciónFuente'
         verbose_name = 'Información de Fuente'
         verbose_name_plural = 'Información de Fuentes'
 
@@ -63,6 +64,7 @@ class FactoresUtilizacion(models.Model):
         return f"T454_{self.numeroUsuarios} - {self.numeroBovinos} - {self.numeroPorcinos} - {self.numeroHectareas}"
 
     class Meta:
+        db_table = 'T463FactoresUtilización'
         verbose_name = 'Factores de Utilización'
         verbose_name_plural = 'Factores de Utilización'
 
@@ -93,6 +95,7 @@ class CaptacionMensualAgua(models.Model):
         return f"T455_{self.periodoUso} - {self.mes}"
 
     class Meta:
+        db_table = 'T462TCaptaciónMensualAgua'
         verbose_name = 'Captación Mensual de Agua'
         verbose_name_plural = 'Captaciones Mensuales de Agua'
 
@@ -137,9 +140,55 @@ class T0444Formulario(models.Model):
         return f"T456_{self.id} - {self.razonSocial}"
 
     class Meta:
+        db_table = 'T461TFormulario'
         verbose_name = 'T457ormulario '
         verbose_name_plural = 'T467Formularios '
 
+
+
+
+
+class T459TablaTercerosss(models.Model):
+
+
+
+    T459nroDocumentoID = models.TextField(primary_key=True,db_column='T459nroDocumentoID')
+    Fecha = models.DateTimeField(db_column='Fecha')
+    T459Cod_TipoDocumentoID = models.TextField(db_column='T459Cod_TipoDocumentoID')
+    T459Cod_MunicipioExpID = models.TextField(db_column='T459Cod_MunicipioExpID',null=True)
+    T459digitoVerificacion = models.TextField(db_column='T459digitoVerificacion',null=True)
+    T459tipoPersona = models.TextField(db_column='T459tipoPersona',null=True)
+    T459codNaturalezaEmpresa = models.TextField(db_column='T459codNaturalezaEmpresa',null=True)
+    T459primerNombre = models.TextField(db_column='T459primerNombre',null=True)
+    T459segundoNombre = models.TextField(db_column='T459segundoNombre',null=True)
+    T459primerApellido = models.TextField(db_column='T459primerApellido',null=True)
+    T459segundoApellido = models.TextField(db_column='T459segundoApellido',null=True)
+    T459razonSocial = models.TextField(db_column='T459razonSocial',null=True)
+    T459nombreComercial = models.TextField(db_column='T459nombreComercial',null=True)
+    T459dirResidencia = models.TextField(db_column='T459dirResidencia',null=True)
+    T459dirResidenciaReferencia = models.TextField(db_column='T459dirResidenciaReferencia',null=True)
+    T459dirResidenciaGeoref = models.TextField(db_column='T459dirResidenciaGeoref',null=True)
+    T459Cod_MunicipioResidenciaNal = models.TextField(db_column='T459Cod_MunicipioResidenciaNal',null=True)
+    T459Cod_PaisResidenciaExterior = models.TextField(db_column='T459Cod_PaisResidenciaExterior',null=True)
+    T459dirLaboralNal = models.TextField(db_column='T459dirLaboralNal',null=True)
+    T459Cod_MunicipioLaboralNal = models.TextField(db_column='T459Cod_MunicipioLaboralNal',null=True)
+    T459dirNotificacionNal = models.TextField(db_column='T459dirNotificacionNal',null=True)
+    T459dirNotificacionNalReferencia = models.TextField(db_column='T459dirNotificacionNalReferencia',null=True)
+    T459Cod_MunicipioNotificacionNal = models.TextField(db_column='T459Cod_MunicipioNotificacionNal',null=True)
+    T459emailNotificacion = models.TextField(db_column='T459emailNotificacion',null=True)
+    T459emailEmpresarial = models.TextField(db_column='T459emailEmpresarial',null=True)
+    T459telFijoResidencial = models.TextField(db_column='T459telFijoResidencial',null=True)
+    T459telEmpresa = models.TextField(db_column='T459telEmpresa',null=True)
+    T459telCelularEmpresa = models.TextField(db_column='T459telCelularEmpresa',null=True)
+    T459telEmpresa2 = models.TextField(db_column='T459telEmpresa2',null=True)
+    T459Cod_PaisNacionalidadDeEmpresa = models.TextField(db_column='T459Cod_PaisNacionalidadDeEmpresa',null=True)
+    T459Id_PersonaRepLegal = models.TextField(db_column='T010Id_PersonaRepLegal',null=True)
+    T459fechaNacimiento = models.DateTimeField(db_column='T459fechaNacimiento',null=True)
+
+    class Meta:
+        db_table = 'T459TablaTerceros'
+        verbose_name = 'TablaTerceros'
+        verbose_name_plural = 'TablaTerceros'
 
 
 class T458PrincipalLiquidacion(models.Model):
@@ -166,12 +215,11 @@ class T458PrincipalLiquidacion(models.Model):
     T458diasmora = models.FloatField(db_column='T458diasmora', null=True)
     T458nit = models.TextField(db_column='T458nit', null=True)
 
+
     class Meta:
         db_table = 'T458Principal'
         verbose_name = 'Principal'
         verbose_name_plural = 'Principal'
-
-
 
 class CarteraPrincipal(models.Model):
     T457id_cartera = models.AutoField(primary_key=True, db_column='T457IdCarteraPrincipal')

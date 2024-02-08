@@ -1,6 +1,6 @@
 from gestion_documental.serializers.pqr_serializers import ArchivosSerializer
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-from recaudo.models.tasa_retributiva_vertimiento_models import CaptacionMensualAgua, FactoresUtilizacion, InformacionFuente, T0444Formulario, T458PrincipalLiquidacion, documento_formulario_recuado
+from recaudo.models.tasa_retributiva_vertimiento_models import CaptacionMensualAgua, FactoresUtilizacion, InformacionFuente, T0444Formulario, T458PrincipalLiquidacion, T459TablaTercerosss, documento_formulario_recuado
 from rest_framework import serializers
 
 
@@ -118,3 +118,10 @@ class PrincipalLiquidacionSerializer(serializers.ModelSerializer):
         model = T458PrincipalLiquidacion
         fields = '__all__'
 
+
+
+
+class T459TablaTercerosssSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T459TablaTercerosss
+        fields = '__all__'
