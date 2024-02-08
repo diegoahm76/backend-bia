@@ -41,6 +41,7 @@ from transversal.models.organigrama_models import Organigramas
 from django.db.models.functions import Concat
 from django.db.models import Value as V
 from gestion_documental.utils import UtilsGestor
+from django.forms.models import model_to_dict
 
 from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertasProgramadasCreate
@@ -1645,6 +1646,8 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
         if not documento_principal:
             documento_principal = None
         
+        docs_indice = []
+        
         for data, archivo in zip(data_documentos, archivos):
             # VALIDAR FORMATO ARCHIVO 
             archivo_nombre = archivo.name
@@ -1722,7 +1725,7 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             nro_folios_del_doc = int(data['nro_folios_del_doc'])
             pagina_fin = pagina_inicio + nro_folios_del_doc - 1
             
-            Docs_IndiceElectronicoExp.objects.create(
+            doc_indice_elect = Docs_IndiceElectronicoExp.objects.create(
                 id_indice_electronico_exp=indice_electronico,
                 id_doc_archivo_exp=doc_creado,
                 identificación_doc_exped=doc_creado.identificacion_doc_en_expediente,
@@ -1740,8 +1743,10 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
                 cod_origen_archivo=doc_creado.cod_origen_archivo,
                 es_un_archivo_anexo=doc_creado.es_un_archivo_anexo,
             )
+            
+            docs_indice.append(model_to_dict(doc_indice_elect))
         
-        return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente'}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente', 'data':docs_indice}, status=status.HTTP_201_CREATED)
 
 class IndexarDocumentosGet(generics.ListAPIView):
     serializer_class = IndexarDocumentosGetSerializer
