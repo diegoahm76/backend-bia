@@ -42,7 +42,6 @@ class TipoAguaZonaHidrica (models.Model):
         verbose_name = 'Tipo Zona Agua Hidrica'
         verbose_name_plural = 'Tipo Zona Agua Hidricas'
 
-
 class SubZonaHidrica(models.Model):
     id_sub_zona_hidrica = models.AutoField(primary_key=True, editable=False, db_column="T623IdSubZonaHidrica")
     nombre_sub_zona_hidrica = models.CharField(max_length=255, db_column="T623nombreSubzonaHidrica")
@@ -51,10 +50,11 @@ class SubZonaHidrica(models.Model):
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")    
     id_tipo_agua_zona_hidrica = models.ForeignKey(TipoAguaZonaHidrica,blank=True,null=True,on_delete=models.SET_NULL, db_column="T623Id_TipoAguaZonaHidrica")
     valor_regional = models.CharField(max_length=50, db_column="T623valorRegional", null=True, blank=True)
+    fecha_inicio = models.DateField(null=True, blank=True, db_column="T623fechaInicio")
+    fecha_fin = models.DateField(null=True, blank=True, db_column="T623fechaFin")
 
     class Meta:
         db_table = 'T623SubZonasHidricas'
         verbose_name = 'Sub Zona Hidrica'
         verbose_name_plural = 'Sub Zona Hidricas'
         unique_together = ['nombre_sub_zona_hidrica', 'id_zona_hidrica','codigo_rio']
-        
