@@ -13,7 +13,9 @@ urlpatterns = [
     path('captacionmensualagua/', views.CaptacionMensualAguaViwes.as_view(), name='meses'),
 
 
-    path('liquidaciones/<str:expediente>/', views.T458PrincipalLiquidacionPorExpediente.as_view(), name='liquidaciones_por_expediente'),
+    path('busqueda_avanzada/', views.T458PrincipalLiquidacionPorExpediente.as_view(), name='busqueda_avanzada'),
+    path('busqueda_avanzada_dos/',views.viewsT459TablaTercerosssView.as_view(), name='busqueda_avanzada_terceros'),
+
 
 
 ]
