@@ -21,13 +21,13 @@ class documento_formulario_recuado(models.Model):
 
 
 class InformacionFuente(models.Model):
-    numero = models.PositiveIntegerField()
-    tipo = models.CharField(max_length=255)
-    nombreFuente = models.CharField(max_length=255)
-    caudalConcesionado = models.CharField(max_length=255)
-    sistemaMedicionAguaCaptada = models.CharField(max_length=255)
-    cordenadaX = models.FloatField()
-    cordenadaY = models.FloatField()
+    numero = models.PositiveIntegerField( blank=True, null=True)
+    tipo = models.CharField(max_length=255, blank=True, null=True)
+    nombreFuente = models.CharField(max_length=255, blank=True, null=True)
+    caudalConcesionado = models.CharField(max_length=255, blank=True, null=True)
+    sistemaMedicionAguaCaptada = models.CharField(max_length=255, blank=True, null=True)
+    cordenadaX = models.FloatField( blank=True, null=True)
+    cordenadaY = models.FloatField( blank=True, null=True)
 
     def __str__(self):
         return f"aT452_{self.numero} - {self.nombreFuente}"
@@ -51,14 +51,14 @@ class InformacionFuente(models.Model):
 
 
 class FactoresUtilizacion(models.Model):
-    numeroUsuarios = models.PositiveIntegerField()
-    numeroBovinos = models.PositiveIntegerField()
-    numeroPorcinos = models.PositiveIntegerField()
-    numeroHectareas = models.PositiveIntegerField()
-    consumoNumeroUsuarios = models.PositiveIntegerField()
-    consumoNumeroBovinos = models.PositiveIntegerField()
-    consumoNumeroPorcinos = models.PositiveIntegerField()
-    consumoNumeroHectareas = models.PositiveIntegerField()
+    numeroUsuarios = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    numeroBovinos = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    numeroPorcinos = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    numeroHectareas = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    consumoNumeroUsuarios = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    consumoNumeroBovinos = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    consumoNumeroPorcinos = models.PositiveIntegerField(max_length=255, blank=True, null=True)
+    consumoNumeroHectareas = models.PositiveIntegerField(max_length=255, blank=True, null=True)
 
     def __str__(self):
         return f"T454_{self.numeroUsuarios} - {self.numeroBovinos} - {self.numeroPorcinos} - {self.numeroHectareas}"
@@ -85,11 +85,11 @@ class CaptacionMensualAgua(models.Model):
         (12, 'Diciembre'),
     ]
 
-    periodoUso = models.CharField(max_length=255)
-    tiempoUso = models.PositiveIntegerField()
-    caudalUtilizado = models.PositiveIntegerField()
-    volumenAguaCaptada = models.PositiveIntegerField()
-    mes = models.PositiveIntegerField(choices=MES_CHOICES)
+    periodoUso = models.CharField(max_length=255, blank=True, null=True)
+    tiempoUso = models.PositiveIntegerField( blank=True, null=True)
+    caudalUtilizado = models.PositiveIntegerField(blank=True, null=True)
+    volumenAguaCaptada = models.PositiveIntegerField( blank=True, null=True)
+    mes = models.PositiveIntegerField(choices=MES_CHOICES, blank=True, null=True)
 
     def __str__(self):
         return f"T455_{self.periodoUso} - {self.mes}"
@@ -113,22 +113,22 @@ class T0444Formulario(models.Model):
         ('OTRO', 'Otro'),
     ]
 
-    tipoUsuario = models.CharField(max_length=15, choices=TIPO_USUARIO_CHOICES)
+    tipoUsuario = models.CharField(max_length=15, choices=TIPO_USUARIO_CHOICES, blank=True, null=True)
     otrotipo = models.CharField(max_length=255, blank=True, null=True)
     idpersona = models.CharField(max_length=255, blank=True, null=True)
-    razonSocial = models.CharField(max_length=255)
-    nit = models.PositiveIntegerField()
-    nombreRepresentanteLegal = models.CharField(max_length=255)
-    cc = models.PositiveIntegerField()
-    actividadEconomica = models.CharField(max_length=255)
-    telefono = models.CharField(max_length=15)
-    fax = models.CharField(max_length=15)
-    codigoCIIU = models.PositiveIntegerField()
-    direccion = models.TextField()
-    municipio = models.CharField(max_length=255)
-    expediente = models.PositiveIntegerField()
-    numConcesion = models.PositiveIntegerField()
-    fechaCreacion = models.DateTimeField(auto_now_add=True)
+    razonSocial = models.CharField(max_length=255, blank=True, null=True)
+    nit = models.PositiveIntegerField(blank=True, null=True)
+    nombreRepresentanteLegal = models.CharField(max_length=255, blank=True, null=True)
+    cc = models.PositiveIntegerField(blank=True, null=True)
+    actividadEconomica = models.CharField(max_length=255, blank=True, null=True)
+    telefono = models.CharField(max_length=15, blank=True, null=True)
+    fax = models.CharField(max_length=15, blank=True, null=True)
+    codigoCIIU = models.PositiveIntegerField(blank=True, null=True)
+    direccion = models.TextField(blank=True, null=True)
+    municipio = models.CharField(max_length=255, blank=True, null=True)
+    expediente = models.PositiveIntegerField( blank=True, null=True)
+    numConcesion = models.PositiveIntegerField( blank=True, null=True)
+    fechaCreacion = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     informacionFuentesAbastecimiento = models.ManyToManyField(InformacionFuente)
     factoresUtilizacion = models.OneToOneField(FactoresUtilizacion, on_delete=models.CASCADE)
     captacionesMensualesAgua = models.ManyToManyField(CaptacionMensualAgua)
