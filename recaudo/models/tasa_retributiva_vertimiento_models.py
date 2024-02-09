@@ -21,13 +21,13 @@ class documento_formulario_recuado(models.Model):
 
 
 class InformacionFuente(models.Model):
-    numero = models.PositiveIntegerField()
-    tipo = models.CharField(max_length=255)
-    nombreFuente = models.CharField(max_length=255)
-    caudalConcesionado = models.CharField(max_length=255)
-    sistemaMedicionAguaCaptada = models.CharField(max_length=255)
-    cordenadaX = models.FloatField()
-    cordenadaY = models.FloatField()
+    numero = models.TextField(blank=True, null=True, db_column='T464_numero')
+    tipo = models.TextField(max_length=255, blank=True, null=True, db_column='T464_tipo')
+    nombreFuente = models.TextField(max_length=255, blank=True, null=True, db_column='T464_nombreFuente')
+    caudalConcesionado = models.TextField(max_length=255, blank=True, null=True, db_column='T464_caudalConcesionado')
+    sistemaMedicionAguaCaptada = models.TextField(max_length=255, blank=True, null=True, db_column='T464_sistemaMedicionAguaCaptada')
+    cordenadaX = models.FloatField(blank=True, null=True, db_column='T464_cordenadaX')
+    cordenadaY = models.FloatField(blank=True, null=True, db_column='T464_cordenadaY')
 
     def __str__(self):
         return f"aT452_{self.numero} - {self.nombreFuente}"
@@ -36,7 +36,6 @@ class InformacionFuente(models.Model):
         db_table = '464TInformaciónFuente'
         verbose_name = 'Información de Fuente'
         verbose_name_plural = 'Información de Fuentes'
-
 
 # class CoordenadasSitioCaptacion(models.Model):
 #     cordenadaX = models.FloatField()
@@ -51,14 +50,14 @@ class InformacionFuente(models.Model):
 
 
 class FactoresUtilizacion(models.Model):
-    numeroUsuarios = models.PositiveIntegerField()
-    numeroBovinos = models.PositiveIntegerField()
-    numeroPorcinos = models.PositiveIntegerField()
-    numeroHectareas = models.PositiveIntegerField()
-    consumoNumeroUsuarios = models.PositiveIntegerField()
-    consumoNumeroBovinos = models.PositiveIntegerField()
-    consumoNumeroPorcinos = models.PositiveIntegerField()
-    consumoNumeroHectareas = models.PositiveIntegerField()
+    numeroUsuarios = models.TextField(blank=True, null=True, db_column='T463_numeroUsuarios')
+    numeroBovinos = models.TextField(blank=True, null=True, db_column='T463_numeroBovinos')
+    numeroPorcinos = models.TextField(blank=True, null=True, db_column='T463_numeroPorcinos')
+    numeroHectareas = models.TextField(blank=True, null=True, db_column='T463_numeroHectareas')
+    consumoNumeroUsuarios = models.TextField(blank=True, null=True, db_column='T463_consumoNumeroUsuarios')
+    consumoNumeroBovinos = models.TextField(blank=True, null=True, db_column='T463_consumoNumeroBovinos')
+    consumoNumeroPorcinos = models.TextField(blank=True, null=True, db_column='T463_consumoNumeroPorcinos')
+    consumoNumeroHectareas = models.TextField(blank=True, null=True, db_column='T463_consumoNumeroHectareas')
 
     def __str__(self):
         return f"T454_{self.numeroUsuarios} - {self.numeroBovinos} - {self.numeroPorcinos} - {self.numeroHectareas}"
@@ -85,11 +84,11 @@ class CaptacionMensualAgua(models.Model):
         (12, 'Diciembre'),
     ]
 
-    periodoUso = models.CharField(max_length=255)
-    tiempoUso = models.PositiveIntegerField()
-    caudalUtilizado = models.PositiveIntegerField()
-    volumenAguaCaptada = models.PositiveIntegerField()
-    mes = models.PositiveIntegerField(choices=MES_CHOICES)
+    periodoUso = models.TextField(blank=True, null=True, db_column='T462_periodoUso')
+    tiempoUso = models.TextField(blank=True, null=True, db_column='T462_tiempoUso')
+    caudalUtilizado = models.TextField(blank=True, null=True, db_column='T462_caudalUtilizado')
+    volumenAguaCaptada = models.TextField(blank=True, null=True, db_column='T462_volumenAguaCaptada')
+    mes = models.TextField(choices=MES_CHOICES, blank=True, null=True, db_column='T462_mes')
 
     def __str__(self):
         return f"T455_{self.periodoUso} - {self.mes}"
@@ -101,9 +100,7 @@ class CaptacionMensualAgua(models.Model):
 
 
 
-
-
-class T0444Formulario(models.Model):
+class T0444Formulario(models.Model): #T0444Formulario
     TIPO_USUARIO_CHOICES = [
         ('EMPRESARIAL', 'Empresarial'),
         ('DOMESTICO', 'Doméstico'),
@@ -113,27 +110,27 @@ class T0444Formulario(models.Model):
         ('OTRO', 'Otro'),
     ]
 
-    tipoUsuario = models.CharField(max_length=15, choices=TIPO_USUARIO_CHOICES)
-    otrotipo = models.CharField(max_length=255, blank=True, null=True)
-    idpersona = models.CharField(max_length=255, blank=True, null=True)
-    razonSocial = models.CharField(max_length=255)
-    nit = models.PositiveIntegerField()
-    nombreRepresentanteLegal = models.CharField(max_length=255)
-    cc = models.PositiveIntegerField()
-    actividadEconomica = models.CharField(max_length=255)
-    telefono = models.CharField(max_length=15)
-    fax = models.CharField(max_length=15)
-    codigoCIIU = models.PositiveIntegerField()
-    direccion = models.TextField()
-    municipio = models.CharField(max_length=255)
-    expediente = models.PositiveIntegerField()
-    numConcesion = models.PositiveIntegerField()
-    fechaCreacion = models.DateTimeField(auto_now_add=True)
-    informacionFuentesAbastecimiento = models.ManyToManyField(InformacionFuente)
-    factoresUtilizacion = models.OneToOneField(FactoresUtilizacion, on_delete=models.CASCADE)
-    captacionesMensualesAgua = models.ManyToManyField(CaptacionMensualAgua)
-    aprobado = models.BooleanField(default=False)
-    id_archivo_sistema	= models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, blank=True, null=True)
+    tipoUsuario = models.TextField(max_length=15, choices=TIPO_USUARIO_CHOICES, blank=True, null=True, db_column='T461_tipoUsuario')
+    otrotipo = models.TextField(max_length=255, blank=True, null=True, db_column='T461_otrotipo')
+    idpersona = models.TextField(max_length=255, blank=True, null=True, db_column='T461_idpersona')
+    razonSocial = models.TextField(max_length=255, blank=True, null=True, db_column='T461_razonSocial')
+    nit = models.TextField(blank=True, null=True, db_column='T461_nit')
+    nombreRepresentanteLegal = models.TextField(max_length=255, blank=True, null=True, db_column='T461_nombreRepresentanteLegal')
+    cc = models.TextField(blank=True, null=True, db_column='T461_cc')
+    actividadEconomica = models.TextField(max_length=255, blank=True, null=True, db_column='T461_actividadEconomica')
+    telefono = models.TextField(max_length=15, blank=True, null=True, db_column='T461_telefono')
+    fax = models.TextField(max_length=15, blank=True, null=True, db_column='T461_fax')
+    codigoCIIU = models.TextField(blank=True, null=True, db_column='T461_codigoCIIU')
+    direccion = models.TextField(blank=True, null=True, db_column='T461_direccion')
+    municipio = models.TextField(max_length=255, blank=True, null=True, db_column='T461_municipio')
+    expediente = models.TextField(blank=True, null=True, db_column='T461_expediente')
+    numConcesion = models.TextField(blank=True, null=True, db_column='T461_numConcesion')
+    fechaCreacion = models.DateTimeField(auto_now_add=True, blank=True, null=True, db_column='T461_fechaCreacion')
+    informacionFuentesAbastecimiento = models.ManyToManyField(InformacionFuente, db_column='T461_informacionFuentesAbastecimiento')
+    factoresUtilizacion = models.OneToOneField(FactoresUtilizacion, on_delete=models.CASCADE, db_column='T461_factoresUtilizacion')
+    captacionesMensualesAgua = models.ManyToManyField(CaptacionMensualAgua, db_column='T461_captacionesMensualesAgua')
+    aprobado = models.BooleanField(default=False, db_column='T461_aprobado')
+    id_archivo_sistema	= models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, blank=True, null=True, db_column='T461_id_archivo_sistema')
 
 
     def __str__(self):
@@ -143,9 +140,6 @@ class T0444Formulario(models.Model):
         db_table = 'T461TFormulario'
         verbose_name = 'T457ormulario '
         verbose_name_plural = 'T467Formularios '
-
-
-
 
 
 class T459TablaTercerosss(models.Model):
