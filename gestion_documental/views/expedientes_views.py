@@ -3275,6 +3275,7 @@ class PublicarUpdateView(generics.UpdateAPIView):
             
         eliminacion_documental.observaciones = observaciones
         eliminacion_documental.tiene_observaciones = True
+        eliminacion_documental.dias_publicacion = 60
         eliminacion_documental.save()
         
         # Auditoria Actualizar Publicación

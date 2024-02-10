@@ -41,6 +41,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         data_tramite['id_persona_registra'] = request.user.persona.id_persona
         data_tramite['id_medio_solicitud'] = 2
         data_tramite['id_estado_actual_solicitud'] = 13
+        data_tramite['requiere_digitalizacion'] = True
         data_tramite['fecha_ini_estado_actual'] = datetime.now()
         
         serializer = self.serializer_class(data=data_tramite)
@@ -236,6 +237,7 @@ class InicioTramiteCreateView(generics.CreateAPIView):
             data['cod_relacion_con_el_titular'] = 'RL' # VALIDAR PARA CASO DE APODERADOS
         
         data['cod_tipo_operacion_tramite'] = 'N'
+        data['requiere_digitalizacion'] = True
         data['nombre_proyecto'] = permiso_ambiental.nombre
         data['costo_proyecto'] = 0
         data['fecha_inicio_tramite'] = datetime.now()

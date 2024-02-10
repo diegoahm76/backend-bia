@@ -51,7 +51,7 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                 if not instance:
                     raise ValidationError("No se encontró el consecutivo del documento.")
                 
-                instance.id_documento_digital = data_archivo_id
+                instance.id_archivo = data_archivo_id
                 instance.save()
 
                 #GENERA ALERTA DE EVEMTO INMEDIATO 
