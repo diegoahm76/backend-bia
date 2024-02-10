@@ -1182,7 +1182,7 @@ class SolicitudDeDigitalizacionOPACreate(generics.CreateAPIView):
         solicitud_tramite =SolicitudesTramites.objects.filter(id_solicitud_tramite= data_in['id_solicitud_tramite']).first()
 
         if not solicitud_tramite:
-            raise NotFound("No existe pqrsdf")
+            raise NotFound("No existe el OPA seleccionado.")
         print(solicitud_tramite)
         
         #raise ValidationError('SI SOMOS')
@@ -2291,14 +2291,12 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
             )
 
             # Obtener el ID del nuevo estado EN GESTION
-            id_estado_gestion = nuevo_estado_gestion.id_estado_PQR
+            id_estado_gestion = nuevo_estado_gestion.estado_solicitud.id_estado_solicitud
 
             # Actualizar el estado actual del trámite a EN GESTION
             solicitud_tramite.id_estado_actual_solicitud = estado_solicitud
             solicitud_tramite.save()
             estado_en_gestion = EstadosSolicitudes.objects.get(id_estado_solicitud=id_estado_gestion)
-
-            print('hola')
 
             # Actualizar el estado actual del trámite a EN GESTION
             solicitud_tramite = SolicitudesTramites.objects.get(id_solicitud_tramite=data_in['id_solicitud_tramite'])
