@@ -80,13 +80,13 @@ class SolicitudesRespondidasGet(generics.ListAPIView):
             if tipo_solicitud:
                 condiciones &= ~Q(id_pqrsdf=0) and ~Q(id_pqrsdf=None) if tipo_solicitud == 'PQR' else ~Q(id_complemento_usu_pqr=0) and ~Q(id_complemento_usu_pqr=None)
             if fecha_desde and fecha_hasta:
-                condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_hasta)
+                condiciones &= Q(fecha_rta_solicitud__date__gte=fecha_desde, fecha_rta_solicitud__date__lte=fecha_hasta)
         else:
             fecha_actual = datetime.now()
             fecha_desde = fecha_actual - timedelta(days=7)
-            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_actual)
+            condiciones &= Q(fecha_rta_solicitud__date__gte=fecha_desde, fecha_rta_solicitud__date__lte=fecha_actual)
 
-        condiciones &= Q(Q(digitalizacion_completada = True) or Q(devuelta_sin_completar = True))
+        condiciones &= Q(Q(digitalizacion_completada = True) | Q(devuelta_sin_completar = True))
         return condiciones
     
 class SolicitudByIdGet(generics.GenericAPIView):
@@ -553,7 +553,7 @@ class ProcesaSolicitudesOtros:
         
             # Obtiene los anexos
             anexos_otros = Anexos_PQR.objects.filter(id_otros = solicitud_otro.id_otro)
-            ids_anexos = [anexo_otro.id_anexo_PQR for anexo_otro in anexos_otros]
+            ids_anexos = [anexo_otro.id_anexo.id_anexo for anexo_otro in anexos_otros]
             anexos = Anexos.objects.filter(id_anexo__in=ids_anexos)
             validate_anexos = self.valida_anexos_filtro_estado(anexos, estado_solicitud)
 
@@ -913,13 +913,13 @@ class OtrosSolicitudesRespondidasGet(generics.ListAPIView):
     def set_conditions_filters(self, fecha_desde, fecha_hasta):
         condiciones = Q()
         if fecha_desde and fecha_hasta:
-            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_hasta)
+            condiciones &= Q(fecha_rta_solicitud__date__gte=fecha_desde, fecha_rta_solicitud__date__lte=fecha_hasta)
         else:
             fecha_actual = datetime.now()
             fecha_desde = fecha_actual - timedelta(days=7)
-            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_actual)
+            condiciones &= Q(fecha_rta_solicitud__date__gte=fecha_desde, fecha_rta_solicitud__date__lte=fecha_actual)
 
-        condiciones &= Q(Q(digitalizacion_completada = True) or Q(devuelta_sin_completar = True))
+        condiciones &= Q(Q(digitalizacion_completada = True) | Q(devuelta_sin_completar = True))
         return condiciones
 
 class OtrosSolicitudByIdGet(generics.GenericAPIView):
@@ -957,6 +957,9 @@ class OpasSolicitudesPendientesGet(generics.ListAPIView):
 
             #Filtra las solicitudes que no este completada
             solicitudes_opas = self.queryset.filter(digitalizacion_completada=False, devuelta_sin_completar=False).exclude(id_tramite=None).order_by('fecha_solicitud')
+            opas = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+            opas_id_list = [opa.id_solicitud_tramite.id_solicitud_tramite for opa in opas]
+            solicitudes_opas = solicitudes_opas.filter(id_tramite__in = opas_id_list)
 
             #Obtiene los datos de la solicitud y anexos para serializar
             procesaSolicitudesOpas = ProcesaSolicitudesOpas()
@@ -1204,42 +1207,42 @@ class OpasResponderDigitalizacion(generics.RetrieveUpdateAPIView):
                 raise NotFound('No se encontró la solicitud que intenta responder')
         
     def crear_historico_estados(self, id_tramite, fecha_actual, id_persona_digitalizo, digitalizacion_completada):
-        estado_tramite_inicial = Estados_PQR.objects.filter(Q(id_tramite=id_tramite.id_tramites, estado_solicitud=3)).first()
+        estado_tramite_inicial = Estados_PQR.objects.filter(Q(id_tramite=id_tramite.id_solicitud_tramite, estado_solicitud=3)).first()
         
-        data_estado_crear = self.set_data_estado_tramites(id_tramite.id_tramites, fecha_actual, id_persona_digitalizo, estado_tramite_inicial.id_estado_PQR, 10)
+        data_estado_crear = self.set_data_estado_tramites(id_tramite.id_solicitud_tramite, fecha_actual, id_persona_digitalizo, estado_tramite_inicial.id_estado_PQR, 10)
         creador_estados = Estados_PQRCreate()
         creador_estados.crear_estado(data_estado_crear)
 
-        sin_pendientes = self.crear_estado_sin_pendientes(id_tramite.id_tramites, fecha_actual, id_persona_digitalizo, estado_tramite_inicial.id_estado_PQR)
+        sin_pendientes = self.crear_estado_sin_pendientes(id_tramite.id_solicitud_tramite, fecha_actual, id_persona_digitalizo, estado_tramite_inicial.id_estado_PQR)
         estado_sin_pendientes_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=4).first()
 
-        opas_db = SolicitudesTramites.objects.filter(id_tramite=id_tramite.id_tramites).first()
+        opas_db = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_tramite.id_solicitud_tramite).first()
         opas_db.fecha_envio_definitivo_a_digitalizacion = opas_db.fecha_envio_definitivo_a_digitalizacion if digitalizacion_completada else None
         opas_db.fecha_digitalizacion_completada = fecha_actual if digitalizacion_completada else opas_db.fecha_digitalizacion_completada
         opas_db.id_estado_actual_solicitud = estado_sin_pendientes_instance if sin_pendientes else opas_db.id_estado_actual_solicitud
         opas_db.fecha_ini_estado_actual = fecha_actual if sin_pendientes else opas_db.fecha_ini_estado_actual
         opas_db.save()
 
-    def crear_estado_sin_pendientes(self, id_tramites, fecha_actual, id_persona_digitalizo, estado_PQR_asociado):
+    def crear_estado_sin_pendientes(self, id_tramite, fecha_actual, id_persona_digitalizo, estado_PQR_asociado):
         sin_pendientes = False
-        estados_pqrsdf_pendientes = Estados_PQR.objects.filter(Q(id_tramites=id_tramites, estado_PQR_asociado=estado_PQR_asociado))
+        estados_pqrsdf_pendientes = Estados_PQR.objects.filter(Q(id_tramite=id_tramite, estado_PQR_asociado=estado_PQR_asociado))
         
         #Obtiene todos los tipos de solicitud creadas
         solicitudes_dig_enviadas = len(estados_pqrsdf_pendientes.filter(estado_solicitud=9))
         solicitudes_dig_respondidas = len(estados_pqrsdf_pendientes.filter(estado_solicitud=10))
 
         if solicitudes_dig_enviadas == solicitudes_dig_respondidas:
-            data_estado_crear = self.set_data_estado_tramites(id_tramites, fecha_actual, id_persona_digitalizo, None, 4)
+            data_estado_crear = self.set_data_estado_tramites(id_tramite, fecha_actual, id_persona_digitalizo, None, 4)
             creador_estados = Estados_PQRCreate()
             creador_estados.crear_estado(data_estado_crear)
             sin_pendientes = True
         
         return sin_pendientes
 
-    def set_data_estado_tramites(self, id_tramites, fecha_actual, id_persona_digitalizo, estado_PQR_asociado, estado_solicitud):
+    def set_data_estado_tramites(self, id_tramite, fecha_actual, id_persona_digitalizo, estado_PQR_asociado, estado_solicitud):
         data_estado = {}
         data_estado['fecha_iniEstado'] = fecha_actual
-        data_estado['id_tramites'] = id_tramites
+        data_estado['id_tramite'] = id_tramite
         data_estado['estado_PQR_asociado'] = estado_PQR_asociado
         data_estado['estado_solicitud'] = estado_solicitud
         data_estado['persona_genera_estado'] = id_persona_digitalizo.id_persona
@@ -1262,7 +1265,7 @@ class ProcesaSolicitudesOpas:
     def consulta_anexos_tramites(self, solicitud_tramite, estado_solicitud, peticion_estado):
         solicitud_model = None
         tramite = solicitud_tramite.id_tramite
-        radicado = tramite.id_radicados
+        radicado = tramite.id_radicado
         
         instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
         numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
@@ -1270,14 +1273,15 @@ class ProcesaSolicitudesOpas:
         
         if radicado:
             # Obtiene los anexos
-            anexos_tramites = AnexosTramite.objects.filter(id_solicitud_tramite = solicitud_tramite.id_tramite)
-            ids_anexos = [anexo_tramite.id_anexo_tramite for anexo_tramite in anexos_tramites]
+            anexos_tramites = AnexosTramite.objects.filter(id_solicitud_tramite = solicitud_tramite.id_tramite.id_solicitud_tramite)
+            ids_anexos = [anexo_tramite.id_anexo.id_anexo for anexo_tramite in anexos_tramites]
             anexos = Anexos.objects.filter(id_anexo__in=ids_anexos)
             validate_anexos = self.valida_anexos_filtro_estado(anexos, estado_solicitud)
 
             if validate_anexos:
                 #Obtiene el modelo de solicitud a serializar
-                solicitud_model = self.set_data_solicitudes(solicitud_tramite, "TRAMITE", tramite.id_persona_titular.id_persona, tramite.cantidad_anexos, radicado_nuevo, anexos, peticion_estado)
+                solicitud_model = self.set_data_solicitudes(solicitud_tramite, "OPAS",None, tramite.id_persona_titular.id_persona, anexos.count(), radicado_nuevo, anexos, peticion_estado)
+                
         
         return solicitud_model
     
@@ -1323,6 +1327,7 @@ class OpasSolicitudesRespondidasGet(generics.ListAPIView):
         condiciones = self.set_conditions_filters(fecha_desde, fecha_hasta)
         solicitudes_respondidas_tramite = self.queryset.filter(condiciones).exclude(id_tramite=None).order_by('fecha_rta_solicitud')
 
+        print('hola:', condiciones)
         #Obtiene los datos de la solicitud y anexos para serializar
         procesaSolicitudes = ProcesaSolicitudesOpas()
         solicitudes_respondidas = procesaSolicitudes.procesa_solicitudes(solicitudes_respondidas_tramite, None, 'R')
@@ -1333,13 +1338,13 @@ class OpasSolicitudesRespondidasGet(generics.ListAPIView):
     def set_conditions_filters(self, fecha_desde, fecha_hasta):
         condiciones = Q()
         if fecha_desde and fecha_hasta:
-            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_hasta)
+            condiciones &= Q(fecha_rta_solicitud__date__gte=fecha_desde, fecha_rta_solicitud__date__lte=fecha_hasta)
         else:
             fecha_actual = datetime.now()
             fecha_desde = fecha_actual - timedelta(days=7)
-            condiciones &= Q(fecha_rta_solicitud__gte=fecha_desde, fecha_rta_solicitud__lte=fecha_actual)
+            condiciones &= Q(fecha_rta_solicitud__date__gte=fecha_desde, fecha_rta_solicitud__date__lte=fecha_actual)
 
-        condiciones &= Q(Q(digitalizacion_completada = True) or Q(devuelta_sin_completar = True))
+        condiciones &= Q(Q(digitalizacion_completada = True) | Q(devuelta_sin_completar = True))
         return condiciones
     
 
