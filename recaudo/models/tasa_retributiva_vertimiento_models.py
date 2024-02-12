@@ -100,7 +100,7 @@ class CaptacionMensualAgua(models.Model):
 
 
 
-class T461TFormulario(models.Model):
+class T0444Formulario(models.Model):
     TIPO_USUARIO_CHOICES = [
         ('EMPRESARIAL', 'Empresarial'),
         ('DOMESTICO', 'Doméstico'),
