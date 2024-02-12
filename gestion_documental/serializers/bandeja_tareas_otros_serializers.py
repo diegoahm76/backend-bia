@@ -323,3 +323,8 @@ class MetadatosAnexosOtrosTmpSerializerGet(serializers.ModelSerializer):
             lista_datos =  obj.palabras_clave_doc.split("|")
             return lista_datos
         return None
+
+class TareasAsignadasOotrosUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = '__all__'
