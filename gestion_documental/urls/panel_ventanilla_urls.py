@@ -84,6 +84,7 @@ urlpatterns = [
     #ASIGNACION_DE_TRAMITES_ENTREGA_125
     path('asignar-tramites/seccion-subseccion/get/', views.SeccionSubseccionPlaneacionAsignacionGet.as_view(), name='subseccion_planeacion_grupos'),
     path('asignar-tramites/asignacion/create/',views.AsignacionTramiteSubseccionOGrupo.as_view(),name='crear-asignacion-tramites'),
+    path('asignar-tramites/historico-asignacion/get/<str:tra>/',views.AsignacionTramitesGet.as_view(),name='get-asignacion-tramites'),
 
 
 

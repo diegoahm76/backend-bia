@@ -1,6 +1,7 @@
 from django.db import models
 
 from gestion_documental.choices.cod_tipo_proceso_conseg_choices import PROCESO_CHOICES
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 
 class ConfigTipoConsecAgno(models.Model):
@@ -34,7 +35,7 @@ class Consecutivo(models.Model):
     nro_consecutivo = models.CharField(max_length=20, db_column='T308nroConsecutivo')
     fecha_consecutivo = models.DateTimeField(db_column='T308fechaConsecutivo')
     id_persona_solicita = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T308Id_PersonaRadica')
-    
+    id_archivo = models.ForeignKey(ArchivosDigitales,on_delete=models.SET_NULL,db_column='T308Id_ArchivoDigital',blank=True,null=True)
     class Meta:
         db_table = 'T308Consecutivo'
         #unique_together = [('agno_consecutivo','nro_consecutivo'),]
