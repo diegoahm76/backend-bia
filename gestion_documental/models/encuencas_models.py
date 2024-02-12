@@ -129,16 +129,16 @@ class RespuestaEncuesta(models.Model):
 
 
 class AsignarEncuesta(models.Model):
-    id_asignar_encuesta = models.BigAutoField(primary_key=True, db_column='TXXXIdAsignar_Encuesta')
-    id_encuesta = models.ForeignKey(EncabezadoEncuesta, on_delete=models.CASCADE, db_column='TXXXId_Encuesta')
-    id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='TXXXId_Persona')
-    id_alerta_generada = models.ForeignKey(AlertasGeneradas, on_delete=models.CASCADE, db_column='TXXXId_Alerta_Generada', null=True, blank=True)
+    id_asignar_encuesta = models.BigAutoField(primary_key=True, db_column='T309IdAsignar_Encuesta')
+    id_encuesta = models.ForeignKey(EncabezadoEncuesta, on_delete=models.CASCADE, db_column='T309Id_Encuesta')
+    id_persona = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T309Id_Persona')
+    id_alerta_generada = models.ForeignKey(AlertasGeneradas, on_delete=models.CASCADE, db_column='T309Id_Alerta_Generada', null=True, blank=True)
     
     def __str__(self):
         return f'Respuesta de Encuesta {self.id_asignar_encuesta}'
 
     class Meta:
-        db_table = 'TXXXAsignar_Encuesta'
+        db_table = 'T309Asignar_Encuesta'
         verbose_name = 'Respuesta de Encuesta'
         verbose_name_plural = 'Respuestas de Encuesta'
         unique_together = (('id_encuesta', 'id_persona'),)

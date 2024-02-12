@@ -1,6 +1,6 @@
 from gestion_documental.serializers.pqr_serializers import ArchivosSerializer
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-from recaudo.models.tasa_retributiva_vertimiento_models import CaptacionMensualAgua, FactoresUtilizacion, InformacionFuente, T0444Formulario, documento_formulario_recuado
+from recaudo.models.tasa_retributiva_vertimiento_models import CaptacionMensualAgua, FactoresUtilizacion, InformacionFuente, T0444Formulario, T458PrincipalLiquidacion, T459TablaTercerosss, documento_formulario_recuado
 from rest_framework import serializers
 
 
@@ -78,6 +78,7 @@ class T0444FormularioSerializer(serializers.ModelSerializer):
     # coordenadasSitioCaptacion = CoordenadasSitioCaptacionSerializer()
     factoresUtilizacion = FactoresUtilizacionSerializer()
     captacionesMensualesAgua = CaptacionMensualAguaSerializer(many=True)
+    ruta_archivo = serializers.SerializerMethodField()
 
     class Meta:
         model = T0444Formulario
@@ -102,3 +103,25 @@ class T0444FormularioSerializer(serializers.ModelSerializer):
         formulario.captacionesMensualesAgua.set(captaciones_mensuales)
 
         return formulario
+
+    def get_ruta_archivo(self, obj):
+        if obj.id_archivo_sistema is None:
+            return None
+        id_archivo_digital = obj.id_archivo_sistema.id_archivo_digital
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital =id_archivo_digital).first()
+        data = ArchivosSerializer(archivo).data
+        return data
+    
+
+class PrincipalLiquidacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T458PrincipalLiquidacion
+        fields = '__all__'
+
+
+
+
+class T459TablaTercerosssSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T459TablaTercerosss
+        fields = '__all__'

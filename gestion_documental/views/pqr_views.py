@@ -1155,6 +1155,19 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                 id_persona_responde = persona
                 valores_creados_detalles = []
 
+                if not 'id_tarea_asignada' in data_respuesta_pqrsdf:
+                    raise ValidationError('El campo "id_tarea_asignada" es obligatorio.')
+                
+                
+                #Validacion 116
+                id_tarea = int(data_respuesta_pqrsdf['id_tarea_asignada'])
+               
+                tarea = TareasAsignadas.objects.filter(id_tarea_asignada=id_tarea).first()
+                if not tarea:
+                    raise ValidationError('No se encontró la tarea asignada con el ID especificado.')
+              
+                
+
                 util_respuesta_PQR = Util_Respuesta_PQR()
                 anexos = util_respuesta_PQR.set_archivo_in_anexo(data_respuesta_pqrsdf['anexos'], request.FILES, "create")
                 
@@ -1180,7 +1193,42 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                 # # Auditoria
                 # descripcion_auditoria = self.set_descripcion_auditoria(data_respuesta_PQRSDF_creado)
                 # self.auditoria(request, descripcion_auditoria, isCreateForWeb, valores_creados_detalles)
+                        
+                ##VALIDACION 116
 
+                ##NOMBRE DE LA PERSONA QUE RESPONDE
+                
+                nombre_completo_responde = None
+                nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                                persona.primer_apellido, persona.segundo_apellido]
+                nombre_completo_responde = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_responde = nombre_completo_responde if nombre_completo_responde != "" else None
+                nombre_persona = nombre_completo_responde
+
+                tarea.cod_estado_solicitud = 'Re'
+                tarea.fecha_respondido =data_respuesta_PQRSDF_creado['fecha_respuesta'] #fecha_respuesta
+                tarea.nombre_persona_que_responde = nombre_persona
+                tarea.save()
+                #SI LA TAREA FUE FRUTO DE UNA REASIGNACION 
+                if tarea.id_tarea_asignada_padre_inmediata:
+                    tarea_padre = tarea.id_tarea_asignada_padre_inmediata
+
+                    # Iterar a través de las tareas padres hasta encontrar la tarea original
+                    while tarea_padre and not tarea_padre.id_asignacion:
+                        tarea_padre.fecha_respondido = data_respuesta_PQRSDF_creado['fecha_respuesta']
+                        tarea_padre.nombre_persona_que_responde = nombre_persona
+                        tarea_padre.ya_respondido_por_un_delegado = True
+                        tarea_padre.save()
+
+                        # Ir a la siguiente tarea padre
+                        tarea_padre = tarea_padre.id_tarea_asignada_padre_inmediata
+
+                    # Si se encontró la tarea original, actualizarla
+                    if tarea_padre:
+                        tarea_padre.fecha_respondido = data_respuesta_PQRSDF_creado['fecha_respuesta']
+                        tarea_padre.nombre_persona_que_responde = nombre_persona
+                        tarea_padre.ya_respondido_por_un_delegado = True
+                        tarea_padre.save()
                 return Response({'success': True, 'detail': 'Se creó el PQRSDF correctamente', 'data': data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
