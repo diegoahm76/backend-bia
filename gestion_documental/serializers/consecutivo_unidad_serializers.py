@@ -91,7 +91,7 @@ class ConsecutivoGetSerializer(serializers.ModelSerializer):
     id_subserie_doc=serializers.ReadOnlyField(source='id_catalogo.id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
     cod_subserie_doc=serializers.ReadOnlyField(source='id_catalogo.id_catalogo_serie.id_subserie_doc.codigo',default=None)
     nombre_subserie_doc=serializers.ReadOnlyField(source='id_catalogo.id_catalogo_serie.id_subserie_doc.nombre',default=None)
-
+    ruta_archivo = serializers.SerializerMethodField()
 
     class Meta:
         model = Consecutivo
@@ -99,12 +99,12 @@ class ConsecutivoGetSerializer(serializers.ModelSerializer):
 
 
     def get_ruta_archivo(self, obj):
-        if obj.id_archivo_sistema is None:
+        if obj.id_archivo is None:
             return None
-        id_archivo_digital = obj.id_archivo_sistema.id_archivo_digital
+        id_archivo_digital = obj.id_archivo.id_archivo_digital
         archivo = ArchivosDigitales.objects.filter(id_archivo_digital =id_archivo_digital).first()
         data = ArchivosSerializer(archivo).data
-        return data
+        return data['ruta_archivo']
 
     def get_consecutivo(self,obj):
         conf = ConfigTipoConsecAgno.objects.filter(agno_consecutivo=obj.agno_consecutivo,id_unidad=obj.id_unidad).first()
