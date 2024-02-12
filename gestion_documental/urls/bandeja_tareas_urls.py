@@ -3,6 +3,7 @@
 
 from django.urls import path
 from gestion_documental.views import bandeja_tareas_views as views
+from gestion_documental.views import bandeja_tareas_otros_views as views_otros
 
 urlpatterns = [
 
@@ -36,10 +37,17 @@ urlpatterns = [
     path('unidad-organizacional/personas/get/<str:uni>/',views.PersonasUnidadGetByUnidad.as_view(),name='listar-personas-unidad'),
     path('reasignaciones/tareas/create/',views.ReasignacionesTareasCreate.as_view(),name='crear-reasignaciones-tareas'),
     path('reasignaciones/tareas/get/<str:pk>/',views.ReasignacionesTareasgetById.as_view(),name='listar-reasignaciones-tareas'),
-    #ReasignacionTareasAsignadasJusTarea
     path('reasignaciones/tareas/jus/get/<str:pk>/',views.ReasignacionTareasAsignadasJusTarea.as_view(),name='listar-reasignaciones-tareas-jus'),
-    #ReasignacionTareasGetByIdTarea
     path('seguimiento-tarea/tareas/get/<str:pk>/',views.ReasignacionTareasGetByIdTarea.as_view(),name='listar-reasignaciones-tareas-id'),
-
     path('seguimiento-tarea/respuesta/pqrsdf/get/<str:pqr>/',views.RespuestaPQRSDFByPQR.as_view(),name='listar-respuesta-pqrsdf'),
+    #OTROS
+    path('tareas-asignadas/get-otros-by-persona/<str:id>/', views_otros.TareasAsignadasGetOtrosByPersona.as_view(), name='get-tareas-asignadas-otros-by-person'),
+    path('detalle-otros/get/<str:id>/', views_otros.DetalleOtrosGet.as_view(), name='get-detalle-otros-by-id'),
+    path('otros/anexo/get/<str:pk>/',views_otros.OtrosInfoAnexosGet.as_view(),name='get-otros-anexo'),
+    path('otros/anexo/metadatos/get/<str:pk>/', views_otros.OtrosAnexoMetaDataGet.as_view(), name='get-otros-anexo-metadatos'),
+    path('tareas-asignadas/otros/rechazar/update/<str:pk>/', views_otros.TareasAsignadasOtrosRechazarUpdate.as_view(), name='update-tareas-asignadas-otros'),
+    path('tareas-asignadas/otros/aceptar/update/<str:pk>/', views_otros.TareasAsignadasAceptarOtroUpdate.as_view(), name='update-tareas-asignadas-otros'),
+    path('tareas-asignadas/otros/jus/tarea/get/<str:pk>/', views_otros.TareasAsignadasOtroJusTarea.as_view(), name='update-tareas-asignadas-otros'),
+    #ReasignacionesTareasOtroCreate
+    path('reasignaciones/otros/tareas/create/', views_otros.ReasignacionesTareasOtroCreate.as_view(), name='crear-reasignaciones-tareas-otros'),
 ]
