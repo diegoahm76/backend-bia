@@ -45,5 +45,9 @@ urlpatterns = [
     path('detalle-otros/get/<str:id>/', views_otros.DetalleOtrosGet.as_view(), name='get-detalle-otros-by-id'),
     path('otros/anexo/get/<str:pk>/',views_otros.OtrosInfoAnexosGet.as_view(),name='get-otros-anexo'),
     path('otros/anexo/metadatos/get/<str:pk>/', views_otros.OtrosAnexoMetaDataGet.as_view(), name='get-otros-anexo-metadatos'),
-    
+    path('tareas-asignadas/otros/rechazar/update/<str:pk>/', views_otros.TareasAsignadasOtrosRechazarUpdate.as_view(), name='update-tareas-asignadas-otros'),
+    path('tareas-asignadas/otros/aceptar/update/<str:pk>/', views_otros.TareasAsignadasAceptarOtroUpdate.as_view(), name='update-tareas-asignadas-otros'),
+    path('tareas-asignadas/otros/jus/tarea/get/<str:pk>/', views_otros.TareasAsignadasOtroJusTarea.as_view(), name='update-tareas-asignadas-otros'),
+    #ReasignacionesTareasOtroCreate
+    path('reasignaciones/otros/tareas/create/', views_otros.ReasignacionesTareasOtroCreate.as_view(), name='crear-reasignaciones-tareas-otros'),
 ]

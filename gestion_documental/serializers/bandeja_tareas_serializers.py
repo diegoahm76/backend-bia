@@ -679,3 +679,9 @@ class RespuestasPQRGetSeralizer(serializers.ModelSerializer):
             nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
             nombre_completo = ' '.join(item for item in nombre_list if item is not None)
             return nombre_completo.upper()
+        
+
+class ReasignacionesTareasOtrosCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReasignacionesTareas
+        fields = '__all__'
