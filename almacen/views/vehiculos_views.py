@@ -231,24 +231,25 @@ def eliminar_registro_arrendamiento(pk):
     ultimo_periodo = periodos_veh_arrendado.last()
 
     hoja_vida_veh_arrendado = HojaDeVidaVehiculos.objects.filter(id_vehiculo_arrendado=vehiculo.id_vehiculo_arrendado).last()
-    agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
-    conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+    #agenda = VehiculosAgendadosDiaDisponible.objects.filter(id_Hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
+    #conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=hoja_vida_veh_arrendado.id_hoja_de_vida).last()
 
     fecha_sistema = datetime.now()
 
-    if ultimo_periodo.fecha_fin < fecha_sistema.date():
-        raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
+    if  ultimo_periodo: #validaciones
+        if ultimo_periodo.fecha_fin < fecha_sistema.date():
+            raise ValidationError("Los registros con fechas vencidas no se pueden eliminar, solo es permitido eliminar los registros con fechas actuales.")
 
-    if periodos_veh_arrendado.count() > 1:
-        raise ValidationError("No se puede eliminar.")
-    else:
-        if agenda and ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
-            raise ValidationError("No se puede eliminar.")
+    # if periodos_veh_arrendado.count() > 1:
+    #     raise ValidationError("No se puede eliminar.")
+    # else:
+    #     if agenda and ultimo_periodo.fecha_inicio <= agenda.dia_disponibilidad:
+    #         raise ValidationError("No se puede eliminar.")
 
-        if conductor and ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
-            raise ValidationError("No se puede eliminar x2")
+    #     if conductor and ultimo_periodo.fecha_inicio <= conductor.fecha_final_asignacion:
+    #         raise ValidationError("No se puede eliminar x2")
 
-        vehiculo.delete()
+    vehiculo.delete()#HACE PARTE DEL ELSE
         
     return True
 

@@ -148,7 +148,8 @@ class InicioTramiteCreateSerializer(serializers.ModelSerializer):
             'id_medio_solicitud',
             'id_persona_registra',
             'id_estado_actual_solicitud',
-            'fecha_ini_estado_actual'
+            'fecha_ini_estado_actual',
+            'requiere_digitalizacion'
         ]
         extra_kwargs = {
             'id_solicitud_tramite': {'read_only': True},
@@ -161,7 +162,8 @@ class InicioTramiteCreateSerializer(serializers.ModelSerializer):
             'id_medio_solicitud': {'required': True, 'allow_null': False},
             'id_persona_registra': {'required': True, 'allow_null': False},
             'id_estado_actual_solicitud': {'required': True, 'allow_null': False},
-            'fecha_ini_estado_actual': {'required': True, 'allow_null': False}
+            'fecha_ini_estado_actual': {'required': True, 'allow_null': False},
+
         }
 
 class TramiteListGetSerializer(serializers.ModelSerializer):
@@ -263,6 +265,7 @@ class AnexosUpdateSerializer(serializers.ModelSerializer):
 class AnexosGetSerializer(serializers.ModelSerializer):
     nombre = serializers.SerializerMethodField()
     descripcion = serializers.SerializerMethodField()
+    id_archivo_digital = serializers.SerializerMethodField()
     formato = serializers.SerializerMethodField()
     tamagno_kb = serializers.SerializerMethodField()
     ruta_archivo = serializers.SerializerMethodField()
@@ -272,6 +275,9 @@ class AnexosGetSerializer(serializers.ModelSerializer):
     
     def get_descripcion(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().descripcion
+    
+    def get_id_archivo_digital(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.id_archivo_digital
     
     def get_formato(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.formato
@@ -291,6 +297,7 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'id_anexo',
             'nombre',
             'descripcion',
+            'id_archivo_digital',
             'formato',
             'tamagno_kb',
             'ruta_archivo'
