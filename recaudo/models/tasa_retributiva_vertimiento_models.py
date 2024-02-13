@@ -33,7 +33,7 @@ class InformacionFuente(models.Model):
         return f"aT452_{self.numero} - {self.nombreFuente}"
 
     class Meta:
-        db_table = '464TInformaciónFuente'
+        db_table = 'T464TInformacionFuente'
         verbose_name = 'Información de Fuente'
         verbose_name_plural = 'Información de Fuentes'
 
@@ -94,7 +94,7 @@ class CaptacionMensualAgua(models.Model):
         return f"T455_{self.periodoUso} - {self.mes}"
 
     class Meta:
-        db_table = 'T462TCaptaciónMensualAgua'
+        db_table = 'T462TCaptacionMensualAgua'
         verbose_name = 'Captación Mensual de Agua'
         verbose_name_plural = 'Captaciones Mensuales de Agua'
 
