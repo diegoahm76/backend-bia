@@ -16,7 +16,7 @@ from gestion_documental.models.configuracion_tiempos_respuesta_models import Con
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.bandeja_tareas_otros_serializers import AnexosOtrosGetSerializer, DetalleOtrosGetSerializer, MetadatosAnexosOtrosTmpSerializerGet, TareasAsignadasOotrosUpdateSerializer, TareasAsignadasOtrosGetSerializer
-from gestion_documental.serializers.bandeja_tareas_serializers import ReasignacionesTareasOtrosCreateSerializer, TareasAsignadasGetJustificacionSerializer
+from gestion_documental.serializers.bandeja_tareas_serializers import ReasignacionesTareasOtrosCreateSerializer, ReasignacionesTareasgetOtrosByIdSerializer, TareasAsignadasGetJustificacionSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -334,6 +334,8 @@ class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
     vista_tareas = TareasAsignadasCreate()
     permission_classes = [IsAuthenticated]
     def post(self, request):
+
+
         data_in = request.data
         data_in['fecha_reasignacion'] = datetime.now()
         data_in['cod_estado_reasignacion'] = 'Ep'
@@ -345,6 +347,11 @@ class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
         if tarea.cod_estado_asignacion == 'Re':
             raise ValidationError("Esta tarea fue Rechazada ")
         tarea.cod_estado_solicitud = 'De'
+
+        reasignadas = ReasignacionesTareas.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+
+        if reasignadas:
+            raise ValidationError("La tarea tiene una reasignacion pendiente por responder.")
         tarea.save()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
@@ -356,6 +363,7 @@ class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
         data_tarea['fecha_asignacion'] = datetime.now()
         data_tarea['cod_estado_solicitud'] = 'Ep'
         data_tarea['id_tarea_asignada_padre_inmediata'] = tarea.id_tarea_asignada
+        data_tarea['comentario_asignacion'] = data_in['comentario_reasignacion']
         respuesta_tareas = self.vista_tareas.crear_asignacion_tarea(data_tarea)
         if respuesta_tareas.status_code != status.HTTP_201_CREATED:
             return respuesta_tareas
@@ -375,3 +383,15 @@ class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
         #CAMBIO EL ESTADO DE LA TAREA PADRE EN ESPERA
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
+
+
+class ReasignacionesOtrosTareasgetById(generics.ListAPIView):
+    serializer_class = ReasignacionesTareasgetOtrosByIdSerializer
+    queryset = ReasignacionesTareas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        instance = self.get_queryset().filter(id_tarea_asignada=pk)
+        if not instance:
+            raise NotFound("No existen registros")
+        serializer = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)

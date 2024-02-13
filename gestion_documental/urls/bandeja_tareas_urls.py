@@ -50,4 +50,5 @@ urlpatterns = [
     path('tareas-asignadas/otros/jus/tarea/get/<str:pk>/', views_otros.TareasAsignadasOtroJusTarea.as_view(), name='update-tareas-asignadas-otros'),
     #ReasignacionesTareasOtroCreate
     path('reasignaciones/otros/tareas/create/', views_otros.ReasignacionesTareasOtroCreate.as_view(), name='crear-reasignaciones-tareas-otros'),
+    path('reasignaciones/otros/tareas/get/<str:pk>/', views_otros.ReasignacionesOtrosTareasgetById.as_view(), name='listar-reasignaciones-tareas-otros'),
 ]
