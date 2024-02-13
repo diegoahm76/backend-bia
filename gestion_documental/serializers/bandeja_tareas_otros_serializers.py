@@ -37,7 +37,7 @@ class TareasAsignadasOtrosGetSerializer(serializers.ModelSerializer):
     class Meta:#
         model = TareasAsignadas
         fields = '__all__'
-        fields = ['id_tarea_asignada','id_otro','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea','tarea_reasignada_a']
+        fields = ['id_tarea_asignada','id_otro','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea','tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
         
 
 
@@ -323,3 +323,8 @@ class MetadatosAnexosOtrosTmpSerializerGet(serializers.ModelSerializer):
             lista_datos =  obj.palabras_clave_doc.split("|")
             return lista_datos
         return None
+
+class TareasAsignadasOotrosUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = '__all__'

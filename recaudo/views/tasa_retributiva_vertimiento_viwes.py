@@ -1,5 +1,6 @@
 
 from gestion_documental.models.consecutivo_unidad_models import Consecutivo
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recaudo.models.tasa_retributiva_vertimiento_models import  CaptacionMensualAgua, T0444Formulario, T458PrincipalLiquidacion, T459TablaTercerosss, documento_formulario_recuado
 from recaudo.serializers.tasa_retributiva_vertimiento_serializers import  PrincipalLiquidacionSerializer, T0444FormularioSerializer, T459TablaTercerosssSerializer, documento_formulario_recuados_Getserializer, documento_formulario_recuados_serializer
@@ -51,7 +52,11 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                 if not instance:
                     raise ValidationError("No se encontró el consecutivo del documento.")
                 
-                instance.id_documento_digital = data_archivo_id
+                archivo_digital =ArchivosDigitales.objects.filter(id_archivo_digital=data_archivo_id).first()
+
+                if not archivo_digital: 
+                    raise ValidationError("No se encontró el archivo digital.")
+                instance.id_archivo = archivo_digital
                 instance.save()
 
                 #GENERA ALERTA DE EVEMTO INMEDIATO 
