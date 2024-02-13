@@ -27,7 +27,7 @@ class ConfigTipoConsecAgno(models.Model):
 
 
 class Consecutivo(models.Model):
-    id_consecutivo = models.AutoField(primary_key=True, db_column='T307IdConsecutivo')
+    id_consecutivo = models.AutoField(primary_key=True, db_column='T308IdConsecutivo')
     #cod_tipo_proceso = models.CharField(max_length=3, choices=PROCESO_CHOICES, db_column='T308codTipoProceso')
     id_unidad = models.ForeignKey('transversal.UnidadesOrganizacionales', on_delete=models.CASCADE, db_column='T308Id_Unidad',related_name='T308Id_Unidad')
     id_catalogo = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T308Id_Catalogo',related_name='T308Id_Catalogo')
