@@ -92,8 +92,8 @@ class Util:
         #                     to=to_whatsapp_number)
 
         # SE COMENTA PARA NO CONSUMIR SALDO EN AMBIENTES DE PRUEBAS
-        response = requests.request("POST", url, headers=headers, data=payload.encode("utf-8"))
-        print(response.text)
+        # response = requests.request("POST", url, headers=headers, data=payload.encode("utf-8"))
+        # print(response.text)
         
         #client.messages.create(messaging_service_sid=TWILIO_MESSAGING_SERVICE_SID, body=sms, from_=PHONE_NUMBER, to=phone)
         
