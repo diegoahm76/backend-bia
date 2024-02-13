@@ -3179,6 +3179,8 @@ class PublicarCreateView(generics.CreateAPIView):
                 raise ValidationError('No se encontró uno o varios de los expedientes ingresados')
             if expediente_doc.estado != 'C':
                 raise ValidationError('Solo puede elegir expedientes cerrados para su eliminación')
+            if expediente_doc.id_eliminacion_exp:
+                raise ValidationError('Uno o varios de los expedientes elegidos ya se encuentran en otra publicación de eliminación')
             
             expediente_doc.id_eliminacion_exp = eliminacion
             expediente_doc.save()
