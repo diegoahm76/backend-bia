@@ -1126,8 +1126,18 @@ class TramiteListOpasGetView(generics.ListAPIView):
         filter['id_solicitud_tramite__id_medio_solicitud'] = 2
         filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
-        
+        #nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
+        #nombre_opa = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
         for key, value in request.query_params.items():
+
+            if key == 'nombre_opa':
+                if value != '':
+                    filter['id_permiso_ambiental__nombre__icontains'] = value
+
+            if key =='nombre_proyecto':
+                if value != '':
+                    filter['id_solicitud_tramite__nombre_proyecto__icontains']= value
+                    
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_solicitud_tramite__id_estado_actual_solicitud__nombre__icontains'] = value 
