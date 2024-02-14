@@ -15,7 +15,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas,
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_tramites_serializers import TareasAsignadasTramitesGetSerializer
+from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasTramitesGetSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -24,6 +24,7 @@ from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPers
 from seguridad.utils import Util
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+from tramites.models.tramites_models import SolicitudesTramites
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
@@ -94,3 +95,42 @@ class TareasAsignadasGetTramitesByPersona(generics.ListAPIView):
         else :
             data_validada = serializer.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
+
+
+
+class DetalleSolicitudesTramitesGet(generics.ListAPIView):
+
+    serializer_class = SolicitudesTramitesDetalleGetSerializer
+    queryset = SolicitudesTramites.objects.all()
+
+
+    def get(self, request, id):
+
+        instance = self.get_queryset().filter(id_solicitud_tramite=id).first()
+        if not instance:
+            raise NotFound('No se encontro el otro')
+        serializer = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class OtrosInfoAnexosGet(generics.ListAPIView):
+    serializer_class = AnexosTramitesGetSerializer
+    queryset =SolicitudesTramites.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+        data=[]
+        instance =self.queryset.filter(id_solicitud_tramite=pk).first()
+
+
+        if not instance:
+                raise NotFound("No existen registros")
+        anexos_pqrs = Anexos_PQR.objects.filter(id_otros=instance)
+        for x in anexos_pqrs:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)

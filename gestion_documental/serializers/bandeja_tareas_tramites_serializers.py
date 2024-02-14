@@ -9,7 +9,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
-from tramites.models.tramites_models import SolicitudesTramites
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -31,13 +31,49 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
     tarea_reasignada_a = serializers.SerializerMethodField(default=None)
     unidad_org_destino = serializers.SerializerMethodField(default=None)
     estado_reasignacion_tarea = serializers.SerializerMethodField(default=None)
+    tiempo_respuesta = serializers.SerializerMethodField(default=None)
 
     class Meta:#
         model = TareasAsignadas
         fields = '__all__'
-        fields = ['id_tarea_asignada','id_tramite','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea','tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
+        fields = ['id_tarea_asignada','id_tramite','tipo_tarea','asignado_por','asignado_para','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','tiempo_respuesta','requerimientos_pendientes_respuesta','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea','tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
         
+    def get_tiempo_respuesta(self,obj):
+        tarea = obj
+        id_tramite = None
 
+        if tarea.id_asignacion:
+                asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
+                id_tramite = asignacion.id_asignacion_tramite
+        else:
+
+            while tarea:
+                tarea = tarea.id_tarea_asignada_padre_inmediata
+
+                if tarea.id_asignacion:
+                    asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
+
+                    id_tramite = asignacion.id_asignacion_tramite
+                    break
+        if not id_tramite:
+            return None
+        instance_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_tramite).first()
+        if not instance_tramite:
+            return None
+   
+
+        fecha_radicado = instance_tramite.fecha_radicado
+
+        if not fecha_radicado:
+            return None
+        
+        fecha_actual = datetime.now()
+        fecha_radicado_mas_15_dias = fecha_radicado + timedelta(days=15)
+      
+   
+        dias_faltan = fecha_radicado_mas_15_dias - fecha_actual
+
+        return dias_faltan.days
 
     def get_id_tramite(self,obj):
         #buscamos la asignacion
@@ -243,3 +279,57 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
         return instance_tramite.fecha_radicado           
 
         
+class SolicitudesTramitesDetalleGetSerializer(serializers.ModelSerializer):
+
+    nombre_completo_titular = serializers.SerializerMethodField(default=None)
+    #cod_tipo_operacion_tramite
+    tipo_operacion = serializers.ReadOnlyField(source='get_cod_tipo_operacion_tramite_display',default=None)
+    nombre_tramite = serializers.SerializerMethodField(default=None)
+    medio_solicitud = serializers.ReadOnlyField(source='id_medio_solicitud.nombre',default=None)
+    nombre_sucursal = serializers.ReadOnlyField(source='id_sucursal_recepcion_fisica.descripcion_sucursal',default=None)
+    radicado = serializers.SerializerMethodField(default=None)
+    class Meta:
+        model = SolicitudesTramites
+        fields = ['id_solicitud_tramite','nombre_completo_titular','nombre_tramite','tipo_operacion','nombre_proyecto','costo_proyecto','pago','fecha_registro','medio_solicitud','nombre_sucursal','radicado','fecha_radicado']
+
+
+    def get_nombre_tramite(self, obj):
+        instance = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
+        if not instance:
+            return None
+        
+        nombre_tramite = instance.id_permiso_ambiental.nombre
+        return nombre_tramite
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+
+    def get_nombre_completo_titular(self, obj):
+
+        if obj.id_persona_titular:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            if obj.es_anonima:
+                return "Anonimo"
+            else:
+                return 'No Identificado'
+            
+
+
+class AnexosTramitesGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+  
+    class Meta:
+        model = Anexos
+        fields = '__all__'  

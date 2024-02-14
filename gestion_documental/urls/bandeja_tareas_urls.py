@@ -55,4 +55,6 @@ urlpatterns = [
     #TRAMITES
     #TareasAsignadasGetTramitesByPersona
     path('tareas-asignadas/tramites/get-by-persona/<str:id>/', views_tramites.TareasAsignadasGetTramitesByPersona.as_view(), name='get-tareas-asignadas-tr'),
+
+    path('detalle-tramites/get/<str:id>/', views_tramites.DetalleSolicitudesTramitesGet.as_view(), name='get-detalle-tramites-by-id'),
 ]
