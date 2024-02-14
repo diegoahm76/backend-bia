@@ -1768,7 +1768,7 @@ class ReportesPQRSDFSearch(generics.ListAPIView):
 
         id_estado_actual_solicitud = self.request.query_params.get('id_estado_actual_solicitud')
         id_und_org_seccion_asignada = self.request.query_params.get('id_und_org_seccion_asignada')
-        cod_tipo_pqrsdf = self.request.query_params.get('cod_tipo_pqrsdf')
+        tipo_solicitud = self.request.query_params.get('tipo_solicitud')
 
         queryset = PQRSDF.objects.filter(id_estado_actual_solicitud__in=estados_pqrsdf)
 
@@ -1787,8 +1787,9 @@ class ReportesPQRSDFSearch(generics.ListAPIView):
         if id_und_org_seccion_asignada:
             queryset = queryset.filter(asignacionpqr__id_und_org_seccion_asignada=id_und_org_seccion_asignada)
 
-        if cod_tipo_pqrsdf:
-            queryset = queryset.filter(cod_tipo_pqrsdf=cod_tipo_pqrsdf)
+        if tipo_solicitud:
+            queryset = queryset.filter(cod_tipo_PQRSDF=tipo_solicitud)
+
 
         return queryset
 
@@ -2092,6 +2093,7 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
             'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
             'SOLICITUD AL USUARIO ENVIADA',
             'SOLICITUD AL USUARIO RESPONDIDA'
+            'GUARDADO'
         ])
 
         tipo_solicitud = self.request.query_params.get('tipo_solicitud')
@@ -2104,7 +2106,7 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
         id_persona_interpone = self.request.query_params.get('id_persona_interpone')
         cod_relacion_con_el_titular = self.request.query_params.get('cod_relacion_con_el_titular')
 
-        queryset = PQRSDF.objects.filter(id_estado_actual_solicitud__in=estados_pqrsdf)
+        queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO')
 
         if tipo_solicitud:
             queryset = queryset.filter(cod_tipo_PQRSDF=tipo_solicitud)
@@ -2122,17 +2124,28 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
         if cod_relacion_con_el_titular:
                 queryset = queryset.filter(cod_relacion_con_el_titular=cod_relacion_con_el_titular)
 
+
         if radicado:
-            try:
-                prefijo, agno, numero = radicado.split('-')
-            except ValueError:
-                raise ValidationError('El campo "Radicado" debe tener el formato correcto: (PREFIJO) - (AGNO) - (NUMERO_RADICADO).')
-            
-            queryset = queryset.filter(
-                id_radicado__prefijo_radicado=prefijo,
-                id_radicado__agno_radicado=agno,
-                id_radicado__nro_radicado=numero
-            )
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                   queryset = queryset.filter(
+                        id_radicado__prefijo_radicado__icontains=prefijo,
+                        id_radicado__agno_radicado__icontains=agno,
+                        id_radicado__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicado__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicado__agno_radicado__icontains=radicado) |
+                    Q(id_radicado__nro_radicado__icontains=radicado)
+                )
     
 
         if fecha_radicado_desde:
@@ -2191,10 +2204,31 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
                     Q(id_estado_actual_solicitud__nombre='RADICADO') &
                     (Q(fecha_radicado__isnull=True) | Q(dias_faltantes__gt=0))
                 ).distinct()
-            else:
-                estado_mapping_value = estado_mapping.get(estado_solicitud, '')
-                if estado_mapping_value:
-                    queryset = queryset.filter(id_estado_actual_solicitud__nombre=estado_mapping_value)
+            elif estado_solicitud == 'EN VENTANILLA CON PENDIENTES':
+                # Filtrar por PQRSDF en estado 'EN VENTANILLA CON PENDIENTES'
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre='EN VENTANILLA CON PENDIENTES')
+
+            elif estado_solicitud == 'EN VENTANILLA SIN PENDIENTES':
+                # Filtrar por PQRSDF en estado 'EN VENTANILLA SIN PENDIENTES'
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre='EN VENTANILLA SIN PENDIENTES')
+
+            elif estado_solicitud == 'EN GESTION':
+                # Filtrar por PQRSDF en estado 'EN GESTION'
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre='EN GESTION')
+
+            elif estado_solicitud == 'RESPONDIDA':
+                # Filtrar por PQRSDF en estado 'RESPONDIDA'
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre='RESPONDIDA')
+
+            elif estado_solicitud == 'NOTIFICADA':
+                # Filtrar por PQRSDF en estado 'RESPONDIDA'
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre='NOTIFICADA')
+
+            elif estado_solicitud == 'CERRADA':
+                # Filtrar por PQRSDF en estado 'RESPONDIDA'
+                queryset = queryset.filter(id_estado_actual_solicitud__nombre='CERRADA')
+
+
 
         return queryset
 

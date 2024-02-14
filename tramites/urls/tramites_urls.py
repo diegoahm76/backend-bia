@@ -16,4 +16,7 @@ urlpatterns = [
     path('opa/tramites/radicar/create/<str:id_solicitud_tramite>/', views.RadicarCreateView.as_view(), name='radicar-create'),
     path('opa/tramites/radicar/get/<str:id_solicitud_tramite>/', views.RadicarGetView.as_view(), name='radicar-get'),
     path('opa/tramites/radicar/volver-enviar/<str:id_solicitud_tramite>/', views.RadicarVolverEnviarGetView.as_view(), name='radicar-volver-enviar'),
+
+    #Consulta_Estado_Solicitud_OPAS_130
+    path('opa/tramites/consulta-estado-opas/', views.ConsultaEstadoOPAS.as_view(), name='listar-OPAS-solicitud'),
 ]

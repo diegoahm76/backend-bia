@@ -302,3 +302,8 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'tamagno_kb',
             'ruta_archivo'
         ]
+
+class OPASSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PermisosAmbSolicitudesTramite
+        fields = '__all__'
