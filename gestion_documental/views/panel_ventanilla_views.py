@@ -11,7 +11,7 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 from seguridad.utils import Util
@@ -1948,40 +1948,30 @@ class UnidadesOrganizacionalesRelacionadasListView(generics.ListAPIView):
 #PANEL DE VENTANILLA TRAMITES 
 class SolicitudesTramitesGet(generics.ListAPIView):
     serializer_class = SolicitudesTramitesGetSerializer
-    queryset =SolicitudesTramites.objects.all()
-                                         
+    queryset = SolicitudesTramites.objects.all()           
     permission_classes = [IsAuthenticated]
 
     def get (self, request):
-        #tipo_busqueda = 'PQRSDF'
         data_respuesta = []
         filter={}
         
         for key, value in request.query_params.items():
-
-            # if key == 'radicado':
-            #     if value !='':
-            #         filter['mezcla__icontains'] = value
             if key =='estado_actual_solicitud':
                 if value != '':
-                    filter['id_estado_actual_solicitud__nombre__icontains'] = value    
-            if key == 'tipo_solicitud':
-                if value != '':
-                    tipo_busqueda = False
-
+                    filter['id_estado_actual_solicitud__nombre__icontains'] = value
             if key == 'fecha_inicio':
                 if value != '':
-                    
                     filter['fecha_radicado__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
             if key == 'fecha_fin':
                 if value != '':
                     filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
 
-
         filter['id_radicado__isnull'] = False
         instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        permisos_ambientales_solicitudes = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental='O').values_list('id_solicitud_tramite', flat=True).distinct()
+        instance = instance.exclude(id_solicitud_tramite__in=list(permisos_ambientales_solicitudes))
+        
         radicado_value = request.query_params.get('radicado')
-        print(radicado_value)
         if not instance:
             raise NotFound("No existen registros")
 
@@ -1993,7 +1983,129 @@ class SolicitudesTramitesGet(generics.ListAPIView):
         else :
             data_validada = data_respuesta
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
+
+class SolicitudDeDigitalizacionTramitesCreate(generics.CreateAPIView):
+    serializer_class = SolicitudDeDigitalizacionPostSerializer
+    serializer_tramite = TramitePutSerializer
+    queryset =SolicitudDeDigitalizacion.objects.all()
+    permission_classes = [IsAuthenticated]
+    creador_estados = Estados_PQRCreate
     
+    def post(self, request):
+        fecha_actual = datetime.now()    
+      
+        data_in = request.data
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        permisos_ambientales_solicitud = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'], id_permiso_ambiental__cod_tipo_permiso_ambiental='O')
+        
+        if not solicitud_tramite:
+            raise NotFound("No existe el tramite seleccionado.")
+
+        if not solicitud_tramite.requiere_digitalizacion:
+            raise ValidationError("No requiere digitalizacion")
+        
+        if permisos_ambientales_solicitud:
+            raise PermissionDenied("No se puede realizar la solicitud de digitalización de un OPA en este servicio")
+        
+        if solicitud_tramite.id_estado_actual_solicitud:
+            if solicitud_tramite.id_estado_actual_solicitud.id_estado_solicitud == 3:
+                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
+        
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_tramite=request.data['id_solicitud_tramite'])
+        for solicitude in solicitudes:
+            if  not solicitude.fecha_rta_solicitud:
+                raise ValidationError('No se puede realizar la solicitud porque tiene pendientes')
+        
+        #CREA UN ESTADO NUEVO  T255 EN VENTANILLA CON PENDIENTES
+        data_estado = {}
+        data_estado['id_tramite'] = request.data['id_solicitud_tramite']
+        data_estado['estado_solicitud'] = 3
+        data_estado['fecha_iniEstado'] = fecha_actual
+        respuesta_estado = self.creador_estados.crear_estado(self,data_estado)
+        data_respuesta_estado_asociado = respuesta_estado.data['data']
+        
+        # #ASOCIAR ESTADO
+        data_estado_asociado = {}
+        data_estado_asociado['id_tramite'] = request.data['id_solicitud_tramite']
+        data_estado_asociado['estado_solicitud'] = 9
+        data_estado_asociado['estado_PQR_asociado'] =data_respuesta_estado_asociado['id_estado_PQR']
+        data_estado_asociado['fecha_iniEstado'] = fecha_actual
+        respuesta_estado_asociado = self.creador_estados.crear_estado(self,data_estado_asociado)
+        
+        #CAMBIAMOS EL ESTADO ACTUAL DEL TRAMITE  self.serializer_class(unidad_medida,data)
+        serializador_tramite = self.serializer_tramite(solicitud_tramite, data={
+            'id_estado_actual_solicitud':3,
+            'fecha_envio_definitivo_a_digitalizacion':datetime.now()
+        }, partial=True)
+        serializador_tramite.is_valid(raise_exception=True)
+        serializador_tramite.save()
+        
+        data_in['id_tramite'] = data_in['id_solicitud_tramite']
+        data_in['fecha_solicitud'] = fecha_actual
+        data_in['digitalizacion_completada'] = False
+        data_in['devuelta_sin_completar'] = False
+        
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estados':respuesta_estado_asociado.data['data']}, status=status.HTTP_200_OK)
+
+class TramitesAnexoInfoGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset =PermisosAmbSolicitudesTramite.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,tra):
+        data=[]
+        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=tra).first()
+        if not tramite:
+            raise NotFound("No existen registros")
+        
+        tabla_intermedia_anexos_tramites = AnexosTramite.objects.filter(id_solicitud_tramite=tramite)
+
+        for x in tabla_intermedia_anexos_tramites:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+
+class TramitesGetHitorico(generics.ListAPIView):
+    serializer_class = TramitesGetHistoricoSerializer
+    queryset = SolicitudesTramites.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request):
+        filter={}
+        filter['id_radicado__isnull'] = False
+        radicado = None
+        for key, value in request.query_params.items():
+
+            if key == 'radicado':
+                if value !='':
+                    radicado = value
+            if key =='fecha_radicado':
+                if value != '':
+                    filter['fecha_radicado'] = datetime.strptime(value, '%Y-%m-%d').date()
+           
+    
+        instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
+        permisos_ambientales_solicitudes = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental='O').values_list('id_solicitud_tramite', flat=True).distinct()
+        instance = instance.exclude(id_solicitud_tramite__in=list(permisos_ambientales_solicitudes))
+        
+        if not instance:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance,many=True)
+        data_respuesta = serializador.data
+        data_validada =[]
+        if radicado and radicado != '':
+            data_validada = [item for item in serializador.data if radicado in item.get('cabecera', {}).get('radicado', '')]
+        else :
+            data_validada = data_respuesta
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
 
 #Asignacion_Tramites
 class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):

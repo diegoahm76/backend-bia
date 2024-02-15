@@ -75,6 +75,10 @@ urlpatterns = [
     #PANEL DE VENTANILLA TRAMITES
    
     path('tramites/get/', views.SolicitudesTramitesGet.as_view(), name='listar-tramites'),
+    path('tramites/estados_solicitudes/get/', views.EstadosSolicitudesTramitesGet.as_view(),name='listar-estados-solicitud-tramites'),
+    path('tramites/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionTramitesCreate.as_view(),name='crear-solicitud-tramites'),
+    path('tramites/anexo/get/<str:tra>/',views.TramitesAnexoInfoGet.as_view(),name='get-tramites-anexo'),
+    path('tramites/historico/get/',views.TramitesGetHitorico.as_view(),name='listar-historico-tramites'),
     #ASIGNACION_DE_OPAS
     path('asginar-opas/seccion-subseccion/get/',views.SeccionSubseccionAsignacionGet.as_view(),name='listar-unidades'),
     path('asginar-opas/seccion-subseccion-grupos/<int:subseccion_id>/', views.SubseccionGestionAmbientalGruposGet.as_view(), name='subseccion_gestion_ambiental_grupos'),
