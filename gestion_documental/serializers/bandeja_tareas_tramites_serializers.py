@@ -333,3 +333,11 @@ class AnexosTramitesGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anexos
         fields = '__all__'  
+
+
+
+
+class TareasAsignadasTramiteUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = '__all__'

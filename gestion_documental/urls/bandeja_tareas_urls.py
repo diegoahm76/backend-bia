@@ -57,4 +57,10 @@ urlpatterns = [
     path('tareas-asignadas/tramites/get-by-persona/<str:id>/', views_tramites.TareasAsignadasGetTramitesByPersona.as_view(), name='get-tareas-asignadas-tr'),
 
     path('detalle-tramites/get/<str:id>/', views_tramites.DetalleSolicitudesTramitesGet.as_view(), name='get-detalle-tramites-by-id'),
+    #TramitesInfoAnexosGet
+    path('tramites/anexo/get/<str:pk>/', views_tramites.TramitesInfoAnexosGet.as_view(), name='get-tramites-anexo'),
+    #TareasAsignadasTramitesRechazarUpdate
+    path('tareas-asignadas/tramites/rechazar/update/<str:pk>/', views_tramites.TareasAsignadasTramitesRechazarUpdate.as_view(), name='update-tareas-asignadas-tram'),
+
+    path('tareas-asignadas/tramites/aceptar/update/<str:pk>/', views_tramites.TareasAsignadasAceptarTramiteUpdate.as_view(), name='update-tareas-asignadas-tram')
 ]
