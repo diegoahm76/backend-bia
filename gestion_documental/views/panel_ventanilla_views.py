@@ -2173,7 +2173,7 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
 
             # Creamos la tarea 315 #pendiente panel de ventanilla de tramite
             data_tarea = {}
-            data_tarea['cod_tipo_tarea'] = 'ROpa'
+            data_tarea['cod_tipo_tarea'] = 'Rtra' #KEVIN NO ES ROpa es Rtra
             data_tarea['id_asignacion'] = serializer.data['id_asignacion_tramite']
             data_tarea['fecha_asignacion'] = timezone.now()
             data_tarea['cod_estado_solicitud'] = 'Ep'
