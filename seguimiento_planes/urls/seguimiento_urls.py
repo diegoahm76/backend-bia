@@ -106,10 +106,10 @@ urlpatterns=[
     path('eliminar-seguimiento-pai-documentos/<str:pk>/',views.SeguimientoPAIDocumentosDelete.as_view(),name='eliminarseguimientopaidocumentos'),
     path('consltar-seguimiento-documentos-id-pai/<str:pk>/', views.SeguimientoPAIDocumentosListIdSeguimiento.as_view(),name='consultaridseguimientopai'),
     # Seguimiento POAI
-    path('consultar-seguimiento-poai/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
-    path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
-    path('actualizar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
-    path('eliminar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIDelete.as_view(),name='eliminarseguimientopoai'),
-    # Busqueda avanzada de seguimiento POAI por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador, nombre meta, nombre, concepto, cuenta, objeto_contrato, codigo_modalidad, 
-    path('consultar-seguimiento-poai-avanzado/',views.BusquedaAvanzadaSeguimientoPOAI.as_view(),name='consultarseguimientopoaiavanzado'),
+    # path('consultar-seguimiento-poai/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
+    # path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
+    # path('actualizar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
+    # path('eliminar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIDelete.as_view(),name='eliminarseguimientopoai'),
+    # # Busqueda avanzada de seguimiento POAI por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador, nombre meta, nombre, concepto, cuenta, objeto_contrato, codigo_modalidad, 
+    # path('consultar-seguimiento-poai-avanzado/',views.BusquedaAvanzadaSeguimientoPOAI.as_view(),name='consultarseguimientopoaiavanzado'),
     ]
