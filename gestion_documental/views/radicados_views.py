@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosGetRadicadoIdSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
@@ -22,7 +22,17 @@ from gestion_documental.views.panel_ventanilla_views import Estados_OTROSDelete,
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 
 
+class GetRadicadoById(generics.ListAPIView):
+    serializer_class = RadicadosGetRadicadoIdSerializer
+    queryset = T262Radicados.objects.all()
+    def get(self, request, id):
 
+        instance = self.get_queryset().filter(id_radicado=id).first()
+
+        if not instance:
+            raise NotFound('No se encontro el radicado')
+        serializer = self.serializer_class(instance)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes registros.', 'data':serializer.data}, status=status.HTTP_200_OK) 
 
 class GetHistoricoRadicados(generics.ListAPIView):
     serializer_class = RadicadosGetHistoricoSerializer
@@ -91,13 +101,13 @@ class GetRadicadosImprimir(generics.ListAPIView):
             serializer = self.serializer_class(data_to_serializer, many=True)
             return Response({'success':True, 'detail':'Se encontraron los siguientes radicados que coinciden con los criterios de búsqueda', 'data':serializer.data}, status=status.HTTP_200_OK)
         except Exception as e:
-            raise({'success': False, 'detail': str(e)}) 
+            raise ValidationError(str(e)) 
 
     def procesa_radicados_filtrados(self, radicados):
         data_radicados = []
         for radicado in radicados:
             pqrsdf_instance = PQRSDF.objects.all()
-            modulo_radica = modulos_radican.objects.filter(id_ModuloQueRadica=radicado.id_modulo_que_radica).first()
+            modulo_radica = radicado.id_modulo_que_radica
             if modulo_radica:
                 if modulo_radica.nombre == "PQRSDF":
                     pqrsdf = pqrsdf_instance.filter(id_radicado = radicado.id_radicado).first()
@@ -794,7 +804,7 @@ class AnexosCreate(generics.CreateAPIView):
             return serializer.data
 
         except Exception as e:
-            raise({'success': False, 'detail': str(e)})
+            raise ValidationError(str(e))
 
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
@@ -1247,7 +1257,8 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
             'SOLICITUD DE DIGITALIZACION ENVIADA',
             'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
             'SOLICITUD AL USUARIO ENVIADA',
-            'SOLICITUD AL USUARIO RESPONDIDA'
+            'SOLICITUD AL USUARIO RESPONDIDA',
+            'GUARDADO'
         ])
 
         tipo_solicitud = self.request.query_params.get('tipo_solicitud')
@@ -1273,17 +1284,28 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
         if cod_relacion_titular:
                 queryset = queryset.filter(cod_relacion_titular=cod_relacion_titular)
 
+
         if radicado:
-            try:
-                prefijo, agno, numero = radicado.split('-')
-            except ValueError:
-                raise ValidationError('El campo "Radicado" debe tener el formato correcto: (PREFIJO) - (AGNO) - (NUMERO_RADICADO).')
-            
-            queryset = queryset.filter(
-                id_radicados__prefijo_radicado=prefijo,
-                id_radicados__agno_radicado=agno,
-                id_radicados__nro_radicado=numero
-            )
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                   queryset = queryset.filter(
+                        id_radicados__prefijo_radicado__icontains=prefijo,
+                        id_radicados__agno_radicado__icontains=agno,
+                        id_radicados__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicados__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicados__agno_radicado__icontains=radicado) |
+                    Q(id_radicados__nro_radicado__icontains=radicado)
+                )
 
         if fecha_radicado_desde:
             queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
@@ -1348,6 +1370,7 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
                 'Radicado': f"{otros.id_radicados.prefijo_radicado}-{otros.id_radicados.agno_radicado}-{otros.id_radicados.nro_radicado}" if otros.id_radicados else 'N/A',
                 'Fecha de Radicado': otros.fecha_radicado,
                 'Persona Que Radicó': f"{otros.id_radicados.id_persona_radica.primer_nombre} {otros.id_radicados.id_persona_radica.segundo_nombre} {otros.id_radicados.id_persona_radica.primer_apellido} {otros.id_radicados.id_persona_radica.segundo_apellido}" if otros.id_radicados and otros.id_radicados.id_persona_radica else 'N/A',
+                'Id_Estado': otros.id_estado_actual_solicitud.id_estado_solicitud,
                 'Estado': estado_nombre,
                 'Ubicacion en la corporacion':ubicacion_corporacion,
                 
