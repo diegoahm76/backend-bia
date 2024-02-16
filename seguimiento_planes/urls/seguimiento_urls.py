@@ -7,6 +7,10 @@ urlpatterns=[
     path('crear-fuentes-financiacion-indicadores/',views.FuenteFinanciacionIndicadoresCreate.as_view(),name='crearfuentesfinanciacionindicadores'),
     path('actualizar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresUpdate.as_view(),name='actualizarfuentesfinanciacionindicadores'),
     path('eliminar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresDelete.as_view(),name='eliminarfuentesfinanciacionindicadores'),
+    # Listar todos los registros de fuentes de financiacion indicadores por id_indicador
+    path('consultar-fuentes-financiacion-indicadores-id-indicador/<str:pk>/', views.FuenteFinanciacionIndicadoresPorIndicadorList.as_view(),name='consultaridindicadorfuentesfinanciacionindicadores'),
+    # Listar todos los registros de fuentes de financiacion indicadores por id_meta
+    path('consultar-fuentes-financiacion-indicadores-id-meta/<str:pk>/', views.FuenteFinanciacionIndicadoresPorMetaList.as_view(),name='consultaridmetafuentesfinanciacionindicadores'),
     # Busqueda avanzada de fuentes de financiacion indicadores por nombre fuente, nombre proyecto, nombre producto, nombre actividad, nombre indicador
     path('consultar-fuentes-financiacion-indicadores-avanzado/',views.BusquedaAvanzadaFuentesFinanciacionIndicadores.as_view(),name='consultarfuentesfinanciacionindicadoresavanzado'),
     # Sectores
@@ -102,10 +106,10 @@ urlpatterns=[
     path('eliminar-seguimiento-pai-documentos/<str:pk>/',views.SeguimientoPAIDocumentosDelete.as_view(),name='eliminarseguimientopaidocumentos'),
     path('consltar-seguimiento-documentos-id-pai/<str:pk>/', views.SeguimientoPAIDocumentosListIdSeguimiento.as_view(),name='consultaridseguimientopai'),
     # Seguimiento POAI
-    path('consultar-seguimiento-poai/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
-    path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
-    path('actualizar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
-    path('eliminar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIDelete.as_view(),name='eliminarseguimientopoai'),
-    # Busqueda avanzada de seguimiento POAI por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador, nombre meta, nombre, concepto, cuenta, objeto_contrato, codigo_modalidad, 
-    path('consultar-seguimiento-poai-avanzado/',views.BusquedaAvanzadaSeguimientoPOAI.as_view(),name='consultarseguimientopoaiavanzado'),
+    # path('consultar-seguimiento-poai/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
+    # path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
+    # path('actualizar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
+    # path('eliminar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIDelete.as_view(),name='eliminarseguimientopoai'),
+    # # Busqueda avanzada de seguimiento POAI por nombre plan, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador, nombre meta, nombre, concepto, cuenta, objeto_contrato, codigo_modalidad, 
+    # path('consultar-seguimiento-poai-avanzado/',views.BusquedaAvanzadaSeguimientoPOAI.as_view(),name='consultarseguimientopoaiavanzado'),
     ]

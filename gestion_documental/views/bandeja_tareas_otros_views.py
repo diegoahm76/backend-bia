@@ -380,7 +380,7 @@ class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
         if respuesta_relacion.status_code != status.HTTP_201_CREATED:
             return respuesta_relacion
 
-        #CAMBIO EL ESTADO DE LA TAREA PADRE EN ESPERA
+   
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
 

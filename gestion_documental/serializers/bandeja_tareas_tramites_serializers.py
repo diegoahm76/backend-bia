@@ -341,3 +341,10 @@ class TareasAsignadasTramiteUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TareasAsignadas
         fields = '__all__'
+
+
+
+class ReasignacionesTareasTramitesCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReasignacionesTareas
+        fields = '__all__'

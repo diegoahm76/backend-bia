@@ -62,5 +62,7 @@ urlpatterns = [
     #TareasAsignadasTramitesRechazarUpdate
     path('tareas-asignadas/tramites/rechazar/update/<str:pk>/', views_tramites.TareasAsignadasTramitesRechazarUpdate.as_view(), name='update-tareas-asignadas-tram'),
 
-    path('tareas-asignadas/tramites/aceptar/update/<str:pk>/', views_tramites.TareasAsignadasAceptarTramiteUpdate.as_view(), name='update-tareas-asignadas-tram')
+    path('tareas-asignadas/tramites/aceptar/update/<str:pk>/', views_tramites.TareasAsignadasAceptarTramiteUpdate.as_view(), name='update-tareas-asignadas-tram'),
+    #ReasignacionesTareasTramitesCreate
+    path('reasignaciones/tramites/tareas/create/',views_tramites.ReasignacionesTareasTramitesCreate.as_view(),name='crear-reasignaciones-tareas-tramites')
 ]
