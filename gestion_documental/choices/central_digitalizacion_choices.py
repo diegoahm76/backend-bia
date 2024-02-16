@@ -1,8 +1,6 @@
 TIPO_SOLICITUD_CHOICES = (
     ('PQR', 'PQRSDF'),
-    ('CDPQR', 'Complemento de PQRSDF'),
-    ('OTROS', 'OTROS'),
-    ('OPAS', 'OPAS')
+    ('CDPQR', 'Complemento de PQRSDF')
 )
 
 ESTADO_SOLICITUD_CHOICES = (

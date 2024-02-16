@@ -5,36 +5,6 @@ from gestion_documental.models.radicados_models import Anexos, Anexos_PQR, Confi
 from transversal.models.personas_models import Personas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
-class RadicadosGetRadicadoIdSerializer(serializers.ModelSerializer):
-
-    nombre_modulo = serializers.ReadOnlyField(source='id_modulo_que_radica.nombre',default=None)
-    nombre_tipo_radicado = serializers.ReadOnlyField(source='get_cod_tipo_radicado_display',default=None)
-    persona_titular = serializers.SerializerMethodField()
-    radicado_nuevo = serializers.SerializerMethodField()
-    class Meta:
-        model = T262Radicados
-        fields = '__all__'
-
-
-    def get_persona_titular(self, obj):
-        nombre_completo = None
-        nombre_list = [obj.id_persona_radica.primer_nombre, obj.id_persona_radica.segundo_nombre,
-                        obj.id_persona_radica.primer_apellido, obj.id_persona_radica.segundo_apellido]
-        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
-        nombre_completo = nombre_completo if nombre_completo != "" else None
-        return nombre_completo
-    
-    def get_radicado_nuevo(self, obj):
-        cadena = ""
-        radicado = obj
-        if radicado:
-            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
-            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
-        
-            return cadena
-        else: 
-            return 'SIN RADICAR'
 class RadicadosGetHistoricoSerializer(serializers.ModelSerializer):
 
     nombre_modulo = serializers.ReadOnlyField(source='id_modulo_que_radica.nombre',default=None)

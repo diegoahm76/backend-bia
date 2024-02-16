@@ -178,7 +178,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
                 raise ValidationError('El CCD seleccionado no se encuentra terminado o ha sido retirado de producción')
             
             instancia_validacion = ValidacionUnidadesDelegacionActualView()
-            validar_delegacion = instancia_validacion.validar_delegacion(ccd_seleccionado.id_ccd)
+            validar_delegacion = instancia_validacion.validar_delegacion(ccd_seleccionado)
 
             if validar_delegacion == []:
 
@@ -238,7 +238,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
                     return response_ccd
             
             else:
-                return Response({'success':False, 'detail':'Existen unidades organizacionales sin responsable asignado, dirijase al módulo de actividades previas a cambio de ccd', 'data':validar_delegacion}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'success':False, 'detail':'Existen Unidades Organizacionales del CCD Actual sin delegación de responsable en el CCD a Activar', 'data':validar_delegacion}, status=status.HTTP_403_FORBIDDEN)
                 
         if response_org.status_code != status.HTTP_200_OK:
             return response_org

@@ -1,7 +1,6 @@
 from django.db import models
 
 from gestion_documental.choices.cod_tipo_proceso_conseg_choices import PROCESO_CHOICES
-from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 
 class ConfigTipoConsecAgno(models.Model):
@@ -27,15 +26,15 @@ class ConfigTipoConsecAgno(models.Model):
 
 
 class Consecutivo(models.Model):
-    id_consecutivo = models.AutoField(primary_key=True, db_column='T308IdConsecutivo')
-    #cod_tipo_proceso = models.CharField(max_length=3, choices=PROCESO_CHOICES, db_column='T308codTipoProceso')
-    id_unidad = models.ForeignKey('transversal.UnidadesOrganizacionales', on_delete=models.CASCADE, db_column='T308Id_Unidad',related_name='T308Id_Unidad')
-    id_catalogo = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T308Id_Catalogo',related_name='T308Id_Catalogo')
-    agno_consecutivo = models.SmallIntegerField(db_column='T308agnoConsecutivo')
-    nro_consecutivo = models.CharField(max_length=20, db_column='T308nroConsecutivo')
-    fecha_consecutivo = models.DateTimeField(db_column='T308fechaConsecutivo')
-    id_persona_solicita = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T308Id_PersonaRadica')
-    id_archivo = models.ForeignKey(ArchivosDigitales,on_delete=models.SET_NULL,db_column='T308Id_ArchivoDigital',blank=True,null=True)
+    id_consecutivo = models.AutoField(primary_key=True, db_column='T307IdConsecutivo')
+    #cod_tipo_proceso = models.CharField(max_length=3, choices=PROCESO_CHOICES, db_column='T307codTipoProceso')
+    id_unidad = models.ForeignKey('transversal.UnidadesOrganizacionales', on_delete=models.CASCADE, db_column='T307Id_Unidad',related_name='T307Id_Unidad')
+    id_catalogo = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T307Id_Catalogo',related_name='T307Id_Catalogo')
+    agno_consecutivo = models.SmallIntegerField(db_column='T307agnoConsecutivo')
+    nro_consecutivo = models.CharField(max_length=20, db_column='T307nroConsecutivo')
+    fecha_consecutivo = models.DateTimeField(db_column='T307fechaConsecutivo')
+    id_persona_solicita = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T307Id_PersonaRadica')
+    
     class Meta:
-        db_table = 'T308Consecutivo'
+        db_table = 'T307Consecutivo'
         #unique_together = [('agno_consecutivo','nro_consecutivo'),]

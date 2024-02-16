@@ -2,10 +2,8 @@ from rest_framework import serializers
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 
 from gestion_documental.models.consecutivo_unidad_models import ConfigTipoConsecAgno, Consecutivo
-from gestion_documental.models.expedientes_models import ArchivosDigitales
-from gestion_documental.serializers.pqr_serializers import ArchivosSerializer
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-from datetime import datetime, date, timedelta
+
 class ConfigTipoConsecAgnoGetSerializer(serializers.ModelSerializer):
     nombre_unidad = serializers.ReadOnlyField(source='id_unidad.nombre', default=None)
     persona_configura = serializers.SerializerMethodField()
@@ -36,25 +34,10 @@ class ConfigTipoConsecAgnoPutConSerializer(serializers.ModelSerializer):
 class UnidadesGetSerializer(serializers.ModelSerializer):
     #nombre_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_org_actual_admin_series.nombre', default=None)
     #codigo_unidad_org_actual_admin_series = serializers.ReadOnlyField(source='id_unidad_org_actual_admin_series.codigo', default=None)
-    tiene_configuracion = serializers.SerializerMethodField()
-
-    def get_tiene_configuracion(self, obj):
-        id_configuracion = None
-        
-        hoy = date.today()
-        age = hoy.year
-        instance = ConfigTipoConsecAgno.objects.filter(id_unidad=obj.id_unidad_organizacional,agno_consecutivo=age).first()
-
     
-
-        if not instance:
-            return False
-        
-        return True
-
     class Meta:
         model = UnidadesOrganizacionales
-        fields = ['id_unidad_organizacional','codigo','nombre','tiene_configuracion']
+        fields = ['id_unidad_organizacional','codigo','nombre']
 
 class ConsecutivoCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -91,20 +74,14 @@ class ConsecutivoGetSerializer(serializers.ModelSerializer):
     id_subserie_doc=serializers.ReadOnlyField(source='id_catalogo.id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
     cod_subserie_doc=serializers.ReadOnlyField(source='id_catalogo.id_catalogo_serie.id_subserie_doc.codigo',default=None)
     nombre_subserie_doc=serializers.ReadOnlyField(source='id_catalogo.id_catalogo_serie.id_subserie_doc.nombre',default=None)
-    ruta_archivo = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Consecutivo
         fields = '__all__'
 
 
-    def get_ruta_archivo(self, obj):
-        if obj.id_archivo is None:
-            return None
-        id_archivo_digital = obj.id_archivo.id_archivo_digital
-        archivo = ArchivosDigitales.objects.filter(id_archivo_digital =id_archivo_digital).first()
-        data = ArchivosSerializer(archivo).data
-        return data['ruta_archivo']
+
 
     def get_consecutivo(self,obj):
         conf = ConfigTipoConsecAgno.objects.filter(agno_consecutivo=obj.agno_consecutivo,id_unidad=obj.id_unidad).first()

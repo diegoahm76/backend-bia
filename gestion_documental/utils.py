@@ -19,7 +19,7 @@ from django.template.loader import render_to_string
 class UtilsGestor:
 
 
-    def generar_archivo_blanco(data, nombre_archivo="black.pdf", ruta="home,BIA,Otros,PQRSDF,Complementos"):
+    def generar_archivo_blanco(data):
         
         
   
@@ -61,11 +61,11 @@ class UtilsGestor:
 
 
         # Crear un objeto ContentFile con el contenido del PDF.
-        # nombre_archivo = "black.pdf"
+        nombre_archivo = "black.pdf"
         pdf_content_file = ContentFile(pdf_bytes,name=nombre_archivo)
         vista_archivos = ArchivosDgitalesCreate()
         # Verificar si la generación del PDF fue exitosa.
-        # ruta = "home,BIA,Otros,PQRSDF,Complementos"
+        ruta = "home,BIA,Otros,PQRSDF,Complementos"
         respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},pdf_content_file)
         data_archivo = respuesta_archivo.data['data']
         if respuesta_archivo.status_code != status.HTTP_201_CREATED:

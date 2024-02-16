@@ -192,16 +192,11 @@ class CCDCambioActualPut(generics.UpdateAPIView):
     def activar_ccd(self, ccd_seleccionado, id_organigrama, data_desactivar, data_activar, data_auditoria):
 
         try:
-            ccd_seleccionado = CuadrosClasificacionDocumental.objects.get(id_ccd=ccd_seleccionado)
-        except CuadrosClasificacionDocumental.DoesNotExist:
-            raise NotFound('El CCD seleccionado no existe')
-
-        try:
             organigrama_actual = Organigramas.objects.get(id_organigrama=id_organigrama, actual=True)
         except Organigramas.DoesNotExist:
             raise NotFound('El organigrama ingresado no existe o no está activo')
         
-        if organigrama_actual.id_organigrama != ccd_seleccionado.id_organigrama.id_organigrama:
+        if organigrama_actual.id_organigrama != ccd_seleccionado.id_organigrama:
             raise PermissionDenied('El CCD seleccionado no pertenece al organigrama ingresado')
         
         previous_activacion_ccd = copy.copy(ccd_seleccionado)
@@ -280,7 +275,7 @@ class CCDCambioActualPut(generics.UpdateAPIView):
             raise PermissionDenied("El CCD seleccionado no esta terminado o ya está puesto en producción")
         
         if not ccd_actual:
-            response_ccd = self.activar_ccd(ccd_seleccionado.id_ccd, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
+            response_ccd = self.activar_ccd(ccd_seleccionado, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
         else:
             if ccd_actual.id_ccd == ccd_seleccionado.id_ccd:
@@ -296,7 +291,7 @@ class CCDCambioActualPut(generics.UpdateAPIView):
             response_subproceso_3 = instancia_subproceso_3.actualizar_permisos_unidad_agrupaciones(ccd_seleccionado.id_ccd, data_auditoria)
             response_subproceso_4 = instancia_subproceso_4.actualizar_consecutivos(ccd_seleccionado.id_ccd, data_auditoria)
 
-            response_ccd = self.activar_ccd(ccd_seleccionado.id_ccd, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
+            response_ccd = self.activar_ccd(ccd_seleccionado, organigrama_actual.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
             if response_subproceso_1.status_code != status.HTTP_200_OK:
                 return response_subproceso_1

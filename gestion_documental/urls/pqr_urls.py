@@ -52,7 +52,6 @@ urlpatterns = [
     #Radicacion_Email_118
      path('radicacion-email/login-email/', views.ObtenerCorreosView.as_view(), name='login-radicacion-email'),
      path('eliminar-correo/<str:email_id>/',views.EliminarCorreoView.as_view(), name='eliminar-correo'),
-    #  path('descargar-correo/<int:email_id>/<str:nombre_archivo>/',views.DescargarArchivoAdjuntoView.as_view(), name='eliminar-correo'),
 
 
 

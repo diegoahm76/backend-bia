@@ -20,8 +20,17 @@ class UnidadesOrganizacionalesSerializer(serializers.ModelSerializer):
         ]
 
 class HistoricoTransferenciasSerializer(serializers.ModelSerializer):
+    expediente = serializers.SerializerMethodField()
     nombre_completo_persona_transfirio = serializers.SerializerMethodField()
     nombre_tipo_transferencia = serializers.ReadOnlyField(source='get_cod_tipo_transferencia_display')
+    nombre_serie = serializers.SerializerMethodField()
+    nombre_subserie = serializers.SerializerMethodField()
+    unidad_organizacional = serializers.SerializerMethodField()
+
+    def get_expediente(self, obj):
+        expediente = ExpedientesDocumentales.objects.all().filter(id_expediente_documental = obj.id_expedienteDoc_id).first()
+        expediente_Serializer = ExpedienteSerializer(expediente).data
+        return expediente_Serializer
     
     def get_nombre_completo_persona_transfirio(self, obj):
         persona = Personas.objects.filter(id_persona=obj.id_persona_transfirio_id).first()
@@ -30,17 +39,27 @@ class HistoricoTransferenciasSerializer(serializers.ModelSerializer):
         nombre_completo = ' '.join(item for item in nombre_list if item is not None)
         return nombre_completo
     
+    def get_nombre_serie(self, obj):
+        nombre_serie = None
+        if obj.id_serie_origen_id:
+            serie = SeriesDoc.objects.all().filter(id_serie_doc = obj.id_serie_origen_id).first()
+            nombre_serie = serie.nombre
+        return nombre_serie
+    
+    def get_nombre_subserie(self, obj):
+        nombre_subSerie = None
+        if obj.id_subserie_origen_id:
+            subSerie = SubseriesDoc.objects.all().filter(id_subserie_doc = obj.id_subserie_origen_id).first()
+            nombre_subSerie = subSerie.nombre
+        return nombre_subSerie
+    
+    def get_unidad_organizacional(self, obj):
+        unidad_organizacional = UnidadesOrganizacionales.objects.all().filter(id_unidad_organizacional = obj.id_unidad_org_propietaria_id).first()
+        return unidad_organizacional.nombre
+    
     class Meta:
         model = TransferenciasDocumentales
-        fields = [
-            'id_transferencia_documental',
-            'id_persona_transfirio',
-            'nombre_completo_persona_transfirio',
-            'cod_tipo_transferencia',
-            'nombre_tipo_transferencia',
-            'fecha_transferenciaExp',
-            'nro_expedientes_transferidos'
-        ]
+        fields = '__all__'
 
 class ExpedienteSerializer(serializers.ModelSerializer):
     codigo_completo = serializers.SerializerMethodField()
@@ -213,7 +232,7 @@ class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
         return nombre_tipologia_documental
 
     def get_anexos(self, obj):
-        anexos = DocumentosDeArchivoExpediente.objects.all().filter(id_doc_de_arch_del_cual_es_anexo = obj.id_documento_de_archivo_exped)
+        anexos = DocumentosDeArchivoExpediente.objects.all().filter(id_doc_de_arch_del_cual_es_anexo = obj.id_expediente_documental_id)
         anexos_serializer = AnexosDocumentosSerializer(anexos, many = True)
         return anexos_serializer.data
 

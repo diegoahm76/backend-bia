@@ -286,9 +286,6 @@ def liquidacionPdf(request, pk):
             liquidaciondos += valorPagar
     totalliquidacion = liquidacionuno + liquidaciondos
 
-    nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres is not None else ''
-    apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos is not None else ''
-
     context = {
         'rp': liquidacion.id, #referencia pago
         'limite_pago': liquidacion.vencimiento,
@@ -297,7 +294,7 @@ def liquidacionPdf(request, pk):
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'anio': anio,
         'cedula': liquidacion.id_deudor.identificacion,
-        'titular': nombres + ' ' + apellidos,
+        'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
         'representante_legal': '',
         'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
         'telefono': liquidacion.id_deudor.telefono,
@@ -368,7 +365,7 @@ class  liquidacionPdfpruebaMigueluno(generics.ListAPIView):
             'fecha_impresion': liquidacion.fecha_liquidacion,
             'anio': liquidacion.fecha_liquidacion.year,
             'cedula': liquidacion.id_deudor.identificacion,
-            'titular': liquidacion.id_deudor.nombres + ' ' + liquidacion.id_deudor.apellidos,
+            'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
             'representante_legal': '',
             'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
             'telefono': liquidacion.id_deudor.telefono,

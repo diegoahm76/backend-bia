@@ -11,8 +11,6 @@ class RegistrosConfiguracionSerializer(serializers.ModelSerializer):
 
 
 class TipoCobroSerializer(serializers.ModelSerializer):
-    nombre_renta_asociado = serializers.ReadOnlyField(source='tipo_renta_asociado.nombre_tipo_renta') 
-
     class Meta:
         model = TipoCobro
         fields = '__all__'
