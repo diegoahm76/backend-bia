@@ -57,7 +57,7 @@ class EstadoSolicitudesTramitesGet(generics.ListAPIView):
         data_respuesta = serializador.data
         data_validada =[]
         if radicado_value and radicado_value != '':
-            data_validada = [item for item in serializador.data if radicado_value in item.get('radicado', '')]
+            data_validada = [item for item in serializador.data if radicado_value.lower() in item.get('radicado', '').lower()]
         else :
             data_validada = data_respuesta
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
