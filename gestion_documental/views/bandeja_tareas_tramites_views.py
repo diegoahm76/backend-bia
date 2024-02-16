@@ -9,7 +9,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas,
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
+from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, ReasignacionesTareasTramitesCreateSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -284,4 +284,61 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             print(asignacion.id_otros)
 
         return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+    
+
+
+class ReasignacionesTareasTramitesCreate(generics.CreateAPIView):
+    serializer_class = ReasignacionesTareasTramitesCreateSerializer
+    queryset = ReasignacionesTareas.objects.all()
+    vista_tareas = TareasAsignadasCreate()
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+
+
+        data_in = request.data
+        data_in['fecha_reasignacion'] = datetime.now()
+        data_in['cod_estado_reasignacion'] = 'Ep'
+
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=data_in['id_tarea_asignada']).first()
+        if not tarea:
+            raise NotFound("No existen registros de tareas")
+        
+        if tarea.cod_estado_asignacion == 'Re':
+            raise ValidationError("Esta tarea fue Rechazada ")
+        tarea.cod_estado_solicitud = 'De'
+
+        reasignadas = ReasignacionesTareas.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+
+        if reasignadas:
+            raise ValidationError("La tarea tiene una reasignacion pendiente por responder.")
+        tarea.save()
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA T316
+        data_tarea = {}
+        data_tarea['cod_tipo_tarea'] = 'Rtra'
+        data_tarea['id_asignacion'] = None
+        data_tarea['fecha_asignacion'] = datetime.now()
+        data_tarea['cod_estado_solicitud'] = 'Ep'
+        data_tarea['id_tarea_asignada_padre_inmediata'] = tarea.id_tarea_asignada
+        data_tarea['comentario_asignacion'] = data_in['comentario_reasignacion']
+        respuesta_tareas = self.vista_tareas.crear_asignacion_tarea(data_tarea)
+        if respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            return respuesta_tareas
+
+        data_tarea_respuesta =respuesta_tareas.data['data']
+
+        #ASIGNO LA NUEVA TAREA A LA BANDEJA DE LA PERSONA 
+        vista_asignar_tarea =TareaBandejaTareasPersonaCreate()
+        data_tarea_bandeja_asignacion = {}
+        data_tarea_bandeja_asignacion['id_persona'] = data_in['id_persona_a_quien_se_reasigna']
+        data_tarea_bandeja_asignacion['id_tarea_asignada'] = data_tarea_respuesta['id_tarea_asignada']
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = False
+        respuesta_relacion = vista_asignar_tarea.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
+
+   
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
