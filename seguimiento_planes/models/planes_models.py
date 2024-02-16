@@ -1,6 +1,23 @@
 from django.db import models
 
 # Create your models here.
+
+class Sector(models.Model):
+    id_sector = models.AutoField(primary_key=True, editable=False, db_column='T517IdSector')
+    nombre_sector = models.CharField(max_length=100, db_column='T517nombreSector')
+    aplicacion = models.CharField(max_length=100, db_column='T517aplicacion')
+    activo = models.BooleanField(default=True, db_column='T517activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T517itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T517registroPrecargado')
+
+    def __str__(self):
+        return str(self.id_sector)
+
+    class Meta:
+        db_table = 'T517Sector'
+        verbose_name = 'Sector'
+        verbose_name_plural = 'Sectores'
+
 class ObjetivoDesarrolloSostenible(models.Model):
     id_objetivo = models.AutoField(
         primary_key=True, editable=False, db_column='T500IdObjetivo')
@@ -65,26 +82,6 @@ class TipoEje(models.Model):
         verbose_name = 'Tipo Eje'
         verbose_name_plural = 'Tipos Ejes'
 
-class EjeEstractegico(models.Model):
-    id_eje_estrategico = models.AutoField(
-        primary_key=True, editable=False, db_column='T502IdEjeEstrategico')
-    nombre = models.CharField(
-        max_length=255, db_column='T502nombreEjeEstrategico')
-    # tipo_eje = models.CharField(
-    #     max_length=30, db_column='T502tipoEje')
-    id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T502IdPlan')
-    id_tipo_eje = models.ForeignKey(
-        TipoEje, on_delete=models.CASCADE, db_column='T502IdTipoEje')
-
-    def __str__(self):
-        return str(self.id_eje_estrategico)
-
-    class Meta:
-        db_table = 'T502EjeEstrategico'
-        verbose_name = 'Eje Estrategico'
-        verbose_name_plural = 'Ejes Estrategicos'
-
 class Objetivo(models.Model):
     id_objetivo = models.AutoField(
         primary_key=True, editable=False, db_column='T503IdObjetivo')
@@ -106,6 +103,8 @@ class Programa(models.Model):
         primary_key=True, editable=False, db_column='T504IdPrograma')
     nombre_programa = models.CharField(
         max_length=255, db_column='T504nombrePrograma')
+    numero_programa = models.CharField(
+        max_length=255, db_column='T504numeroPrograma')
     porcentaje_1 = models.IntegerField(
         null=True, blank=True, db_column='T504porcentaje1')
     porcentaje_2 = models.IntegerField(
@@ -119,6 +118,8 @@ class Programa(models.Model):
     cumplio = models.BooleanField(default=False, db_column='T504cumplio')
     fecha_creacion = models.DateField(
         null=True, blank=True, db_column='T504fechaCreacion')
+    id_sector = models.ForeignKey(
+        Sector, on_delete=models.CASCADE, db_column='T504IdSector')
 
     def __str__(self):
         return str(self.id_programa)
@@ -128,11 +129,34 @@ class Programa(models.Model):
         verbose_name = 'Programa'
         verbose_name_plural = 'Programas'
 
+class EjeEstractegico(models.Model):
+    id_eje_estrategico = models.AutoField(
+        primary_key=True, editable=False, db_column='T502IdEjeEstrategico')
+    nombre = models.CharField(
+        max_length=255, db_column='T502nombreEjeEstrategico')
+    # tipo_eje = models.CharField(
+    #     max_length=30, db_column='T502tipoEje')
+    id_plan = models.ForeignKey(
+        Planes, on_delete=models.CASCADE, db_column='T502IdPlan')
+    id_tipo_eje = models.ForeignKey(
+        TipoEje, on_delete=models.CASCADE, db_column='T502IdTipoEje')
+    id_programa = models.ForeignKey(
+        Programa, on_delete=models.CASCADE, db_column='T502IdPrograma')
+
+    def __str__(self):
+        return str(self.id_eje_estrategico)
+
+    class Meta:
+        db_table = 'T502EjeEstrategico'
+        verbose_name = 'Eje Estrategico'
+        verbose_name_plural = 'Ejes Estrategicos'
+
+
 class Proyecto(models.Model):
     id_proyecto = models.AutoField(
         primary_key=True, editable=False, db_column='T505IdProyecto')
-    numero_proyecto = models.IntegerField(
-        null=True, blank=True, db_column='T505numeroProyecto')
+    numero_proyecto = models.CharField(
+        max_length=255, db_column='T505numeroProyecto')
     nombre_proyecto = models.CharField(
         max_length=255, db_column='T505nombreProyecto')
     pondera_1 = models.IntegerField(
@@ -162,8 +186,8 @@ class Proyecto(models.Model):
 class Productos(models.Model):
     id_producto = models.AutoField(
         primary_key=True, editable=False, db_column='T506IdProducto')
-    numero_producto = models.IntegerField(
-        null=True, blank=True, db_column='T506numeroProducto')
+    numero_producto = models.CharField(
+        max_length=255, db_column='T506numeroProducto')
     nombre_producto = models.CharField(
         max_length=255, db_column='T506nombreProducto')
     id_proyecto = models.ForeignKey(
@@ -186,8 +210,8 @@ class Productos(models.Model):
 class Actividad(models.Model):
     id_actividad = models.AutoField(
         primary_key=True, editable=False, db_column='T507IdActividad')
-    numero_actividad = models.IntegerField(
-        null=True, blank=True, db_column='T507numeroActividad')
+    numero_actividad = models.CharField(
+        max_length=255, db_column='T507numeroActividad')
     nombre_actividad = models.CharField(
         max_length=255, db_column='T507nombreActividad')
     id_producto = models.ForeignKey(
@@ -267,6 +291,8 @@ class Indicador(models.Model):
         primary_key=True, editable=False, db_column='T512IdIndicador')
     nombre_indicador = models.CharField(
         max_length=255, db_column='T512nombreIndicador')
+    numero_indicador = models.CharField(
+        max_length=255, db_column='T512numeroIndicador')
     linea_base = models.CharField(
         max_length=255, db_column='T512lineaBase')
     medida = models.CharField(
@@ -338,6 +364,8 @@ class Metas(models.Model):
         primary_key=True, editable=False, db_column='T513IdMeta')
     nombre_meta = models.CharField(
         max_length=255, db_column='T513nombreMeta')
+    # numero_meta = models.CharField(
+    #     max_length=255, db_column='T513numeroMeta')
     unidad_meta = models.CharField(
         max_length=3, choices=[
             ('NUM', 'Numero'),
@@ -350,20 +378,20 @@ class Metas(models.Model):
     cumplio = models.BooleanField(default=False, db_column='T513cumplio')
     fecha_creacion_meta = models.DateField(
         null=True, blank=True, db_column='T513fechaCreacionMeta')
-    agno_1 = models.IntegerField(
-        null=True, blank=True, db_column='T513agno1')
-    agno_2 = models.IntegerField(
-        null=True, blank=True, db_column='T513agno2')
-    agno_3 = models.IntegerField(
-        null=True, blank=True, db_column='T513agno3')
-    agno_4 = models.IntegerField(
-        null=True, blank=True, db_column='T513agno4')
-    valor_ejecutado_compromiso = models.BigIntegerField(
-        null=True, blank=True, db_column='T513valorEjecutadoCompromiso')
-    valor_ejecutado_obligado = models.BigIntegerField(
-        null=True, blank=True, db_column='T513valorEjecutadoObligado')
-    avance_fisico = models.IntegerField(
-        null=True, blank=True, db_column='T513avanceFisico')
+    # agno_1 = models.IntegerField(
+    #     null=True, blank=True, db_column='T513agno1')
+    # agno_2 = models.IntegerField(
+    #     null=True, blank=True, db_column='T513agno2')
+    # agno_3 = models.IntegerField(
+    #     null=True, blank=True, db_column='T513agno3')
+    # agno_4 = models.IntegerField(
+    #     null=True, blank=True, db_column='T513agno4')
+    # valor_ejecutado_compromiso = models.BigIntegerField(
+    #     null=True, blank=True, db_column='T513valorEjecutadoCompromiso')
+    # valor_ejecutado_obligado = models.BigIntegerField(
+    #     null=True, blank=True, db_column='T513valorEjecutadoObligado')
+    # avance_fisico = models.IntegerField(
+    #     null=True, blank=True, db_column='T513avanceFisico')
     id_indicador = models.ForeignKey(
         Indicador, on_delete=models.CASCADE, db_column='T513IdIndicador')
     id_plan = models.ForeignKey(
@@ -390,6 +418,8 @@ class Subprograma(models.Model):
         primary_key=True, editable=False, db_column='T515IdSubprograma')
     nombre_subprograma = models.CharField(
         max_length=255, db_column='T515nombreSubprograma')
+    numero_subprograma = models.CharField(
+        max_length=255, db_column='T515numeroSubprograma')
     id_programa = models.ForeignKey(
         Programa, on_delete=models.CASCADE, db_column='T515IdPrograma')
 
