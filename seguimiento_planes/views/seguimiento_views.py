@@ -8,8 +8,9 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import SeguimientoPOAISerializer, FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
-from seguimiento_planes.models.seguimiento_models import SeguimientoPOAI, FuenteFinanciacionIndicadores, Sector, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
+from seguimiento_planes.models.seguimiento_models import SeguimientoPOAI, FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -105,6 +106,43 @@ class BusquedaAvanzadaFuentesFinanciacionIndicadores(generics.ListAPIView):
         if not fuentes:
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar todos los registros de fuentes de financiacion indicadores por id_indicador
+
+class FuenteFinanciacionIndicadoresPorIndicadorList(generics.ListAPIView):
+    queryset = FuenteFinanciacionIndicadores.objects.all()
+    serializer_class = FuenteFinanciacionIndicadoresSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        id_indicador = request.GET.get('id_indicador')
+        if id_indicador:
+            fuentes = self.queryset.filter(id_indicador=id_indicador)
+        else:
+            raise ValidationError("No se proporcionó el ID del indicador.")
+        serializer = FuenteFinanciacionIndicadoresSerializer(fuentes, many=True)
+        if not fuentes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+# Listar todos los registros de fuentes de financiacion indicadores por id_meta
+
+class FuenteFinanciacionIndicadoresPorMetaList(generics.ListAPIView):
+    queryset = FuenteFinanciacionIndicadores.objects.all()
+    serializer_class = FuenteFinanciacionIndicadoresSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        id_meta = request.GET.get('id_meta')
+        if id_meta:
+            fuentes = self.queryset.filter(id_meta=id_meta)
+        else:
+            raise ValidationError("No se proporcionó el ID de la meta.")
+        serializer = FuenteFinanciacionIndicadoresSerializer(fuentes, many=True)
+        if not fuentes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # ---------------------------------------- Sectores tabla básica ----------------------------------------
 
 # Listar todos los registros de sectores
