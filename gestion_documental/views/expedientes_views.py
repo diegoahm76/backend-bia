@@ -27,7 +27,7 @@ from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpe
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EliminacionAnexosSerializer, EliminacionGetSerializer, EliminacionHistorialGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, IndiceElectronicoXMLSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
+from gestion_documental.serializers.expedientes_serializers import  AgregarArchivoSoporteCreateSerializer, AnularExpedienteSerializer, AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer, AperturaExpedienteUpdateAutSerializer, AperturaExpedienteUpdateNoAutSerializer, ArchivoSoporteSerializer, ArchivosDigitalesCreateSerializer, ArchivosDigitalesSerializer, ArchivosSoporteCierreReaperturaSerializer, ArchivosSoporteGetAllSerializer, BorrarExpedienteSerializer, CierreExpedienteDetailSerializer, CierreExpedienteSerializer, ConcesionAccesoDocumentosCreateSerializer, ConcesionAccesoDocumentosGetSerializer, ConcesionAccesoExpedientesCreateSerializer, ConcesionAccesoExpedientesGetSerializer, ConcesionAccesoPersonasFilterSerializer, ConcesionAccesoUpdateSerializer, ConfiguracionTipoExpedienteAperturaGetSerializer, ConsultaExpedientesDocumentosGetByIdSerializer, ConsultaExpedientesDocumentosGetListSerializer, ConsultaExpedientesDocumentosGetSerializer, ConsultaExpedientesGetSerializer, EliminacionGetSerializer, EliminacionHistorialGetSerializer, EnvioCodigoSerializer, ExpedienteAperturaSerializer, ExpedienteGetOrdenSerializer, ExpedienteSearchSerializer, ExpedientesDocumentalesGetSerializer, FirmaCierreGetSerializer, IndexarDocumentosAnularSerializer, IndexarDocumentosCreateSerializer, IndexarDocumentosGetSerializer, IndexarDocumentosUpdateAutSerializer, IndexarDocumentosUpdateSerializer, IndiceElectronicoXMLSerializer, InformacionIndiceGetSerializer, ListExpedientesComplejosSerializer, ListarTRDSerializer, ListarTipologiasSerializer, ReubicacionFisicaExpedienteSerializer, SerieSubserieUnidadTRDGetSerializer
 from gestion_documental.serializers.depositos_serializers import  CarpetaCajaGetOrdenSerializer
 from rest_framework.response import Response
 from rest_framework import status
@@ -41,7 +41,6 @@ from transversal.models.organigrama_models import Organigramas
 from django.db.models.functions import Concat
 from django.db.models import Value as V
 from gestion_documental.utils import UtilsGestor
-from django.forms.models import model_to_dict
 
 from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertasProgramadasCreate
@@ -1646,8 +1645,6 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
         if not documento_principal:
             documento_principal = None
         
-        docs_indice = []
-        
         for data, archivo in zip(data_documentos, archivos):
             # VALIDAR FORMATO ARCHIVO 
             archivo_nombre = archivo.name
@@ -1725,7 +1722,7 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             nro_folios_del_doc = int(data['nro_folios_del_doc'])
             pagina_fin = pagina_inicio + nro_folios_del_doc - 1
             
-            doc_indice_elect = Docs_IndiceElectronicoExp.objects.create(
+            Docs_IndiceElectronicoExp.objects.create(
                 id_indice_electronico_exp=indice_electronico,
                 id_doc_archivo_exp=doc_creado,
                 identificación_doc_exped=doc_creado.identificacion_doc_en_expediente,
@@ -1743,10 +1740,8 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
                 cod_origen_archivo=doc_creado.cod_origen_archivo,
                 es_un_archivo_anexo=doc_creado.es_un_archivo_anexo,
             )
-            
-            docs_indice.append(model_to_dict(doc_indice_elect))
         
-        return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente', 'data':docs_indice}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente'}, status=status.HTTP_201_CREATED)
 
 class IndexarDocumentosGet(generics.ListAPIView):
     serializer_class = IndexarDocumentosGetSerializer
@@ -3131,13 +3126,12 @@ class EliminacionHistorialGetView(generics.ListAPIView):
 
 class PublicarCreateView(generics.CreateAPIView):
     serializer_class = EliminacionHistorialGetSerializer
-    serializer_class_anexos = EliminacionAnexosSerializer
+    # serializer_class_inventario = InventarioCreateSerializer
     permission_classes = [IsAuthenticated]
     
     def create(self, request):
         data = request.data
         expedientes = data['expedientes']
-        anexos = data.get('anexos')
         
         tiempo_rta_dias = ConfiguracionTiemposRespuesta.objects.filter(nombre_configuracion='Tiempo de publicación del proceso de eliminación documental').first()
         tiempo_rta_dias = tiempo_rta_dias.tiempo_respuesta_en_dias if tiempo_rta_dias.tiempo_respuesta_en_dias else 0
@@ -3175,18 +3169,11 @@ class PublicarCreateView(generics.CreateAPIView):
        # Actualizar cada expediente
         for count, expediente in enumerate(expedientes, start=1):
             expediente_doc = ExpedientesDocumentales.objects.filter(id_expediente_documental=expediente).first()
-            if not expediente_doc:
-                raise ValidationError('No se encontró uno o varios de los expedientes ingresados')
-            if expediente_doc.estado != 'C':
-                raise ValidationError('Solo puede elegir expedientes cerrados para su eliminación')
-            if expediente_doc.id_eliminacion_exp:
-                raise ValidationError('Uno o varios de los expedientes elegidos ya se encuentran en otra publicación de eliminación')
-            
             expediente_doc.id_eliminacion_exp = eliminacion
             expediente_doc.save()
             
             documentos_exp = expediente_doc.documentosdearchivoexpediente_set.aggregate(total_folios=Sum('nro_folios_del_doc'))
-            total_folios = documentos_exp['total_folios'] if documentos_exp['total_folios'] else 0
+            total_folios = documentos_exp['total_folios']
             
             # Guardar en T305
             InventarioDocumental.objects.create(
@@ -3199,22 +3186,6 @@ class PublicarCreateView(generics.CreateAPIView):
                 nro_folios=total_folios,
                 id_eliminacion_documental=eliminacion
             )
-        
-        serializer_anexos_data = []
-        if anexos:
-            for anexo in anexos:
-                data_anexo = {}
-                data_anexo['id_eliminacion_documental'] = eliminacion.id_eliminacion_documental
-                data_anexo['id_documento_archivo_exp'] = anexo
-                
-                serializer_anexos = self.serializer_class_anexos(data=data_anexo)
-                serializer_anexos.is_valid(raise_exception=True)
-                serializer_anexos.save()
-                
-                serializer_anexos_data.append(serializer_anexos.data)
-            
-        serializer_eliminacion_data = serializer_eliminacion.data
-        serializer_eliminacion_data['anexos'] = serializer_anexos_data
         
         # Auditoria Crear Publicación
         usuario = request.user.id_usuario
@@ -3235,7 +3206,7 @@ class PublicarCreateView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
         
-        return Response({'success':True, 'detail':'Se creó la siguiente publicación de eliminación de expedientes', 'data': serializer_eliminacion_data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Se creó la siguiente publicación de eliminación de expedientes', 'data': serializer_eliminacion.data}, status=status.HTTP_201_CREATED)
 
 class PublicarUpdateView(generics.UpdateAPIView):
     serializer_class = EliminacionHistorialGetSerializer
@@ -3256,13 +3227,6 @@ class PublicarUpdateView(generics.UpdateAPIView):
         
         if eliminacion_documental.estado == 'E':
             raise ValidationError('No puede actualizar una eliminación que ya fue ejecutada')
-        
-        fecha_max_eliminacion = eliminacion_documental.fecha_publicacion + timedelta(days=eliminacion_documental.dias_publicacion)
-        dias_restantes = (fecha_max_eliminacion - datetime.now()).days
-        dias_restantes = dias_restantes if dias_restantes > 0 else 0
-        
-        if dias_restantes == 0:
-            raise ValidationError('No puede actualizar la eliminación documental porque ya culminó el tiempo límite de su publicación')
             
         for expediente in expedientes_deseleccionados:
             expediente_doc = ExpedientesDocumentales.objects.filter(id_expediente_documental=expediente).first()
@@ -3277,7 +3241,6 @@ class PublicarUpdateView(generics.UpdateAPIView):
             
         eliminacion_documental.observaciones = observaciones
         eliminacion_documental.tiene_observaciones = True
-        eliminacion_documental.dias_publicacion = 60
         eliminacion_documental.save()
         
         # Auditoria Actualizar Publicación

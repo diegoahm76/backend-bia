@@ -426,13 +426,12 @@ class RespuestaPQR(models.Model):
 
 class Anexos_PQR(models.Model):
     id_anexo_PQR = models.AutoField(primary_key=True,db_column='T259IdAnexos_PQR_Otros')
-    id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.SET_NULL,null=True,db_column='T259Id_PQRSDF')
-    id_solicitud_usu_sobre_PQR = models.ForeignKey(SolicitudAlUsuarioSobrePQRSDF,on_delete=models.SET_NULL,db_column='T259Id_SolicitudAlUsuSobrePQR',null=True)#T266
+    id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,null=True,db_column='T259Id_PQRSDF')
+    id_solicitud_usu_sobre_PQR = models.ForeignKey(SolicitudAlUsuarioSobrePQRSDF,on_delete=models.CASCADE,db_column='T259Id_SolicitudAlUsuSobrePQR',null=True)#T266
     id_otros =  models.ForeignKey(Otros, on_delete=models.SET_NULL, blank=True, null=True, db_column='T259Id_Otros')
-    id_complemento_usu_PQR = models.ForeignKey(ComplementosUsu_PQR,on_delete=models.SET_NULL,db_column='T259Id_ComplementoUsuAPQR', null=True)#T267
-    id_respuesta_PQR = models.ForeignKey(RespuestaPQR,on_delete=models.SET_NULL,db_column='T259Id_Respuesta_PQR', null=True)
+    id_complemento_usu_PQR = models.ForeignKey(ComplementosUsu_PQR,on_delete=models.CASCADE,db_column='T259Id_ComplementoUsuAPQR', null=True)#T267
+    id_respuesta_PQR = models.ForeignKey(RespuestaPQR,on_delete=models.CASCADE,db_column='T259Id_Respuesta_PQR', null=True)
     id_anexo = models.ForeignKey(Anexos,on_delete=models.CASCADE,db_column='T259Id_Anexo')
-    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', on_delete=models.SET_NULL, db_column='T259Id_SolicitudTramite', null=True)
 
     class Meta:
         unique_together = [("id_anexo",)]

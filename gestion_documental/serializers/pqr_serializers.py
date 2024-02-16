@@ -313,35 +313,11 @@ class MetadatosPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadatosAnexosTmp
         fields = '__all__'
-        
-class OtrosMetadatosPostSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MetadatosAnexosTmp
-        fields = '__all__'
-        extra_kwargs = {
-            'nro_folios_documento': {'required': True, 'allow_null': False},
-            'asunto': {'required': True, 'allow_null': False, 'allow_blank': False},
-            'tiene_replica_fisica': {'required': True, 'allow_null': False},
-            'cod_origen_archivo': {'required': True, 'allow_null': False, 'allow_blank': False},
-            'cod_categoria_archivo': {'required': True, 'allow_null': False, 'allow_blank': False},
-        }
 
 class MetadatosPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = MetadatosAnexosTmp
         fields = '__all__'
-        
-class OtrosMetadatosPutSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MetadatosAnexosTmp
-        fields = '__all__'
-        extra_kwargs = {
-            'nro_folios_documento': {'allow_null': False},
-            'asunto': {'allow_null': False, 'allow_blank': False},
-            'tiene_replica_fisica': {'allow_null': False},
-            'cod_origen_archivo': {'allow_null': False, 'allow_blank': False},
-            'cod_categoria_archivo': {'allow_null': False, 'allow_blank': False},
-        }
 
 class InfoDenunciasPQRSDFSerializer(serializers.ModelSerializer):
     class Meta:
@@ -540,29 +516,3 @@ class EstadosSolicitudesSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadosSolicitudes
         fields = '__all__'
-
-
-class OpasMetadatosPostSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MetadatosAnexosTmp
-        fields = '__all__'
-        extra_kwargs = {
-            'nro_folios_documento': {'required': True, 'allow_null': False},
-            'asunto': {'required': True, 'allow_null': False, 'allow_blank': False},
-            'tiene_replica_fisica': {'required': True, 'allow_null': False},
-            'cod_origen_archivo': {'required': True, 'allow_null': False, 'allow_blank': False},
-            'cod_categoria_archivo': {'required': True, 'allow_null': False, 'allow_blank': False},
-        }
-
-
-class OpasMetadatosPutSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MetadatosAnexosTmp
-        fields = '__all__'
-        extra_kwargs = {
-            'nro_folios_documento': {'allow_null': False},
-            'asunto': {'allow_null': False, 'allow_blank': False},
-            'tiene_replica_fisica': {'allow_null': False},
-            'cod_origen_archivo': {'allow_null': False, 'allow_blank': False},
-            'cod_categoria_archivo': {'allow_null': False, 'allow_blank': False},
-        }

@@ -835,8 +835,8 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             nombre_list = [obj.primer_nombre, obj.segundo_nombre,
                             obj.primer_apellido, obj.segundo_apellido]
             nombre_completo = ' '.join(item for item in nombre_list if item is not None)
-            nombre_completo = nombre_completo.upper() if nombre_completo != "" else None
-        return nombre_completo
+            nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo.upper()
     
     def get_primer_nombre(self,obj):
         primer_nombre2 = obj.primer_nombre

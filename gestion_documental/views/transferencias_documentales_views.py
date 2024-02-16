@@ -12,11 +12,9 @@ from gestion_documental.models.ctrl_acceso_models import CtrlAccesoClasificacion
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales, IndicesElectronicosExp
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.tca_models import CatSeriesUnidadOrgCCD_TRD_TCA
-from gestion_documental.models.transferencias_documentales_models import TransferenciaExpediente, TransferenciasDocumentales
+from gestion_documental.models.transferencias_documentales_models import TransferenciasDocumentales
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD
-from gestion_documental.serializers.expedientes_serializers import EliminacionAnexosSerializer
 from gestion_documental.serializers.transferencias_documentales_serializers import CrearTransferenciaSerializer, ExpedienteSerializer, HistoricoTransferenciasSerializer, UnidadesOrganizacionalesSerializer, UpdateExpedienteSerializer
-from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 
 from seguridad.signals.roles_signals import IsAuthenticated
 
@@ -41,7 +39,7 @@ class GetHistoricoTransferencias(generics.ListAPIView):
         try:
             filter = {}
             for key,value in request.query_params.items():
-                if key in ['cod_tipo_transferencia','fecha_transferenciaExp','id_persona_transfirio']:
+                if key in ['cod_tipo_transferencia','id_unidad_org_propietaria','fecha_transferenciaExp','id_persona_transfirio']:
                     if key == "fecha_transferenciaExp":
                         if value != "":
                             filter[key+'__contains'] = value
@@ -56,18 +54,6 @@ class GetHistoricoTransferencias(generics.ListAPIView):
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class GetExpedientesTransferidos(generics.ListAPIView):
-    serializer_class = ExpedienteSerializer
-    queryset = ExpedientesDocumentales.objects.all()
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, id_transferencia_documental):
-        expedientes_transferidos = TransferenciaExpediente.objects.filter(id_transferencia_documental=id_transferencia_documental).values_list('id_expediente_documental', flat=True)
-        if not expedientes_transferidos:
-            raise NotFound('No se encontraron los expedientes transferidos para la transferencia elegida')
-        expedientes_transferidos = self.queryset.filter(id_expediente_documental__in=list(expedientes_transferidos))
-        serializador = self.serializer_class(expedientes_transferidos, many=True)
-        return Response({'success':True, 'detail':'Se encontraron los siguientes expedientes para la transferencia elegida', 'data':serializador.data},status=status.HTTP_200_OK)
 
 class GetExpedientesATransferir(generics.ListAPIView):
     serializer_class = ExpedienteSerializer
@@ -82,7 +68,7 @@ class GetExpedientesATransferir(generics.ListAPIView):
 
             condiciones = Q(estado = "C")
             if id_unidad_organizacional:
-                condiciones &= Q(id_und_seccion_propietaria_serie=id_unidad_organizacional)
+                condiciones &= ~Q(id_und_seccion_propietaria_serie=id_unidad_organizacional)
             expedientes_filtrados = self.queryset.filter(condiciones)
             expedientes_transferir = self.get_expedientes_transferir(expedientes_filtrados, tipo_transferencia, cod_disposicion_final)
             serializador = self.serializer_class(expedientes_transferir, many = True)
@@ -95,8 +81,8 @@ class GetExpedientesATransferir(generics.ListAPIView):
         expedientes_transferir = []
         fecha_actual = datetime.now()
         for expediente in expedientes:
-            catSeriesUnidadOrgCCDTRD = expediente.id_cat_serie_und_org_ccd_trd_prop
-            indicesElectronicosExp = IndicesElectronicosExp.objects.all().filter(id_expediente_doc=expediente.id_expediente_documental).first()
+            catSeriesUnidadOrgCCDTRD = CatSeriesUnidadOrgCCDTRD.objects.all().filter(id_catserie_unidadorg = expediente.id_cat_serie_und_org_ccd_trd_prop_id).first()
+            indicesElectronicosExp = IndicesElectronicosExp.objects.all().filter(id_expediente_doc = expediente.id_expediente_documental).first()
             
             if cod_disposicion_final and catSeriesUnidadOrgCCDTRD.cod_disposicion_final_id != cod_disposicion_final:
                 continue
@@ -280,72 +266,44 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
 class CreateTransferencia(generics.CreateAPIView):
     serializer_class = CrearTransferenciaSerializer
     serializer_expediente_class = UpdateExpedienteSerializer
-    serializer_class_anexos = EliminacionAnexosSerializer
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
     def post(self, request):
         try:
             with transaction.atomic():
-                expedientes = request.data.get('expedientes', [])
+                expedientes = json.loads(request.data.get('expedientes', ''))
                 cod_tipo_transferencia = request.data.get('cod_tipo_transferencia')
-                anexos = request.data.get('anexos')
                 fecha_actual = datetime.now()
-                
-                output_data = {}
 
                 if expedientes:
-                    transferencia = self.create_transferencia_documental(cod_tipo_transferencia, request.user.persona_id, fecha_actual, len(expedientes))
-                    output_data = model_to_dict(transferencia)
-                    output_data['expedientes'] = []
                     for expediente in expedientes:
-                        expediente_bd = ExpedientesDocumentales.objects.all().filter(id_expediente_documental=expediente).first()
-                        if not expediente_bd:
-                            raise ValidationError('El expediente no existe')
-                        transferencia_exp = TransferenciaExpediente.objects.create(
-                            id_transferencia_documental = transferencia,
-                            id_expediente_documental = expediente_bd
-                        )
-                        output_data['expedientes'].append(model_to_dict(transferencia_exp))
-                    
-                    anexos = self.create_anexos(anexos, transferencia)
-                    output_data['anexos'] = anexos
+                        expediente_bd = ExpedientesDocumentales.objects.all().filter(id_expediente_documental = expediente['id_expediente_documental']).first()
+                        self.create_transferencia_documental(cod_tipo_transferencia, expediente_bd, request.user.persona_id, fecha_actual)
+                        self.update_expediente(expediente_bd, cod_tipo_transferencia, fecha_actual)
                 else:
-                    raise ValidationError('Los expedientes son necesarios para crear las transferencias')
+                    raise ValidationError("error': 'Los expedientes son necesarios para crear las transferencias.")
                 
-                return Response({'success':True, 'detail':'Los expedientes seleccionados han sido transferidos correctamente', 'data':output_data},status=status.HTTP_200_OK)
+                return Response({'success':True, 'detail':'Los expedientes seleccionados han sido transferidos correctamente'},status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    def create_transferencia_documental(self, cod_tipo_transferencia, id_persona_guarda, fecha_actual, nro_expedientes_transferidos):
-        crear_transferencia = self.set_data_tipo_primaria(cod_tipo_transferencia, id_persona_guarda, fecha_actual, nro_expedientes_transferidos)
+    def create_transferencia_documental(self, cod_tipo_transferencia, expediente, id_persona_guarda, fecha_actual):
+        crear_transferencia = self.set_data_tipo_primaria(cod_tipo_transferencia, expediente, id_persona_guarda, fecha_actual)
         serializer = self.serializer_class(data=crear_transferencia)
         serializer.is_valid(raise_exception=True)
-        transferencia = serializer.save()
-        return transferencia
+        serializer.save()
     
-    def create_anexos(self, anexos, transferencia):
-        serializer_anexos_data = []
-        if anexos:
-            for anexo in anexos:
-                data_anexo = {}
-                data_anexo['id_transferencia_documental'] = transferencia.id_transferencia_documental
-                data_anexo['id_documento_archivo_exp'] = anexo
-                
-                serializer_anexos = self.serializer_class_anexos(data=data_anexo)
-                serializer_anexos.is_valid(raise_exception=True)
-                serializer_anexos.save()
-                
-                serializer_anexos_data.append(serializer_anexos.data)
-        return serializer_anexos_data
-    
-    def set_data_tipo_primaria(self, cod_tipo_transferencia, id_persona_guarda, fecha_actual, nro_expedientes_transferidos):
+    def set_data_tipo_primaria(self, cod_tipo_transferencia, expediente, id_persona_guarda, fecha_actual):
         crear_transferencia = {}
+        crear_transferencia['id_expedienteDoc'] = expediente.id_expediente_documental
         crear_transferencia['id_persona_transfirio'] = id_persona_guarda
         crear_transferencia['cod_tipo_transferencia'] = cod_tipo_transferencia
         crear_transferencia['fecha_transferenciaExp'] = fecha_actual
-        crear_transferencia['nro_expedientes_transferidos'] = nro_expedientes_transferidos
+        crear_transferencia['id_serie_origen'] = expediente.id_serie_origen_id
+        crear_transferencia['id_subserie_origen'] = expediente.id_subserie_origen_id
+        crear_transferencia['id_unidad_org_propietaria'] = expediente.id_und_seccion_propietaria_serie_id
         return crear_transferencia
     
     def update_expediente(self, expediente, cod_tipo_transferencia, fecha_actual):
