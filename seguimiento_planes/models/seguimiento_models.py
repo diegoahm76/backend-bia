@@ -1,5 +1,5 @@
 from django.db import models
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguimiento_planes.models.planes_models import Sector, Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -21,6 +21,7 @@ class FuenteFinanciacionIndicadores(models.Model):
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T516IdProyecto')
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T516IdActividad')
     id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T516IdProducto')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T516IdMeta')
 
     def __str__(self):
         return str(self.nombre_fuente)
@@ -29,22 +30,6 @@ class FuenteFinanciacionIndicadores(models.Model):
         db_table = 'T516FuentesFinanciacionIndicadores'
         verbose_name = 'Fuentes de Financiación Indicadores'
         verbose_name_plural = 'Fuentes de Financiación Indicadores'
-
-class Sector(models.Model):
-    id_sector = models.AutoField(primary_key=True, editable=False, db_column='T517IdSector')
-    nombre_sector = models.CharField(max_length=100, db_column='T517nombreSector')
-    aplicacion = models.CharField(max_length=100, db_column='T517aplicacion')
-    activo = models.BooleanField(default=True, db_column='T517activo')
-    item_ya_usado = models.BooleanField(default=False, db_column='T517itemYaUsado')
-    registro_precargado = models.BooleanField(default=False, db_column='T517registroPrecargado')
-
-    def __str__(self):
-        return str(self.id_sector)
-
-    class Meta:
-        db_table = 'T517Sector'
-        verbose_name = 'Sector'
-        verbose_name_plural = 'Sectores'
 
 class DetalleInversionCuentas(models.Model):
     id_detalle_inversion = models.AutoField(primary_key=True, editable=False, db_column='T518IdDetalleInversion')
@@ -344,7 +329,7 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
         verbose_name_plural = "Seguimiento PAI Documentos"
 
 class SeguimientoPOAI(models.Model):
-    id_seguimiento: models.AutoField(primary_key=True, editable=False, db_column='T532IdSeguiPOAI')
+    id_seguimiento = models.AutoField(primary_key=True, editable=False, db_column='T532IdSeguiPOAI')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T528IdPlan')
     id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T532IdPrograma')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T532IdProyecto')
@@ -353,7 +338,7 @@ class SeguimientoPOAI(models.Model):
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T532IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T532IdMeta')
     id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T532IdConcepto')
-    id_sector: models.ForeignKey(Sector, on_delete=models.CASCADE, db_column='T532IdSector')
+    id_sector = models.ForeignKey(Sector, on_delete=models.CASCADE, db_column='T532IdSector')
     id_fuente_financiacion = models.ForeignKey(FuenteFinanciacion, on_delete=models.CASCADE, db_column='T532IdFuenteFinanciacion')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T532IdUnidadOrganizacional')
     id_detalle_inversion = models.ForeignKey(DetalleInversionCuentas, on_delete=models.CASCADE, db_column='T532IdDetalleInversion')
@@ -423,3 +408,5 @@ class SeguimientoPOAI(models.Model):
         db_table = "T532SeguiminetoPOAI"
         verbose_name = "Seguimiento POAI"
         verbose_name_plural = "Seguimiento POAI"
+
+# class SeguimientoPoaiOptimizado(models.Model):
