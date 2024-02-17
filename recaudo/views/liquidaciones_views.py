@@ -495,3 +495,21 @@ def liquidacionPdfpruebaMigueldos(request, pk):
 
     # Devolver la respuesta HTTP
     return response
+
+
+
+
+class  LiquidacionPdfpruebaMiguelUpdate(generics.UpdateAPIView):
+   
+    def put(self,request,pk):
+        data=request.data
+        liquidacion = LiquidacionesBase.objects.filter(pk=pk).first()
+        if not liquidacion : 
+            raise NotFound("no se encontro la liquidacion buscada")
+        info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).first()
+        if not info : 
+              raise NotFound("Aun no se ha creado el calculo")
+        info.calculos['caudal_consecionado']=data.get('caudal_consecionado')
+        info.save()
+        return Response({'success': True, 'detail': 'Se actualizo la liquidacion'}, status=status.HTTP_200_OK)
+
