@@ -11,7 +11,10 @@ from almacen.choices.tipos_activo_choices import tipos_activo_CHOICES
 from almacen.choices.tipos_depreciacion_activos_choices import tipos_depreciacion_activos_CHOICES
 from almacen.choices.estado_aprobacion_choices import estado_aprobacion_CHOICES
 from almacen.choices.cod_tipo_elemento_vivero_choices import cod_tipo_elemento_vivero_CHOICES
+from almacen.choices.estado_solicitud_choices import estado_solicitud_CHOICES
+from almacen.choices.tipo_conductor_choices import tipo_conductor_CHOICES
 
+tipo_conductor_CHOICES
 from rest_framework.views import APIView
 from rest_framework.response import Response
     
@@ -78,4 +81,15 @@ class EstadoAprobacionChoices(APIView):
 class CodTipoElementoViveroChoices(APIView):
     def get(self,request):
         choices = cod_tipo_elemento_vivero_CHOICES
+        return Response(choices)
+    
+
+class EstadoSolicitudChoices(APIView):
+    def get(self,request):
+        choices = estado_solicitud_CHOICES
+        return Response(choices)
+    
+class TipoConductorChoices(APIView):
+    def get(self,request):
+        choices = tipo_conductor_CHOICES
         return Response(choices)
