@@ -11,7 +11,7 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 from seguridad.utils import Util
@@ -1965,6 +1965,16 @@ class SolicitudesTramitesGet(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['fecha_radicado__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key =='asunto_proyecto':
+                if value != '':
+                    filter['nombre_proyecto__icontains'] = value
+            if key =='expediente':
+                if value != '':
+                    filter['id_expediente__titulo_expediente__icontains'] = value
+            if key =='pagado':
+                if value != '':
+                    value = True if value.lower() == 'true' else False
+                    filter['pago'] = value
 
         filter['id_radicado__isnull'] = False
         instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
@@ -1972,6 +1982,8 @@ class SolicitudesTramitesGet(generics.ListAPIView):
         instance = instance.exclude(id_solicitud_tramite__in=list(permisos_ambientales_solicitudes))
         
         radicado_value = request.query_params.get('radicado')
+        nombre_titular = request.query_params.get('nombre_titular')
+        
         if not instance:
             raise NotFound("No existen registros")
 
@@ -1982,6 +1994,10 @@ class SolicitudesTramitesGet(generics.ListAPIView):
             data_validada = [item for item in serializador.data if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta
+            
+        if nombre_titular and nombre_titular != '':
+            data_validada = [item for item in serializador.data if nombre_titular in item.get('nombre_completo_titular', '')]
+
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
 
 class SolicitudDeDigitalizacionTramitesCreate(generics.CreateAPIView):
@@ -2523,3 +2539,17 @@ class AsignacionTramitesGet(generics.ListAPIView):
 
         #return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'seccion':serializer_unidad.data,'hijos':serializer.data}}, status=status.HTTP_200_OK)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+# class TramitesCompletementosGet(generics.ListAPIView):
+#     serializer_class = TramitesComplementosUsu_PQRGetSerializer
+#     queryset = ComplementosUsu_PQR.objects.filter(id_solicitud_usu_PQR__id_solicitud_tramite__isnull=False)
+#     permission_classes = [IsAuthenticated]
+    
+#     def get(self, request, id_solicitud_tramite):
+#         instance = self.get_queryset().filter(id_solicitud_usu_PQR__id_solicitud_tramite=id_solicitud_tramite)
+#         if not instance:
+#             raise NotFound("No existen registros")
+        
+#         serializador = self.serializer_class(instance, many=True)
+#         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
