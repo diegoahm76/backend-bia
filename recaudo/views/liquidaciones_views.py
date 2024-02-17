@@ -387,25 +387,25 @@ class  liquidacionPdfpruebaMigueluno(generics.ListAPIView):
             'factor_costo_oportunidad': info.calculos['factor_costo_oportunidad']
         }
 
-    # pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/TUA.docx'
-    # outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
 
-    # doc = DocxTemplate(pathToTemplate)
-    # doc.render(context)
-    
-    # # Crear un objeto BytesIO para almacenar el contenido del documento en memoria
-    # output = BytesIO()
-
-    # # Guardar el documento renderizado en el objeto BytesIO
-    # doc.save(output)
-
-    # # Crear una respuesta HTTP con el contenido del BytesIO
-    # response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    # response['Content-Disposition'] = 'attachment; filename=output.docx'
-    # response.write(output.getvalue())
-
-    # Devolver la respuesta HTTP
         return Response({'success': True, 'detail':'Se mostraron los datos', 'data':context}, status=status.HTTP_200_OK)
+
+
+class  LiquidacionPdfpruebaMiguelUpdate(generics.UpdateAPIView):
+   
+    def put(self,request,pk):
+        data=request.data
+        liquidacion = LiquidacionesBase.objects.filter(pk=pk).first()
+        if not liquidacion : 
+            raise NotFound("no se encontro la liquidacion buscada")
+        info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).first()
+        if not info : 
+              raise NotFound("Aun no se ha creado el calculo")
+        info.calculos['caudal_consecionado']=data.get('caudal_consecionado')
+        info.save()
+        return Response({'success': True, 'detail': 'Se actualizo la liquidacion'}, status=status.HTTP_200_OK)
+
+
 
 
 from django.http import JsonResponse

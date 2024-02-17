@@ -32,5 +32,8 @@ urlpatterns = [
     path('liquidacion-pdf_miguel_dos/<int:pk>/', views.liquidacionPdfpruebaMigueldos, name='descargar-liquidacion-pdff'),
 
 
+    path('liquidacion-pdf_miguel_doooos/<int:pk>/', views.LiquidacionPdfpruebaMiguelUpdate.as_view(), name='descargar-liqupdff'),
+
+
     
 ]
