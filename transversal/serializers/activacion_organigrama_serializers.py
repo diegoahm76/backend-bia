@@ -22,7 +22,7 @@ class OrganigramaSerializer(serializers.ModelSerializer):
 class OrganigramaCambioActualSerializer(serializers.ModelSerializer):
     class Meta:
         model= Organigramas
-        fields=['justificacion_nueva_version']
+        fields=['actual','fecha_puesta_produccion','justificacion_nueva_version']
 
 class UnidadesDelegacionSerializer(serializers.ModelSerializer):
     id_organigrama = serializers.ReadOnlyField(source='id_organigrama.id_organigrama',default=None)
