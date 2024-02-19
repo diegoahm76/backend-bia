@@ -262,7 +262,7 @@ class modulos_radican(models.Model):
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
     id_pqrsdf = models.ForeignKey(PQRSDF, on_delete =models.SET_NULL, db_column='T266Id_PQRSDF',null=True,blank=True)
-    id_solicitud_tramnite = models.ForeignKey('tramites.SolicitudesTramites',on_delete= models.SET_NULL, db_column='T266Id_SolicitudTramite',null=True,blank=True)
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites',on_delete= models.SET_NULL, db_column='T266Id_SolicitudTramite',null=True,blank=True)
     id_persona_solicita = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T266Id_PersonaSolicita')
     id_und_org_oficina_solicita = models.ForeignKey(UnidadesOrganizacionales, models.CASCADE, db_column='T266Id_UndOrgOficina_Solicita')
     cod_tipo_oficio = models.CharField(max_length=1,choices=TIPOS_OFICIO_CHOICES,db_column='T266codTipoOficio')
