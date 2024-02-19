@@ -260,21 +260,23 @@ class modulos_radican(models.Model):
 
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
-    id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
+    id_pqrsdf = models.ForeignKey(PQRSDF, models.SET_NULL, blank=True, null=True,  db_column='T266Id_PQRSDF')
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, blank=True, null=True, db_column='T266Id_SolicitudTramite')
     id_persona_solicita = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T266Id_PersonaSolicita')
     id_und_org_oficina_solicita = models.ForeignKey(UnidadesOrganizacionales, models.CASCADE, db_column='T266Id_UndOrgOficina_Solicita')
+    cod_tipo_oficio = models.CharField(max_length=1,choices=TIPOS_OFICIO_CHOICES,db_column='T266codTipoOficio')
     fecha_solicitud = models.DateTimeField(db_column='T66fechaSolicitud')
     asunto = models.CharField(max_length=100, db_column='T266asunto')
     descripcion = models.CharField(max_length=500, db_column='T266descripcion')
     cantidad_anexos = models.SmallIntegerField(null=True, db_column='T266cantidadAnexos')
     nro_folios_totales = models.SmallIntegerField(null=True, db_column='T266nroFoliosTotales')
     dias_para_respuesta = models.SmallIntegerField(null=True, db_column='T266diasParaRespuesta')
-    id_radicado_salida = models.ForeignKey(T262Radicados, models.CASCADE, db_column='T266Id_RadicadoSalida', blank=True, null=True)
+    id_radicado_salida = models.ForeignKey(T262Radicados, models.SET_NULL, db_column='T266Id_RadicadoSalida', blank=True, null=True)
     fecha_radicado_salida = models.DateTimeField(db_column='T266fechaRadicadoSalida', blank=True, null=True)
     id_estado_actual_solicitud = models.ForeignKey(EstadosSolicitudes, models.CASCADE, db_column='T266Id_EstadoActualSolicitud')
     fecha_ini_estado_actual = models.DateTimeField(db_column='T266fechaIniEstadoActual')
-    id_doc_de_archivo_exp = models.ForeignKey(DocumentosDeArchivoExpediente, models.CASCADE, db_column='T266Id_DocDeArch_Exp', blank=True, null=True)
-    cod_tipo_oficio = models.CharField(max_length=1,choices=TIPOS_OFICIO_CHOICES,db_column='T266codTipoOficio')
+    id_doc_de_archivo_exp = models.ForeignKey(DocumentosDeArchivoExpediente, models.SET_NULL, db_column='T266Id_DocDeArch_Exp', blank=True, null=True)
+    
     class Meta:
         db_table = 'T266SolicitudAlUsuarioSobrePQRSDF'
 
