@@ -1,6 +1,6 @@
 estado_solicitud_CHOICES = (
     ('ES','En Espera'),
-    ('FN','Finalizada'),
-    ('RE','Rechazada'),
+    ('RE','Respondida'),
+    ('RC','Rechazada'),
     ('FN','Finalizada'),
 )
