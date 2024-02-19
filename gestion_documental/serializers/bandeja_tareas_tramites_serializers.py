@@ -9,6 +9,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
+from gestion_documental.serializers.bandeja_tareas_serializers import UnidadOrganizacionalBandejaTareasSerializer
 from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -348,3 +349,58 @@ class ReasignacionesTareasTramitesCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReasignacionesTareas
         fields = '__all__'
+
+
+class ReasignacionesTareasgetTramitesByIdSerializer(serializers.ModelSerializer):
+    persona_reasignada = serializers.SerializerMethodField()
+    cargo =serializers.ReadOnlyField(source='id_persona_a_quien_se_reasigna.id_cargo.nombre',default=None)
+    unidad_organizacional = serializers.SerializerMethodField()
+    estado_asignacion = serializers.ReadOnlyField(source='get_cod_estado_reasignacion_display',default=None)
+    class Meta:
+        model = ReasignacionesTareas
+        fields = ['id_reasignacion_tarea','fecha_reasignacion','persona_reasignada','cargo','unidad_organizacional','comentario_reasignacion','estado_asignacion','justificacion_reasignacion_rechazada']
+
+    def get_persona_reasignada(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    def  get_unidad_organizacional(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        if persona:
+            unidad = persona.id_unidad_organizacional_actual
+            if unidad:
+                serializador_unidad = UnidadOrganizacionalBandejaTareasSerializer(unidad)
+                return serializador_unidad.data
+        return None
+
+
+
+class MetadatosAnexosTramitesTmpSerializerGet(serializers.ModelSerializer):
+    origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', default=None)
+    categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', default=None)
+    nombre_tipologia_documental = serializers.CharField(source='id_tipologia_doc.nombre', default=None)
+    numero_folios = serializers.SerializerMethodField()
+    fecha_creacion_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.fecha_creacion_doc',default=None)
+    palabras_clave_doc = serializers.SerializerMethodField()
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = ['id_metadatos_anexo_tmp','asunto','numero_folios','fecha_creacion_archivo','origen_archivo','categoria_archivo','tiene_replica_fisica','es_version_original','palabras_clave_doc','nombre_tipologia_documental','descripcion']
+    def get_numero_folios(self, obj):
+        return obj.nro_folios_documento
+    
+    def get_palabras_clave_doc(self, obj):
+        if obj.palabras_clave_doc:
+            lista_datos =  obj.palabras_clave_doc.split("|")
+            return lista_datos
+        return None
+
+
+class TareasAsignadasGetTramiteJustificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = ['id_tarea_asignada','justificacion_rechazo']
+

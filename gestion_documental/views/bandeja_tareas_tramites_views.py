@@ -9,7 +9,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas,
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, ReasignacionesTareasTramitesCreateSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
+from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, MetadatosAnexosTramitesTmpSerializerGet, ReasignacionesTareasTramitesCreateSerializer, ReasignacionesTareasgetTramitesByIdSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasGetTramiteJustificacionSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -342,3 +342,56 @@ class ReasignacionesTareasTramitesCreate(generics.CreateAPIView):
    
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
+
+
+class ReasignacionesTramitesTareasgetById(generics.ListAPIView):
+    serializer_class = ReasignacionesTareasgetTramitesByIdSerializer
+    queryset = ReasignacionesTareas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        instance = self.get_queryset().filter(id_tarea_asignada=pk)
+        if not instance:
+            raise NotFound("No existen registros")
+        serializer = self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+    
+class TramitesAnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosTramitesTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+    
+
+
+class TareasAsignadasTramitesJusTarea(generics.UpdateAPIView):
+
+    serializer_class = TareasAsignadasGetTramiteJustificacionSerializer
+    queryset = TareasAsignadas.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request,pk):
+        
+        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
+        
+        if not tarea:
+            raise NotFound('No se encontro la tarea')
+        if  tarea.cod_estado_asignacion == 'Ac':
+            raise NotFound('Esta tarea fue aceptada')
+        
+        serializer = self.serializer_class(tarea)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)

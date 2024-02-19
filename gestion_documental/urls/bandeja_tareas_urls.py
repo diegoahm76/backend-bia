@@ -63,6 +63,10 @@ urlpatterns = [
     path('tareas-asignadas/tramites/rechazar/update/<str:pk>/', views_tramites.TareasAsignadasTramitesRechazarUpdate.as_view(), name='update-tareas-asignadas-tram'),
 
     path('tareas-asignadas/tramites/aceptar/update/<str:pk>/', views_tramites.TareasAsignadasAceptarTramiteUpdate.as_view(), name='update-tareas-asignadas-tram'),
-    #ReasignacionesTareasTramitesCreate
-    path('reasignaciones/tramites/tareas/create/',views_tramites.ReasignacionesTareasTramitesCreate.as_view(),name='crear-reasignaciones-tareas-tramites')
+    path('reasignaciones/tramites/tareas/create/',views_tramites.ReasignacionesTareasTramitesCreate.as_view(),name='crear-reasignaciones-tareas-tramites'),
+    path('reasignaciones/tramites/tareas/get/<str:pk>/', views_tramites.ReasignacionesTramitesTareasgetById.as_view(), name='listar-reasignaciones-tareas-tramites'),
+    path('tramites/anexo/metadatos/get/<str:pk>/', views_tramites.TramitesAnexoMetaDataGet.as_view(), name='get-tramites-anexo-metadatos'),
+    #TareasAsignadasTramitesJusTarea
+    path('tareas-asignadas/tramites/jus/tarea/get/<str:pk>/', views_tramites.TareasAsignadasTramitesJusTarea.as_view(), name='update-tareas-asignadas-tr'),
+
 ]
