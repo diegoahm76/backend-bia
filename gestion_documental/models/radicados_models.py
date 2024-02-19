@@ -17,6 +17,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales, Docu
 from gestion_documental.models.trd_models import TipologiasDoc
 from seguridad.models import Personas
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
+# from tramites.models.tramites_models import SolicitudesTramites
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -260,7 +261,8 @@ class modulos_radican(models.Model):
 
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
-    id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
+    id_pqrsdf = models.ForeignKey(PQRSDF, on_delete =models.SET_NULL, db_column='T266Id_PQRSDF',null=True,blank=True)
+    id_solicitud_tramnite = models.ForeignKey('tramites.SolicitudesTramites',on_delete= models.SET_NULL, db_column='T266Id_SolicitudTramite',null=True,blank=True)
     id_persona_solicita = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T266Id_PersonaSolicita')
     id_und_org_oficina_solicita = models.ForeignKey(UnidadesOrganizacionales, models.CASCADE, db_column='T266Id_UndOrgOficina_Solicita')
     fecha_solicitud = models.DateTimeField(db_column='T66fechaSolicitud')
