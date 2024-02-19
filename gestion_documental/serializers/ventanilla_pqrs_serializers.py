@@ -1791,3 +1791,87 @@ class TramitesComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
             'descripcion'
         ]
     
+class TramitesDetalleHistoricoComplementoSerializer(serializers.ModelSerializer):
+    id_solicitud_tramite = serializers.ReadOnlyField(source='id_solicitud_usu_PQR.id_solicitud_tramite.id_solicitud_tramite', default=None)
+    solicitud_actual = serializers.SerializerMethodField()
+    registros = serializers.SerializerMethodField()
+    titular = serializers.SerializerMethodField()
+    
+    def get_solicitud_actual(self, obj):
+        idComplementoUsu_PQR = obj.idComplementoUsu_PQR
+        data = []
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_complemento_usu_pqr=idComplementoUsu_PQR)
+        for solicitud in solicitudes:
+            estado = Estados_PQR.objects.filter(fecha_iniEstado=solicitud.fecha_solicitud,estado_solicitud=9).first()
+            data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
+           
+        return data
+    
+    def get_registros(self,obj):
+        idComplementoUsu_PQR = obj.idComplementoUsu_PQR
+        data = []
+        solicitudes = SolicitudDeDigitalizacion.objects.filter(id_complemento_usu_pqr=idComplementoUsu_PQR)
+        for solicitud in solicitudes:
+            data.append(
+                {
+                    'id':solicitud.id_solicitud_de_digitalizacion,
+                    'accion':'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
+                    'digitalizacion_completada':solicitud.digitalizacion_completada,
+                    'fecha_rta_solicitud':solicitud.fecha_rta_solicitud,
+                    'observacion':solicitud.observacion_digitalizacion
+                }
+            )
+        return data
+        
+    def get_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_interpone:
+            if obj.id_persona_interpone.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_persona_interpone.razon_social
+            else:
+                nombre_list = [obj.id_persona_interpone.primer_nombre, obj.id_persona_interpone.segundo_nombre,
+                                obj.id_persona_interpone.primer_apellido, obj.id_persona_interpone.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    class Meta:
+        model = ComplementosUsu_PQR
+        fields = [
+            'id_solicitud_usu_PQR',
+            'id_solicitud_tramite',
+            'titular',
+            'cantidad_anexos',
+            'asunto',
+            'solicitud_actual',
+            'registros'
+        ]
+
+class TramitesGetHistoricoComplementoSerializer(serializers.ModelSerializer):
+    cabecera = serializers.SerializerMethodField()
+    detalle = serializers.SerializerMethodField()
+        
+    def get_cabecera(self, obj):
+        cadena = ""
+        radicado = obj.id_radicado
+       
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            
+            return {
+                'idComplementoUsu_PQR':obj.idComplementoUsu_PQR,
+                'radicado':cadena
+            }
+           
+        else: 
+            return 'SIN RADICAR'
+
+    def get_detalle(self, obj):
+        serializer = TramitesDetalleHistoricoComplementoSerializer(obj)
+        return serializer.data
+    
+    class Meta:
+        model = ComplementosUsu_PQR
+        fields = ['cabecera','detalle']
