@@ -32,6 +32,8 @@ urlpatterns = [
 
     #Inspeccion-vehiculos-conductor
     path('info-conductor/get/',views.DatosBasicosConductorGet.as_view(),name='info-conductor'),
+    path('buscar-vehiculos-arrendados/get/',views.BusquedaAvanzadaVehiculosArrendados.as_view(),name='info-vehicukos-arrendados'),
+    
 
 
 

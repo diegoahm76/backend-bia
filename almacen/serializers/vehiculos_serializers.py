@@ -50,10 +50,11 @@ class UpdateArrendarVehiculoSerializer(serializers.ModelSerializer):
 
 
 class SolicitudViajeSerializer(serializers.ModelSerializer):
+    cod_departamento = serializers.ReadOnlyField(source='cod_municipio.cod_departamento.cod_departamento')
+
     class Meta:
         model = SolicitudesViajes
         fields = '__all__'
-
 
 class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
     class Meta:
