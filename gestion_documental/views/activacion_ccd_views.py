@@ -15,6 +15,9 @@ from gestion_documental.serializers.activacion_ccd_serializers import (
     PermisosUndsOrgActualesSerieExpCCDSerializer,
     ConfiguracionTipoExpedienteAgnoSerializer,
     ConsecPorNivelesTipologiasDocAgnoSerializer,
+    CCDCambioActualSerializer,
+    TRDCambioActualSerializer,
+    TCACambioActualSerializer
 )
 from seguridad.utils import Util
 
@@ -105,7 +108,7 @@ class GetCCDPosiblesActivar(generics.ListAPIView):
         return Response({'success':True, 'detail':'Los CCD posibles que se pueden activar son los siguientes', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 class TCACambioActualPut(generics.UpdateAPIView):
-    serializer_class = TCASerializer
+    serializer_class = TCACambioActualSerializer
     permission_classes = [IsAuthenticated]
 
     def activar_tca(self, tca_seleccionado, data_desactivar, data_activar, data_auditoria):
@@ -141,7 +144,7 @@ class TCACambioActualPut(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'Tabla de control de acceso activado'}, status=status.HTTP_200_OK)
 
 class TRDCambioActualPut(generics.UpdateAPIView):
-    serializer_class = TRDSerializer
+    serializer_class = TRDCambioActualSerializer
     permission_classes = [IsAuthenticated]
 
     def activar_trd(self, trd_seleccionado, data_desactivar, data_activar, data_auditoria):
@@ -184,9 +187,8 @@ class TRDCambioActualPut(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'Tabla de retencion documental activado'}, status=status.HTTP_200_OK)
         
 
-
 class CCDCambioActualPut(generics.UpdateAPIView):
-    serializer_class = CCDSerializer
+    serializer_class = CCDCambioActualSerializer
     permission_classes = [IsAuthenticated]
 
     def activar_ccd(self, ccd_seleccionado, id_organigrama, data_desactivar, data_activar, data_auditoria):
@@ -197,8 +199,10 @@ class CCDCambioActualPut(generics.UpdateAPIView):
             raise NotFound('El CCD seleccionado no existe')
 
         try:
-            organigrama_actual = Organigramas.objects.get(id_organigrama=id_organigrama, actual=True)
+            #organigrama_actual = Organigramas.objects.get(id_organigrama=id_organigrama, actual=True)
+            organigrama_actual = Organigramas.objects.get(id_organigrama=id_organigrama)
         except Organigramas.DoesNotExist:
+
             raise NotFound('El organigrama ingresado no existe o no está activo')
         
         if organigrama_actual.id_organigrama != ccd_seleccionado.id_organigrama.id_organigrama:
@@ -225,7 +229,7 @@ class CCDCambioActualPut(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        del data_activar['justificacion_nueva_version']
+        del data_activar['justificacion']
 
         trd_seleccionado = TablaRetencionDocumental.objects.filter(id_ccd=ccd_seleccionado.id_ccd).first()
         instancia_trd = TRDCambioActualPut()
@@ -268,7 +272,7 @@ class CCDCambioActualPut(generics.UpdateAPIView):
         data_activar = {
             'actual': True,
             'fecha_puesta_produccion': datetime.now(),
-            'justificacion_nueva_version': data['justificacion']
+            'justificacion': data['justificacion']
             }
         
         try:

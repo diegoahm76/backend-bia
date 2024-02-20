@@ -685,3 +685,29 @@ class ReasignacionesTareasOtrosCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReasignacionesTareas
         fields = '__all__'
+
+class ReasignacionesTareasgetOtrosByIdSerializer(serializers.ModelSerializer):
+    persona_reasignada = serializers.SerializerMethodField()
+    cargo =serializers.ReadOnlyField(source='id_persona_a_quien_se_reasigna.id_cargo.nombre',default=None)
+    unidad_organizacional = serializers.SerializerMethodField()
+    estado_asignacion = serializers.ReadOnlyField(source='get_cod_estado_reasignacion_display',default=None)
+    class Meta:
+        model = ReasignacionesTareas
+        fields = ['id_reasignacion_tarea','fecha_reasignacion','persona_reasignada','cargo','unidad_organizacional','comentario_reasignacion','estado_asignacion','justificacion_reasignacion_rechazada']
+
+    def get_persona_reasignada(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+    def  get_unidad_organizacional(self, obj):
+        persona = obj.id_persona_a_quien_se_reasigna
+        if persona:
+            unidad = persona.id_unidad_organizacional_actual
+            if unidad:
+                serializador_unidad = UnidadOrganizacionalBandejaTareasSerializer(unidad)
+                return serializador_unidad.data
+        return None
