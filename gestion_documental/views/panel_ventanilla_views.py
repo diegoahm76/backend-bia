@@ -2618,7 +2618,7 @@ class TramitesSolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView)
         data_estado_asociado = {}
         data_estado_asociado['solicitud_usu_sobre_PQR'] = complemento.id_solicitud_usu_PQR.id_solicitud_al_usuario_sobre_pqrsdf
         data_estado_asociado['estado_solicitud'] = 9
-        data_estado_asociado['estado_PQR_asociado'] = estado_solicitud_a_usuario
+        data_estado_asociado['estado_PQR_asociado'] = estado_solicitud_a_usuario.id_estado_PQR
         data_estado_asociado['fecha_iniEstado'] = fecha_actual
         data_estado_asociado['persona_genera_estado'] = request.user.persona.id_persona
         
@@ -2632,8 +2632,8 @@ class AsignacionComplementoTramitesCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
     creador_estados = Estados_PQRCreate
     
-    def post(self, request, id_complemento_usu_pqr):
-        data_in = request.data
+    def post(self, request):
+        id_complemento_usu_pqr = request.data['id_complemento_usu_pqr']
         
         complemento = ComplementosUsu_PQR.objects.filter(idComplementoUsu_PQR=id_complemento_usu_pqr).first()
         if not complemento:
@@ -2660,7 +2660,8 @@ class AsignacionComplementoTramitesCreate(generics.CreateAPIView):
         
         AdicionalesDeTareas.objects.create(
             id_complemento_usu_pqr = complemento,
-            id_tarea_asignada = tarea_tramite
+            id_tarea_asignada = tarea_tramite,
+            fecha_de_adicion = datetime.now()
         )
         
         # Actualizar en T315 si aplica

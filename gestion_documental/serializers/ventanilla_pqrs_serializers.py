@@ -1474,6 +1474,9 @@ class SolicitudesTramitesGetSerializer(serializers.ModelSerializer):
     tipo_solicitud = serializers.SerializerMethodField()
     nombre_tramite = serializers.SerializerMethodField()
     cantidad_anexos = serializers.SerializerMethodField()
+    estado_asignacion_grupo = serializers.SerializerMethodField()
+    persona_asignada = serializers.SerializerMethodField()
+    unidad_asignada = serializers.SerializerMethodField()
     
     def get_cantidad_anexos(self, obj):
         conteo_anexos = AnexosTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).count()
@@ -1633,9 +1636,7 @@ class TramitesDetalleHistoricoSerializer(serializers.ModelSerializer):
         data = []
         solicitudes = SolicitudDeDigitalizacion.objects.filter(id_tramite=id_tramite)
         for solicitud in solicitudes:
-            
-          
-            estado = Estados_PQR.objects.filter(fecha_iniEstado=solicitud.fecha_solicitud,estado_solicitud=9).first()
+            estado = Estados_PQR.objects.filter(id_tramite=solicitud.id_tramite.id_solicitud_tramite,estado_solicitud=9).first()
             data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
            
         return data
@@ -1802,7 +1803,7 @@ class TramitesDetalleHistoricoComplementoSerializer(serializers.ModelSerializer)
         data = []
         solicitudes = SolicitudDeDigitalizacion.objects.filter(id_complemento_usu_pqr=idComplementoUsu_PQR)
         for solicitud in solicitudes:
-            estado = Estados_PQR.objects.filter(fecha_iniEstado=solicitud.fecha_solicitud,estado_solicitud=9).first()
+            estado = Estados_PQR.objects.filter(solicitud_usu_sobre_PQR=solicitud.id_complemento_usu_pqr.id_solicitud_usu_PQR.id_solicitud_al_usuario_sobre_pqrsdf,estado_solicitud=9).first()
             data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
            
         return data
