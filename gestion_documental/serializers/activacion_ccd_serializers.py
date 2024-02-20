@@ -67,14 +67,17 @@ class CCDPosiblesSerializer(serializers.ModelSerializer):
 class CCDCambioActualSerializer(serializers.ModelSerializer):
     class Meta:
         model= CuadrosClasificacionDocumental
-        fields=['justificacion_nueva_version']
+        fields=['actual','fecha_puesta_produccion','justificacion']
 
-
-class CCDActivarSerializer(serializers.ModelSerializer):
+class TCACambioActualSerializer(serializers.ModelSerializer):
     class Meta:
-        model= CuadrosClasificacionDocumental
-        fields=['fecha_puesta_produccion', 'justificacion_puesta_produccion', 'actual']
+        model = TablasControlAcceso
+        fields = ['actual','fecha_puesta_produccion']
 
+class TRDCambioActualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TablaRetencionDocumental
+        fields = ['actual','fecha_puesta_produccion']
 
 class CtrlAccesoClasificacionExpCCDSerializer(serializers.ModelSerializer):
 

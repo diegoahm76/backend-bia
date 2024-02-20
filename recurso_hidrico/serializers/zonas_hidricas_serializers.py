@@ -47,7 +47,9 @@ class SubZonaHidricaSerializerr(serializers.ModelSerializer):
 
 class SubZonaHidricaValorRegionalSerializer(serializers.ModelSerializer):
     valor_regional = serializers.CharField()  # Permitir editar solo este campo
+    fecha_inicio = serializers.DateField(read_only=True)
+    fecha_fin = serializers.DateField(read_only=True)
 
     class Meta:
         model = SubZonaHidrica
-        fields = ['valor_regional']
+        fields = ['valor_regional', 'fecha_inicio', 'fecha_fin']
