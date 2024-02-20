@@ -74,5 +74,30 @@ urlpatterns = [
     path('asignar-otros/create/',views.AsignacionOtrosCreate.as_view(),name='crear-asignacion-grupo-otros'),
     path('asignar-otros/get/<str:id_otros>/',views.AsignacionOtrosGet.as_view(),name='listar-asignacion-grupo-otros'),
     path('otros/historico/get/',views.OtrosGetHistorico.as_view(),name='listar-historico-opas'),
+    #PANEL DE VENTANILLA TRAMITES
+   
+    path('tramites/get/', views.SolicitudesTramitesGet.as_view(), name='listar-tramites'),
+    path('tramites/estados_solicitudes/get/', views.EstadosSolicitudesTramitesGet.as_view(),name='listar-estados-solicitud-tramites'),
+    path('tramites/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionTramitesCreate.as_view(),name='crear-solicitud-tramites'),
+    path('tramites/anexo/get/<str:tra>/',views.TramitesAnexoInfoGet.as_view(),name='get-tramites-anexo'),
+    path('tramites/historico/get/',views.TramitesGetHitorico.as_view(),name='listar-historico-tramites'),
+    path('tramites/complementos/get/<str:id_solicitud_tramite>/', views.TramitesCompletementosGet.as_view(),name='listar-complementos-tramites'),
+    path('tramites/complementos/digitalizacion/create/',views.TramitesSolicitudDeDigitalizacionComplementoCreate.as_view(),name='crear-solicitud-complemento-tramites'),
+    path('tramites/complementos/asignar/create/',views.AsignacionComplementoTramitesCreate.as_view(),name='crear-asignacion-grupo-tramites'),
+    
+    #ASIGNACION_DE_OPAS
+    path('asginar-opas/seccion-subseccion/get/',views.SeccionSubseccionAsignacionGet.as_view(),name='listar-unidades'),
+    path('asginar-opas/seccion-subseccion-grupos/<int:subseccion_id>/', views.SubseccionGestionAmbientalGruposGet.as_view(), name='subseccion_gestion_ambiental_grupos'),
+    path('asginar-opas/seccion-subseccion-serie/', views.UnidadesOrganizacionalesRelacionadasListView.as_view(), name='subseccion-serie'),
+
+
+    #ASIGNACION_DE_TRAMITES_ENTREGA_125
+    path('asignar-tramites/seccion-subseccion/get/', views.SeccionSubseccionPlaneacionAsignacionGet.as_view(), name='subseccion_planeacion_grupos'),
+    path('asignar-tramites/asignacion/create/',views.AsignacionTramiteSubseccionOGrupo.as_view(),name='crear-asignacion-tramites'),
+    path('asignar-tramites/historico-asignacion/get/<str:tra>/',views.AsignacionTramitesGet.as_view(),name='get-asignacion-tramites'),
+
+
+
+
 
 ]

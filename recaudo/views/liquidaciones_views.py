@@ -349,23 +349,48 @@ class CalculosLiquidacionBaseView(generics.GenericAPIView):
 from io import BytesIO
 from django.http import HttpResponse
 
-class  liquidacionPdfpruebaMigueluno(generics.ListAPIView):
-
-    def get(self,request,pk):
-        
+class liquidacionPdfpruebaMigueluno(generics.ListAPIView):
+    def get(self, request, pk):
+        # Obtener los datos necesarios de la base de datos
         ley = LeyesLiquidacion.objects.all().first()
         liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
         info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
 
+        # Calcular los datos necesarios
+        nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres else ''
+        apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos else ''
+        anio = liquidacion.fecha_liquidacion.year
+        tua = info.calculos['tarifa_tasa']
+        caudalc = float(info.calculos['caudal_consecionado'])
+        fop = float(info.calculos['factor_costo_oportunidad'])
+        volumenMeses = []
+        montopagarMeses = []
+        totalliquidacion = 0
+        liquidacionuno = 0
+        liquidaciondos = 0
+        dias_por_mes_actual = obtener_dias_por_mes(anio)
+
+        for mes, dias in dias_por_mes_actual.items():
+            volumen = round(float(caudalc * dias), 2)
+            volumenMeses.append(volumen)
+            valorPagar = round(float(tua * volumen * fop), 2)
+            montopagarMeses.append(valorPagar)
+            if mes < 7:
+                liquidacionuno += valorPagar
+            else:
+                liquidaciondos += valorPagar
+        totalliquidacion = liquidacionuno + liquidaciondos
+
+        # Crear el contexto para el documento PDF
         context = {
             'rp': liquidacion.id,  # referencia pago
             'limite_pago': liquidacion.vencimiento,
             'doc_cobro': '',
-            'ley': ley.ley if ley.ley is not None else '',
+            'ley': ley.ley if ley.ley else '',
             'fecha_impresion': liquidacion.fecha_liquidacion,
-            'anio': liquidacion.fecha_liquidacion.year,
+            'anio': anio,
             'cedula': liquidacion.id_deudor.identificacion,
-            'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
+            'titular': nombres + ' ' + apellidos,
             'representante_legal': '',
             'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
             'telefono': liquidacion.id_deudor.telefono,
@@ -374,34 +399,42 @@ class  liquidacionPdfpruebaMigueluno(generics.ListAPIView):
             'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
             'predio': str(info.calculos['predio']).upper(),
             'municipio': str(info.calculos['municipio']).upper(),
-            'caudal_consecionado': info.calculos['caudal_consecionado'],
+            'caudal_consecionado': caudalc,
             'uso': str(info.calculos['uso']).upper(),
             'fr': info.calculos['factor_regional'],  # factor regional
-            'tt': info.calculos['tarifa_tasa'],  # tarifa de la tasa
+            'tt': tua,  # tarifa de la tasa
             'numero_cuota': liquidacion.periodo_liquidacion,
             'valor_cuota': liquidacion.valor,
             'codigo_barras': '',
-            'factor_costo_oportunidad': info.calculos['factor_costo_oportunidad']
+            'factor_costo_oportunidad': fop,
+            'volumenMeses': volumenMeses,
+            'montopagarMeses': montopagarMeses,
+            'liquidacionuno': liquidacionuno,
+            'liquidaciondos': liquidaciondos,
+            'liquidaciontotal': totalliquidacion,
         }
 
-    # pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/TUA.docx'
-    # outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
+        # Crear un documento Word
+        # doc = Document()
 
-    # doc = DocxTemplate(pathToTemplate)
-    # doc.render(context)
-    
-    # # Crear un objeto BytesIO para almacenar el contenido del documento en memoria
-    # output = BytesIO()
+        # # Agregar contenido al documento
+        # doc.add_paragraph('Liquidación de prueba')
+        # doc.add_paragraph('RP: {}'.format(context['rp']))
+        # doc.add_paragraph('Fecha de impresión: {}'.format(context['fecha_impresion']))
+        # doc.add_paragraph('Año: {}'.format(context['anio']))
+        # doc.add_paragraph('Titular: {}'.format(context['titular']))
+        # doc.add_paragraph('Dirección: {}'.format(context['direccion']))
+        # # Agregar más contenido según sea necesario
 
-    # # Guardar el documento renderizado en el objeto BytesIO
-    # doc.save(output)
+        # # Guardar el documento en BytesIO
+        # output = BytesIO()
+        # doc.save(output)
 
-    # # Crear una respuesta HTTP con el contenido del BytesIO
-    # response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    # response['Content-Disposition'] = 'attachment; filename=output.docx'
-    # response.write(output.getvalue())
+        # Crear una respuesta HTTP con el contenido del BytesIO
+        # response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        # response['Content-Disposition'] = 'attachment; filename=output.docx'
+        # response.write(output.getvalue())
 
-    # Devolver la respuesta HTTP
         return Response({'success': True, 'detail':'Se mostraron los datos', 'data':context}, status=status.HTTP_200_OK)
 
 
@@ -459,3 +492,21 @@ def liquidacionPdfpruebaMigueldos(request, pk):
 
     # Devolver la respuesta HTTP
     return response
+
+
+
+
+class  LiquidacionPdfpruebaMiguelUpdate(generics.UpdateAPIView):
+   
+    def put(self,request,pk):
+        data=request.data
+        liquidacion = LiquidacionesBase.objects.filter(pk=pk).first()
+        if not liquidacion : 
+            raise NotFound("no se encontro la liquidacion buscada")
+        info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).first()
+        if not info : 
+              raise NotFound("Aun no se ha creado el calculo")
+        info.calculos['caudal_consecionado']=data.get('caudal_consecionado')
+        info.save()
+        return Response({'success': True, 'detail': 'Se actualizo la liquidacion'}, status=status.HTTP_200_OK)
+

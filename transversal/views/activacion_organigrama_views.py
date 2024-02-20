@@ -93,6 +93,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
     def activar_organigrama(self, organigrama_seleccionado, data_desactivar, data_activar, data_auditoria):
 
+        organigrama_seleccionado = Organigramas.objects.get(id_organigrama=organigrama_seleccionado)
         previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
         organigrama_actual = Organigramas.objects.filter(actual=True).first()
         
@@ -163,7 +164,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
         if not ccd_actual:
 
             data_activar['justificacion_nueva_version'] = data['justificacion']
-            response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+            response_org = self.activar_organigrama(organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
         
         else:
             if not data.get('id_ccd'):
@@ -195,7 +196,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
                 instancia_subproceso_10 = TemporalPersonaUnidadCrearActOrgView()
 
                 # Subproceso 1
-                instancia_subproceso_1.actualizar_agrupacion_documental(organigrama_seleccionado.id_organigrama, data_auditoria)
+                res_sub1 = instancia_subproceso_1.actualizar_agrupacion_documental(organigrama_seleccionado.id_organigrama, data_auditoria)
 
                 # Subproceso 2
                 instancia_subproceso_2.actualizar_expedientes_documentos(organigrama_seleccionado.id_organigrama, data_auditoria)
@@ -226,13 +227,13 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
                 # Activar Organigrama
                 data_activar['justificacion_nueva_version'] = data['justificacion']
-                response_org = self.activar_organigrama(organigrama_seleccionado, data_desactivar, data_activar, data_auditoria)
+                response_org = self.activar_organigrama(organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
                 # Activar CCD
                 data_activar_ccd = data_activar
-                data_activar_ccd['justificacion_nueva_version'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
+                data_activar_ccd['justificacion'] = "ACTIVACIÓN AUTOMÁTICA DESDE EL PROCESO DE 'CAMBIO DE ORGANIGRAMA ACTUAL'"
                 ccd_activar = CCDCambioActualPut()
-                response_ccd = ccd_activar.activar_ccd(ccd_seleccionado, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+                response_ccd = ccd_activar.activar_ccd(ccd_seleccionado.id_ccd, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
                 if response_ccd.status_code != status.HTTP_200_OK:
                     return response_ccd
@@ -297,14 +298,20 @@ class ActualizarUnidadesSeccionResponsableActOrgView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     
     def actualizar_agrupacion_documental(self, id_ccd_nuevo, data_auditoria):
-        unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo, id_unidad_seccion_actual_padre=F('id_unidad_seccion_actual'))
-        unidades = UnidadesOrganizacionales.objects.filter(id_unidad_org_actual_admin_series__in=[unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables])
 
-        for unidad in unidades:
-            for unidad_responsable in unidades_responsables:
-                if unidad.id_unidad_org_actual_admin_series == unidad_responsable.id_unidad_seccion_actual:
-                    unidad.id_unidad_org_actual_admin_series = unidad_responsable.id_unidad_seccion_nueva
-                    unidad.save()
+        try: 
+            unidades_responsables = UnidadesSeccionResponsableTemporal.objects.filter(id_ccd_nuevo=id_ccd_nuevo, id_unidad_seccion_actual_padre=F('id_unidad_seccion_actual'))
+            unidades = UnidadesOrganizacionales.objects.filter(id_unidad_org_actual_admin_series__in=[unidad.id_unidad_seccion_actual.id_unidad_organizacional for unidad in unidades_responsables])
+
+            for unidad in unidades:
+                for unidad_responsable in unidades_responsables:
+                    if unidad.id_unidad_org_actual_admin_series == unidad_responsable.id_unidad_seccion_actual:
+                        unidad.id_unidad_org_actual_admin_series = unidad_responsable.id_unidad_seccion_nueva
+                        unidad.save()
+        except:
+            return False
+        return True
+        
         
         
         # # Auditoria Actualizar Unidades Seccion Responsable
@@ -346,8 +353,6 @@ class ActualizarExpedientesDocumentosActOrgView(generics.UpdateAPIView):
         # data_auditoria['valores_actualizados'] = valores_actualizados
         # Util.save_auditoria(data_auditoria)
 
-
-        
 
 # TODO: Subproceso 3 - Cambiar unidades organizacionales con permisos sobre Agrupaciones Documentales en todos los CCD
 # - Consultar la tabla temporal T227UndsSeccionResponsables_Tmp para obtener las asignaciones de unidades entre el CCD DESACTIVANDO y el CCD ACTIVANDO.
@@ -397,6 +402,7 @@ class ActualizarAlertasActOrgView(generics.UpdateAPIView):
                     alerta_programada.save()
 
         for alerta_programada in alertas_programadas:
+            alertas_aux = []
             for unidad_responsable in unidades_responsables:
                 alertas_split = alerta_programada.id_und_org_lider_alertar.split('|')
                 for alerta_split in alertas_split:
@@ -451,8 +457,6 @@ class ActualizarControlAccesoActOrgView(generics.ListCreateAPIView):
         # data_auditoria['descripcion'] = descripcion
         # data_auditoria['valores_actualizados'] = valores_actualizados
         # Util.save_auditoria(data_auditoria)
-
-
 
 # TODO: Subproceso 6 - Crear registros de CONTROL DE ACCESO para las exclusiones de Agrupaciones Documentales del CCD que se está ACTIVANDO.
 # - Consultar la tabla T222CtrlAcceso_ClasificacionExp_CCD para obtener los registros correspondientes al CCD DESACTIVANDO y con exclusiones de Agrupaciones Documentales.

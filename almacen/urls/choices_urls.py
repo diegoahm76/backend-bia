@@ -16,6 +16,8 @@ urlpatterns = [
     path('tipo-depreciacion-activo/', views.TipoDepreciacionActivos.as_view(), name='tipo-depreciacion-activos'),
     path('estado-aprobacion/', views.EstadoAprobacionChoices.as_view(), name='estado-aprobacion'),
     path('tipo-elemento/', views.CodTipoElementoViveroChoices.as_view(), name='tipo-elemento'),
+    path('estado-solicitud/', views.EstadoSolicitudChoices.as_view(), name='estado-solicitud'),
+    path('tipo-conductor/', views.TipoConductorChoices.as_view(), name='tipo-conductor'),
 
     
 ]
