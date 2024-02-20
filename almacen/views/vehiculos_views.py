@@ -881,43 +881,58 @@ class DatosBasicosConductorGet(generics.ListAPIView):
 
 
 
-#busqueda_avanzada
-# class BusquedaAvanzadaVehiculos(generics.ListAPIView):
-#     serializer_class = BusquedaVehiculoSerializer
+#BUSQUEDA_AVANZADA_VEHICULOS
+class BusquedaAvanzadaVehiculosArrendados(generics.ListAPIView):
+    serializer_class = BusquedaVehiculoSerializer
 
-#     def get_queryset(self):
-#         # Obtener la persona logueada (conductor)
-#         persona_logueada = self.request.user.persona
+    def get_queryset(self):
+            # Obtener la persona logueada (conductor)
+            persona_logueada = self.request.user.persona
 
-#         # Buscar el registro en la tabla VehiculosAgendables_Conductor
-#         try:
-#             vehiculo_conductor = VehiculosAgendables_Conductor.objects.get(id_persona_conductor=persona_logueada)
-#             hoja_de_vida_vehiculo = vehiculo_conductor.id_hoja_vida_vehiculo
+            # Buscar el registro en la tabla VehiculosAgendables_Conductor
+            vehiculo_conductor = VehiculosAgendables_Conductor.objects.get(id_persona_conductor=persona_logueada)
+            hoja_de_vida_vehiculo = vehiculo_conductor.id_hoja_vida_vehiculo
 
-#             # Verificar si el vehículo es arrendado
-#             if hoja_de_vida_vehiculo.es_arrendado:
-#                 vehiculo_arrendado = VehiculosArrendados.objects.get(id_vehiculo_arrendado=hoja_de_vida_vehiculo.id_vehiculo_arrendado)
-#                 placa = vehiculo_arrendado.placa
-#                 nombre_vehiculo = vehiculo_arrendado.nombre
-#             else:
-#                 articulo = CatalogoBienes.objects.get(id_bien=hoja_de_vida_vehiculo.id_articulo)
-#                 placa = articulo.doc_identificador_nro
-#                 nombre_vehiculo = articulo.nombre
+            if hoja_de_vida_vehiculo.es_arrendado:
+                # Si el vehículo es arrendado, obtener la información de la tabla VehiculosArrendados
+                vehiculo_arrendado = VehiculosArrendados.objects.get(id_vehiculo_arrendado=hoja_de_vida_vehiculo.id_vehiculo_arrendado)
+                placa = vehiculo_arrendado.placa
+                nombre_vehiculo = vehiculo_arrendado.nombre
+                marca_vehiculo = vehiculo_arrendado.id_marca.nombre  # Obtener el nombre de la marca
+                tiene_hoja_vida = vehiculo_arrendado.tiene_hoja_de_vida
+            else:
+                # Si el vehículo no es arrendado, obtener la información de la tabla CatalogoBienes
+                articulo = CatalogoBienes.objects.get(id_bien=hoja_de_vida_vehiculo.id_articulo)
+                placa = articulo.doc_identificador_nro
+                nombre_vehiculo = articulo.nombre
+                marca_vehiculo = None  # No aplicable para vehículos no arrendados
+                tiene_hoja_vida = articulo.tiene_hoja_de_vida
 
-#             # Filtrar los vehículos por placa, nombre del vehículo y nombre del contratista
-#             placa_param = self.request.query_params.get('placa', None)
-#             nombre_vehiculo_param = self.request.query_params.get('nombre_vehiculo', None)
-#             nombre_contratista_param = self.request.query_params.get('nombre_contratista', None)
+            # Agregar la placa, el nombre del vehículo y la marca seleccionada al contexto
+            self.request.session['vehiculo_seleccionado_placa'] = placa
+            self.request.session['vehiculo_seleccionado_nombre'] = nombre_vehiculo
+            self.request.session['vehiculo_seleccionado_marca'] = marca_vehiculo
 
-#             queryset = HojaDeVidaVehiculos.objects.all()
+            queryset = HojaDeVidaVehiculos.objects.all()
 
-#             if placa_param:
-#                 queryset = queryset.filter(placa=placa_param)
-#             if nombre_vehiculo_param:
-#                 queryset = queryset.filter(nombre=nombre_vehiculo_param)
-#             if nombre_contratista_param:
-#                 queryset = queryset.filter(nombre_contratista=nombre_contratista_param)
+            # Filtrar los vehículos por placa, nombre del vehículo, nombre del contratista y marca
+            placa_param = self.request.query_params.get('placa', None)
+            nombre_vehiculo_param = self.request.query_params.get('nombre_vehiculo', None)
+            nombre_contratista_param = self.request.query_params.get('nombre_contratista', None)
+            marca_param = self.request.query_params.get('marca', None)
 
-#             return queryset
-#         except (VehiculosAgendables_Conductor.DoesNotExist, VehiculosArrendados.DoesNotExist, CatalogoBienes.DoesNotExist, HojaDeVidaVehiculos.DoesNotExist):
-#             return HojaDeVidaVehiculos.objects.none()  # Retorna una lista vacía si no se encuentra ningún vehículo asignado al conductor
+            if placa_param:
+                queryset = queryset.filter(placa=placa_param)
+            if nombre_vehiculo_param:
+                queryset = queryset.filter(nombre=nombre_vehiculo_param)
+            if nombre_contratista_param:
+                queryset = queryset.filter(nombre_contratista=nombre_contratista_param)
+            if marca_param:
+                # Filtrar por marca (si el vehículo es arrendado)
+                if hoja_de_vida_vehiculo.es_arrendado:
+                    queryset = queryset.filter(id_vehiculo_arrendado__id_marca__nombre=marca_param)
+                else:
+                    # Si el vehículo no es arrendado, buscar en la tabla CatalogoBienes
+                    queryset = queryset.filter(id_articulo__id_marca__nombre=marca_param)
+
+            return queryset, tiene_hoja_vida
