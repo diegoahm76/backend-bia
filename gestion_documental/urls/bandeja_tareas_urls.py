@@ -69,4 +69,12 @@ urlpatterns = [
     #TareasAsignadasTramitesJusTarea
     path('tareas-asignadas/tramites/jus/tarea/get/<str:pk>/', views_tramites.TareasAsignadasTramitesJusTarea.as_view(), name='update-tareas-asignadas-tr'),
 
+    path('tareas-asignadas/tramites/respuesta/requerimientos/<str:pk>/',views_tramites.RequerimientosTramite.as_view(),name='listar-respuesta-requerimientos'),
+    #RespuestaTramitesInfoAnexosGet
+    path('tareas-asignadas/tramites/respuesta/anexo/get/<str:pk>/', views_tramites.RespuestaTramitesInfoAnexosGet.as_view(), name='get-respuesta-tramites-anexo'),
+
+    path('tareas-asignadas/tramites/complemento/documento/digital/get/<str:pk>/', views_tramites.ComplementoTramitesAnexoDocumentoDigitalGet.as_view(), name='get-archivo-complemento'),
+    #DetalleRespuestaTramitesByIdGet
+    path('tareas-asignadas/tramites/respuesta/detalle/get/<str:pk>/', views_tramites.DetalleRespuestaTramitesByIdGet.as_view(), name='get-detalle-respuesta-tramites-by-id'),
+
 ]
