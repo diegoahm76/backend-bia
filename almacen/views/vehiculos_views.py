@@ -694,8 +694,13 @@ class BusquedaVehiculos(generics.ListAPIView):
         # Agregar el nombre de la marca y el tipo de vehículo a cada objeto serializado
         for data in serializer.data:
             vehiculo = HojaDeVidaVehiculos.objects.get(pk=data['id_hoja_de_vida'])
-            vehiculo_marca_nombre = vehiculo.id_vehiculo_arrendado.id_marca.nombre
-            vehiculo_placa = vehiculo.id_vehiculo_arrendado.placa
+            if vehiculo.id_vehiculo_arrendado:
+                vehiculo_marca_nombre = vehiculo.id_vehiculo_arrendado.id_marca.nombre
+                vehiculo_placa = vehiculo.id_vehiculo_arrendado.placa
+            else:
+                vehiculo_marca_nombre = "Desconocido"
+                vehiculo_placa = "Desconocido"
+
             if data['cod_tipo_vehiculo'] == "C":
                 tipo_vehiculo = "CARRO"
             elif data['cod_tipo_vehiculo'] == "M":
@@ -822,17 +827,14 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
     def get_queryset(self):
         queryset = VehiculosAgendables_Conductor.objects.all()
 
-        # Filtrar por tipo de vehículo (C: Carro, M: Moto)
         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
         if tipo_vehiculo:
             queryset = queryset.filter(id_hoja_vida_vehiculo__cod_tipo_vehiculo=tipo_vehiculo)
 
-        # Filtrar por placa del vehículo
         placa = self.request.query_params.get('placa')
         if placa:
             queryset = queryset.filter(id_hoja_vida_vehiculo__id_vehiculo_arrendado__placa__icontains=placa)
 
-        # Filtrar por nombre o número de documento del conductor
         conductor = self.request.query_params.get('conductor')
         if conductor:
             queryset = queryset.filter(
@@ -846,12 +848,12 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         serializer_data = serializer.data
 
-        #Filtrar por tipo de conductor (IN: Interno, EX: Externo)
         tipo_conductor = request.query_params.get('tipo_conductor')
         if tipo_conductor:
-            serializer_data = [vehiculo for vehiculo in serializer_data if tipo_conductor.lower() in vehiculo["tipo_conductor"].lower()]
+            # Verificamos si tipo_conductor es None antes de intentar iterar
+            serializer_data = [vehiculo for vehiculo in serializer_data if vehiculo.get("tipo_conductor") and tipo_conductor.upper() in vehiculo["tipo_conductor"].upper()]
+
             
-        
         return Response({'success': True, 'detail': 'Asignaciones de vehículos obtenidas exitosamente', 'data': serializer_data})
     
 
