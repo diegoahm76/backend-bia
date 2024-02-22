@@ -85,8 +85,11 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
         tramite = None
 
         if tarea.id_asignacion:
+               
                 asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
-                tramite = asignacion.id_asignacion_tramite
+                print(asignacion.id_asignacion_tramite)
+                print(asignacion)
+                tramite = asignacion.id_solicitud_tramite.id_solicitud_tramite
         else:
 
             while tarea:
@@ -95,7 +98,7 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
                 if tarea.id_asignacion:
                     asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
 
-                    tramite = asignacion.id_solicitud_tramite
+                    tramite = asignacion.id_solicitud_tramite.id_solicitud_tramite
                     break
         if not tramite:
             return None
