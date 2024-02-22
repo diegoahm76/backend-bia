@@ -32,7 +32,10 @@ urlpatterns = [
 
     #Inspeccion-vehiculos-conductor
     path('info-conductor/get/',views.DatosBasicosConductorGet.as_view(),name='info-conductor'),
-    path('buscar-vehiculos-arrendados/get/',views.BusquedaAvanzadaVehiculosArrendados.as_view(),name='info-vehicukos-arrendados'),
+    path('vehiculo-persona-conductor/get/',views.VehiculosAsociadosPersona.as_view(),name='info-vehicukos-arrendados'),
+    path('inspeccion-vehiculo/create/',views.CrearInspeccionVehiculo.as_view(),name='crear-inspeccion-vehiculos'),
+    path('novedades-vehiculo/get/',views.NovedadesVehiculosList.as_view(),name='novedades-vehiculos'),
+    path('revisar-vehiculo/<int:pk>/',views.InspeccionVehiculoDetail.as_view(),name='revisar-vehiculos'),
     
 
 
