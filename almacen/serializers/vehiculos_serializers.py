@@ -74,17 +74,16 @@ class ClaseTerceroPersonaSerializer(serializers.ModelSerializer):
 
 class AsignacionVehiculoSerializer(serializers.ModelSerializer):
     tipo_vehiculo = serializers.CharField(source='id_hoja_vida_vehiculo.cod_tipo_vehiculo')
-    marca = serializers.CharField(source='id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre')
-    placa = serializers.CharField(source='id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa')
+    marca = serializers.SerializerMethodField()
+    placa = serializers.SerializerMethodField()
     tipo_conductor = serializers.SerializerMethodField()
     nombre_conductor = serializers.SerializerMethodField()
     nro_documento_conductor = serializers.CharField(source='id_persona_conductor.numero_documento')
     id_asignacion = serializers.IntegerField(source='id_vehiculo_conductor')  # Aquí incluimos el ID de la asignación
 
-
     class Meta:
         model = VehiculosAgendables_Conductor
-        fields = ['id_asignacion','tipo_vehiculo', 'marca', 'placa', 'tipo_conductor', 'nombre_conductor', 'nro_documento_conductor', 'fecha_inicio_asignacion', 'fecha_final_asignacion']
+        fields = ['id_asignacion', 'tipo_vehiculo', 'marca', 'placa', 'tipo_conductor', 'nombre_conductor', 'nro_documento_conductor', 'fecha_inicio_asignacion', 'fecha_final_asignacion']
 
     def get_tipo_conductor(self, obj):
         # Verificar si el conductor es interno o externo
@@ -98,6 +97,17 @@ class AsignacionVehiculoSerializer(serializers.ModelSerializer):
 
     def get_nombre_conductor(self, obj):
         return f"{obj.id_persona_conductor.primer_nombre} {obj.id_persona_conductor.primer_apellido}"
+
+    def get_marca(self, obj):
+        if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado:
+            return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+        return None
+
+    def get_placa(self, obj):
+        if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado:
+            return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+        return None
+
     
 
 
