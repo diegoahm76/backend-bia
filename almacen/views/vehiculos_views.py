@@ -12,6 +12,8 @@ from django.db.models import Q
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import (CatalogoBienes)
 from django.db import transaction
+from rest_framework.response import Response
+from django.http import JsonResponse
 
 
 
@@ -27,6 +29,7 @@ from almacen.models.vehiculos_models import (
 from almacen.serializers.vehiculos_serializers import (
     ActualizarVehiculoArrendadoSerializer,
     AsignacionVehiculoSerializer,
+    BusquedaSolicitudViajeSerializer,
     BusquedaVehiculoSerializer,
     ClaseTerceroPersonaSerializer,
     CrearAgendaVehiculoDiaSerializer,
@@ -838,8 +841,11 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
         conductor = self.request.query_params.get('conductor')
         if conductor:
             queryset = queryset.filter(
-                id_persona_conductor__primer_nombre__icontains=conductor) | queryset.filter(
-                    id_persona_conductor__numero_documento__icontains=conductor)
+                Q(id_persona_conductor__primer_nombre__icontains=conductor) |
+                Q(id_persona_conductor__primer_apellido__icontains=conductor) |
+                Q(id_persona_conductor__primer_nombre__icontains=conductor.split()[0], id_persona_conductor__primer_apellido__icontains=conductor.split()[1])
+            )
+
 
         return queryset
 
@@ -1083,3 +1089,105 @@ class InspeccionVehiculoDetail(generics.RetrieveAPIView, generics.UpdateAPIView)
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response({'success': True, 'detail': 'La inspección ha sido consultada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+#Busqueda_Avanzada_Solicitud_Viajes
+class BusquedaSolicitudesViaje(generics.ListAPIView):
+    serializer_class = BusquedaSolicitudViajeSerializer
+
+    def get_queryset(self):
+        queryset = SolicitudesViajes.objects.exclude(estado_solicitud='FN')  # Excluir las solicitudes en estado "Finalizada"
+        
+        # Obtener parámetros de consulta
+        fecha_solicitud_desde = self.request.query_params.get('fecha_solicitud_desde')
+        fecha_solicitud_hasta = self.request.query_params.get('fecha_solicitud_hasta')
+        cod_municipio = self.request.query_params.get('cod_municipio')
+        nro_pasajeros = self.request.query_params.get('nro_pasajeros')
+        requiere_carga = self.request.query_params.get('requiere_carga')
+        fecha_partida = self.request.query_params.get('fecha_partida')
+        fecha_retorno = self.request.query_params.get('fecha_retorno')
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+
+        # Filtrar por fecha_solicitud DESDE
+        if fecha_solicitud_desde:
+            queryset = queryset.filter(fecha_solicitud__gte=fecha_solicitud_desde)
+
+        # Filtrar por fecha_solicitud HASTA
+        if fecha_solicitud_hasta:
+            queryset = queryset.filter(fecha_solicitud__lte=fecha_solicitud_hasta)
+
+        # Filtrar por cod_municipio
+        if cod_municipio:
+            queryset = queryset.filter(cod_municipio=cod_municipio)
+
+        # Filtrar por nro_pasajeros
+        if nro_pasajeros:
+            queryset = queryset.filter(nro_pasajeros__icontains=nro_pasajeros)
+
+        # Filtrar por requiere_carga
+        if requiere_carga:
+            queryset = queryset.filter(requiere_carga=requiere_carga)
+
+        # Filtrar por fecha_partida
+        if fecha_partida:
+            queryset = queryset.filter(fecha_partida__icontains=fecha_partida)
+
+        # Filtrar por fecha_retorno
+        if fecha_retorno:
+            queryset = queryset.filter(fecha_retorno__icontains=fecha_retorno)
+
+        # Filtrar por estado_solicitud si es válido
+        if estado_solicitud:
+            # Verificar si el estado proporcionado es válido
+            estados_validos = ['ES', 'RE', 'RC']
+            if estado_solicitud in estados_validos:
+                queryset = queryset.filter(estado_solicitud=estado_solicitud)
+            else:
+                # Si el estado proporcionado no es válido, devolver una respuesta de error
+                return Response({'error': f'El estado {estado_solicitud} no es válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return queryset
+    
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        if not queryset.exists():
+            return JsonResponse({
+                'success': False,
+                'detail': 'No se encontraron datos que coincidan con los criterios de búsqueda.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data = []
+        for solicitud in queryset:
+            data.append({
+                'id_solicitud_viaje': solicitud.id_solicitud_viaje,
+                "id_persona_solicita": solicitud.id_persona_solicita.id_persona,
+                'primer_nombre_solicitante': solicitud.id_persona_solicita.primer_nombre,
+                'primer_apellido_solicitante': solicitud.id_persona_solicita.primer_apellido,
+                'cod_municipio': solicitud.cod_municipio.cod_municipio,                
+                'nombre_municipio': solicitud.cod_municipio.nombre,
+                'fecha_solicitud': solicitud.fecha_solicitud,
+                'tiene_expediente_asociado': solicitud.tiene_expediente_asociado,
+                'motivo_viaje': solicitud.motivo_viaje,
+                'direccion': solicitud.direccion,
+                'indicaciones_destino': solicitud.indicaciones_destino,
+                'nro_pasajeros': solicitud.nro_pasajeros,
+                'requiere_carga': solicitud.requiere_carga,
+                'fecha_partida': solicitud.fecha_partida,
+                'hora_partida': solicitud.hora_partida,
+                'fecha_retorno': solicitud.fecha_retorno,
+                'hora_retorno': solicitud.hora_retorno,
+                'requiere_compagnia_militar': solicitud.requiere_compagnia_militar,
+                'consideraciones_adicionales': solicitud.consideraciones_adicionales,
+                'fecha_aprobacion_responsable': solicitud.fecha_aprobacion_responsable,
+                'fecha_rechazo': solicitud.fecha_rechazo,
+                'justificacion_rechazo': solicitud.justificacion_rechazo,
+                'estado_solicitud': solicitud.estado_solicitud
+            })
+
+        return JsonResponse({
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': data
+        }, status=status.HTTP_200_OK)
