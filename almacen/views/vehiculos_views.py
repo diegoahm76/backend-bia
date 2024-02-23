@@ -866,7 +866,7 @@ class EliminarAsignacionVehiculo(generics.DestroyAPIView):
             instance = self.get_object()
             serializer = self.get_serializer(instance)
             self.perform_destroy(instance)
-            return Response({'success': True, 'detail': 'Asignación eliminada exitosamente', 'data': serializer.data}, status=status.HTTP_204_NO_CONTENT)
+            return Response({'success': True, 'detail': 'Asignación eliminada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         except:
             return Response({'success': False, 'detail': 'Error al eliminar la asignación'}, status=status.HTTP_400_BAD_REQUEST)
 
