@@ -11,10 +11,12 @@ from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVid
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import (CatalogoBienes)
+from django.db import transaction
 
 
 
 from almacen.models.vehiculos_models import (
+    InspeccionesVehiculosDia,
     PeriodoArriendoVehiculo,
     SolicitudesViajes,
     VehiculosAgendables_Conductor,
@@ -29,12 +31,15 @@ from almacen.serializers.vehiculos_serializers import (
     ClaseTerceroPersonaSerializer,
     CrearAgendaVehiculoDiaSerializer,
     HojaDeVidaVehiculosSerializer,
+    InspeccionVehiculoSerializer,
+    InspeccionesVehiculosDiaCreateSerializer,
     PeriodoVehiculoArrendadoSerializer,
     PutSolicitudViajeSerializer,
     RegistrarVehiculoArrendadoSerializer,
     SolicitudViajeSerializer,
     UpdateArrendarVehiculoSerializer,
     VehiculoConductorSerializer,
+    VehiculoPersonaLogueadaSerializer,
     VehiculosAgendablesConductorSerializer
     )
 from transversal.models.base_models import ClasesTerceroPersona
@@ -335,18 +340,22 @@ class BusquedaVehiculoArrendado(generics.ListAPIView):
     queryset = VehiculosArrendados.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request):
-        filter={}
+    def get(self, request):
+        filters = {}
         
         for key, value in request.query_params.items():
-            if key in ['nombre','placa']:
-                if value != '':
-                    filter[key+'__icontains'] = value
-                    
-        vehiculo_arrendado = self.queryset.all().filter(**filter)
-        serializador = self.serializer_class(vehiculo_arrendado,many=True)
+            if value != '':
+                if key == 'nombre' or key == 'placa':
+                    filters[key + '__icontains'] = value
+                elif key == 'nombre_marca':
+                    filters['id_marca__nombre__icontains'] = value
+                elif key == 'nombre_contratista':
+                    filters['empresa_contratista__icontains'] = value
         
-        return Response({'succes':True,'detail':'Se encontraron los siguientes registros de vehiculos arrendados.','data':serializador.data},status=status.HTTP_200_OK)
+        vehiculos_arrendados = self.queryset.filter(**filters)
+        serializer = self.serializer_class(vehiculos_arrendados, many=True)
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de vehículos arrendados.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class BusquedaFechasArrendamientoVehiculo(generics.ListAPIView):
     serializer_class = PeriodoVehiculoArrendadoSerializer
@@ -685,8 +694,13 @@ class BusquedaVehiculos(generics.ListAPIView):
         # Agregar el nombre de la marca y el tipo de vehículo a cada objeto serializado
         for data in serializer.data:
             vehiculo = HojaDeVidaVehiculos.objects.get(pk=data['id_hoja_de_vida'])
-            vehiculo_marca_nombre = vehiculo.id_vehiculo_arrendado.id_marca.nombre
-            vehiculo_placa = vehiculo.id_vehiculo_arrendado.placa
+            if vehiculo.id_vehiculo_arrendado:
+                vehiculo_marca_nombre = vehiculo.id_vehiculo_arrendado.id_marca.nombre
+                vehiculo_placa = vehiculo.id_vehiculo_arrendado.placa
+            else:
+                vehiculo_marca_nombre = "Desconocido"
+                vehiculo_placa = "Desconocido"
+
             if data['cod_tipo_vehiculo'] == "C":
                 tipo_vehiculo = "CARRO"
             elif data['cod_tipo_vehiculo'] == "M":
@@ -813,17 +827,14 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
     def get_queryset(self):
         queryset = VehiculosAgendables_Conductor.objects.all()
 
-        # Filtrar por tipo de vehículo (C: Carro, M: Moto)
         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
         if tipo_vehiculo:
             queryset = queryset.filter(id_hoja_vida_vehiculo__cod_tipo_vehiculo=tipo_vehiculo)
 
-        # Filtrar por placa del vehículo
         placa = self.request.query_params.get('placa')
         if placa:
             queryset = queryset.filter(id_hoja_vida_vehiculo__id_vehiculo_arrendado__placa__icontains=placa)
 
-        # Filtrar por nombre o número de documento del conductor
         conductor = self.request.query_params.get('conductor')
         if conductor:
             queryset = queryset.filter(
@@ -837,12 +848,12 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         serializer_data = serializer.data
 
-        #Filtrar por tipo de conductor (IN: Interno, EX: Externo)
         tipo_conductor = request.query_params.get('tipo_conductor')
         if tipo_conductor:
-            serializer_data = [vehiculo for vehiculo in serializer_data if tipo_conductor.lower() in vehiculo["tipo_conductor"].lower()]
+            # Verificamos si tipo_conductor es None antes de intentar iterar
+            serializer_data = [vehiculo for vehiculo in serializer_data if vehiculo.get("tipo_conductor") and tipo_conductor.upper() in vehiculo["tipo_conductor"].upper()]
+
             
-        
         return Response({'success': True, 'detail': 'Asignaciones de vehículos obtenidas exitosamente', 'data': serializer_data})
     
 
@@ -873,66 +884,202 @@ class DatosBasicosConductorGet(generics.ListAPIView):
         # Obtener la persona logueada
         persona_logueada = request.user.persona
 
+        # Obtener el ID de la persona logueada
+        id_persona_logueada = persona_logueada.id_persona
+
         # Obtener el nombre completo del conductor
         nombre_completo = f"{persona_logueada.primer_nombre} {persona_logueada.segundo_nombre} {persona_logueada.primer_apellido} {persona_logueada.segundo_apellido}"
 
-
-        return Response({'success': True, 'detail': 'nombre_conductor', 'data': nombre_completo})
+        return Response({'success': True, 'detail': 'Información del conductor', 'data': {'id_persona_logueada': id_persona_logueada, 'nombre_completo': nombre_completo}})
 
 
 
 #BUSQUEDA_AVANZADA_VEHICULOS
-class BusquedaAvanzadaVehiculosArrendados(generics.ListAPIView):
-    serializer_class = BusquedaVehiculoSerializer
+class VehiculosAsociadosPersona(generics.ListAPIView):
+    serializer_class = VehiculoPersonaLogueadaSerializer
 
-    def get_queryset(self):
-            # Obtener la persona logueada (conductor)
-            persona_logueada = self.request.user.persona
+    def get(self, request, *args, **kwargs):
+        # Obtener el ID de la persona logueada
+        id_persona_logueada = self.request.user.persona.id_persona  # Suponiendo que la relación entre usuario y persona existe
 
-            # Buscar el registro en la tabla VehiculosAgendables_Conductor
-            vehiculo_conductor = VehiculosAgendables_Conductor.objects.get(id_persona_conductor=persona_logueada)
-            hoja_de_vida_vehiculo = vehiculo_conductor.id_hoja_vida_vehiculo
+        # Filtrar los vehículos asociados a la persona logueada
+        vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=id_persona_logueada)
 
-            if hoja_de_vida_vehiculo.es_arrendado:
-                # Si el vehículo es arrendado, obtener la información de la tabla VehiculosArrendados
-                vehiculo_arrendado = VehiculosArrendados.objects.get(id_vehiculo_arrendado=hoja_de_vida_vehiculo.id_vehiculo_arrendado)
-                placa = vehiculo_arrendado.placa
-                nombre_vehiculo = vehiculo_arrendado.nombre
-                marca_vehiculo = vehiculo_arrendado.id_marca.nombre  # Obtener el nombre de la marca
-                tiene_hoja_vida = vehiculo_arrendado.tiene_hoja_de_vida
+        # Serializar los datos de los vehículos asociados
+        serializer = self.get_serializer(vehiculos_asociados, many=True)
+
+        # Retornar la respuesta con el mensaje
+        return Response({'success': True, 'detail': 'Información de los vehículos asociados a la persona logueada', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+#INSPECCIONES_VEHICULOS
+class CrearInspeccionVehiculo(generics.CreateAPIView):
+    queryset = InspeccionesVehiculosDia.objects.all()
+    serializer_class = InspeccionesVehiculosDiaCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        # Validamos los datos recibidos en la solicitud
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            # Asignar automáticamente la fecha de inspección y fecha de registro
+            serializer.validated_data['dia_inspeccion'] = datetime.now().date()
+            serializer.validated_data['fecha_registro'] = datetime.now()
+            
+            # Establecer la persona que realiza la inspección como la persona logueada
+            serializer.validated_data['id_persona_inspecciona'] = request.user.persona
+
+            # Verificar si se necesita verificación superior
+            if not serializer.validated_data.get('requiere_verificacion'):
+                # Si no se requiere verificación superior, establecer en False
+                serializer.validated_data['verificacion_superior_realizada'] = False
+
+            # Actualizar el kilometraje y fecha de última actualización si corresponde
+            id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+            if id_hoja_vida_vehiculo and not id_hoja_vida_vehiculo.id_vehiculo_arrendado:
+                hoja_vida_vehiculo = id_hoja_vida_vehiculo
+                hoja_vida_vehiculo.ultimo_kilometraje = serializer.validated_data.get('kilometraje')
+                hoja_vida_vehiculo.fecha_ultimo_kilometraje = datetime.now().date()
+                hoja_vida_vehiculo.save()
+            
+            #Actualizar el valor de T066esAgendable si está presente en los datos de la solicitud
+            es_agendable = request.data['es_agendable']
+            if es_agendable is not None:
+                id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+                if id_hoja_vida_vehiculo:
+                    hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
+                    hoja_vida_vehiculo.es_agendable = es_agendable
+                    hoja_vida_vehiculo.save()
+
+            print(es_agendable)
+            # Creamos la inspección de vehículo
+            with transaction.atomic():
+                instancia_inspeccion = serializer.save()
+
+            data = serializer.data
+            data['es_agendable'] = es_agendable
+
+            # Retornamos el registro creado con la variable es_agendable
+            return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
+        else:
+            # Si los datos no son válidos, retornamos los errores de validación
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        
+class NovedadesVehiculosList(generics.ListAPIView):
+    serializer_class = InspeccionVehiculoSerializer
+
+    def get(self, request, format=None):
+        vehiculos_sin_novedad = []
+        vehiculos_con_novedad = []
+
+        # Obtener todas las inspecciones de vehículos
+        inspecciones = InspeccionesVehiculosDia.objects.all()
+
+        for inspeccion in inspecciones:
+            placa, marca = self.obtener_placa_y_marca(inspeccion)
+            id_inspeccion = inspeccion.id_inspeccion_vehiculo
+            id_hoja_de_vida = inspeccion.id_hoja_vida_vehiculo_id
+
+            # Verificar las novedades
+            novedades = self.verificar_novedades(inspeccion)
+
+            if not novedades:
+                vehiculos_sin_novedad.append({
+                    "id_inspeccion_vehiculo": id_inspeccion,
+                    "id_hoja_de_vida": id_hoja_de_vida,
+                    "placa": placa,
+                    "marca": marca
+                })
             else:
-                # Si el vehículo no es arrendado, obtener la información de la tabla CatalogoBienes
-                articulo = CatalogoBienes.objects.get(id_bien=hoja_de_vida_vehiculo.id_articulo)
-                placa = articulo.doc_identificador_nro
-                nombre_vehiculo = articulo.nombre
-                marca_vehiculo = None  # No aplicable para vehículos no arrendados
-                tiene_hoja_vida = articulo.tiene_hoja_de_vida
-
-            # Agregar la placa, el nombre del vehículo y la marca seleccionada al contexto
-            self.request.session['vehiculo_seleccionado_placa'] = placa
-            self.request.session['vehiculo_seleccionado_nombre'] = nombre_vehiculo
-            self.request.session['vehiculo_seleccionado_marca'] = marca_vehiculo
-
-            queryset = HojaDeVidaVehiculos.objects.all()
-
-            # Filtrar los vehículos por placa, nombre del vehículo, nombre del contratista y marca
-            placa_param = self.request.query_params.get('placa', None)
-            nombre_vehiculo_param = self.request.query_params.get('nombre_vehiculo', None)
-            nombre_contratista_param = self.request.query_params.get('nombre_contratista', None)
-            marca_param = self.request.query_params.get('marca', None)
-
-            if placa_param:
-                queryset = queryset.filter(placa=placa_param)
-            if nombre_vehiculo_param:
-                queryset = queryset.filter(nombre=nombre_vehiculo_param)
-            if nombre_contratista_param:
-                queryset = queryset.filter(nombre_contratista=nombre_contratista_param)
-            if marca_param:
-                # Filtrar por marca (si el vehículo es arrendado)
-                if hoja_de_vida_vehiculo.es_arrendado:
-                    queryset = queryset.filter(id_vehiculo_arrendado__id_marca__nombre=marca_param)
+                placa_marca = f"{placa}-{marca}"
+                if len(novedades) == 1:
+                    vehiculos_con_novedad.append({
+                        "id_inspeccion_vehiculo": id_inspeccion,
+                        "id_hoja_de_vida": id_hoja_de_vida,
+                        "placa_marca": placa_marca,
+                        "novedad": novedades[0]
+                    })
                 else:
-                    # Si el vehículo no es arrendado, buscar en la tabla CatalogoBienes
-                    queryset = queryset.filter(id_articulo__id_marca__nombre=marca_param)
+                    vehiculos_con_novedad.append({
+                        "id_inspeccion_vehiculo": id_inspeccion,
+                        "id_hoja_de_vida": id_hoja_de_vida,
+                        "placa_marca": placa_marca,
+                        "cantidad_novedades": len(novedades)
+                    })
 
-            return queryset, tiene_hoja_vida
+        return Response({
+            "success": True,
+            "detail": "Inspecciones obtenidas correctamente",
+            "data": {
+                "vehiculos_sin_novedad": vehiculos_sin_novedad,
+                "vehiculos_con_novedad": vehiculos_con_novedad
+            }
+        }, status=status.HTTP_200_OK)
+
+    def obtener_placa_y_marca(self, inspeccion):
+        hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
+
+        if hoja_vida_vehiculo:
+            if hoja_vida_vehiculo.id_vehiculo_arrendado:
+                vehiculo_arrendado = hoja_vida_vehiculo.id_vehiculo_arrendado
+                if vehiculo_arrendado:
+                    placa = vehiculo_arrendado.placa if hasattr(vehiculo_arrendado, 'placa') else None
+                    marca_nombre = vehiculo_arrendado.id_marca.nombre if hasattr(vehiculo_arrendado, 'id_marca') and hasattr(vehiculo_arrendado.id_marca, 'nombre') else None
+                    return placa, marca_nombre
+
+            elif hoja_vida_vehiculo.id_articulo:
+                catalogo_bien = hoja_vida_vehiculo.id_articulo
+                if catalogo_bien:
+                    placa = catalogo_bien.doc_identificador_nro if hasattr(catalogo_bien, 'doc_identificador_nro') else None
+                    marca_nombre = catalogo_bien.id_marca.nombre if hasattr(catalogo_bien, 'id_marca') and hasattr(catalogo_bien.id_marca, 'nombre') else None
+                    return placa, marca_nombre
+
+        # Si hoja_vida_vehiculo es None o no tiene id_vehiculo_arrendado ni id_articulo
+        return None, None
+
+    def verificar_novedades(self, inspeccion):
+        novedades = []
+        campos_booleanos = [
+            'dir_llantas_delanteras', 'dir_llantas_Traseras', 'limpiabrisas_delantero',
+            'limpiabrisas_traseros', 'nivel_aceite', 'estado_frenos', 'nivel_refrigerante',
+            'apoyo_cabezas_piloto', 'apoyo_cabezas_copiloto', 'apoyo_cabezas_traseros',
+            'frenos_generales', 'freno_emergencia', 'llantas_delanteras', 'llantas_traseras',
+            'llanta_repuesto', 'espejos_laterales', 'espejo_retrovisor', 'cinturon_seguridad_delantero',
+            'cinturon_seguridad_trasero', 'luces_altas', 'luces_media', 'luces_bajas', 'luces_parada',
+            'luces_parqueo', 'luces_reversa', 'kit_herramientas', 'botiquin_completo', 'pito'
+        ]
+        for campo in campos_booleanos:
+            if not getattr(inspeccion, campo):
+                novedades.append(campo)
+        return novedades
+    
+
+class InspeccionVehiculoDetail(generics.RetrieveAPIView, generics.UpdateAPIView):
+    queryset = InspeccionesVehiculosDia.objects.all()
+    serializer_class = InspeccionVehiculoSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Verificar si la inspección ya ha sido verificada anteriormente
+        if instance.verificacion_superior_realizada:
+            serializer = self.get_serializer(instance)
+            return Response({'error': 'La inspección ya ha sido verificada anteriormente.', 'data': serializer.data}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener el ID de la persona logueada
+        persona_id = request.user.persona.id_persona if request.user.is_authenticated else None
+        
+        # Actualizar los campos de la inspección
+        instance.verificacion_superior_realizada = True
+        instance.id_persona_que_verifica_id = persona_id  # Actualizamos el ID de la persona logueada
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response({'success': True, 'detail': 'La inspección ha sido verificada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({'success': True, 'detail': 'La inspección ha sido consultada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
