@@ -36,6 +36,12 @@ urlpatterns = [
     path('inspeccion-vehiculo/create/',views.CrearInspeccionVehiculo.as_view(),name='crear-inspeccion-vehiculos'),
     path('novedades-vehiculo/get/',views.NovedadesVehiculosList.as_view(),name='novedades-vehiculos'),
     path('revisar-vehiculo/<int:pk>/',views.InspeccionVehiculoDetail.as_view(),name='revisar-vehiculos'),
+
+
+    #Agendamiento_vehiculos
+    path('busqueda-solicitudes-viajes/get/',views.BusquedaSolicitudesViaje.as_view(),name='busqueda-solicitudes-viaje'),
+
+
     
 
 

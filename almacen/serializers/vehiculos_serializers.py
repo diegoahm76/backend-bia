@@ -22,7 +22,11 @@ class RegistrarVehiculoArrendadoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = VehiculosArrendados
-        fields = ['id_vehiculo_arrendado', 'nombre', 'descripcion', 'placa', 'nombre_marca', 'empresa_contratista', 'tiene_hoja_de_vida']
+        fields = ['id_vehiculo_arrendado', 'nombre', 'descripcion', 'placa', 'nombre_marca', 'empresa_contratista', 'tiene_hoja_de_vida', 'id_marca']
+        extra_kwargs = {
+            'id_marca': {'required': False}
+        }
+
 
 class ActualizarVehiculoArrendadoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -225,3 +229,20 @@ class InspeccionVehiculoSerializer(serializers.ModelSerializer):
     class Meta:
         model = InspeccionesVehiculosDia
         fields = '__all__'
+
+
+class BusquedaSolicitudViajeSerializer(serializers.ModelSerializer):
+    nombre_solicitante = serializers.SerializerMethodField()
+    nombre_municipio = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SolicitudesViajes
+        fields = '__all__'
+
+    def get_nombre_solicitante(self, obj):
+        # Combinar el primer nombre y el primer apellido del solicitante
+        return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
+
+    def get_nombre_municipio(self, obj):
+        # Obtener el nombre del municipio
+        return obj.cod_municipio.nombre
