@@ -170,7 +170,7 @@ class AsignacionesViajeAgendado(models.Model):
 
 class ViajesAgendados(models.Model):
     id_viaje_agendado = models.AutoField(primary_key=True, editable=False, db_column="T077IdViajeAgendado")
-    id_hoja_vida_vehiculo = models.ForeignKey("almacen.HojaDeVidaVehiculos", on_delete=models.CASCADE, db_column="T077Id_HojaDeVidaVehiculo")
+    id_vehiculo_conductor = models.ForeignKey(VehiculosAgendables_Conductor, on_delete=models.SET_NULL, null=True, blank=True, db_column="T077Id_ConductorVehiculoAsig")
     direccion = models.CharField(max_length=255, null=True, blank=True, db_column="T077direccion")
     cod_municipio_destino = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T077Cod_MunicipioDestino")
     indicaciones_destino = models.CharField(max_length=255, null=True, blank=True, db_column="T077indicacionesDestino")
