@@ -1804,7 +1804,8 @@ class TramitesDetalleHistoricoComplementoSerializer(serializers.ModelSerializer)
         solicitudes = SolicitudDeDigitalizacion.objects.filter(id_complemento_usu_pqr=idComplementoUsu_PQR)
         for solicitud in solicitudes:
             estado = Estados_PQR.objects.filter(solicitud_usu_sobre_PQR=solicitud.id_complemento_usu_pqr.id_solicitud_usu_PQR.id_solicitud_al_usuario_sobre_pqrsdf,estado_solicitud=9).first()
-            data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':estado.estado_solicitud.nombre,'fecha_solicitud':solicitud.fecha_solicitud})
+            accion = estado.estado_solicitud.nombre if estado.estado_solicitud.nombre else None
+            data.append({'id_solicitud_de_digitalizacion':solicitud.id_solicitud_de_digitalizacion,'accion':accion,'fecha_solicitud':solicitud.fecha_solicitud})
            
         return data
     
