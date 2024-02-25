@@ -14,7 +14,6 @@ urlpatterns = [
     path('busqueda/fechas-arrendamiento/vehiculo/<str:pk>/',views.BusquedaFechasArrendamientoVehiculo.as_view(),name='busqueda-fechas-arrendamiento-vehiculo'),
 
 
-
     #Vehiculos_Final
 
     #Solicitud_de_viaje
@@ -40,6 +39,15 @@ urlpatterns = [
 
     #Agendamiento_vehiculos
     path('busqueda-solicitudes-viajes/get/',views.BusquedaSolicitudesViaje.as_view(),name='busqueda-solicitudes-viaje'),
+    path('reprobar-solicitud-viaje/create/',views.CrearReprobacion.as_view(),name='repobar-solicitudes-viaje'),
+    path('aprobar-solicitud-viaje/create/',views.CrearAprobacion.as_view(),name='aprobar-solicitudes-viaje'),
+    path('solicitud-viaje/<int:id_solicitud_viaje>/', views.ObtenerSolicitudViaje.as_view(), name='obtener_solicitud_viaje'),
+    path('busqueda-vehiculos-general/',views.BusquedaVehiculosGRL.as_view(),name='busqueda-vehiculos-general'),
+    path('detalles-vehiculos-agendados/',views.DetallesViajeGet.as_view(),name='detalles-vehiculos-agendados'),
+    path('viajes-agendados/<int:pk>/', views.EditarAprobacion.as_view(), name='editar_aprobacion_viaje'),
+    path('eliminar-viaje-agendado/<int:pk>/', views.EliminarViajeAgendado.as_view(), name='eliminar_viaje_agendado'),
+
+
 
 
     

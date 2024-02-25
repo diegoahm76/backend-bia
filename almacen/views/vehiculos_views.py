@@ -1,3 +1,4 @@
+from django.forms import BooleanField
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +14,8 @@ from rest_framework.exceptions import ValidationError, PermissionDenied, NotFoun
 from almacen.models.bienes_models import (CatalogoBienes)
 from django.db import transaction
 from rest_framework.response import Response
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
+from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 
 
 
@@ -24,15 +26,19 @@ from almacen.models.vehiculos_models import (
     VehiculosAgendables_Conductor,
     VehiculosAgendadosDiaDisponible,
     VehiculosArrendados,
-    VehiculosAgendables_Conductor
+    VehiculosAgendables_Conductor,
+    ViajesAgendados
     )
 from almacen.serializers.vehiculos_serializers import (
     ActualizarVehiculoArrendadoSerializer,
     AsignacionVehiculoSerializer,
+    BusquedaAvanzadaGRLSerializer,
     BusquedaSolicitudViajeSerializer,
     BusquedaVehiculoSerializer,
+    BusquedaVehiculosGRLSerializer,
     ClaseTerceroPersonaSerializer,
     CrearAgendaVehiculoDiaSerializer,
+    DetallesViajeSerializer,
     HojaDeVidaVehiculosSerializer,
     InspeccionVehiculoSerializer,
     InspeccionesVehiculosDiaCreateSerializer,
@@ -43,11 +49,16 @@ from almacen.serializers.vehiculos_serializers import (
     UpdateArrendarVehiculoSerializer,
     VehiculoConductorSerializer,
     VehiculoPersonaLogueadaSerializer,
-    VehiculosAgendablesConductorSerializer
+    VehiculosAgendablesConductorSerializer,
+    VehiculosArrendadosSerializer,
+    ViajesAgendadosDeleteSerializer,
+    ViajesAgendadosSerializer,
     )
 from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
 from seguridad.models import Personas
+from django.db.models import Value, CharField
+
 
 
 #TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO(MODELADO)
@@ -786,6 +797,9 @@ class AsignarVehiculo(generics.CreateAPIView):
         # Lista para almacenar las asignaciones exitosas
         asignaciones_exitosas = []
         
+        # Conjunto para almacenar las asignaciones ya realizadas
+        asignaciones_realizadas = set()
+        
         # Iterar sobre cada asignación proporcionada en la lista
         for asignacion_data in asignaciones:
             serializer = self.serializer_class(data=asignacion_data)
@@ -793,19 +807,32 @@ class AsignarVehiculo(generics.CreateAPIView):
                 # Obtener los datos proporcionados por el usuario
                 id_hoja_vida_vehiculo = serializer.validated_data['id_hoja_vida_vehiculo']
                 id_persona_conductor = serializer.validated_data['id_persona_conductor']
-                fecha_inicio_asignacion = serializer.validated_data['fecha_inicio_asignacion']
-                fecha_final_asignacion = serializer.validated_data['fecha_final_asignacion']
                 
-                # Obtener la persona logueada
-                persona_logueada = request.user.persona
+                # Verificar si esta asignación ya ha sido realizada
+                if (id_hoja_vida_vehiculo, id_persona_conductor) in asignaciones_realizadas:
+                    errors.append({'detalle': ['Esta asignación ya ha sido realizada.']})
+                    continue
+                
+                # Verificar si el conductor ya está asignado a otro vehículo
+                if VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=id_persona_conductor).exists():
+                    errors.append({'id_persona_conductor': ['Este conductor ya está asignado a otro vehículo.']})
+                    continue
+                
+                # Verificar si el vehículo ya está asignado a otro conductor
+                if VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=id_hoja_vida_vehiculo).exists():
+                    errors.append({'id_hoja_vida_vehiculo': ['Este vehículo ya está asignado a otro conductor.']})
+                    continue
+                
+                # Guardar la asignación como realizada
+                asignaciones_realizadas.add((id_hoja_vida_vehiculo, id_persona_conductor))
                 
                 # Guardar la nueva asignación en la base de datos
                 asignacion = VehiculosAgendables_Conductor.objects.create(
                     id_hoja_vida_vehiculo=id_hoja_vida_vehiculo,
                     id_persona_conductor=id_persona_conductor,
-                    fecha_inicio_asignacion=fecha_inicio_asignacion,
-                    fecha_final_asignacion=fecha_final_asignacion,
-                    id_persona_que_asigna=persona_logueada,
+                    fecha_inicio_asignacion=serializer.validated_data['fecha_inicio_asignacion'],
+                    fecha_final_asignacion=serializer.validated_data['fecha_final_asignacion'],
+                    id_persona_que_asigna=request.user.persona,
                     fecha_registro=datetime.now()  # Utilizar now() para obtener la fecha actual
                 )
                 
@@ -821,8 +848,6 @@ class AsignarVehiculo(generics.CreateAPIView):
             return Response({'success': False, 'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'success': True, 'detail': 'Se asignaron correctamente los vehículos.', 'data': asignaciones_exitosas}, status=status.HTTP_200_OK)
-        
-
 
 class ListarAsignacionesVehiculos(generics.ListAPIView):
     serializer_class = AsignacionVehiculoSerializer
@@ -1026,7 +1051,7 @@ class NovedadesVehiculosList(generics.ListAPIView):
 
     def obtener_placa_y_marca(self, inspeccion):
         hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
-
+        #VEHICULO_ARRENDADO
         if hoja_vida_vehiculo:
             if hoja_vida_vehiculo.id_vehiculo_arrendado:
                 vehiculo_arrendado = hoja_vida_vehiculo.id_vehiculo_arrendado
@@ -1034,7 +1059,7 @@ class NovedadesVehiculosList(generics.ListAPIView):
                     placa = vehiculo_arrendado.placa if hasattr(vehiculo_arrendado, 'placa') else None
                     marca_nombre = vehiculo_arrendado.id_marca.nombre if hasattr(vehiculo_arrendado, 'id_marca') and hasattr(vehiculo_arrendado.id_marca, 'nombre') else None
                     return placa, marca_nombre
-
+            #VEHICULO_PRIOPIO_ARRENDADO
             elif hoja_vida_vehiculo.id_articulo:
                 catalogo_bien = hoja_vida_vehiculo.id_articulo
                 if catalogo_bien:
@@ -1191,3 +1216,358 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes registros.',
             'data': data
         }, status=status.HTTP_200_OK)
+    
+
+
+#RECHAZAR_SOLICITUD
+class CrearReprobacion(generics.CreateAPIView):
+    serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Validar si existe la solicitud de viaje
+        id_solicitud_viaje = data.get('id_solicitud_viaje')
+        solicitud_viaje = SolicitudesViajes.objects.filter(id_solicitud_viaje=id_solicitud_viaje).first()
+        if not solicitud_viaje:
+            return JsonResponse({'error': 'La solicitud de viaje especificada no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Validar que la solicitud de viaje esté en estado de espera
+        if solicitud_viaje.estado_solicitud != 'ES':
+            return JsonResponse({'error': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar que se haya proporcionado la observación de no autorizado
+        observacion_no_autorizado = data.get('observacion_no_autorizado')
+        if not observacion_no_autorizado:
+            return JsonResponse({'error': 'La observación de no autorizado es obligatoria.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear el registro en la tabla T077ViajesAgendados
+        viaje_agendado_data = {
+            'id_solicitud_viaje': id_solicitud_viaje,
+            'direccion': solicitud_viaje.direccion,
+            'cod_municipio_destino': solicitud_viaje.cod_municipio.cod_municipio,
+            'indicaciones_destino': solicitud_viaje.indicaciones_destino,
+            'nro_total_pasajeros_req': solicitud_viaje.nro_pasajeros,
+            'requiere_capacidad_carga': solicitud_viaje.requiere_carga,
+            'fecha_partida_asignada': solicitud_viaje.fecha_partida,
+            'hora_partida': solicitud_viaje.hora_partida,
+            'fecha_retorno_asignada': solicitud_viaje.fecha_retorno,
+            'hora_retorno': solicitud_viaje.hora_retorno,
+            'requiere_compagnia_militar': solicitud_viaje.requiere_compagnia_militar,
+            'viaje_autorizado': False,
+            'observacion_autorizacion': observacion_no_autorizado,
+            'fecha_no_autorizado': timezone.now(),
+            'estado': 'FI',
+            'ya_inicio': False,
+            'ya_llego': False  
+        }
+
+        viaje_agendado_serializer = self.get_serializer(data=viaje_agendado_data)
+        viaje_agendado_serializer.is_valid(raise_exception=True)
+        viaje_agendado = viaje_agendado_serializer.save()
+
+        # Obtener la persona logueada y la unidad organizacional actual
+        persona_logueada = request.user.persona
+        unidad_org_actual = persona_logueada.id_unidad_organizacional_actual
+
+        # Actualizar la solicitud de viaje en la tabla T075SolicitudesViaje
+        solicitud_viaje.id_persona_responsable = persona_logueada
+        solicitud_viaje.id_unidad_org_responsable = unidad_org_actual
+        solicitud_viaje.fecha_rechazo = viaje_agendado.fecha_no_autorizado
+        solicitud_viaje.justificacion_rechazo = observacion_no_autorizado
+        solicitud_viaje.estado_solicitud = 'RC'
+        solicitud_viaje.save()
+
+        return JsonResponse({'success': True, 'detail': 'Reprobación de la petición creada exitosamente.', 'data': viaje_agendado_serializer.data}, status=status.HTTP_201_CREATED)
+
+
+#APROBACION_SOLICITUD
+class CrearAprobacion(generics.CreateAPIView):
+    serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Validar si existe la solicitud de viaje
+        id_solicitud_viaje = data.get('id_solicitud_viaje')
+        solicitud_viaje = SolicitudesViajes.objects.filter(id_solicitud_viaje=id_solicitud_viaje).first()
+
+        if not solicitud_viaje:
+            return JsonResponse({'error': 'La solicitud de viaje especificada no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        # Validar que la solicitud de viaje esté en estado de espera
+        if solicitud_viaje.estado_solicitud != 'ES':
+            return JsonResponse({'error': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar si existe el conductor del vehículo asignado al viaje
+        id_persona_conductor = data.get('id_persona_conductor')
+        if not id_persona_conductor:
+            return JsonResponse({'error': 'El conductor del vehículo asignado no fue especificado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener la persona logueada y la unidad organizacional actual
+        persona_logueada = request.user.persona
+        unidad_org_actual = persona_logueada.id_unidad_organizacional_actual
+
+        # Crear el registro en la tabla T077ViajesAgendados
+        viaje_agendado_data = {
+            'id_solicitud_viaje': id_solicitud_viaje,
+            'id_vehiculo_conductor': id_persona_conductor,
+            'direccion': solicitud_viaje.direccion,
+            'cod_municipio_destino': solicitud_viaje.cod_municipio.cod_municipio,
+            'indicaciones_destino': solicitud_viaje.indicaciones_destino,
+            'nro_total_pasajeros_req': solicitud_viaje.nro_pasajeros,
+            'requiere_capacidad_carga': solicitud_viaje.requiere_carga,
+            'fecha_partida_asignada': solicitud_viaje.fecha_partida,
+            'hora_partida': solicitud_viaje.hora_partida,
+            'fecha_retorno_asignada': solicitud_viaje.fecha_retorno,
+            'hora_retorno': solicitud_viaje.hora_retorno,
+            'requiere_compagnia_militar': solicitud_viaje.requiere_compagnia_militar,
+            'viaje_autorizado': True,
+            'observacion_no_autorizado': None,
+            'fecha_no_autorizado': None,
+            'id_persona_autoriza':  request.user.persona.id_persona,
+            'fecha_autorizacion': timezone.now(),
+            'ya_inicio': False,
+            'ya_llego': False,
+            'multiples_asignaciones': False,
+            'viaje_agendado_abierto': True,
+            'estado': 'AC',
+        }
+
+        viaje_agendado_serializer = self.get_serializer(data=viaje_agendado_data)
+        viaje_agendado_serializer.is_valid(raise_exception=True)
+        viaje_agendado = viaje_agendado_serializer.save()
+
+        
+
+        # Actualizar la solicitud de viaje en la tabla T075SolicitudesViaje
+        solicitud_viaje.id_persona_responsable = persona_logueada
+        solicitud_viaje.id_unidad_org_responsable = unidad_org_actual
+        solicitud_viaje.fecha_aprobacion_responsable = viaje_agendado.fecha_autorizacion
+        solicitud_viaje.estado_solicitud = 'RE'
+        solicitud_viaje.save()
+
+        return JsonResponse({'success': True, 'detail': 'Aprobación del viaje agendado creada exitosamente.', 'data': viaje_agendado_serializer.data}, status=status.HTTP_201_CREATED)
+
+#BUSQUEDA_VEHICULOS
+class ListaVehiculosDisponibles(generics.ListAPIView):
+    serializer_class = HojaDeVidaVehiculosSerializer
+
+    def get_queryset(self):
+        # Obtener todos los vehículos
+        vehiculos = HojaDeVidaVehiculos.objects.all()
+
+        # Obtener la fecha actual para realizar las comparaciones
+        fecha_actual = timezone.now().date()
+
+        # Filtrar vehículos que estén disponibles para agenda
+        vehiculos_disponibles = []
+        for vehiculo in vehiculos:
+            # Verificar si el vehículo tiene asignaciones activas
+            asignaciones_activas = ViajesAgendados.objects.filter(
+                Q(id_vehiculo_conductor__id_hoja_vida_vehiculo=vehiculo.id_hoja_de_vida) &
+                Q(estado='AC') &
+                (Q(fecha_partida_asignada__lte=fecha_actual) & Q(fecha_retorno_asignada__gte=fecha_actual))
+            ).exists()
+
+            if not asignaciones_activas:
+                vehiculos_disponibles.append(vehiculo)
+
+        return vehiculos_disponibles
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        data = []
+        for vehiculo in queryset:
+            vehiculo_arrendado_data = {}
+            vehiculo_arrendado = vehiculo.id_vehiculo_arrendado
+            
+            # Verificar si vehiculo_arrendado es None
+            if vehiculo_arrendado:
+                vehiculo_arrendado_data = {
+                    'id_vehiculo_arrendado': vehiculo_arrendado.id_vehiculo_arrendado,
+                    'nombre': vehiculo_arrendado.nombre,
+                    'descripcion': vehiculo_arrendado.descripcion,
+                    'placa': vehiculo_arrendado.placa,
+                    'marca': vehiculo_arrendado.id_marca.nombre,
+                    'empresa_contratista': vehiculo_arrendado.empresa_contratista,
+                    'tiene_hoja_de_vida': vehiculo_arrendado.tiene_hoja_de_vida
+                }
+            
+            data.append({
+                'id_vehiculo_hoja_vida': vehiculo.id_hoja_de_vida,
+                'cod_tipo_vehiculo': vehiculo.cod_tipo_vehiculo,
+                'tiene_platon': vehiculo.tiene_platon,
+                'es_arrendado': vehiculo.es_arrendado,
+                'vehiculo_arrendado': vehiculo_arrendado_data
+            })
+
+        return JsonResponse({'success': True, 'detail': 'Vehículos disponibles para agenda.', 'data': data}, status=status.HTTP_200_OK)
+
+
+
+
+
+class BusquedaVehiculosGRL(generics.ListAPIView):
+    serializer_class = BusquedaAvanzadaGRLSerializer
+
+    def get_queryset(self):
+        queryset = VehiculosAgendables_Conductor.objects.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Obtener parámetros de la solicitud
+        placa = self.request.query_params.get('placa')
+        marca = self.request.query_params.get('marca')
+        empresa_contratista = self.request.query_params.get('empresa_contratista')
+        nombre = self.request.query_params.get('nombre')
+        persona_conductor = self.request.query_params.get('persona_conductor')
+        es_arrendado = self.request.query_params.get('es_arrendado')
+        tiene_platon = self.request.query_params.get('tiene_platon')
+
+        # Filtrar vehículos por parámetros de búsqueda
+        data_filtrada = serializer.data
+
+        if placa:
+            data_filtrada = [item for item in data_filtrada if placa in (item['placa'] if item['placa'] else '')]
+
+        if marca:
+            data_filtrada = [item for item in data_filtrada if marca in (item['marca'] if item['marca'] else '')]
+
+        if empresa_contratista:
+            data_filtrada = [item for item in data_filtrada if empresa_contratista in (item['empresa_contratista'] if item['empresa_contratista'] else '')]
+
+        if nombre:
+            data_filtrada = [item for item in data_filtrada if nombre in (item['nombre'] if item['nombre'] else '')]
+
+        if persona_conductor:
+            data_filtrada = [item for item in data_filtrada if persona_conductor in (item['persona_conductor'] if item['persona_conductor'] else '')]
+
+        if es_arrendado and es_arrendado != '':
+            es_arrendado = True if 'True' in es_arrendado else False
+            data_filtrada = [item for item in data_filtrada if es_arrendado == item['es_arrendado']]
+
+        if tiene_platon and tiene_platon != '':
+            tiene_platon = True if 'True' in tiene_platon else False
+            data_filtrada = [item for item in data_filtrada if tiene_platon == item['tiene_platon']]
+
+        # Realizar validación adicional
+        vehiculos_disponibles = []
+        for vehiculo in data_filtrada:
+            # Validar si el vehículo tiene asignaciones activas
+            asignaciones_activas = ViajesAgendados.objects.filter(
+                id_vehiculo_conductor_id=vehiculo['id_vehiculo_conductor'],  # Usamos el campo id_vehiculo_conductor para la relación
+                estado='AC',  # Filtro por estado ACTIVA
+                fecha_partida_asignada__lte=datetime.now(),  # Filtramos por fecha de partida menor o igual a la fecha actual
+                fecha_retorno_asignada__gte=datetime.now()  # Filtramos por fecha de retorno mayor o igual a la fecha actual
+            ).exists()
+
+            if not asignaciones_activas:
+                vehiculos_disponibles.append(vehiculo)
+
+        # Retornar la respuesta con la data procesada
+        return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': vehiculos_disponibles}, status=status.HTTP_200_OK)
+
+
+class ObtenerSolicitudViaje(generics.RetrieveAPIView):
+    queryset = SolicitudesViajes.objects.all()  # Obtener todas las solicitudes de viaje
+    serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente
+
+    def retrieve(self, request, *args, **kwargs):
+        # Obtener el id_solicitud_viaje desde los argumentos de la URL
+        id_solicitud_viaje = kwargs.get('id_solicitud_viaje')
+
+        try:
+            # Intentar obtener la solicitud de viaje por su id_solicitud_viaje
+            solicitud_viaje = self.get_queryset().get(id_solicitud_viaje=id_solicitud_viaje)
+            serializer = self.get_serializer(solicitud_viaje)
+            return Response({'success': True, 'detail': 'Solicitud de viaje obtenida exitosamente', 'data': serializer.data})
+        except SolicitudesViajes.DoesNotExist:
+            # Si no se encuentra la solicitud de viaje, devolver una respuesta de error
+            return Response({'success': False, 'detail': 'La solicitud de viaje no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class DetallesViajeGet(generics.ListAPIView):
+    serializer_class = DetallesViajeSerializer
+
+    def get_queryset(self):
+        return ViajesAgendados.objects.exclude(id_vehiculo_conductor__isnull=True)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        message = "Lista de viajes agendados obtenida exitosamente."
+        return Response({'success': True, 'detail': message, 'data': data})
+
+
+class EditarAprobacion(generics.UpdateAPIView):
+    serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ViajesAgendados.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        # Obtener el ID del viaje agendado de la URL
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+
+        # Obtener el objeto ViajesAgendados
+        viaje_agendado = self.get_object()
+
+        # Obtener el ID del vehiculo_conductor de la solicitud
+        id_vehiculo_conductor = request.data.get('id_vehiculo_conductor')
+
+        # Verificar si el ID del vehiculo_conductor es válido
+        if id_vehiculo_conductor is None:
+            return Response({'error': 'El campo id_vehiculo_conductor es necesario para la actualización.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Obtener la instancia de VehiculosAgendables_Conductor
+            vehiculo_conductor = VehiculosAgendables_Conductor.objects.get(pk=id_vehiculo_conductor)
+        except VehiculosAgendables_Conductor.DoesNotExist:
+            return Response({'error': 'El vehículo conductor especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Actualizar el campo id_vehiculo_conductor
+        viaje_agendado.id_vehiculo_conductor = vehiculo_conductor
+        viaje_agendado.save()
+
+        # Serializar y devolver la instancia actualizada
+        serializer = self.get_serializer(viaje_agendado)
+        return Response(serializer.data)
+    
+
+class EliminarViajeAgendado(generics.DestroyAPIView):
+    queryset = ViajesAgendados.objects.all()
+    serializer_class = ViajesAgendadosDeleteSerializer
+
+    def delete(self, instance, pk):
+        # Obtener el ID de la solicitud de viaje asociada al viaje agendado
+        instance = self.get_queryset().filter(id_viaje_agendado=pk).first()
+        id_solicitud_viaje = instance.id_solicitud_viaje.id_solicitud_viaje
+        
+        # Buscar la solicitud de viaje asociada
+        solicitud_viaje = SolicitudesViajes.objects.filter(id_solicitud_viaje=id_solicitud_viaje).first()
+
+        # Eliminar el viaje agendado
+        instance.delete()
+
+        # Actualizar la solicitud de viaje si existe
+        if solicitud_viaje:
+            solicitud_viaje.id_persona_responsable = None
+            solicitud_viaje.id_unidad_org_responsable = None
+            solicitud_viaje.fecha_aprobacion_responsable = None
+            solicitud_viaje.estado_solicitud = 'ES'
+            solicitud_viaje.save()
+
+        return Response({'success': True, 'detail': 'El viaje agendado ha sido eliminado correctamente y la solicitud de viaje ha sido actualizada.'}, status=status.HTTP_200_OK)
