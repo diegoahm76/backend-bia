@@ -14,7 +14,7 @@ from rest_framework.exceptions import ValidationError, PermissionDenied, NotFoun
 from almacen.models.bienes_models import (CatalogoBienes)
 from django.db import transaction
 from rest_framework.response import Response
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 
 
@@ -38,6 +38,7 @@ from almacen.serializers.vehiculos_serializers import (
     BusquedaVehiculosGRLSerializer,
     ClaseTerceroPersonaSerializer,
     CrearAgendaVehiculoDiaSerializer,
+    DetallesViajeSerializer,
     HojaDeVidaVehiculosSerializer,
     InspeccionVehiculoSerializer,
     InspeccionesVehiculosDiaCreateSerializer,
@@ -50,7 +51,8 @@ from almacen.serializers.vehiculos_serializers import (
     VehiculoPersonaLogueadaSerializer,
     VehiculosAgendablesConductorSerializer,
     VehiculosArrendadosSerializer,
-    ViajesAgendadosSerializer
+    ViajesAgendadosDeleteSerializer,
+    ViajesAgendadosSerializer,
     )
 from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
@@ -1220,6 +1222,8 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
 #RECHAZAR_SOLICITUD
 class CrearReprobacion(generics.CreateAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -1279,6 +1283,77 @@ class CrearReprobacion(generics.CreateAPIView):
         return JsonResponse({'success': True, 'detail': 'Reprobación de la petición creada exitosamente.', 'data': viaje_agendado_serializer.data}, status=status.HTTP_201_CREATED)
 
 
+#APROBACION_SOLICITUD
+class CrearAprobacion(generics.CreateAPIView):
+    serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+
+        # Validar si existe la solicitud de viaje
+        id_solicitud_viaje = data.get('id_solicitud_viaje')
+        solicitud_viaje = SolicitudesViajes.objects.filter(id_solicitud_viaje=id_solicitud_viaje).first()
+
+        if not solicitud_viaje:
+            return JsonResponse({'error': 'La solicitud de viaje especificada no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        # Validar que la solicitud de viaje esté en estado de espera
+        if solicitud_viaje.estado_solicitud != 'ES':
+            return JsonResponse({'error': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validar si existe el conductor del vehículo asignado al viaje
+        id_persona_conductor = data.get('id_persona_conductor')
+        if not id_persona_conductor:
+            return JsonResponse({'error': 'El conductor del vehículo asignado no fue especificado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener la persona logueada y la unidad organizacional actual
+        persona_logueada = request.user.persona
+        unidad_org_actual = persona_logueada.id_unidad_organizacional_actual
+
+        # Crear el registro en la tabla T077ViajesAgendados
+        viaje_agendado_data = {
+            'id_solicitud_viaje': id_solicitud_viaje,
+            'id_vehiculo_conductor': id_persona_conductor,
+            'direccion': solicitud_viaje.direccion,
+            'cod_municipio_destino': solicitud_viaje.cod_municipio.cod_municipio,
+            'indicaciones_destino': solicitud_viaje.indicaciones_destino,
+            'nro_total_pasajeros_req': solicitud_viaje.nro_pasajeros,
+            'requiere_capacidad_carga': solicitud_viaje.requiere_carga,
+            'fecha_partida_asignada': solicitud_viaje.fecha_partida,
+            'hora_partida': solicitud_viaje.hora_partida,
+            'fecha_retorno_asignada': solicitud_viaje.fecha_retorno,
+            'hora_retorno': solicitud_viaje.hora_retorno,
+            'requiere_compagnia_militar': solicitud_viaje.requiere_compagnia_militar,
+            'viaje_autorizado': True,
+            'observacion_no_autorizado': None,
+            'fecha_no_autorizado': None,
+            'id_persona_autoriza':  request.user.persona.id_persona,
+            'fecha_autorizacion': timezone.now(),
+            'ya_inicio': False,
+            'ya_llego': False,
+            'multiples_asignaciones': False,
+            'viaje_agendado_abierto': True,
+            'estado': 'AC',
+        }
+
+        viaje_agendado_serializer = self.get_serializer(data=viaje_agendado_data)
+        viaje_agendado_serializer.is_valid(raise_exception=True)
+        viaje_agendado = viaje_agendado_serializer.save()
+
+        
+
+        # Actualizar la solicitud de viaje en la tabla T075SolicitudesViaje
+        solicitud_viaje.id_persona_responsable = persona_logueada
+        solicitud_viaje.id_unidad_org_responsable = unidad_org_actual
+        solicitud_viaje.fecha_aprobacion_responsable = viaje_agendado.fecha_autorizacion
+        solicitud_viaje.estado_solicitud = 'RE'
+        solicitud_viaje.save()
+
+        return JsonResponse({'success': True, 'detail': 'Aprobación del viaje agendado creada exitosamente.', 'data': viaje_agendado_serializer.data}, status=status.HTTP_201_CREATED)
+
 #BUSQUEDA_VEHICULOS
 class ListaVehiculosDisponibles(generics.ListAPIView):
     serializer_class = HojaDeVidaVehiculosSerializer
@@ -1337,7 +1412,6 @@ class ListaVehiculosDisponibles(generics.ListAPIView):
 
 
 
-from datetime import datetime
 
 class BusquedaVehiculosGRL(generics.ListAPIView):
     serializer_class = BusquedaAvanzadaGRLSerializer
@@ -1402,4 +1476,98 @@ class BusquedaVehiculosGRL(generics.ListAPIView):
         # Retornar la respuesta con la data procesada
         return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': vehiculos_disponibles}, status=status.HTTP_200_OK)
 
+
+class ObtenerSolicitudViaje(generics.RetrieveAPIView):
+    queryset = SolicitudesViajes.objects.all()  # Obtener todas las solicitudes de viaje
+    serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente
+
+    def retrieve(self, request, *args, **kwargs):
+        # Obtener el id_solicitud_viaje desde los argumentos de la URL
+        id_solicitud_viaje = kwargs.get('id_solicitud_viaje')
+
+        try:
+            # Intentar obtener la solicitud de viaje por su id_solicitud_viaje
+            solicitud_viaje = self.get_queryset().get(id_solicitud_viaje=id_solicitud_viaje)
+            serializer = self.get_serializer(solicitud_viaje)
+            return Response({'success': True, 'detail': 'Solicitud de viaje obtenida exitosamente', 'data': serializer.data})
+        except SolicitudesViajes.DoesNotExist:
+            # Si no se encuentra la solicitud de viaje, devolver una respuesta de error
+            return Response({'success': False, 'detail': 'La solicitud de viaje no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class DetallesViajeGet(generics.ListAPIView):
+    serializer_class = DetallesViajeSerializer
+
+    def get_queryset(self):
+        return ViajesAgendados.objects.exclude(id_vehiculo_conductor__isnull=True)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        message = "Lista de viajes agendados obtenida exitosamente."
+        return Response({'success': True, 'detail': message, 'data': data})
+
+
+class EditarAprobacion(generics.UpdateAPIView):
+    serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ViajesAgendados.objects.all()
+
+    def update(self, request, *args, **kwargs):
+        # Obtener el ID del viaje agendado de la URL
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+
+        # Obtener el objeto ViajesAgendados
+        viaje_agendado = self.get_object()
+
+        # Obtener el ID del vehiculo_conductor de la solicitud
+        id_vehiculo_conductor = request.data.get('id_vehiculo_conductor')
+
+        # Verificar si el ID del vehiculo_conductor es válido
+        if id_vehiculo_conductor is None:
+            return Response({'error': 'El campo id_vehiculo_conductor es necesario para la actualización.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Obtener la instancia de VehiculosAgendables_Conductor
+            vehiculo_conductor = VehiculosAgendables_Conductor.objects.get(pk=id_vehiculo_conductor)
+        except VehiculosAgendables_Conductor.DoesNotExist:
+            return Response({'error': 'El vehículo conductor especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Actualizar el campo id_vehiculo_conductor
+        viaje_agendado.id_vehiculo_conductor = vehiculo_conductor
+        viaje_agendado.save()
+
+        # Serializar y devolver la instancia actualizada
+        serializer = self.get_serializer(viaje_agendado)
+        return Response(serializer.data)
     
+
+class EliminarViajeAgendado(generics.DestroyAPIView):
+    queryset = ViajesAgendados.objects.all()
+    serializer_class = ViajesAgendadosDeleteSerializer
+
+    def delete(self, instance, pk):
+        # Obtener el ID de la solicitud de viaje asociada al viaje agendado
+        instance = self.get_queryset().filter(id_viaje_agendado=pk).first()
+        id_solicitud_viaje = instance.id_solicitud_viaje.id_solicitud_viaje
+        
+        # Buscar la solicitud de viaje asociada
+        solicitud_viaje = SolicitudesViajes.objects.filter(id_solicitud_viaje=id_solicitud_viaje).first()
+
+        # Eliminar el viaje agendado
+        instance.delete()
+
+        # Actualizar la solicitud de viaje si existe
+        if solicitud_viaje:
+            solicitud_viaje.id_persona_responsable = None
+            solicitud_viaje.id_unidad_org_responsable = None
+            solicitud_viaje.fecha_aprobacion_responsable = None
+            solicitud_viaje.estado_solicitud = 'ES'
+            solicitud_viaje.save()
+
+        return Response({'success': True, 'detail': 'El viaje agendado ha sido eliminado correctamente y la solicitud de viaje ha sido actualizada.'}, status=status.HTTP_200_OK)

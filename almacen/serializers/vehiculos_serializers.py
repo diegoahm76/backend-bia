@@ -263,6 +263,9 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 
+
+
+        
 class BusquedaVehiculosGRLSerializer(serializers.ModelSerializer):
     nombre_marca = serializers.ReadOnlyField(source='id_marca.nombre')
     conductor = serializers.SerializerMethodField()
@@ -414,3 +417,85 @@ class RegistrarVehiculoArrendadoSerializer(serializers.ModelSerializer):
         id_hoja_de_vida = id_hoja_de_vida.id_hoja_de_vida if id_hoja_de_vida else None
         
         return id_hoja_de_vida
+    
+
+
+class DetallesViajeSerializer(serializers.ModelSerializer):
+
+    placa = serializers.SerializerMethodField()
+    nombre = serializers.SerializerMethodField()
+    marca = serializers.SerializerMethodField()
+    id_marca = serializers.SerializerMethodField()
+    empresa_contratista = serializers.SerializerMethodField()
+    persona_conductor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ViajesAgendados
+        fields = '__all__'
+
+    def get_placa(self, obj):
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo:
+                if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+                else:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.doc_identificador_nro
+        
+        return None
+
+    def get_nombre(self, obj):
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo:
+                if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+                else:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.nombre
+        
+        return None
+    
+    def get_marca(self, obj):
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo:
+                if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+                else:
+                    marca = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.id_marca
+                    return marca.nombre if marca else None
+        
+        return None
+    
+    def get_id_marca(self, obj):
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo:
+                if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.id_marca
+                else:
+                    id_marca = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.id_marca
+                    return id_marca.id_marca if id_marca else None
+        
+        return None
+    
+    def get_empresa_contratista(self, obj):
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo:
+                if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                    return obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.empresa_contratista
+    
+        return None
+    
+    def get_persona_conductor(self, obj):
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_persona_conductor:
+                nombre_list = [obj.id_vehiculo_conductor.id_persona_conductor.primer_nombre, obj.id_vehiculo_conductor.id_persona_conductor.segundo_nombre,
+                            obj.id_vehiculo_conductor.id_persona_conductor.primer_apellido, obj.id_vehiculo_conductor.id_persona_conductor.segundo_apellido]
+                persona_conductor = ' '.join(item for item in nombre_list if item is not None)
+                persona_conductor = persona_conductor if persona_conductor != "" else None
+                return persona_conductor
+        
+
+
+class ViajesAgendadosDeleteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ViajesAgendados
+        fields = '__all__'
