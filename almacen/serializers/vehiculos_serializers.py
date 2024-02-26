@@ -4,7 +4,7 @@ from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVidaOtrosActivos, HojaDeVidaVehiculos, DocumentosVehiculo
 from transversal.models.base_models import Municipio, ApoderadoPersona, ClasesTerceroPersona, Personas
-from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados
+from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
 
 
 
@@ -499,3 +499,35 @@ class ViajesAgendadosDeleteSerializer(serializers.ModelSerializer):
     class Meta:
         model = ViajesAgendados
         fields = '__all__'
+
+
+class BitacoraViajeSerializer(serializers.ModelSerializer):
+    id_conductor_que_parte = serializers.PrimaryKeyRelatedField(queryset=Personas.objects.all(), required=False)
+
+    class Meta:
+        model = BitacoraViaje    
+        fields = ['id_bitacora', 
+                  'id_viaje_agendado', 
+                  'es_conductor_asignado', 
+                  'id_conductor_que_parte', 
+                  'fecha_inicio_recorrido', 
+                  'novedad_salida', 
+                  'fecha_llegada_recorrido', 
+                  'novedad_llegada']
+        extra_kwargs = {
+            'id_conductor_que_parte': {'required': False}
+        }
+
+
+class BitacoraSalidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BitacoraViaje
+        fields = ['id_bitacora', 'id_viaje_agendado', 'es_conductor_asignado', 'id_conductor_que_parte', 'fecha_inicio_recorrido', 'novedad_salida']
+
+
+class BitacoraLlegadaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BitacoraViaje
+        fields = '__all__'
+
+    

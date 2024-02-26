@@ -16,10 +16,12 @@ from django.db import transaction
 from rest_framework.response import Response
 from django.http import Http404, JsonResponse
 from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
+from django.shortcuts import get_object_or_404
 
 
 
 from almacen.models.vehiculos_models import (
+    BitacoraViaje,
     InspeccionesVehiculosDia,
     PeriodoArriendoVehiculo,
     SolicitudesViajes,
@@ -32,6 +34,9 @@ from almacen.models.vehiculos_models import (
 from almacen.serializers.vehiculos_serializers import (
     ActualizarVehiculoArrendadoSerializer,
     AsignacionVehiculoSerializer,
+    BitacoraLlegadaSerializer,
+    BitacoraSalidaSerializer,
+    BitacoraViajeSerializer,
     BusquedaAvanzadaGRLSerializer,
     BusquedaSolicitudViajeSerializer,
     BusquedaVehiculoSerializer,
@@ -1605,3 +1610,175 @@ class ListarAgendamientos(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'success': True, 'detail': 'Agendamientos obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class CrearBitacoraSalida(generics.CreateAPIView):
+    serializer_class = BitacoraViajeSerializer
+
+    def create(self, request, *args, **kwargs):
+        # Obtener datos del cuerpo de la solicitud
+        id_viaje_agendado = request.data.get('id_viaje_agendado')
+        es_conductor_asignado = request.data.get('es_conductor_asignado')
+        id_conductor_que_parte = request.data.get('id_conductor_que_parte')
+        novedad_salida = request.data.get('novedad_salida')
+
+        # Verificar si es_conductor_asignado es un valor booleano
+        if es_conductor_asignado not in [True, False]:
+            return Response({'success': False, 'detail': 'El valor de es_conductor_asignado debe ser True o False'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si ya existe una bitácora para el viaje agendado
+        if BitacoraViaje.objects.filter(id_viaje_agendado=id_viaje_agendado).exists():
+            return Response({'success': False, 'detail': 'Ya existe una bitácora para este viaje agendado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Si es_conductor_asignado es True, obtener el conductor asignado del viaje agendado
+        if es_conductor_asignado:
+            try:
+                viaje_agendado = ViajesAgendados.objects.get(id_viaje_agendado=id_viaje_agendado)
+                id_conductor_que_parte = viaje_agendado.id_vehiculo_conductor.id_persona_conductor.id_persona  # Acceder a la clave primaria del conductor
+            except ViajesAgendados.DoesNotExist:
+                return Response({'success': False, 'detail': 'El viaje agendado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        # Si es_conductor_asignado es False, verificar si se proporciona el ID del conductor
+        else:
+            if id_conductor_que_parte is None:
+                return Response({'success': False, 'detail': 'Se requiere el ID del conductor que parte si es_conductor_asignado es False'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear la bitácora de salida
+        bitacora_data = {
+            'es_conductor_asignado': es_conductor_asignado,
+            'id_conductor_que_parte': id_conductor_que_parte,
+            'id_viaje_agendado': id_viaje_agendado,
+            'fecha_inicio_recorrido': timezone.now(),
+            'novedad_salida': novedad_salida
+        }
+        serializer = self.get_serializer(data=bitacora_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        # Actualizar el campo T077yaInicio en ViajesAgendados
+        try:
+            viaje_agendado = ViajesAgendados.objects.get(id_viaje_agendado=id_viaje_agendado)
+            viaje_agendado.ya_inicio = True
+            viaje_agendado.save()
+        except ViajesAgendados.DoesNotExist:
+            return Response({'success': False, 'detail':'El viaje agendado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener la instancia de la bitácora de salida recién creada
+        bitacora_salida = serializer.instance
+
+        # Serializar la instancia de la bitácora de salida
+        serialized_bitacora = BitacoraViajeSerializer(bitacora_salida)
+
+        return Response({'success': True, 'detail': 'La bitácora de salida ha sido creada exitosamente', 'data': serialized_bitacora.data}, status=status.HTTP_201_CREATED)
+    
+
+class ObtenerBitacoraSalida(generics.ListAPIView):
+    serializer_class = BitacoraLlegadaSerializer
+
+    def get_queryset(self):
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+        queryset = BitacoraViaje.objects.filter(id_viaje_agendado=id_viaje_agendado)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+        # Verificar si hay registros asociados al id_viaje_agendado
+        if not BitacoraViaje.objects.filter(id_viaje_agendado=id_viaje_agendado).exists():
+            response_data = {
+                'success': False,
+                'detail': f'No se encontraron registros para el id_viaje_agendado {id_viaje_agendado}',
+                'data': []
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        response_data = {
+            'success': True,
+            'detail': 'Bitácoras obtenidas exitosamente',
+            'data': data
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class ActualizarBitacoraLlegada(generics.UpdateAPIView):
+    serializer_class = BitacoraLlegadaSerializer
+
+    def put(self, request, *args, **kwargs):
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+
+        # Verificar si el viaje ya ha iniciado
+        try:
+            viaje_agendado = ViajesAgendados.objects.get(id_viaje_agendado=id_viaje_agendado)
+        except ViajesAgendados.DoesNotExist:
+            return Response({'success': False, 'detail': 'El viaje agendado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not viaje_agendado.ya_inicio:
+            raise ValidationError('El viaje aún no ha iniciado')
+
+        # Obtener la instancia de la bitácora de llegada
+        bitacora_llegada = get_object_or_404(BitacoraViaje, id_viaje_agendado=id_viaje_agendado)
+
+        # Actualizar campos en la bitácora de llegada
+        bitacora_llegada.fecha_llegada_recorrido = timezone.now()
+        bitacora_llegada.novedad_llegada = request.data.get('novedad_llegada', bitacora_llegada.novedad_llegada)
+        bitacora_llegada.save()
+
+        # Actualizar campos en ViajesAgendados
+        viaje_agendado.estado = 'FI'
+        viaje_agendado.ya_llego = True
+        viaje_agendado.save()
+
+        # Actualizar campos en SolicitudesViaje
+        try:
+            solicitud_viaje = SolicitudesViajes.objects.get(id_solicitud_viaje=viaje_agendado.id_solicitud_viaje.id_solicitud_viaje)
+            solicitud_viaje.estado_solicitud = 'FN'
+            solicitud_viaje.save()
+        except SolicitudesViajes.DoesNotExist:
+            return Response({'success': False, 'detail': 'La solicitud de viaje asociada no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serializar la instancia de la bitácora de llegada actualizada
+        serializer = self.get_serializer(bitacora_llegada)
+        data = serializer.data
+
+        return Response({'success': True, 'detail': 'La bitácora de llegada ha sido actualizada exitosamente', 'data': data}, status=status.HTTP_200_OK)
+    
+
+class ObtenerBitacoraLlegada(generics.ListAPIView):
+    serializer_class = BitacoraLlegadaSerializer
+
+    def get_queryset(self):
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+        queryset = BitacoraViaje.objects.filter(id_viaje_agendado=id_viaje_agendado)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
+        
+        # Verificar si el viaje ya ha llegado
+        try:
+            viaje_agendado = ViajesAgendados.objects.get(id_viaje_agendado=id_viaje_agendado)
+        except ViajesAgendados.DoesNotExist:
+            return Response({'success': False, 'detail': 'El viaje agendado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not viaje_agendado.ya_llego:
+            return Response({'success': False, 'detail': 'El viaje aún no ha llegado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si hay registros asociados al id_viaje_agendado
+        if not BitacoraViaje.objects.filter(id_viaje_agendado=id_viaje_agendado).exists():
+            response_data = {
+                'success': False,
+                'detail': f'No se encontraron registros para el id_viaje_agendado {id_viaje_agendado}',
+                'data': []
+            }
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        response_data = {
+            'success': True,
+            'detail': 'Bitácoras de llegada obtenidas exitosamente',
+            'data': data
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
