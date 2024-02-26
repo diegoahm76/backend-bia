@@ -1571,3 +1571,37 @@ class EliminarViajeAgendado(generics.DestroyAPIView):
             solicitud_viaje.save()
 
         return Response({'success': True, 'detail': 'El viaje agendado ha sido eliminado correctamente y la solicitud de viaje ha sido actualizada.'}, status=status.HTTP_200_OK)
+    
+
+
+#Bitacora_vehiculos
+    
+class ListarAgendamientos(generics.ListAPIView):
+    serializer_class = ViajesAgendadosSerializer
+
+    def get_queryset(self):
+        queryset = ViajesAgendados.objects.exclude(fecha_autorizacion=None)
+
+        # Obtener parámetros de consulta
+        fecha_autorizacion_desde = self.request.query_params.get('fecha_autorizacion_desde')
+        fecha_autorizacion_hasta = self.request.query_params.get('fecha_autorizacion_hasta')
+        estado = self.request.query_params.get('estado')
+
+        # Filtrar por fecha_autorizacion DESDE
+        if fecha_autorizacion_desde:
+            queryset = queryset.filter(fecha_autorizacion__gte=fecha_autorizacion_desde)
+
+        # Filtrar por fecha_autorizacion HASTA
+        if fecha_autorizacion_hasta:
+            queryset = queryset.filter(fecha_autorizacion__lte=fecha_autorizacion_hasta)
+
+        # Filtrar por estado si está presente
+        if estado:
+            queryset = queryset.filter(estado=estado)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Agendamientos obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)

@@ -48,6 +48,12 @@ urlpatterns = [
     path('eliminar-viaje-agendado/<int:pk>/', views.EliminarViajeAgendado.as_view(), name='eliminar_viaje_agendado'),
 
 
+    #Bitacora_Vehiculos
+    path('listar-agendamientos/get/', views.ListarAgendamientos.as_view(), name='listar_agendamientos'),
+
+
+
+
 
 
     
