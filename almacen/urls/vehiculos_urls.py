@@ -50,6 +50,14 @@ urlpatterns = [
 
     #Bitacora_Vehiculos
     path('listar-agendamientos/get/', views.ListarAgendamientos.as_view(), name='listar_agendamientos'),
+    path('bitacora-salida/create/', views.CrearBitacoraSalida.as_view(), name='crear_bitacora_salida'),
+    path('bitacora-salida/get/<int:id_viaje_agendado>/', views.ObtenerBitacoraSalida.as_view(), name='obtener_bitacora_salida'),
+    path('bitacora-llegada/update/<int:id_viaje_agendado>/', views.ActualizarBitacoraLlegada.as_view(), name='actualizar_bitacora_llegada'),
+    path('bitacora-llegada/get/<int:id_viaje_agendado>/', views.ObtenerBitacoraSalida.as_view(), name='obtener-bitacora-llegada'),
+
+
+    
+
 
 
 
