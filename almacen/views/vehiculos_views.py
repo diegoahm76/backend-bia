@@ -57,7 +57,9 @@ from almacen.serializers.vehiculos_serializers import (
     VehiculosAgendablesConductorSerializer,
     VehiculosArrendadosSerializer,
     ViajesAgendadosDeleteSerializer,
+    ViajesAgendadosPorIDSerializer,
     ViajesAgendadosSerializer,
+    ViajesAgendadosSolcitudSerializer,
     )
 from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
@@ -574,7 +576,7 @@ class CrearSolicitudViaje(generics.CreateAPIView):
             'cod_municipio': cod_municipio,
             'motivo_viaje': data.get('motivo_viaje_solicitado', ''),  # Corregido el nombre del campo
             'indicaciones_destino': data.get('indicaciones_destino', ''),
-            'requiere_carga': data.get('requiere_carga', False),
+            'requiere_carga': data['requiere_carga'], 
             'fecha_partida': fecha_partida,
             'hora_partida': hora_partida,
             'fecha_retorno': fecha_retorno,
@@ -671,6 +673,11 @@ class EditarSolicitudViaje(generics.UpdateAPIView):
             serializer = self.get_serializer(instance, data=request.data)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
+
+            # Actualizar el estado a "En Espera"
+            instance.estado_solicitud = 'ES'
+            instance.save()
+            
             
             return Response({'success': True, 'detail': 'Solicitud editada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         except SolicitudesViajes.DoesNotExist:
@@ -1498,6 +1505,80 @@ class ObtenerSolicitudViaje(generics.RetrieveAPIView):
         except SolicitudesViajes.DoesNotExist:
             # Si no se encuentra la solicitud de viaje, devolver una respuesta de error
             return Response({'success': False, 'detail': 'La solicitud de viaje no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class ObtenerInformacionViajes(generics.RetrieveAPIView):
+    queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
+    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  # Usar el serializador correspondiente para ViajesAgendados
+    solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
+
+    def get(self, request, id_solicitud_viaje):
+        try:
+            # Verificar si existe una solicitud de viaje con el id dado y estado 'Finalizada' o 'Respondida'
+            solicitud_viaje = SolicitudesViajes.objects.get(
+                id_solicitud_viaje=id_solicitud_viaje,
+                estado_solicitud__in=['FN', 'RE', 'RC']  # Estado 'Finalizada' o 'Respondida'
+            )
+
+            # Obtener el viaje agendado asociado a la solicitud de viaje
+            viaje_agendado = solicitud_viaje.viajesagendados_set.first()
+
+            # Serializar los datos según el estado de la solicitud
+            if solicitud_viaje.estado_solicitud == 'RC':
+                # Si el estado es 'Rechazado', retornar solo la fecha y observación de no autorización
+                response_data = {
+                    'id_solicitud_viaje': solicitud_viaje.id_solicitud_viaje,
+                    'id_viaje_agendado': viaje_agendado.id_viaje_agendado,
+                    'fecha_no_autorizado': solicitud_viaje.fecha_rechazo,
+                    'observacion_autorizacion': solicitud_viaje.justificacion_rechazo
+                }
+            else:
+                # Si no, serializar ambos modelos
+                viajes_data = self.viajes_serializer_class(viaje_agendado).data
+                solicitudes_data = self.solicitudes_serializer_class(solicitud_viaje).data
+
+                # Combinar los datos serializados en un solo diccionario de respuesta
+                response_data = {
+                    'solicitud_viaje': solicitudes_data,
+                    'viajes_agendados': viajes_data
+                }
+
+            return Response({'success': True, 'detail': 'Información de viajes obtenida exitosamente', 'data': response_data})
+        except SolicitudesViajes.DoesNotExist:
+            return Response({'success': False, 'detail': 'La solicitud de viaje no existe o no tiene el estado adecuado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class ObtenerInformacionAgendamiento(generics.RetrieveAPIView):
+    queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
+    viajes_serializer_class = ViajesAgendadosPorIDSerializer  # Usar el serializador correspondiente para ViajesAgendados
+    solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
+
+    def get(self, request, id_solicitud_viaje):
+        try:
+            # Verificar si existe una solicitud de viaje con el id dado y estado 'Finalizada' o 'Respondida'
+            solicitud_viaje = SolicitudesViajes.objects.get(
+                id_solicitud_viaje=id_solicitud_viaje,
+                estado_solicitud__in=['RE']  # Estado: 'Respondida'
+            )
+
+            # Obtener el viaje agendado asociado a la solicitud de viaje
+            viaje_agendado = solicitud_viaje.viajesagendados_set.first()
+
+            # Serializar los datos de ViajesAgendados y SolicitudesViajes
+            viajes_data = self.viajes_serializer_class(viaje_agendado).data
+            solicitudes_data = self.solicitudes_serializer_class(solicitud_viaje).data
+
+            # Combinar los datos serializados en un solo diccionario de respuesta
+            response_data = {
+                'viajes_agendados': viajes_data,
+            }
+
+            return Response({'success': True, 'detail': 'Información de viajes obtenida exitosamente', 'data': response_data})
+        except SolicitudesViajes.DoesNotExist:
+            return Response({'success': False, 'detail': 'La solicitud de viaje no existe o no tiene el estado adecuado.'}, status=status.HTTP_404_NOT_FOUND)
         
 
 
