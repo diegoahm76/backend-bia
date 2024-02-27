@@ -22,7 +22,7 @@ from django.db.models import Max
 from django.db.models import Q
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionTramites, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites, Tramites
 from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, OPASSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
 from transversal.models.base_models import Municipio
 from transversal.models.personas_models import Personas
@@ -744,3 +744,36 @@ class ConsultaEstadoOPAS(generics.ListAPIView):
 
 
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data}, status=status.HTTP_200_OK)
+    
+class TramitesPivotGetView(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        filter = {}
+        
+        for key, value in request.query_params.items():
+            if key in ['procedure_id','radicado']:
+                if key == 'radicado':
+                    if value != '':
+                        filter['radicate_bia__icontains'] = value
+                elif value != '':
+                    filter[key] = value
+        
+        tramites_values = Tramites.objects.filter(**filter).values()
+        
+        organized_data = {
+            'procedure_id': tramites_values[0]['procedure_id'],
+            'radicate_bia': tramites_values[0]['radicate_bia'],
+            'proceeding_id': tramites_values[0]['proceeding_id'],
+        }
+        
+        for item in tramites_values:
+            field_name = item['name_key']
+            if item['type_key'] == 'json':
+                value = json.loads(item['value_key'])
+            else:
+                value = item['value_key']
+            organized_data[field_name] = value
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes trámites', 'data':organized_data}, status=status.HTTP_200_OK)
