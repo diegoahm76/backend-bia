@@ -170,7 +170,8 @@ class AsignacionesViajeAgendado(models.Model):
 
 class ViajesAgendados(models.Model):
     id_viaje_agendado = models.AutoField(primary_key=True, editable=False, db_column="T077IdViajeAgendado")
-    id_hoja_vida_vehiculo = models.ForeignKey("almacen.HojaDeVidaVehiculos", on_delete=models.CASCADE, db_column="T077Id_HojaDeVidaVehiculo")
+    id_vehiculo_conductor = models.ForeignKey(VehiculosAgendables_Conductor, on_delete=models.SET_NULL, null=True, blank=True, db_column="T077Id_ConductorVehiculoAsig")
+    id_solicitud_viaje = models.ForeignKey(SolicitudesViajes, on_delete=models.CASCADE, db_column="T077Id_SolicitudViaje")
     direccion = models.CharField(max_length=255, null=True, blank=True, db_column="T077direccion")
     cod_municipio_destino = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T077Cod_MunicipioDestino")
     indicaciones_destino = models.CharField(max_length=255, null=True, blank=True, db_column="T077indicacionesDestino")
@@ -217,12 +218,9 @@ class CompatibilidadViajesAgendados(models.Model):
 class BitacoraViaje(models.Model):
     id_bitacora = models.AutoField(primary_key=True, editable=False, db_column="T079IdBitacoraViaje")
     id_viaje_agendado = models.ForeignKey(ViajesAgendados, on_delete=models.CASCADE, db_column="T079Id_ViajeAgendado")
-    id_conductor = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T079Id_ConductorQueParte")
-    nombre_conductor_fuera = models.CharField(max_length=90, null=True, blank=True, db_column="T079nombreConductorFueraSistema")
-    documento_conductor_fuera = models.CharField(max_length=90, null=True, blank=True, db_column="T079documentoConductorFS")
-    telefono_conductor_fs = models.CharField(max_length=15, null=True, blank=True, db_column="T079telefonoConductorFS")
+    es_conductor_asignado = models.BooleanField(db_column="T079esConductorAsignado")
+    id_conductor_que_parte = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T079Id_ConductorQueParte")
     fecha_inicio_recorrido = models.DateTimeField(db_column="T079fechaInicioRecorrido")
-    fecha_registro_inicio = models.DateTimeField(db_column="T079fechaRegistroDelInicio")
     novedad_salida = models.CharField(max_length=255, null=True, blank=True, db_column="T079novedadSalida")
     fecha_llegada_recorrido = models.DateTimeField(null=True, blank=True, db_column="T079fechaLlegadaRecorrido")
     novedad_llegada = models.CharField(max_length=255, null=True, blank=True, db_column="T079novedadLlegada")

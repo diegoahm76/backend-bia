@@ -85,8 +85,11 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
         tramite = None
 
         if tarea.id_asignacion:
+               
                 asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
-                tramite = asignacion.id_asignacion_tramite
+                print(asignacion.id_asignacion_tramite)
+                print(asignacion)
+                tramite = asignacion.id_solicitud_tramite.id_solicitud_tramite
         else:
 
             while tarea:
@@ -95,7 +98,7 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
                 if tarea.id_asignacion:
                     asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
 
-                    tramite = asignacion.id_solicitud_tramite
+                    tramite = asignacion.id_solicitud_tramite.id_solicitud_tramite
                     break
         if not tramite:
             return None
@@ -404,3 +407,130 @@ class TareasAsignadasGetTramiteJustificacionSerializer(serializers.ModelSerializ
         model = TareasAsignadas
         fields = ['id_tarea_asignada','justificacion_rechazo']
 
+
+
+class ComplementosUsu_TramiteGetByIdSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+    nombre_completo_titular = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    class Meta:
+        model = ComplementosUsu_PQR
+        fields = ['idComplementoUsu_PQR','tipo','nombre_completo_titular','asunto','cantidad_anexos','radicado','fecha_radicado',]
+    
+
+    def get_tipo(self, obj):
+        return "Complemento de tramite - Respuesta a Requerimiento"
+    
+    def get_nombre_completo_recibe(self, obj):
+        if obj.id_persona_recibe:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_recibe.primer_nombre, obj.id_persona_recibe.segundo_nombre,
+                            obj.id_persona_recibe.primer_apellido, obj.id_persona_recibe.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            return 'No Identificado'
+    def get_nombre_completo_titular(self, obj):
+
+        if obj.id_persona_interpone:
+            nombre_completo_responsable = None
+            nombre_list = [obj.id_persona_interpone.primer_nombre, obj.id_persona_interpone.segundo_nombre,
+                            obj.id_persona_interpone.primer_apellido, obj.id_persona_interpone.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            if obj.es_anonima:
+                return "Anonimo"
+            else:
+                return 'No Identificado'
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+
+
+
+
+class DetalleTramitesComplementosUsu_PQRGetSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+    nombre_completo_titular = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    numero_solicitudes = serializers.SerializerMethodField()
+    es_complemento = serializers.SerializerMethodField()
+    id_solicitud_tramite = serializers.ReadOnlyField(source='id_solicitud_usu_PQR.id_solicitud_tramite.id_solicitud_tramite', default=None)
+    medio_solicitud = serializers.ReadOnlyField(source='id_medio_solicitud.nombre', default=None)
+    nombre_completo_recibe = serializers.SerializerMethodField()
+    
+    def get_es_complemento(self, obj):
+        return True
+    
+    def get_tipo(self, obj):
+        return "Complemento de Trámite - Respuesta a Requerimiento"
+    
+    def get_nombre_completo_recibe(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_recibe:
+            if obj.id_persona_recibe.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_persona_recibe.razon_social
+            else:
+                nombre_list = [obj.id_persona_recibe.primer_nombre, obj.id_persona_recibe.segundo_nombre,
+                                obj.id_persona_recibe.primer_apellido, obj.id_persona_recibe.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        else:
+            nombre_persona_titular = 'No Identificado'
+        return nombre_persona_titular
+        
+    def get_nombre_completo_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_interpone:
+            if obj.id_persona_interpone.tipo_persona == 'J':
+                nombre_persona_titular = obj.id_persona_interpone.razon_social
+            else:
+                nombre_persona_titular = None
+                nombre_list = [obj.id_persona_interpone.primer_nombre, obj.id_persona_interpone.segundo_nombre,
+                                obj.id_persona_interpone.primer_apellido, obj.id_persona_interpone.segundo_apellido]
+                nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        else:
+            nombre_persona_titular = 'No Identificado'
+        return nombre_persona_titular
+            
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        
+    def get_numero_solicitudes(self, obj):
+        id= obj.idComplementoUsu_PQR
+        numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_complemento_usu_pqr=id).count()
+        return numero_solicitudes
+    
+    class Meta:
+        model = ComplementosUsu_PQR
+        fields = [
+            'idComplementoUsu_PQR',
+            'id_solicitud_tramite',
+            'tipo',
+            'nombre_completo_titular',
+            'asunto',
+            'cantidad_anexos',
+            'radicado',
+            'fecha_radicado',
+            'requiere_digitalizacion',
+            'numero_solicitudes',
+            'es_complemento',
+            'complemento_asignado_unidad',
+            'fecha_complemento',
+            'medio_solicitud',
+            'nro_folios_totales',
+            'nombre_completo_recibe',
+            'descripcion'
+        ]

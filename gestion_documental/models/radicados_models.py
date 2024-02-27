@@ -84,6 +84,7 @@ class EstadosSolicitudes(models.Model):
     aplica_para_pqrsdf = models.BooleanField(db_column='T254aplicaParaPQRSDF')
     aplica_para_tramites = models.BooleanField(db_column='T254aplicaParaTramites')
     aplica_para_otros = models.BooleanField(db_column='T254aplicaParaOtros')
+    ubicacion_corporacion = models.CharField(max_length=50, db_column='T254ubiEnCorp',null=True)
 
     class Meta:
        
