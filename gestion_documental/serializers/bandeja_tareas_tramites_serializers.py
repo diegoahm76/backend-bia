@@ -226,7 +226,7 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
 
         if tarea.id_asignacion:
                 asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
-                otro = asignacion.id_asignacion_tramite
+                otro = asignacion.id_solicitud_tramite.id_solicitud_tramite
         else:
 
             while tarea:
@@ -235,7 +235,7 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
                 if tarea.id_asignacion:
                     asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
 
-                    otro = asignacion.id_solicitud_tramite
+                    otro = asignacion.id_solicitud_tramite.id_solicitud_tramite
                     break
 
 
