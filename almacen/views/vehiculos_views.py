@@ -1033,7 +1033,9 @@ class NovedadesVehiculosList(generics.ListAPIView):
                     "id_inspeccion_vehiculo": id_inspeccion,
                     "id_hoja_de_vida": id_hoja_de_vida,
                     "placa": placa,
-                    "marca": marca
+                    "marca": marca,
+                    "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada
+
                 })
             else:
                 placa_marca = f"{placa}-{marca}"
@@ -1042,14 +1044,18 @@ class NovedadesVehiculosList(generics.ListAPIView):
                         "id_inspeccion_vehiculo": id_inspeccion,
                         "id_hoja_de_vida": id_hoja_de_vida,
                         "placa_marca": placa_marca,
-                        "novedad": novedades[0]
+                        "novedad": novedades[0],
+                        "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada
+
                     })
                 else:
                     vehiculos_con_novedad.append({
                         "id_inspeccion_vehiculo": id_inspeccion,
                         "id_hoja_de_vida": id_hoja_de_vida,
                         "placa_marca": placa_marca,
+                        "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada,
                         "cantidad_novedades": len(novedades)
+
                     })
 
         return Response({
