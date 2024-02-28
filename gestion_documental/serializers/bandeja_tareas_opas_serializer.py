@@ -8,13 +8,68 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
-from tramites.models.tramites_models import SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 
 
+class SolicitudesTramitesOpaDetalleSerializer(serializers.ModelSerializer):
+    nombre_completo_titular = serializers.SerializerMethodField()
+    cantidad_anexos = serializers.SerializerMethodField()
+    nombre_opa = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
+    tipo_operacion = serializers.ReadOnlyField(source='id_solicitud_tramite.get_cod_tipo_operacion_tramite_display', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
+    costo_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.costo_proyecto', default=None)
+    medio_solicitud = serializers.ReadOnlyField(source='id_solicitud_tramite.id_medio_solicitud.nombre', default=None)
+    fecha_registro = serializers.ReadOnlyField(source='id_solicitud_tramite.fecha_registro', default=None)
+    nombre_sucursal_recepcion_fisica = serializers.ReadOnlyField(source='id_solicitud_tramite.id_sucursal_recepcion_fisica.descripcion_sucursal', default=None)
+    #cod_tipo_operacion_tramite
+    radicado = serializers.SerializerMethodField(default=None)
+    fecha_radicado = serializers.SerializerMethodField(default=None)
+    def get_fecha_radicado (self, obj):
+       
+        if obj.id_solicitud_tramite.id_radicado:
+          return obj.id_solicitud_tramite.fecha_radicado
+        return None
+
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_solicitud_tramite.id_radicado:
+            #radicado = obj.id_solicitud_tramite.id_radicado
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_solicitud_tramite.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_solicitud_tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_solicitud_tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+    class Meta:
+        model = PermisosAmbSolicitudesTramite#PermisosAmbSolicitudesTramite
+        fields = ['id_solicitud_tramite','nombre_completo_titular','nombre_opa','tipo_operacion','nombre_proyecto','costo_proyecto','medio_solicitud','fecha_registro','cantidad_anexos','nombre_sucursal_recepcion_fisica','radicado','fecha_radicado']
+
+
+    def get_cantidad_anexos(self, obj):
+        conteo_anexos = AnexosTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).count()
+
+        
+        return conteo_anexos
+
+    def get_nombre_completo_titular(self, obj):
+
+        if obj.id_solicitud_tramite.id_persona_titular:
+
+            persona = obj.id_solicitud_tramite.id_persona_titular
+            nombre_completo_responsable = None
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                            persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+            return nombre_completo_responsable
+        else:
+            if obj.es_anonima:
+                return "Anonimo"
+            else:
+                return 'No Identificado'
 class TareasAsignadasOpasGetSerializer(serializers.ModelSerializer):
    
     #cod_tipo_tarea es un choices
