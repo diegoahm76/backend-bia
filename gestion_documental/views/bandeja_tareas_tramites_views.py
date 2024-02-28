@@ -69,6 +69,10 @@ class TareasAsignadasGetTramitesByPersona(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['id_tarea_asignada__fecha_asignacion__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+
+            if key == 'requerimiento':
+                if value != '':
+                    filter['id_tarea_asignada__requerimientos_pendientes_respuesta'] = value
         #id_tarea_asignada
                     
         print(filter)

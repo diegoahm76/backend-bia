@@ -11,7 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from gestion_documental.models.radicados_models import  BandejaTareasPersona, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import TareasAsignadasOpasGetSerializer
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 
 class TareasAsignadasGetOpasByPersona(generics.ListAPIView):
     serializer_class = TareasAsignadasOpasGetSerializer
@@ -56,6 +57,11 @@ class TareasAsignadasGetOpasByPersona(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['id_tarea_asignada__fecha_asignacion__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+
+
+            if key == 'requerimiento':
+                if value != '':
+                    filter['id_tarea_asignada__requerimientos_pendientes_respuesta'] = value
         #id_tarea_asignada
                     
         print(filter)
@@ -76,4 +82,23 @@ class TareasAsignadasGetOpasByPersona(generics.ListAPIView):
         else :
             data_validada = serializer.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
+
+
+
+
+class DetalleOpaGetbyId(generics.ListAPIView):
+    serializer_class = SolicitudesTramitesOpaDetalleSerializer
+    queryset = PermisosAmbSolicitudesTramite.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    
+    def get(self, request,id):
+        instance =self.queryset.filter(id_solicitud_tramite=id,id_permiso_ambiental__cod_tipo_permiso_ambiental='O').first()
+
+        if not instance:
+            raise NotFound("No existen Opa asociada a esta id.")
+        
+
+        serializador = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
 

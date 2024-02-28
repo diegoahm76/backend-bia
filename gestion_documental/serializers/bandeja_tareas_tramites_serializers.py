@@ -24,7 +24,6 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
     asignado_para = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField(default=None)
     fecha_radicado =  serializers.SerializerMethodField(default=None)
-    
     estado_tarea = serializers.ReadOnlyField(source='get_cod_estado_solicitud_display',default=None)
     estado_asignacion_tarea = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)#cod_estado_solicitud
     id_tramite = serializers.SerializerMethodField(default=None)
@@ -222,8 +221,6 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
     def get_radicado(self,obj):
         #buscamos la asignacion
         
-      
-           
         tarea = obj
         otro = None
 
