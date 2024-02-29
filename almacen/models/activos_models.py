@@ -71,7 +71,7 @@ class ItemsBajaActivos(models.Model):
     nombre = models.CharField(max_length=100, db_column="T094nombre")
     nombre_marca = models.CharField(max_length=50, db_column="T094nombreMarca")
     doc_identificador_nro = models.CharField(max_length=30, db_column="T094docIdentificadorNro")
-    valor_unitario = models.DecimalField(max_digits=9, decimal_places=2, db_column='T094valorUnitario')
+    valor_unitario = models.DecimalField(max_digits=11, decimal_places=2, db_column='T094valorUnitario')
     justificacion_baja_activo = models.CharField(max_length=255, db_column="T094justificacionBajaActivo")
     
     def __str__(self):
