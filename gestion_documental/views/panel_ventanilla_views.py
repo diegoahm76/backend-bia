@@ -2304,7 +2304,7 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
                     # Mostrar el grillado con la información básica de la asignación de grupo
                     grillado_info_grupo = {
                         'Acción': 'ASIGNACIÓN DE TRÁMITE',
-                        'Fecha de asignación': registro_t279_grupo.T279fechaAsignacion,
+                        'Fecha de asignación': registro_t279_grupo.fecha_envio_solicitud,
                         'Fecha respuesta de asignación': '',
                         'Asignado para': lider_grupo.nombre_completo_persona,
                         'Subsección': {
@@ -2464,7 +2464,7 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
                 }, status=status.HTTP_200_OK)
 
             # Actualizar estado de asignación cuando el líder de Planeación acepta la asignación
-            estado_aceptado = 'Ac'
+            estado_aceptado = None
             fecha_aceptacion = timezone.now()
 
             # Actualizar estado y fecha de asignación
