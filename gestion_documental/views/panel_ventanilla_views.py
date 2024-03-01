@@ -2001,7 +2001,14 @@ class UnidadesOrganizacionalesRelacionadasListView(generics.ListAPIView):
 #PANEL DE VENTANILLA TRAMITES 
 class SolicitudesTramitesGet(generics.ListAPIView):
     serializer_class = SolicitudesTramitesGetSerializer
-    queryset = SolicitudesTramites.objects.all()           
+    queryset = SolicitudesTramites.objects.select_related(
+        'id_persona_titular',
+        'id_persona_interpone',
+        'id_medio_solicitud',
+        'id_persona_registra',
+        'id_persona_rta_final_gestion',
+        'id_estado_actual_solicitud'
+    )         
     permission_classes = [IsAuthenticated]
 
     def get (self, request):
@@ -2044,12 +2051,12 @@ class SolicitudesTramitesGet(generics.ListAPIView):
         data_respuesta = serializador.data
         data_validada =[]
         if radicado_value and radicado_value != '':
-            data_validada = [item for item in serializador.data if radicado_value in item.get('radicado', '')]
+            data_validada = [item for item in data_respuesta if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta
             
         if nombre_titular and nombre_titular != '':
-            data_validada = [item for item in serializador.data if nombre_titular in item.get('nombre_completo_titular', '')]
+            data_validada = [item for item in data_respuesta if nombre_titular in item.get('nombre_completo_titular', '')]
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
 
