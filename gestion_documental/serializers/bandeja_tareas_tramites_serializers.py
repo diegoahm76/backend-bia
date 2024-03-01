@@ -24,7 +24,6 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
     asignado_para = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField(default=None)
     fecha_radicado =  serializers.SerializerMethodField(default=None)
-    
     estado_tarea = serializers.ReadOnlyField(source='get_cod_estado_solicitud_display',default=None)
     estado_asignacion_tarea = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)#cod_estado_solicitud
     id_tramite = serializers.SerializerMethodField(default=None)
@@ -222,14 +221,12 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
     def get_radicado(self,obj):
         #buscamos la asignacion
         
-      
-           
         tarea = obj
         otro = None
 
         if tarea.id_asignacion:
                 asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
-                otro = asignacion.id_asignacion_tramite
+                otro = asignacion.id_solicitud_tramite.id_solicitud_tramite
         else:
 
             while tarea:
@@ -238,7 +235,7 @@ class TareasAsignadasTramitesGetSerializer(serializers.ModelSerializer):
                 if tarea.id_asignacion:
                     asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=tarea.id_asignacion).first()
 
-                    otro = asignacion.id_solicitud_tramite
+                    otro = asignacion.id_solicitud_tramite.id_solicitud_tramite
                     break
 
 
@@ -309,7 +306,7 @@ class SolicitudesTramitesDetalleGetSerializer(serializers.ModelSerializer):
         if obj.id_radicado:
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
             numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            cadena= obj.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
 
@@ -504,7 +501,7 @@ class DetalleTramitesComplementosUsu_PQRGetSerializer(serializers.ModelSerialize
         if obj.id_radicado:
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
             numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            cadena= obj.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
         

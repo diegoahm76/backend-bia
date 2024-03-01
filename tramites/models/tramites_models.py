@@ -429,3 +429,17 @@ class SolicitudesDeJuridica(models.Model):
         db_table = 'T296SolicitudesDeJuridica'
         verbose_name = 'Solicitud De Juridica'
         verbose_name_plural = 'Solicitudes De Juridica'
+        
+class Tramites(models.Model):
+    id_tramites = models.AutoField(primary_key=True, db_column='T318IdTramites')
+    procedure_id = models.IntegerField(null=True, blank=True, db_column='T318procedure_Id')
+    radicate_bia = models.CharField(max_length=50, null=True, blank=True, db_column='T318radicate_Bia')
+    proceeding_id = models.CharField(max_length=50, null=True, blank=True, db_column='T318proceeding_Id')
+    name_key = models.CharField(max_length=100, null=True, blank=True, db_column='T318name_Key')
+    type_key = models.CharField(max_length=100, null=True, blank=True, db_column='T318type_Key')
+    value_key = models.TextField(null=True, blank=True, db_column='T318value_Key')
+
+    class Meta:
+        db_table = 'T318Tramites'
+        verbose_name = 'Tramites'
+        verbose_name_plural = 'Tramites'
