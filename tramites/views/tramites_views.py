@@ -762,18 +762,21 @@ class TramitesPivotGetView(generics.ListAPIView):
         
         tramites_values = Tramites.objects.filter(**filter).values()
         
-        organized_data = {
-            'procedure_id': tramites_values[0]['procedure_id'],
-            'radicate_bia': tramites_values[0]['radicate_bia'],
-            'proceeding_id': tramites_values[0]['proceeding_id'],
-        }
+        if tramites_values:
+            organized_data = {
+                'procedure_id': tramites_values[0]['procedure_id'],
+                'radicate_bia': tramites_values[0]['radicate_bia'],
+                'proceeding_id': tramites_values[0]['proceeding_id'],
+            }
+            
+            for item in tramites_values:
+                field_name = item['name_key']
+                if item['type_key'] == 'json':
+                    value = json.loads(item['value_key'])
+                else:
+                    value = item['value_key']
+                organized_data[field_name] = value
+        else:
+            raise NotFound('No se encontró el detalle del trámite elegido')
         
-        for item in tramites_values:
-            field_name = item['name_key']
-            if item['type_key'] == 'json':
-                value = json.loads(item['value_key'])
-            else:
-                value = item['value_key']
-            organized_data[field_name] = value
-        
-        return Response({'success':True, 'detail':'Se encontraron los siguientes trámites', 'data':organized_data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Se encontró el detalle del trámite', 'data':organized_data}, status=status.HTTP_200_OK)
