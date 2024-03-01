@@ -333,7 +333,17 @@ class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
 
     def get_catalogo_bienes(self, id_bien_padre, cont_padre):
-        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        catalogo_bienes = CatalogoBienes.objects.prefetch_related(
+                'cod_tipo_activo',
+                'id_marca',
+                'id_unidad_medida',
+                'id_porcentaje_iva',
+                'cod_metodo_valoracion',
+                'cod_tipo_depreciacion',
+                'id_unidad_medida_vida_util',
+                'id_bien_padre'
+            ).filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        
         serializer = self.serializer_class(catalogo_bienes, many=True)
         cont = 0
         data_out = []
