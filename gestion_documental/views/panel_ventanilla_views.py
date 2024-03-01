@@ -2001,7 +2001,7 @@ class UnidadesOrganizacionalesRelacionadasListView(generics.ListAPIView):
 #PANEL DE VENTANILLA TRAMITES 
 class SolicitudesTramitesGet(generics.ListAPIView):
     serializer_class = SolicitudesTramitesGetSerializer
-    queryset = SolicitudesTramites.objects.select_related(
+    queryset = SolicitudesTramites.objects.prefetch_related(
         'id_persona_titular',
         'id_persona_interpone',
         'id_medio_solicitud',
