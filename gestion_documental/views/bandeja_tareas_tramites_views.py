@@ -321,7 +321,7 @@ class ReasignacionesTareasTramitesCreate(generics.CreateAPIView):
         serializer.save()
         ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA T316
         data_tarea = {}
-        data_tarea['cod_tipo_tarea'] = 'Rtra'
+        data_tarea['cod_tipo_tarea'] = tarea.cod_tipo_tarea
         data_tarea['id_asignacion'] = None
         data_tarea['fecha_asignacion'] = datetime.now()
         data_tarea['cod_estado_solicitud'] = 'Ep'

@@ -14,6 +14,10 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 
+class TareasAsignadasOpasUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TareasAsignadas
+        fields = '__all__'
 
 class SolicitudesTramitesOpaDetalleSerializer(serializers.ModelSerializer):
     nombre_completo_titular = serializers.SerializerMethodField()
