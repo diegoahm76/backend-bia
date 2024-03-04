@@ -270,6 +270,10 @@ class BusquedaSolicitudViajeSerializer(serializers.ModelSerializer):
 
 
 class ViajesAgendadosSerializer(serializers.ModelSerializer):
+    nombre_conductor = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_nombre', default=None)
+    apellido_conductor = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_apellido', default=None)
+
+
     class Meta:
         model = ViajesAgendados
         fields = '__all__'
