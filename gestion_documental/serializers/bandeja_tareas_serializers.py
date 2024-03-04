@@ -627,7 +627,7 @@ class ReasignacionesTareasgetByIdTareaSerializer(serializers.ModelSerializer):
     persona_reasigno = serializers.SerializerMethodField()
     class Meta:
         model = ReasignacionesTareas
-        fields = ['id_reasignacion_tarea','persona_reasigno','fecha_reasignacion','persona_reasignada','cargo','unidad_organizacional','comentario_reasignacion','estado_asignacion','justificacion_reasignacion_rechazada']
+        fields = ['id_reasignacion_tarea','persona_reasigno','fecha_reasignacion','id_persona_a_quien_se_reasigna','persona_reasignada','cargo','unidad_organizacional','comentario_reasignacion','estado_asignacion','justificacion_reasignacion_rechazada']
 
     def get_persona_reasignada(self, obj):
         persona = obj.id_persona_a_quien_se_reasigna

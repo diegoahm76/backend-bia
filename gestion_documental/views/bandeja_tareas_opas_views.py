@@ -8,10 +8,12 @@ from django.db import transaction
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from gestion_documental.models.bandeja_tareas_models import ReasignacionesTareas, TareasAsignadas
 
-from gestion_documental.models.radicados_models import  BandejaTareasPersona, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import  AsignacionTramites, BandejaTareasPersona, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer
+from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPersonaUpdate
 from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 
 class TareasAsignadasGetOpasByPersona(generics.ListAPIView):
@@ -102,3 +104,156 @@ class DetalleOpaGetbyId(generics.ListAPIView):
         serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
 
+
+
+class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
+    serializer_class = TareasAsignadasOpasUpdateSerializer
+    queryset = TareasAsignadas.objects.all()
+    permission_classes = [IsAuthenticated]
+    vista_asignacion = TareaBandejaTareasPersonaUpdate()
+    @transaction.atomic
+    def put(self,request,pk):
+        
+        #ACTUALIZA T315
+        data_in = request.data
+        instance = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
+        
+        if not instance:
+            raise NotFound("No se existe un registro con este codigo.")
+        data_in['cod_estado_asignacion'] = 'Ac'
+        data_in['cod_estado_solicitud'] = 'Ep'
+        id_tarea =instance.id_tarea_asignada
+        data_asignacion={}
+
+ 
+        data_asignacion['fecha_leida'] = datetime.now()
+        data_asignacion['leida'] = True
+        respuesta_asignacion_tarea = self.vista_asignacion.actualizacion_asignacion_tarea(data_asignacion,id_tarea)
+       
+        if respuesta_asignacion_tarea.status_code != status.HTTP_200_OK:
+            return respuesta_asignacion_tarea
+        
+        data_asignacion = respuesta_asignacion_tarea.data['data']
+        instance_previous=copy.copy(instance)
+
+        serializer = self.serializer_class(instance,data=data_in, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        #cambio de estado en asignacion en la t268
+        id_asignacion = instance.id_asignacion
+        print(id_asignacion)
+
+        #VALIDACION ENTREGA 116
+
+        if not id_asignacion:
+            print('NO SE ENCONTRO ASIGNACION')
+            print('TAREA PADRE ES ' +str(instance.id_tarea_asignada_padre_inmediata))
+            tarea = instance
+            if tarea.id_asignacion:
+                    id_asignacion = tarea.id_asignacion
+
+            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
+                while not  tarea.id_asignacion:
+                    tarea = tarea.id_tarea_asignada_padre_inmediata
+                    
+                    if tarea.id_asignacion:
+                        id_asignacion = tarea.id_asignacion
+                       
+                        tarea.cod_estado_solicitud = 'De'
+                        tarea.save()
+                       
+                        break
+                
+                ##CAMBIAMOS EL ESTADO DE LA TAREA PADRE A DELEGADA
+
+                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+                if reasignacion:
+                    reasignacion.cod_estado_reasignacion = 'Ac'
+                    reasignacion.save()
+
+        else:
+            #print(id_asignacion)
+            asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=id_asignacion,cod_estado_asignacion__isnull=True).first()
+            #asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=id_asignacion,cod_estado_asignacion__isnull=True).first()
+            #asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
+            if not asignacion:
+                raise NotFound("No se encontro la asignacion")
+            asignacion.cod_estado_asignacion = 'Ac'
+            asignacion.save()
+            #print(data_in)
+            #print(asignacion)
+           
+           
+
+        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+    
+
+
+class TareasAsignadasOpasRechazarUpdate(generics.UpdateAPIView):
+    serializer_class = TareasAsignadasOpasUpdateSerializer
+    queryset = TareasAsignadas.objects.all()
+    permission_classes = [IsAuthenticated]
+    vista_asignacion = TareaBandejaTareasPersonaUpdate()
+    @transaction.atomic
+    def put(self,request,pk):
+        
+        data_in = request.data
+        instance = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
+        
+        if not instance:
+            raise NotFound("No se existe un registro con este codigo.")
+        
+        if instance.cod_tipo_tarea != 'ROpa':
+            raise ValidationError("No se puede rechazar una tarea sino es otro")
+        data_in['cod_estado_asignacion'] = 'Re'
+
+        id_tarea =instance.id_tarea_asignada
+        data_asignacion={}
+
+ 
+        data_asignacion['fecha_leida'] = datetime.now()
+        data_asignacion['leida'] = True
+        respuesta_asignacion_tarea = self.vista_asignacion.actualizacion_asignacion_tarea(data_asignacion,id_tarea)
+       
+        if respuesta_asignacion_tarea.status_code != status.HTTP_200_OK:
+            return respuesta_asignacion_tarea
+        
+        data_asignacion = respuesta_asignacion_tarea.data['data']
+        instance_previous=copy.copy(instance)
+        #print(data_in)
+        serializer = self.serializer_class(instance,data=data_in, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        #EN CASO DE SER UN REGISTRO FRUTO DE DE UNA REASIGNACION EL PROCESO 
+        id_asignacion = instance.id_asignacion
+        if not id_asignacion:
+            
+            tarea = instance
+            if tarea.id_asignacion:
+                    id_asignacion = tarea.id_asignacion
+
+            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
+                while not  tarea.id_asignacion:
+                    tarea = tarea.id_tarea_asignada_padre_inmediata
+                   
+                    if tarea.id_asignacion:
+                
+                        break
+                id_asignacion = tarea.id_asignacion
+                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
+                if reasignacion:
+                    reasignacion.cod_estado_reasignacion = 'Re'
+                    reasignacion.justificacion_reasignacion_rechazada = data_in['justificacion_rechazo']
+                    reasignacion.save()
+        else:
+            #print(id_asignacion)
+            asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=id_asignacion,cod_estado_asignacion__isnull=True).first()
+                # raise ValidationError(asignacion.id_pqrsdf)
+            if not asignacion:
+                raise NotFound("No se encontro la asignacion")
+            asignacion.cod_estado_asignacion = 'Re'
+            asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
+            asignacion.save()
+       
+        
+        return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
