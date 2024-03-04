@@ -73,16 +73,53 @@ class SolicitudViajeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
+    placa = serializers.SerializerMethodField()
+    marca = serializers.SerializerMethodField()
+    nombre = serializers.SerializerMethodField()
     class Meta:
         model = HojaDeVidaVehiculos
         fields = '__all__'
 
+    def get_placa(self, obj):
+        placa = None
+        if obj.es_arrendado:
+            placa = obj.id_vehiculo_arrendado.placa
+        else:
+            placa = obj.id_articulo.doc_identificador_nro
+        
+        return placa
+    
+    def get_marca(self, obj):
+        marca = None
+        if obj.es_arrendado:
+            marca = obj.id_vehiculo_arrendado.id_marca.nombre
+        else:
+            marca = obj.id_articulo.id_marca.nombre
+
+        return marca    
+    
+    def get_nombre(self, obj):
+        nombre = None
+        if obj.es_arrendado:
+            nombre = obj.id_vehiculo_arrendado.nombre
+        else:
+            nombre = obj.id_articulo.nombre
+        
+        return nombre
+
 
 class ClaseTerceroPersonaSerializer(serializers.ModelSerializer):
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.nombre', default=None)
+    email = serializers.ReadOnlyField(source='id_persona.tipo_documento.email', default=None)
+    email_empresarial = serializers.ReadOnlyField(source='id_persona.tipo_documento.email_empresarial', default=None)
+    telefono_empresa = serializers.ReadOnlyField(source='id_persona.telefono_empresa', default=None)
+    telefono_celular = serializers.ReadOnlyField(source='id_persona.telefono_celular', default=None)
+    fecha_nacimiento = serializers.ReadOnlyField(source='id_persona.fecha_nacimiento', default=None)
+    
+    
     class Meta:
         model = ClasesTerceroPersona
         fields = '__all__'
-
 
 class AsignacionVehiculoSerializer(serializers.ModelSerializer):
     tipo_vehiculo = serializers.CharField(source='id_hoja_vida_vehiculo.cod_tipo_vehiculo')
@@ -284,11 +321,35 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
 class ViajesAgendadosSolcitudSerializer(serializers.ModelSerializer):
     nombre_conductor = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_nombre', default=None)
     apellido_conductor = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_apellido', default=None)
+    fecha_nacimiento = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.fecha_nacimiento', default=None)
+    telefono_celular = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.telefono_celular', default=None)
+    telefono_celular_empresa = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.telefono_celular_empresa', default=None)
+    email = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.email', default=None)
+    email_empresarial = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.email_empresarial', default=None)
+    tipo_documento = serializers.SerializerMethodField()
+    numero_documento = serializers.SerializerMethodField()
     placa = serializers.SerializerMethodField()
     marca = serializers.SerializerMethodField()
+    nombre = serializers.SerializerMethodField()
     class Meta:
         model = ViajesAgendados
         fields = '__all__'
+
+    def get_tipo_documento(self, obj):
+        tipo_documento_nombre = None
+        tipo_documento_obj = obj.id_vehiculo_conductor.id_persona_conductor.tipo_documento
+        if tipo_documento_obj:
+            tipo_documento_nombre = tipo_documento_obj.nombre
+        return tipo_documento_nombre
+
+    
+    def get_numero_documento(self, obj):
+        numero_documento_nombre = None
+        numero_documento_obj = obj.id_vehiculo_conductor.id_persona_conductor.numero_documento
+        if numero_documento_obj:
+            numero_documento_nombre = numero_documento_obj
+        return numero_documento_nombre
+
 
     def get_placa(self, obj):
         placa = None
@@ -307,6 +368,17 @@ class ViajesAgendadosSolcitudSerializer(serializers.ModelSerializer):
             marca = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.id_marca.nombre
 
         return marca    
+    
+    def get_nombre(self, obj):
+        nombre = None
+        if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+            nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+        else:
+            nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.nombre
+        
+        return nombre
+    
+    
     
 
 

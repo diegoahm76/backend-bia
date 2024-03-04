@@ -1084,10 +1084,6 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
 #             except NotFound as e:
 #                 return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
         
-class SearchArticulosPagination(PageNumberPagination):
-    page_size = 10  # Cantidad de elementos por página
-    page_size_query_param = 'page_size'  # Parámetro para especificar el tamaño de página
-    max_page_size = None   # Tamaño máximo permitido de página
 
 class SearchArticulosPagination(PageNumberPagination):
     page_size = 10  # Cantidad de elementos por página
@@ -1113,6 +1109,11 @@ class SearchArticulos(generics.ListAPIView):
         if filters:
             queryset = queryset.filter(**filters)
 
+        # Agregar filtros adicionales
+        filters['nro_elemento_bien'] = None
+        filters['nivel_jerarquico'] = 5
+        queryset = queryset.filter(**filters).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
+
         return queryset
 
     def get(self, request):
@@ -1121,16 +1122,19 @@ class SearchArticulos(generics.ListAPIView):
         # Aplicar paginación después de aplicar los filtros
         page = self.paginate_queryset(queryset)
 
+        # Obtener el total de elementos
+        total_elements = queryset.count()
+
         if page is not None:
             serializer = self.serializer_class(page, many=True)
             total_pages = self.get_total_pages(queryset)  # Calcular el número total de páginas
-            return self.get_paginated_response(serializer.data, self.paginator.page.number, total_pages)
+            return self.get_paginated_response(serializer.data, self.paginator.page.number, total_pages,total_elements)
 
         serializer = self.serializer_class(queryset, many=True)
         if queryset.exists():
-            return Response({'success': True, 'detail': 'Se encontraron elementos', 'data': serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Se encontraron elementos', 'data': serializer.data, 'total_elements': total_elements}, status=status.HTTP_200_OK)
         else:
-            return Response({'success': False, 'detail': 'No se encontraron elementos'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No se encontraron elementos', 'total_elements': 0}, status=status.HTTP_404_NOT_FOUND)
 
     def get_total_pages(self, queryset):
         # Calcular el número total de páginas
@@ -1138,13 +1142,15 @@ class SearchArticulos(generics.ListAPIView):
         page_size = self.pagination_class.page_size
         return math.ceil(total_items / page_size)
 
-    def get_paginated_response(self, data, current_page, total_pages):
+    def get_paginated_response(self, data, current_page, total_pages,total_elements):
         return Response({
             'success': True,
             'detail': 'Se encontraron elementos',
             'pagination': {
                 'pagina_actual': current_page,
-                'total_paginas': total_pages
+                'total_paginas': total_pages,
+                'total_datos': total_elements
+
             },
             'data': data
         }, status=status.HTTP_200_OK)
