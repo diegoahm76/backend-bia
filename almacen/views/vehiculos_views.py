@@ -933,7 +933,65 @@ class DatosBasicosConductorGet(generics.ListAPIView):
         # Obtener el nombre completo del conductor
         nombre_completo = f"{persona_logueada.primer_nombre} {persona_logueada.segundo_nombre} {persona_logueada.primer_apellido} {persona_logueada.segundo_apellido}"
 
-        return Response({'success': True, 'detail': 'Información del conductor', 'data': {'id_persona_logueada': id_persona_logueada, 'nombre_completo': nombre_completo}})
+
+        #obtener_email
+        email_persona = None
+        if persona_logueada.email:
+            email_persona = f"{persona_logueada.email}"
+        elif persona_logueada.email_empresarial:
+            telefono_celular = f"{persona_logueada.email_empresarial}"
+        else:
+            email_persona = "Correo electrónico no disponible"
+
+        #fecha_nacimiento
+        fecha_nacimiento = None
+        if persona_logueada.fecha_nacimiento:
+            fecha_nacimiento = f"{persona_logueada.fecha_nacimiento}"
+        else:
+            fecha_nacimiento = "Fecha de nacimiento no disponible"
+
+
+        #tipo_documento
+        tipo_documento = None
+        if persona_logueada.tipo_documento:
+            tipo_documento = f"{persona_logueada.tipo_documento}"
+        else:
+            tipo_documento = "tipo de documento no disponible"
+
+        #numero_documento
+        numero_documento = None
+        if persona_logueada.numero_documento:
+            numero_documento = f"{persona_logueada.numero_documento}"
+        else:
+            numero_documento = "numero de identificacion no disponible"
+
+        #telefono_celular
+        telefono_celular = None
+        if persona_logueada.telefono_celular:
+            telefono_celular = f"{persona_logueada.telefono_celular}"
+        elif persona_logueada.telefono_fijo_residencial:
+            telefono_celular = f"{persona_logueada.telefono_fijo_residencial}"
+        elif persona_logueada.telefono_celular_empresa:
+            telefono_celular = f"{persona_logueada.telefono_celular_empresa}"
+        elif persona_logueada.telefono_empresa:
+            telefono_celular = f"{persona_logueada.telefono_empresa}"
+        else:
+            telefono_celular = "numero de celular no disponible"
+
+        return Response({
+            'success': True,
+            'detail': 'Información del conductor',
+            'data': {
+                'id_persona_logueada': id_persona_logueada,
+                'nombre_completo': nombre_completo,
+                'email': email_persona,
+                'fecha_nacimiento': fecha_nacimiento,
+                'tipo_documento': tipo_documento,
+                'numero_documento': numero_documento,
+                'telefono_celular': telefono_celular,
+            }
+        })
+
 
 
 
@@ -1024,6 +1082,22 @@ class NovedadesVehiculosList(generics.ListAPIView):
             placa, marca = self.obtener_placa_y_marca(inspeccion)
             id_inspeccion = inspeccion.id_inspeccion_vehiculo
             id_hoja_de_vida = inspeccion.id_hoja_vida_vehiculo_id
+            fecha_registro = inspeccion.fecha_registro
+            dia_inspeccion = inspeccion.dia_inspeccion
+            id_persona_inspecciona = inspeccion.id_persona_inspecciona.id_persona
+            persona_inspecciona = Personas.objects.get(id_persona=id_persona_inspecciona)
+            nombre_inspecciona = persona_inspecciona.primer_nombre if persona_inspecciona else None
+            primer_apellido_inspecciona = persona_inspecciona.primer_apellido if persona_inspecciona else None
+            fecha_nacimiento_persona_inspecciona = persona_inspecciona.fecha_nacimiento if persona_inspecciona else None
+            tipo_documento_persona_inspecciona = persona_inspecciona.tipo_documento.nombre if persona_inspecciona else None
+            numero_documento_persona_inspecciona = persona_inspecciona.numero_documento if persona_inspecciona else None
+            numero_celular_persona_inspecciona = persona_inspecciona.telefono_celular if persona_inspecciona else None
+            numero_empresarial_celular_persona_inspecciona = persona_inspecciona.telefono_celular_empresa if persona_inspecciona else None
+            email_persona_inspecciona = persona_inspecciona.email if persona_inspecciona else None
+            email_empresarial_persona_inspecciona = persona_inspecciona.email_empresarial if persona_inspecciona else None
+
+            
+
 
             # Verificar las novedades
             novedades = self.verificar_novedades(inspeccion)
@@ -1034,6 +1108,18 @@ class NovedadesVehiculosList(generics.ListAPIView):
                     "id_hoja_de_vida": id_hoja_de_vida,
                     "placa": placa,
                     "marca": marca,
+                    'fecha_registro': fecha_registro,
+                    'dia_inspeccion': dia_inspeccion,
+                    'id_persona_inspecciona': id_persona_inspecciona,
+                    'nombre_inspecciona': nombre_inspecciona,
+                    'apellido_inspecciona': primer_apellido_inspecciona,
+                    'fecha_nacimiento_persona_inspecciona': fecha_nacimiento_persona_inspecciona,
+                    'tipo_documento_persona_inspecciona': tipo_documento_persona_inspecciona,
+                    'numero_documento_persona_inspecciona': numero_documento_persona_inspecciona,
+                    'numero_celular_persona_inspecciona': numero_celular_persona_inspecciona,
+                    'numero_empresarial_celular_persona_inspecciona': numero_empresarial_celular_persona_inspecciona,
+                    'email_persona_inspecciona': email_persona_inspecciona,
+                    'email_empresarial_persona_inspecciona': email_empresarial_persona_inspecciona,
                     "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada
 
                 })
@@ -1044,6 +1130,18 @@ class NovedadesVehiculosList(generics.ListAPIView):
                         "id_inspeccion_vehiculo": id_inspeccion,
                         "id_hoja_de_vida": id_hoja_de_vida,
                         "placa_marca": placa_marca,
+                        'fecha_registro': fecha_registro,
+                        'dia_inspeccion': dia_inspeccion,
+                        'id_persona_inspecciona': id_persona_inspecciona,
+                        'nombre_inspecciona': nombre_inspecciona,
+                        'apellido_inspecciona': primer_apellido_inspecciona,
+                        'fecha_nacimiento_persona_inspecciona': fecha_nacimiento_persona_inspecciona,
+                        'tipo_documento_persona_inspecciona': tipo_documento_persona_inspecciona,
+                        'numero_documento_persona_inspecciona': numero_documento_persona_inspecciona,
+                        'numero_celular_persona_inspecciona': numero_celular_persona_inspecciona,
+                        'numero_empresarial_celular_persona_inspecciona': numero_empresarial_celular_persona_inspecciona,
+                        'email_persona_inspecciona': email_persona_inspecciona,
+                        'email_empresarial_persona_inspecciona': email_empresarial_persona_inspecciona,
                         "novedad": novedades[0],
                         "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada
 
@@ -1053,6 +1151,18 @@ class NovedadesVehiculosList(generics.ListAPIView):
                         "id_inspeccion_vehiculo": id_inspeccion,
                         "id_hoja_de_vida": id_hoja_de_vida,
                         "placa_marca": placa_marca,
+                        'fecha_registro': fecha_registro,
+                        'dia_inspeccion': dia_inspeccion,
+                        'id_persona_inspecciona': id_persona_inspecciona,
+                        'nombre_inspecciona': nombre_inspecciona,
+                        'apellido_inspecciona': primer_apellido_inspecciona,
+                        'fecha_nacimiento_persona_inspecciona': fecha_nacimiento_persona_inspecciona,
+                        'tipo_documento_persona_inspecciona': tipo_documento_persona_inspecciona,
+                        'numero_documento_persona_inspecciona': numero_documento_persona_inspecciona,
+                        'numero_celular_persona_inspecciona': numero_celular_persona_inspecciona,
+                        'numero_empresarial_celular_persona_inspecciona': numero_empresarial_celular_persona_inspecciona,
+                        'email_persona_inspecciona': email_persona_inspecciona,
+                        'email_empresarial_persona_inspecciona': email_empresarial_persona_inspecciona,
                         "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada,
                         "cantidad_novedades": len(novedades)
 
