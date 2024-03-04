@@ -2,8 +2,8 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recaudo.serializers.registrosconfiguracion_serializer import RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
-from recaudo.models.base_models import RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
+from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
+from recaudo.models.base_models import  AdministraciondePersonal, RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -379,3 +379,17 @@ class CalculadoraDiasMeses(generics.CreateAPIView):
             return Response({'error': 'Alguno de los meses proporcionados no es válido'}, status=400)
 
         
+
+
+
+class Vista_AdministraciondePersonal(generics.ListAPIView):
+    queryset = AdministraciondePersonal.objects.all()
+    serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tipo_cobro = AdministraciondePersonal.objects.all()
+        serializer = self.serializer_class(tipo_cobro, many=True)
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data},
+                        status=status.HTTP_200_OK)

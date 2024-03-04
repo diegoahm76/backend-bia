@@ -111,7 +111,6 @@ class Variables(models.Model):
     nombre = models.CharField(max_length=255, db_column='T443Nombre')
     tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
     tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
-    valor_varaible = models.DecimalField(max_digits=10, decimal_places=2, db_column='T443valor_varaible')
     
     numero_dias_variable = models.IntegerField(db_column='T443numero_dias_variable', null=True, default=None)
     class Meta:
@@ -144,3 +143,18 @@ class LeyesLiquidacion(models.Model):
         verbose_name_plural = 'Leyes'
 
 
+
+
+class AdministraciondePersonal(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T43IdV')
+    nivel = models.IntegerField(db_column='TMMMNivel')
+    director = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMDirector')
+    tecnicos = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMTécnicos')
+    asesor = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMAsesor')
+    profesional = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMProfesional')
+    asistencial = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMAsistencial')
+
+    class Meta:
+        db_table = 'TMMMAdministraciondePersonal'
+        verbose_name = 'Administracion de Personal'
+        verbose_name_plural = 'Administracion de Personal'
