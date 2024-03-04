@@ -1257,7 +1257,8 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
             'SOLICITUD DE DIGITALIZACION ENVIADA',
             'SOLICITUD DIGITALIZACIÓN RESPONDIDA',
             'SOLICITUD AL USUARIO ENVIADA',
-            'SOLICITUD AL USUARIO RESPONDIDA'
+            'SOLICITUD AL USUARIO RESPONDIDA',
+            'GUARDADO'
         ])
 
         tipo_solicitud = self.request.query_params.get('tipo_solicitud')
@@ -1283,17 +1284,28 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
         if cod_relacion_titular:
                 queryset = queryset.filter(cod_relacion_titular=cod_relacion_titular)
 
+
         if radicado:
-            try:
-                prefijo, agno, numero = radicado.split('-')
-            except ValueError:
-                raise ValidationError('El campo "Radicado" debe tener el formato correcto: (PREFIJO) - (AGNO) - (NUMERO_RADICADO).')
-            
-            queryset = queryset.filter(
-                id_radicados__prefijo_radicado=prefijo,
-                id_radicados__agno_radicado=agno,
-                id_radicados__nro_radicado=numero
-            )
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                   queryset = queryset.filter(
+                        id_radicados__prefijo_radicado__icontains=prefijo,
+                        id_radicados__agno_radicado__icontains=agno,
+                        id_radicados__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicados__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicados__agno_radicado__icontains=radicado) |
+                    Q(id_radicados__nro_radicado__icontains=radicado)
+                )
 
         if fecha_radicado_desde:
             queryset = queryset.filter(fecha_radicado__gte=fecha_radicado_desde)
@@ -1358,6 +1370,7 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
                 'Radicado': f"{otros.id_radicados.prefijo_radicado}-{otros.id_radicados.agno_radicado}-{otros.id_radicados.nro_radicado}" if otros.id_radicados else 'N/A',
                 'Fecha de Radicado': otros.fecha_radicado,
                 'Persona Que Radicó': f"{otros.id_radicados.id_persona_radica.primer_nombre} {otros.id_radicados.id_persona_radica.segundo_nombre} {otros.id_radicados.id_persona_radica.primer_apellido} {otros.id_radicados.id_persona_radica.segundo_apellido}" if otros.id_radicados and otros.id_radicados.id_persona_radica else 'N/A',
+                'Id_Estado': otros.id_estado_actual_solicitud.id_estado_solicitud,
                 'Estado': estado_nombre,
                 'Ubicacion en la corporacion':ubicacion_corporacion,
                 

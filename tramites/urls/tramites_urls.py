@@ -4,6 +4,8 @@ from tramites.views import tramites_views as views
 urlpatterns = [
     # TRAMITES
     path('general/create/', views.GeneralTramitesCreateView.as_view(), name='general-tramites-create'),
+    #Tramites Pivot Table T318
+    path('general/get/', views.TramitesPivotGetView.as_view(), name='general-tramites-pivot-get'),
     
     # OPAS
     path('opa/tramites/get-list/<str:cod_tipo_permiso_ambiental>/', views.ListTramitesGetView.as_view(), name='list-tramites-get'),
@@ -16,4 +18,7 @@ urlpatterns = [
     path('opa/tramites/radicar/create/<str:id_solicitud_tramite>/', views.RadicarCreateView.as_view(), name='radicar-create'),
     path('opa/tramites/radicar/get/<str:id_solicitud_tramite>/', views.RadicarGetView.as_view(), name='radicar-get'),
     path('opa/tramites/radicar/volver-enviar/<str:id_solicitud_tramite>/', views.RadicarVolverEnviarGetView.as_view(), name='radicar-volver-enviar'),
+
+    #Consulta_Estado_Solicitud_OPAS_130
+    path('opa/tramites/consulta-estado-opas/', views.ConsultaEstadoOPAS.as_view(), name='listar-OPAS-solicitud'),
 ]

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from gestion_documental.models.radicados_models import  ConfigTiposRadicadoAgno, EstadosSolicitudes
+from gestion_documental.models.radicados_models import  AsignacionTramites, ConfigTiposRadicadoAgno, EstadosSolicitudes
 from tramites.models.tramites_models import  PermisosAmbSolicitudesTramite, SolicitudesTramites
 from datetime import datetime, timedelta
 
@@ -27,6 +27,14 @@ class SolicitudesTramitesEstadoSolicitudGetSerializer(serializers.ModelSerialize
 
     def get_ubicacion_corporacion(self, obj):
         #PENDIENTE VALIDACIONES O ENTREGAS DE MODELADO
+            if not obj.id_estado_actual_solicitud:
+                return None
+            
+            if obj.id_estado_actual_solicitud.id_estado_solicitud== 5:
+
+                asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite,cod_estado_asignacion='Ac').first()
+                return asignacion.id_und_org_seccion_asignada.nombre
+            return obj.id_estado_actual_solicitud.ubicacion_corporacion
             return None
 
     def get_persona_radica(self,obj):
@@ -91,7 +99,7 @@ class SolicitudesTramitesEstadoSolicitudGetSerializer(serializers.ModelSerialize
         if obj.id_radicado:
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
             numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            cadena= obj.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
         

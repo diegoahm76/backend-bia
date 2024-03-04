@@ -1,6 +1,11 @@
+import math
 from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
 from rest_framework.views import APIView
+import unicodedata
+from rest_framework.pagination import PageNumberPagination
+
+
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer,
@@ -328,7 +333,17 @@ class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
 
     def get_catalogo_bienes(self, id_bien_padre, cont_padre):
-        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        catalogo_bienes = CatalogoBienes.objects.prefetch_related(
+                'cod_tipo_activo',
+                'id_marca',
+                'id_unidad_medida',
+                'id_porcentaje_iva',
+                'cod_metodo_valoracion',
+                'cod_tipo_depreciacion',
+                'id_unidad_medida_vida_util',
+                'id_bien_padre'
+            ).filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        
         serializer = self.serializer_class(catalogo_bienes, many=True)
         cont = 0
         data_out = []
@@ -1044,30 +1059,96 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
             return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
+# class SearchArticulos(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
+#     queryset = CatalogoBienes.objects.all()
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         filter = {}
+#         for key, value in request.query_params.items():
+#             if key in ['nombre', 'codigo_bien', 'cod_tipo_activo']:
+#                 if key != 'cod_tipo_activo':
+#                     filter[key+'__icontains'] = value
+#                 else:
+#                     filter[key] = value
+#         filter['nro_elemento_bien'] = None
+#         filter['nivel_jerarquico'] = 5
+#         bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
+#         serializador = self.serializer_class(bien, many=True)
+#         if bien:
+#             return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
+#         else:
+#             try:
+#                 raise NotFound('No se encontró elementos')
+#             except NotFound as e:
+#                 return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+        
+class SearchArticulosPagination(PageNumberPagination):
+    page_size = 10  # Cantidad de elementos por página
+    page_size_query_param = 'page_size'  # Parámetro para especificar el tamaño de página
+    max_page_size = None   # Tamaño máximo permitido de página
+
+class SearchArticulosPagination(PageNumberPagination):
+    page_size = 10  # Cantidad de elementos por página
+    page_size_query_param = 'page_size'  # Parámetro para especificar el tamaño de página
+    max_page_size = None  # Tamaño máximo permitido de página (ilimitado)
+
 class SearchArticulos(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
-    queryset = CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
+    pagination_class = SearchArticulosPagination  # Clase de paginación
+
+    def get_queryset(self):
+        queryset = CatalogoBienes.objects.all()
+
+        filters = {}
+        for key, value in self.request.query_params.items():
+            if key in ['nombre', 'codigo_bien', 'cod_tipo_activo'] and value:
+                if key != 'cod_tipo_activo':
+                    filters[key + '__icontains'] = value
+                else:
+                    filters[key] = value
+
+        if filters:
+            queryset = queryset.filter(**filters)
+
+        return queryset
 
     def get(self, request):
-        filter = {}
-        for key, value in request.query_params.items():
-            if key in ['nombre', 'codigo_bien', 'cod_tipo_activo']:
-                if key != 'cod_tipo_activo':
-                    filter[key+'__icontains'] = value
-                else:
-                    filter[key] = value
-        filter['nro_elemento_bien'] = None
-        filter['nivel_jerarquico'] = 5
-        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
-        serializador = self.serializer_class(bien, many=True)
-        if bien:
-            return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
+        queryset = self.get_queryset()
+
+        # Aplicar paginación después de aplicar los filtros
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.serializer_class(page, many=True)
+            total_pages = self.get_total_pages(queryset)  # Calcular el número total de páginas
+            return self.get_paginated_response(serializer.data, self.paginator.page.number, total_pages)
+
+        serializer = self.serializer_class(queryset, many=True)
+        if queryset.exists():
+            return Response({'success': True, 'detail': 'Se encontraron elementos', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
-            try:
-                raise NotFound('No se encontró elementos')
-            except NotFound as e:
-                return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No se encontraron elementos'}, status=status.HTTP_404_NOT_FOUND)
+
+    def get_total_pages(self, queryset):
+        # Calcular el número total de páginas
+        total_items = queryset.count()
+        page_size = self.pagination_class.page_size
+        return math.ceil(total_items / page_size)
+
+    def get_paginated_response(self, data, current_page, total_pages):
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron elementos',
+            'pagination': {
+                'pagina_actual': current_page,
+                'total_paginas': total_pages
+            },
+            'data': data
+        }, status=status.HTTP_200_OK)
+    
 
 
 class GetCatalogoBienesByCodigo(generics.ListAPIView):

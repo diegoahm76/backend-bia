@@ -3,6 +3,10 @@ from almacen.models.generics_models import Marcas
 from almacen.choices.estado_aprobacion_choices import estado_aprobacion_CHOICES
 from almacen.choices.cod_tipo_cierre_viaje_choices import cod_tipo_cierre_viajes_CHOICES
 from almacen.choices.estado_solicitud_choices import estado_solicitud_CHOICES
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from seguridad.models import Personas
+
+
 
 class VehiculosArrendados(models.Model):
     id_vehiculo_arrendado = models.AutoField(primary_key=True, editable=False, db_column="T071IdVehiculoArrendado")
@@ -29,8 +33,6 @@ class VehiculosAgendables_Conductor(models.Model):
     fecha_final_asignacion = models.DateField(db_column="T072fechaFinalizaAsignacion")
     id_persona_que_asigna = models.ForeignKey("transversal.Personas", on_delete=models.CASCADE, db_column="T072Id_PersonaQueAsigna", related_name='T072id_persona_que_asigna')
     fecha_registro = models.DateTimeField(auto_now_add=True, db_column="T072fechaRegistro")
-    id_persona_actualiza_dif_crea = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T072Id_PersonaUltActualizacionDifCrea")
-    fecha_ultima_actualizacion_dif_crea = models.DateTimeField(null=True, blank=True, db_column="T072fechaUltActualizacionDifCrea")
     
     def __str__(self):
         return str(self.id_vehiculo_conductor)
@@ -109,9 +111,9 @@ class SolicitudesViajes(models.Model):
     id_solicitud_viaje = models.AutoField(primary_key=True, editable=False, db_column="T075IdSolicitudViaje")
     id_persona_solicita = models.ForeignKey("transversal.Personas", on_delete=models.CASCADE, db_column="T075Id_PersonaSolicita", related_name="T075id_persona_solicita")
     id_unidad_org_solicita = models.ForeignKey("transversal.UnidadesOrganizacionales", on_delete=models.CASCADE, db_column="T075Id_UnidadOrgSolicitante", related_name="T075id_unidad_org_solicita")
-    consecutivo_solicitud_viaje = models.IntegerField(unique=True, db_column="T075consecutivoSolicitudViaje")
     fecha_solicitud = models.DateTimeField(db_column="T075fechaSolicitud")
-    expediente_asociado = models.CharField(max_length=90, db_column="T075expedienteAsociado")
+    tiene_expediente_asociado = models.BooleanField(default=False, db_column="T075tieneExpedienteAsociado")
+    id_expediente_asociado = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, db_column='T075Id_ExpedienteAsociado',null=True, blank=True)
     motivo_viaje = models.CharField(max_length=255, db_column="T075motivoViajeSolicitado")
     direccion = models.CharField(max_length=255, db_column="T075direccion")
     cod_municipio = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T075Cod_MunicipioDestino")
@@ -119,29 +121,17 @@ class SolicitudesViajes(models.Model):
     nro_pasajeros = models.SmallIntegerField(db_column="T075nroPasajeros")
     requiere_carga = models.BooleanField(default=True, db_column="T075requiereCarga")
     fecha_partida = models.DateField(db_column="T075fechaPartida")
-    hora_partida = models.TimeField(null=True, blank=True, db_column="T075horaPartida")
+    hora_partida = models.TimeField(db_column="T075horaPartida")
     fecha_retorno = models.DateField(db_column="T075fechaRetorno")
-    hora_retorno = models.TimeField(db_column="T075horaRetorno", blank=True, null=True)
-    apoyo_fuerza_publica = models.BooleanField(default=False, db_column="T075reqCompagniaMilitar")
+    hora_retorno = models.TimeField(db_column="T075horaRetorno")
+    requiere_compagnia_militar = models.BooleanField(default=False, db_column="T075reqCompagniaMilitar")
     consideraciones_adicionales = models.CharField(max_length=255, null=True, blank=True, db_column="T075consideracionesAdicionales")
-    id_funcionario_responsable = models.ForeignKey("transversal.Personas", on_delete=models.CASCADE, db_column="T075Id_FuncionarioResponsable", related_name="T075id_funcionario_responsable")
-    id_unidad_org_responsable = models.ForeignKey("transversal.UnidadesOrganizacionales", on_delete=models.CASCADE, db_column="T075Id_UnidadOrgResponsable", related_name="T075id_unidad_org_responsable")
-    estado_aprobacion = models.CharField(max_length=1, choices=estado_aprobacion_CHOICES, null=True, blank=True, db_column="T075estadoAprobacionResponsable")
-    justificacion_responsable = models.CharField(max_length=255, null=True, blank=True, db_column="T075JustificacionAprobacionResponsable")
+    id_persona_responsable = models.ForeignKey(Personas, on_delete=models.SET_NULL, db_column='T075Id_PersonaResponsable',null=True, blank=True,related_name="T075id_PersonaResponsable")
+    id_unidad_org_responsable = models.ForeignKey("transversal.UnidadesOrganizacionales",  on_delete=models.SET_NULL, db_column="T075Id_UnidadOrgResponsable", null=True, blank=True)
     fecha_aprobacion_responsable = models.DateTimeField(null=True, blank=True, db_column="T075fechaAprobacionResponsable")
-    solicitud_rechazada = models.BooleanField(default=True, db_column="T075solicitudRechazadaAreaTrans")
-    id_persona_rechaza_solicitud = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T075Id_PersonaRechazaSolicitud", related_name="T075id_persona_rechaza_solicitud")
-    justificacion_rechazo = models.CharField(max_length=255, null=True, blank=True, db_column="T075JustificacionRechazoSolicitud")
     fecha_rechazo = models.DateTimeField(null=True, blank=True, db_column="T075fechaRechazoSolicitud")
-    solicitud_aunulada = models.BooleanField(default=True, db_column="T075solicitudAnuladaSolicitante")
-    justificacion_anulacion = models.CharField(max_length=255, null=True, blank=True, db_column="T075justificacionAnulacionSolicitante")
-    fecha_anulacion = models.DateTimeField(null=True, blank=True, db_column="T075fechaAnulacionSolicitante")
-    id_persona_cierra_viaje = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T075Id_PersonaCierraViaje", related_name="T075id_persona_cierra_viaje")
-    cod_tipo_cierre_viaje = models.CharField(max_length=1, choices=cod_tipo_cierre_viajes_CHOICES, null=True, blank=True, db_column="T075codTipoCierreViaje")
-    justificacion_cierre_viaje = models.CharField(max_length=255, null=True, blank=True, db_column="T075justificacionCierreViaje")
-    fecha_cierre_viaje = models.DateTimeField(null=True, blank=True, db_column="T075fechaCierreViaje")
+    justificacion_rechazo = models.CharField(max_length=255, null=True, blank=True, db_column="T075JustificacionRechazoSolicitud")
     estado_solicitud = models.CharField(max_length=2, choices=estado_solicitud_CHOICES, db_column="T075estadoSolicitud")
-    solicitud_abierta = models.BooleanField(default=True, db_column="T075solicitudAbierta")
     
     def __str__(self):
         return str(self.id_solicitud_viaje)
@@ -180,27 +170,28 @@ class AsignacionesViajeAgendado(models.Model):
 
 class ViajesAgendados(models.Model):
     id_viaje_agendado = models.AutoField(primary_key=True, editable=False, db_column="T077IdViajeAgendado")
-    id_hoja_vida_vehiculo = models.ForeignKey("almacen.HojaDeVidaVehiculos", on_delete=models.CASCADE, db_column="T077Id_HojaDeVidaVehiculo")
+    id_vehiculo_conductor = models.ForeignKey(VehiculosAgendables_Conductor, on_delete=models.SET_NULL, null=True, blank=True, db_column="T077Id_ConductorVehiculoAsig")
+    id_solicitud_viaje = models.ForeignKey(SolicitudesViajes, on_delete=models.CASCADE, db_column="T077Id_SolicitudViaje")
     direccion = models.CharField(max_length=255, null=True, blank=True, db_column="T077direccion")
-    municipio_destino = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T077Cod_MunicipioDestino")
+    cod_municipio_destino = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T077Cod_MunicipioDestino")
     indicaciones_destino = models.CharField(max_length=255, null=True, blank=True, db_column="T077indicacionesDestino")
-    nro_pasajeros = models.SmallIntegerField(db_column="T077nroTotalPasajerosReq")
+    nro_total_pasajeros_req = models.SmallIntegerField(db_column="T077nroTotalPasajerosReq")
     requiere_capacidad_carga = models.BooleanField(default=True, db_column="T077requiereCapacidadCarga")
     fecha_partida_asignada = models.DateField(db_column="T077fechaPartidaAsignada")
     hora_partida = models.TimeField(db_column="T077horaPartida")
     fecha_retorno_asignada = models.DateField(db_column="T077fechaRetornoAsignada")
     hora_retorno = models.TimeField(db_column="T077horaRetorno")
-    compania_militar = models.BooleanField(default=True, db_column="T077requiereCompagniaMilitar")
-    observacion_union = models.CharField(max_length=140, null=True, blank=True, db_column="T077observacionUnion")
+    requiere_compagnia_militar = models.BooleanField(default=True, db_column="T077requiereCompagniaMilitar")
     viaje_autorizado = models.BooleanField(default=True, db_column="T077viajeAutorizado")
-    id_persona_autoriza = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T077Id_PersonaAutoriza")
     observacion_autorizacion = models.CharField(max_length=140, null=True, blank=True, db_column="T077observacionAutorizacion")
+    fecha_no_autorizado = models.DateTimeField(null=True, blank=True, db_column="T077fechaNoAutorizado")
+    id_persona_autoriza = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T077Id_PersonaAutoriza")
     fecha_autorizacion = models.DateTimeField(null=True, blank=True, db_column="T077fechaAutorizacion")
-    inicio = models.BooleanField(default=True, db_column="T077yaInicio")
-    llego = models.BooleanField(default=True, db_column="T077yaLlego")
+    ya_inicio = models.BooleanField(default=True, db_column="T077yaInicio")
+    ya_llego = models.BooleanField(default=True, db_column="T077yaLlego")
     multiples_asignaciones = models.BooleanField(default=True, db_column="T077multiplesAsignaciones")
-    viaje_agendado = models.BooleanField(default=True, db_column="T077viajeAgendadoAbierto")
-    
+    estado = models.CharField(max_length=2, choices=estado_aprobacion_CHOICES, db_column="T077estado")
+
     def __str__(self):
         return str(self.id_viaje_agendado)
     
@@ -227,12 +218,9 @@ class CompatibilidadViajesAgendados(models.Model):
 class BitacoraViaje(models.Model):
     id_bitacora = models.AutoField(primary_key=True, editable=False, db_column="T079IdBitacoraViaje")
     id_viaje_agendado = models.ForeignKey(ViajesAgendados, on_delete=models.CASCADE, db_column="T079Id_ViajeAgendado")
-    id_conductor = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T079Id_ConductorQueParte")
-    nombre_conductor_fuera = models.CharField(max_length=90, null=True, blank=True, db_column="T079nombreConductorFueraSistema")
-    documento_conductor_fuera = models.CharField(max_length=90, null=True, blank=True, db_column="T079documentoConductorFS")
-    telefono_conductor_fs = models.CharField(max_length=15, null=True, blank=True, db_column="T079telefonoConductorFS")
+    es_conductor_asignado = models.BooleanField(db_column="T079esConductorAsignado")
+    id_conductor_que_parte = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T079Id_ConductorQueParte")
     fecha_inicio_recorrido = models.DateTimeField(db_column="T079fechaInicioRecorrido")
-    fecha_registro_inicio = models.DateTimeField(db_column="T079fechaRegistroDelInicio")
     novedad_salida = models.CharField(max_length=255, null=True, blank=True, db_column="T079novedadSalida")
     fecha_llegada_recorrido = models.DateTimeField(null=True, blank=True, db_column="T079fechaLlegadaRecorrido")
     novedad_llegada = models.CharField(max_length=255, null=True, blank=True, db_column="T079novedadLlegada")

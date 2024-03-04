@@ -17,6 +17,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales, Docu
 from gestion_documental.models.trd_models import TipologiasDoc
 from seguridad.models import Personas
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
+# from tramites.models.tramites_models import SolicitudesTramites
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -83,6 +84,7 @@ class EstadosSolicitudes(models.Model):
     aplica_para_pqrsdf = models.BooleanField(db_column='T254aplicaParaPQRSDF')
     aplica_para_tramites = models.BooleanField(db_column='T254aplicaParaTramites')
     aplica_para_otros = models.BooleanField(db_column='T254aplicaParaOtros')
+    ubicacion_corporacion = models.CharField(max_length=50, db_column='T254ubiEnCorp',null=True)
 
     class Meta:
        
@@ -260,21 +262,23 @@ class modulos_radican(models.Model):
 
 class SolicitudAlUsuarioSobrePQRSDF(models.Model):
     id_solicitud_al_usuario_sobre_pqrsdf = models.AutoField(primary_key=True, db_column='T266IdSolicitudAlUsuarioSobrePQR')
-    id_pqrsdf = models.ForeignKey(PQRSDF, models.CASCADE, db_column='T266Id_PQRSDF')
+    id_pqrsdf = models.ForeignKey(PQRSDF, on_delete =models.SET_NULL, db_column='T266Id_PQRSDF',null=True,blank=True)
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites',on_delete= models.SET_NULL, db_column='T266Id_SolicitudTramite',null=True,blank=True)
     id_persona_solicita = models.ForeignKey('transversal.Personas', models.CASCADE, db_column='T266Id_PersonaSolicita')
     id_und_org_oficina_solicita = models.ForeignKey(UnidadesOrganizacionales, models.CASCADE, db_column='T266Id_UndOrgOficina_Solicita')
+    cod_tipo_oficio = models.CharField(max_length=1,choices=TIPOS_OFICIO_CHOICES,db_column='T266codTipoOficio')
     fecha_solicitud = models.DateTimeField(db_column='T66fechaSolicitud')
     asunto = models.CharField(max_length=100, db_column='T266asunto')
     descripcion = models.CharField(max_length=500, db_column='T266descripcion')
     cantidad_anexos = models.SmallIntegerField(null=True, db_column='T266cantidadAnexos')
     nro_folios_totales = models.SmallIntegerField(null=True, db_column='T266nroFoliosTotales')
     dias_para_respuesta = models.SmallIntegerField(null=True, db_column='T266diasParaRespuesta')
-    id_radicado_salida = models.ForeignKey(T262Radicados, models.CASCADE, db_column='T266Id_RadicadoSalida', blank=True, null=True)
+    id_radicado_salida = models.ForeignKey(T262Radicados, models.SET_NULL, db_column='T266Id_RadicadoSalida', blank=True, null=True)
     fecha_radicado_salida = models.DateTimeField(db_column='T266fechaRadicadoSalida', blank=True, null=True)
     id_estado_actual_solicitud = models.ForeignKey(EstadosSolicitudes, models.CASCADE, db_column='T266Id_EstadoActualSolicitud')
     fecha_ini_estado_actual = models.DateTimeField(db_column='T266fechaIniEstadoActual')
-    id_doc_de_archivo_exp = models.ForeignKey(DocumentosDeArchivoExpediente, models.CASCADE, db_column='T266Id_DocDeArch_Exp', blank=True, null=True)
-    cod_tipo_oficio = models.CharField(max_length=1,choices=TIPOS_OFICIO_CHOICES,db_column='T266codTipoOficio')
+    id_doc_de_archivo_exp = models.ForeignKey(DocumentosDeArchivoExpediente, models.SET_NULL, db_column='T266Id_DocDeArch_Exp', blank=True, null=True)
+    
     class Meta:
         db_table = 'T266SolicitudAlUsuarioSobrePQRSDF'
 
@@ -426,12 +430,13 @@ class RespuestaPQR(models.Model):
 
 class Anexos_PQR(models.Model):
     id_anexo_PQR = models.AutoField(primary_key=True,db_column='T259IdAnexos_PQR_Otros')
-    id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.CASCADE,null=True,db_column='T259Id_PQRSDF')
-    id_solicitud_usu_sobre_PQR = models.ForeignKey(SolicitudAlUsuarioSobrePQRSDF,on_delete=models.CASCADE,db_column='T259Id_SolicitudAlUsuSobrePQR',null=True)#T266
+    id_PQRSDF = models.ForeignKey(PQRSDF,on_delete=models.SET_NULL,null=True,db_column='T259Id_PQRSDF')
+    id_solicitud_usu_sobre_PQR = models.ForeignKey(SolicitudAlUsuarioSobrePQRSDF,on_delete=models.SET_NULL,db_column='T259Id_SolicitudAlUsuSobrePQR',null=True)#T266
     id_otros =  models.ForeignKey(Otros, on_delete=models.SET_NULL, blank=True, null=True, db_column='T259Id_Otros')
-    id_complemento_usu_PQR = models.ForeignKey(ComplementosUsu_PQR,on_delete=models.CASCADE,db_column='T259Id_ComplementoUsuAPQR', null=True)#T267
-    id_respuesta_PQR = models.ForeignKey(RespuestaPQR,on_delete=models.CASCADE,db_column='T259Id_Respuesta_PQR', null=True)
+    id_complemento_usu_PQR = models.ForeignKey(ComplementosUsu_PQR,on_delete=models.SET_NULL,db_column='T259Id_ComplementoUsuAPQR', null=True)#T267
+    id_respuesta_PQR = models.ForeignKey(RespuestaPQR,on_delete=models.SET_NULL,db_column='T259Id_Respuesta_PQR', null=True)
     id_anexo = models.ForeignKey(Anexos,on_delete=models.CASCADE,db_column='T259Id_Anexo')
+    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', on_delete=models.SET_NULL, db_column='T259Id_SolicitudTramite', null=True)
 
     class Meta:
         unique_together = [("id_anexo",)]
