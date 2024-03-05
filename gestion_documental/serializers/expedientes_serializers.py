@@ -613,6 +613,13 @@ class ArchivosDigitalesCreateSerializer(serializers.ModelSerializer):
             
             ruta_completa = os.path.join(settings.MEDIA_ROOT,Subcarpeta, nombre_nuevo)
             
+            #raise ValidationError(str(os.path.join(settings.MEDIA_ROOT, Subcarpeta)))
+            if not os.access(settings.MEDIA_ROOT, os.W_OK):
+                #raise ValidationError("No se pueden escribir en el directorio de medios")
+                print("No se pueden escribir en el directorio de medios")
+            if not os.access(settings.MEDIA_ROOT, os.R_OK):
+                print("No tiene permisos para acceder y consultar el directorio.")
+
             if not os.path.exists(os.path.join(settings.MEDIA_ROOT, Subcarpeta)):
                 os.makedirs(os.path.join(settings.MEDIA_ROOT, Subcarpeta))
             # Guarda el archivo
