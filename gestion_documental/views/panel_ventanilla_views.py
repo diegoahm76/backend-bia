@@ -1251,7 +1251,7 @@ class SolicitudJuridicaOPACreate(generics.CreateAPIView):
     creador_estados = Estados_PQRCreate
     
     def post(self, request):
-        fecha_actual = datetime.now()    
+        fecha_actual = datetime.now()
       
         data_in = request.data
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
@@ -1271,16 +1271,17 @@ class SolicitudJuridicaOPACreate(generics.CreateAPIView):
         if solicitud_juridica:
             raise ValidationError("El OPA ya fue enviado a revisión jurídica")
         
-        #CREA UN ESTADO NUEVO T255 EN VENTANILLA CON PENDIENTES
+        #CREA UN ESTADO NUEVO T255
         data_estado = {}
         data_estado['id_tramite'] = request.data['id_solicitud_tramite']
         data_estado['estado_solicitud'] = 15
         data_estado['fecha_iniEstado'] = fecha_actual
+        data_estado['persona_genera_estado'] = request.user.persona.id_persona
         respuesta_estado = self.creador_estados.crear_estado(self,data_estado)
         data_respuesta_estado_asociado = respuesta_estado.data['data']
         
         
-        #CAMBIAMOS EL ESTADO ACTUAL DE LA PQRSDF  self.serializer_class(unidad_medida,data)
+        #CAMBIAMOS EL ESTADO ACTUAL DEL OPA
         serializador_opa = self.serializer_tramite(solicitud_tramite, data={'id_estado_actual_solicitud':15}, partial=True)
         serializador_opa.is_valid(raise_exception=True)
         serializador_opa.save()
