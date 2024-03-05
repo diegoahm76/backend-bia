@@ -249,7 +249,7 @@ class AnexosTramite(models.Model):
         return str(self.id_anexo_tramite)
 
     class Meta:
-        db_table = 'T287AnexosTramite'
+        db_table = 'T287Anexos_Tramite'
         verbose_name = 'Anexo Tramite'
         verbose_name_plural = 'Anexos Tramites'
 
