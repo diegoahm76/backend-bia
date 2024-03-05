@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
-from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosGetRadicadoIdSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MediosSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosGetRadicadoIdSerializer, RadicadosImprimirSerializer ,PersonasSerializer
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
@@ -1268,12 +1268,24 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
         estado_solicitud = self.request.query_params.get('estado_solicitud')
         id_persona_titular = self.request.query_params.get('id_persona_titular')
         id_persona_interpone = self.request.query_params.get('id_persona_interpone')
+        id_medio_solicitud = self.request.query_params.get('id_medio_solicitud')
         cod_relacion_titular = self.request.query_params.get('cod_relacion_titular')
+        id_sucursal_recepciona_fisica = self.request.query_params.get('id_sucursal_recepciona_fisica')
+        asunto = self.request.query_params.get('asunto')
 
         queryset = Otros.objects.filter(id_estado_actual_solicitud__in=estados_otros)
 
         if tipo_solicitud:
             queryset = queryset.filter(cod_tipo_solicitud=tipo_solicitud)
+
+        if asunto:
+            queryset = queryset.filter(asunto__icontains=asunto)
+
+        if id_medio_solicitud:
+            queryset = queryset.filter(id_medio_solicitud=id_medio_solicitud)
+            
+        if id_sucursal_recepciona_fisica:
+            queryset = queryset.filter(id_sucursal_recepciona_fisica=id_sucursal_recepciona_fisica)
 
         if id_persona_titular:
             queryset = queryset.filter(id_persona_titular=id_persona_titular)
@@ -1372,6 +1384,8 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
                 'Persona Que Radicó': f"{otros.id_radicados.id_persona_radica.primer_nombre} {otros.id_radicados.id_persona_radica.segundo_nombre} {otros.id_radicados.id_persona_radica.primer_apellido} {otros.id_radicados.id_persona_radica.segundo_apellido}" if otros.id_radicados and otros.id_radicados.id_persona_radica else 'N/A',
                 'Id_Estado': otros.id_estado_actual_solicitud.id_estado_solicitud,
                 'Estado': estado_nombre,
+                'Medio Solicitud': otros.id_medio_solicitud.nombre,
+                'Sucursal Recepciona': otros.id_sucursal_recepciona_fisica.descripcion_sucursal,
                 'Ubicacion en la corporacion':ubicacion_corporacion,
                 
             })
@@ -1381,3 +1395,14 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
             'detail': 'Se encontraron los siguientes registros.',
             'data': data
         }, status=status.HTTP_200_OK)
+    
+
+class ListarMediosParaOTROS(generics.ListAPIView):
+    serializer_class = MediosSolicitudSerializer
+    queryset = MediosSolicitud.objects.all()
+    permission_classes = [IsAuthenticated] 
+
+    def get(self, request):
+        medios_otros = self.queryset.filter(aplica_para_otros=True)
+        serializer = self.serializer_class(medios_otros, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.','data': serializer.data}, status=status.HTTP_200_OK)

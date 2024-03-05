@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import os
 import subprocess
-
+from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import F, ExpressionWrapper, fields, Count, Func,DateTimeField
@@ -22,7 +22,7 @@ from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, Rea
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
-from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, PersonaSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
+from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, MediosSolicitudSerializer, PersonaSerializer, SucursalesEmpresasSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
@@ -2105,18 +2105,29 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
         id_persona_titular = self.request.query_params.get('id_persona_titular')
         id_persona_interpone = self.request.query_params.get('id_persona_interpone')
         cod_relacion_con_el_titular = self.request.query_params.get('cod_relacion_con_el_titular')
+        asunto = self.request.query_params.get('asunto')
+        id_medio_solicitud = self.request.query_params.get('id_medio_solicitud')
+        id_sucursal_especifica_implicada = self.request.query_params.get('id_sucursal_especifica_implicada')
 
         queryset = PQRSDF.objects.exclude(id_estado_actual_solicitud__nombre='GUARDADO')
 
         if tipo_solicitud:
             queryset = queryset.filter(cod_tipo_PQRSDF=tipo_solicitud)
     
+        if asunto:
+            queryset = queryset.filter(asunto__icontains=asunto)
 
         if tipo_pqrsdf:
             queryset = queryset.filter(cod_tipo_PQRSDF=tipo_pqrsdf)
 
         if id_persona_titular:
             queryset = queryset.filter(id_persona_titular=id_persona_titular)
+
+        if id_sucursal_especifica_implicada:
+            queryset = queryset.filter(id_sucursal_especifica_implicada=id_sucursal_especifica_implicada)
+
+        if id_medio_solicitud:
+            queryset = queryset.filter(id_medio_solicitud=id_medio_solicitud)
 
         if id_persona_interpone:
             queryset = queryset.filter(id_persona_interpone=id_persona_interpone)
@@ -2294,6 +2305,8 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
                 'Tiempo Para Respuesta': dias_faltantes if dias_faltantes is not None else 'N/A',
                 'Id_estado': pqrsdf.id_estado_actual_solicitud.id_estado_solicitud,
                 'Estado': estado_nombre,
+                'Medio Solicitud': pqrsdf.id_medio_solicitud.nombre,
+                'Sucursal Implicada': pqrsdf.id_sucursal_especifica_implicada.descripcion_sucursal,
                 'Ubicacion en la corporacion':ubicacion_corporacion,
                 'Documento': documento_info['valor'],
                 'URL_Documento': documento_info.get('url', None),
@@ -3794,7 +3807,36 @@ class EliminarCorreoView(generics.DestroyAPIView):
                 raise ValidationError("ID de correo no proporcionado.")
         except Exception as e:
             raise ValidationError(str(e))
+        
 
+class ListarMediosParaPQRSDF(generics.ListAPIView):
+    serializer_class = MediosSolicitudSerializer
+    queryset = MediosSolicitud.objects.all()
+    permission_classes = [IsAuthenticated]  # Asegúrate de importar IsAuthenticated de rest_framework.permissions
+
+    def get(self, request):
+        medios_pqrsdf = self.queryset.filter(aplica_para_pqrsdf=True)
+        serializer = self.serializer_class(medios_pqrsdf, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros.','data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class ListarSucursalesEmpresas(generics.ListAPIView):
+    serializer_class = SucursalesEmpresasSerializer
+    permission_classes = [IsAuthenticated]  
+
+    def get_queryset(self):
+        return SucursalesEmpresas.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = {
+            'success': True,
+            'detail': 'Se encontraron los siguientes registros.',
+            'data': serializer.data
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 
