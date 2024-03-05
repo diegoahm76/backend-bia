@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib import auth
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
 from transversal.models.base_models import Departamento
@@ -168,8 +169,12 @@ class InicioTramiteCreateSerializer(serializers.ModelSerializer):
 
 class TramiteListGetSerializer(serializers.ModelSerializer):
     id_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.id_persona', default=None)
+    cod_tipo_documento_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.numero_documento', default=None)
     nombre_persona_titular = serializers.SerializerMethodField()
     id_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.id_persona', default=None)
+    cod_tipo_documento_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.numero_documento', default=None)
     nombre_persona_interpone = serializers.SerializerMethodField()
     cod_relacion_con_el_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.cod_relacion_con_el_titular', default=None)
     relacion_con_el_titular = serializers.CharField(source='id_solicitud_tramite.get_cod_relacion_con_el_titular_display')
@@ -184,8 +189,20 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
     tipo_permiso_ambiental = serializers.CharField(source='id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display')
     permiso_ambiental = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
     municipio = serializers.ReadOnlyField(source='cod_municipio.nombre', default=None)
+    id_expediente = serializers.ReadOnlyField(source='id_solicitud_tramite.id_expediente.id_expediente_documental', default=None)
+    expediente = serializers.ReadOnlyField(source='id_solicitud_tramite.id_expediente.titulo_expediente', default=None)
     cod_departamento = serializers.SerializerMethodField()
     departamento = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_solicitud_tramite.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_solicitud_tramite.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_solicitud_tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_solicitud_tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_solicitud_tramite.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
     
     def get_nombre_persona_titular(self, obj):
         nombre_persona_titular = None
@@ -230,8 +247,12 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
         fields = [
             'id_solicitud_tramite',
             'id_persona_titular',
+            'cod_tipo_documento_persona_titular',
+            'numero_documento_persona_titular',
             'nombre_persona_titular',
             'id_persona_interpone',
+            'cod_tipo_documento_persona_interpone',
+            'numero_documento_persona_interpone',
             'nombre_persona_interpone',
             'cod_relacion_con_el_titular',
             'relacion_con_el_titular',
@@ -253,7 +274,10 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
             'direccion',
             'descripcion_direccion',
             'coordenada_x',
-            'coordenada_y'
+            'coordenada_y',
+            'id_expediente',
+            'expediente',
+            'radicado'
         ]
         
 class AnexosUpdateSerializer(serializers.ModelSerializer):
@@ -263,6 +287,9 @@ class AnexosUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class AnexosGetSerializer(serializers.ModelSerializer):
+    numero_folios = serializers.ReadOnlyField(source='id_anexo.numero_folios', default=None)
+    cod_medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.cod_medio_almacenamiento', default=None)
+    medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.get_cod_medio_almacenamiento_display', default=None)
     nombre = serializers.SerializerMethodField()
     descripcion = serializers.SerializerMethodField()
     id_archivo_digital = serializers.SerializerMethodField()
@@ -297,6 +324,9 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'id_anexo',
             'nombre',
             'descripcion',
+            'numero_folios',
+            'cod_medio_almacenamiento',
+            'medio_almacenamiento',
             'id_archivo_digital',
             'formato',
             'tamagno_kb',
