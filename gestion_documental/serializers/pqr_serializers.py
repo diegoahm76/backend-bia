@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-
+from transversal.models.entidades_models import SucursalesEmpresas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, MediosSolicitud
 from transversal.models.personas_models import Personas, UnidadesOrganizacionales
 
@@ -499,7 +499,15 @@ class RespuestaPQRSDFPanelSerializer(serializers.ModelSerializer):
         model = RespuestaPQR
         fields = '__all__'
 
+class MediosSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MediosSolicitud
+        fields = '__all__'
 
+class SucursalesEmpresasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SucursalesEmpresas
+        fields = '__all__' 
 class PersonasSerializer(serializers.ModelSerializer):
     class Meta:
         model = Personas

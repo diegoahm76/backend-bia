@@ -379,7 +379,10 @@ class MetadatosPostSerializer(serializers.ModelSerializer):
         model = MetadatosAnexosTmp
         fields = '__all__'
  
-
+class MediosSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MediosSolicitud
+        fields = '__all__'
 
 class AnexosPutSerializer(serializers.ModelSerializer):
     class Meta:
