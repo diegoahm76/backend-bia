@@ -66,6 +66,8 @@ from seguridad.utils import Util
 from seguridad.models import Personas
 from django.db.models import Value, CharField
 
+from transversal.views.alertas_views import AlertaEventoInmediadoCreate
+
 
 
 #TABLA T071 CREAR REGISTROS DE ARRENDAMIENTO(MODELADO)
@@ -1052,13 +1054,74 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                     hoja_vida_vehiculo.es_agendable = es_agendable
                     hoja_vida_vehiculo.save()
 
-            print(es_agendable)
+            #print(es_agendable)
             # Creamos la inspección de vehículo
             with transaction.atomic():
                 instancia_inspeccion = serializer.save()
 
             data = serializer.data
             data['es_agendable'] = es_agendable
+
+
+
+            #GENERACION DE ALERTA
+
+            
+            if data['requiere_verificacion']:
+                
+                id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+                if not id_hoja_vida_vehiculo:
+                    raise ValidationError('El campo id_hoja_vida_vehiculo es obligatorio.')
+
+                hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
+                id_elemento=hoja_vida_vehiculo.id_hoja_de_vida
+
+                data_alerta = {}
+                vista_alertas_programadas = AlertaEventoInmediadoCreate()
+                data_alerta = {}
+                data_alerta['cod_clase_alerta'] = 'Alm_NvInsp'
+                #data_alerta['id_persona'] = id_persona_asiganada
+                data_alerta['id_elemento_implicado'] = id_elemento
+
+                inspeccion = instancia_inspeccion
+                #raise ValidationError(inspeccion.id_persona_inspecciona)
+                cadena = ""
+                if inspeccion.id_persona_inspecciona:
+
+                    nombre_completo_solicitante = None
+                    nombre_list = [inspeccion.id_persona_inspecciona.primer_nombre, inspeccion.id_persona_inspecciona.segundo_nombre,
+                                    inspeccion.id_persona_inspecciona.primer_apellido, inspeccion.id_persona_inspecciona.segundo_apellido]
+                    nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+                    nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+                    persona = nombre_completo_solicitante
+                
+                    fecha_inspeccion = inspeccion.dia_inspeccion
+                    hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
+                    tipo_vehiculo = hoja_vida_vehiculo.get_cod_tipo_vehiculo_display()
+                    if hoja_vida_vehiculo.es_arrendado:
+                        placa = hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+                        nombre = hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+                        marca = hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+                    else:
+                        placa = hoja_vida_vehiculo.id_articulo.doc_identificador_nro
+                        nombre = hoja_vida_vehiculo.id_articulo.nombre
+                        marca = hoja_vida_vehiculo.id_articulo.id_marca.nombre
+                    
+                    if not hoja_vida_vehiculo:
+                        cadena =  ""
+                    cadena = (
+                        "<p>Persona que inspecciona: " + persona + "</p>"
+                        "<p>Fecha de inspección: " + str(fecha_inspeccion) + "</p>"
+                        "<p>Placa del vehículo: " + placa + "</p>"
+                        "<p>Nombre del vehículo: " + nombre + "</p>"
+                        "<p>Marca del vehículo: " + marca + "</p>"
+                        )
+                    
+                data_alerta['informacion_complemento_mensaje'] = cadena
+                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+                if respuesta_alerta.status_code != status.HTTP_200_OK:
+                    return respuesta_alerta
+
 
             # Retornamos el registro creado con la variable es_agendable
             return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
@@ -1352,7 +1415,7 @@ class CrearReprobacion(generics.CreateAPIView):
     serializer_class = ViajesAgendadosSerializer
     permission_classes = [IsAuthenticated]
 
-
+    
     def create(self, request, *args, **kwargs):
         data = request.data
 
@@ -1407,6 +1470,85 @@ class CrearReprobacion(generics.CreateAPIView):
         solicitud_viaje.justificacion_rechazo = observacion_no_autorizado
         solicitud_viaje.estado_solicitud = 'RC'
         solicitud_viaje.save()
+
+        #GENERACION DE ALERTA
+
+        data_alerta = {}
+        vista_alertas_programadas = AlertaEventoInmediadoCreate()
+        data_alerta = {}
+        data_alerta['cod_clase_alerta'] = 'Alm_SVRech'
+        data_alerta['cod_tipo_alerta'] = 'SV'
+        data_alerta['id_elemento_implicado'] = solicitud_viaje.id_solicitud_viaje
+        cadena =''
+        #CONSTRUIMOS EL MENSAJE 
+        persona_solicita = solicitud_viaje.id_persona_solicita
+        nombre_completo =''
+        nombre_unidad_solicitud = ''
+        nombre_unidad_rechazo =''
+        
+
+        if persona_solicita:
+
+            nombre_completo_solicitante = None
+            nombre_list = [persona_solicita.primer_nombre, persona_solicita.segundo_nombre,
+                            persona_solicita.primer_apellido, persona_solicita.segundo_apellido]
+            nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+            nombre_completo = nombre_completo_solicitante
+
+        unidad = solicitud_viaje.id_unidad_org_solicita
+
+        agrupacion = unidad.cod_agrupacion_documental
+        if agrupacion:
+            nombre_unidad_solicitud = unidad.codigo +" - " + agrupacion +" - "+unidad.nombre
+        else:
+            nombre_unidad_solicitud = unidad.codigo +" - " +unidad.nombre
+
+
+        persona_rechazo = solicitud_viaje.id_persona_responsable
+        if persona_rechazo:
+
+            nombre_completo_solicitante = None
+            nombre_list = [persona_rechazo.primer_nombre, persona_rechazo.segundo_nombre,
+                            persona_rechazo.primer_apellido, persona_rechazo.segundo_apellido]
+            nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+            nombre_completo_responsable = nombre_completo_solicitante
+
+        unidad_responsable = solicitud_viaje.id_unidad_org_responsable
+        agrupacion = unidad_responsable.cod_agrupacion_documental
+        if agrupacion:
+            nombre_unidad_rechazo = unidad_responsable.codigo +" - " + agrupacion +" - "+unidad_responsable.nombre
+        else:
+            nombre_unidad_rechazo = unidad_responsable.codigo +" - " +unidad_responsable.nombre
+
+        print(nombre_completo)
+        print(nombre_unidad_solicitud)
+        print(solicitud_viaje.fecha_solicitud)
+        print(solicitud_viaje.motivo_viaje)
+        print(solicitud_viaje.get_estado_solicitud_display())
+        print(solicitud_viaje.fecha_rechazo)
+        print(nombre_completo_responsable)
+        print(nombre_unidad_rechazo)
+
+        #cadena = "Persona solicitante: " + nombre_completo +"Unidad organizacional del solicitante: " + nombre_unidad_solicitud + "Fecha solicitud: "+str(solicitud_viaje.fecha_solicitud) + "Motivo del viaje solicitado:" + solicitud_viaje.motivo_viaje +"Estado solicitud: "+solicitud_viaje.get_estado_solicitud_display()+" Fecha de rechazo: "+str(solicitud_viaje.fecha_rechazo) +"Persona que rechazó la solicitud: "+nombre_completo_responsable+"Unidad organizacional de la Persona que rechazó la solicitud:"+nombre_unidad_rechazo
+
+        cadena = (
+            "<p><strong>Persona solicitante:</strong> " + nombre_completo + "</p>"
+            "<p><strong>Unidad organizacional del solicitante:</strong> " + nombre_unidad_solicitud + "</p>"
+            "<p><strong>Fecha solicitud:</strong> " + str(solicitud_viaje.fecha_solicitud) + "</p>"
+            "<p><strong>Motivo del viaje solicitado:</strong> " + solicitud_viaje.motivo_viaje + "</p>"
+            "<p><strong>Estado solicitud:</strong> " + solicitud_viaje.get_estado_solicitud_display() + "</p>"
+            "<p><strong>Fecha de rechazo:</strong> " + str(solicitud_viaje.fecha_rechazo) + "</p>"
+            "<p><strong>Persona que rechazó la solicitud:</strong> " + nombre_completo_responsable + "</p>"
+            "<p><strong>Unidad organizacional de la Persona que rechazó la solicitud:</strong> " + nombre_unidad_rechazo + "</p>"
+            )
+
+
+        data_alerta['informacion_complemento_mensaje'] = cadena
+        respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+        if respuesta_alerta.status_code != status.HTTP_200_OK:
+            return respuesta_alerta
 
         return JsonResponse({'success': True, 'detail': 'Reprobación de la petición creada exitosamente.', 'data': viaje_agendado_serializer.data}, status=status.HTTP_201_CREATED)
 
