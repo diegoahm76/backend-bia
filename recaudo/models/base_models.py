@@ -157,3 +157,16 @@ class AdministraciondePersonal(models.Model):
         db_table = 'TMMMAdministraciondePersonal'
         verbose_name = 'Administracion de Personal'
         verbose_name_plural = 'Administracion de Personal'
+        
+
+
+class ConfigaraicionInteres(models.Model):
+    id = models.AutoField(primary_key=True, db_column='TOOOconfiguracion')
+    año = models.IntegerField(db_column='TMMMNivel')
+    mes = models.CharField(max_length=255, db_column='T443Nombre')
+    valor_interes = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMTécnicos')
+
+    class Meta:
+        db_table = 'TMMMConfigaraicionInteres'
+        verbose_name = 'Configaraicion Interes'
+        verbose_name_plural = 'Configaraicion Interes'
