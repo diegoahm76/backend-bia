@@ -43,6 +43,12 @@ urlpatterns = [
         path('calculadoradiasmeses/', viwes.CalculadoraDiasMeses.as_view(), name='registros-calculadora-dias-meses'),
         
         path('administracionpersonal/', viwes.Vista_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
+        path('administracionpersonal/put/<str:pk>/', viwes.Actualizar_AdministraciondePersonal.as_view(), name='administracion-de-personal-update'),
 
+
+        path('administracionpersonal/get/', viwes.Vista_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
+        path('administracionpersonal/post/', viwes.Actualizar_ConfigaraicionInteres.as_view(), name='administracion-de-personal'),
+        path('administracionpersonal/put/<str:pk>/', viwes.Actualizar_AdministraciondePersonal.as_view(), name='administracion-de-personal-update'),
+        path('administracionpersonal/delete/<str:pk>/', viwes.Borrar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-delete'),
     ]
 
