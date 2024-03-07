@@ -1293,20 +1293,37 @@ class InspeccionVehiculoDetail(generics.RetrieveAPIView, generics.UpdateAPIView)
         # Obtener el ID de la persona logueada
         persona_id = request.user.persona.id_persona if request.user.is_authenticated else None
         
+        # Obtener la observación de verificación superior del request data
+        observacion_verificacion_superior = request.data.get('observaciones_verifi_sup')
+        
+        # Validar que la observación de verificación superior sea obligatoria
+        if not observacion_verificacion_superior:
+            return Response({'error': 'La observación de verificación superior es obligatoria.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Actualizar los campos de la inspección
         instance.verificacion_superior_realizada = True
         instance.id_persona_que_verifica_id = persona_id  # Actualizamos el ID de la persona logueada
+        instance.observaciones_verifi_sup = observacion_verificacion_superior  # Agregar la observación de verificación superior
         instance.save()
 
         serializer = self.get_serializer(instance)
         return Response({'success': True, 'detail': 'La inspección ha sido verificada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#Inspeccion_Por_ID_inspeccion
+class InspeccionVehiculoID(generics.RetrieveAPIView):
+    queryset = InspeccionesVehiculosDia.objects.all()
+    serializer_class = InspeccionVehiculoSerializer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({'success': True, 'detail': 'La inspección ha sido consultada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
 
+        if instance:
+            serializer = self.get_serializer(instance)
+            return Response({'success': True, 'detail': 'La inspección ha sido consultada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'error': 'La inspección no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
 
 #Busqueda_Avanzada_Solicitud_Viajes
 class BusquedaSolicitudesViaje(generics.ListAPIView):
