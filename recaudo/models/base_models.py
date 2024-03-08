@@ -170,3 +170,39 @@ class ConfigaraicionInteres(models.Model):
         db_table = 'TMMMConfigaraicionInteres'
         verbose_name = 'Configaraicion Interes'
         verbose_name_plural = 'Configaraicion Interes'
+
+
+
+
+class IndicadoresSemestral(models.Model):
+    # Definición de opciones
+    TUA = 'tua'
+    TR = 'tr'
+    OTRA = 'otra'
+
+    OPCIONES = [
+        (TUA, 'TUA'),
+        (TR, 'TR'),
+        (OTRA, 'OTRA'),
+    ]
+
+    # Campos del modelo
+    id = models.AutoField(primary_key=True, db_column='T465configuracion')
+    proceso = models.CharField(max_length=255, db_column='T465Proceso')
+    nombre_indicador = models.CharField(max_length=255, db_column='T465Nombre_del_indicador')
+    frecuencia_medicion = models.CharField(max_length=255, db_column='T465Frecuencia_de_medicion')
+    variable_1 = models.CharField(max_length=255, db_column='T465Variable_1')
+    variable_2 = models.CharField(max_length=255, db_column='T465Variable_2')
+    formula_indicador = models.CharField(max_length=255, db_column='T465Formula_del_indicador')
+    vigencia_reporta = models.DateField(db_column='T465Vigencia_que_reporta')
+    dependencia_grupo_regional = models.CharField(max_length=255, db_column='T465Dependencia_grupo_regional')
+    objetivo_indicador = models.CharField(max_length=255, db_column='T465Objetivo_del_indicador')
+    unidad_medicion_reporte = models.CharField(max_length=255, db_column='T465Unidad_de_medicion_y_reporte')
+    descripcion_variable_1 = models.TextField(db_column='T465Descipccion_variable_1')
+    descripcion_variable_2 = models.TextField(db_column='T465Descripccion_variable_2')
+    origen_datos = models.CharField(max_length=255, db_column='T465Origen_de_datos')
+
+    class Meta:
+        db_table = 'T465IndicadoresSemestral'
+        verbose_name = 'Configuracion Interes'
+        verbose_name_plural = 'Configuracion Interes'
