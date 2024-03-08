@@ -5,7 +5,6 @@ from rest_framework.views import APIView
 import unicodedata
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import F
-from django.core.cache import cache
 
 
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
@@ -364,64 +363,46 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
 class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     
-    def get_full_catalogo(self):
-        # cache_key = 'catalogo_bienes'
-        
-        # cached_data = cache.get(cache_key)
-        # if cached_data:
-        #     return cached_data
-        # else:
-        catalogo_bienes = CatalogoBienes.objects.prefetch_related(
-            'cod_tipo_activo',
-            'id_marca',
-            'id_unidad_medida',
-            'id_porcentaje_iva',
-            'cod_metodo_valoracion',
-            'cod_tipo_depreciacion',
-            'id_unidad_medida_vida_util',
-            'id_bien_padre'
-        ).filter(nro_elemento_bien=None).order_by('codigo_bien').values(
-                "id_bien",
-                "codigo_bien",
-                "cod_tipo_bien",
-                "nro_elemento_bien",
-                "nombre",
-                "cod_tipo_activo",
-                "nivel_jerarquico",
-                "nombre_cientifico",
-                "descripcion",
-                "doc_identificador_nro",
-                "id_marca",
-                "id_unidad_medida",
-                "id_porcentaje_iva",
-                "cod_metodo_valoracion",
-                "cod_tipo_depreciacion",
-                "cantidad_vida_util",
-                "id_unidad_medida_vida_util",
-                "valor_residual",
-                "stock_minimo",
-                "stock_maximo",
-                "solicitable_vivero",
-                "es_semilla_vivero",
-                "cod_tipo_elemento_vivero",
-                "tiene_hoja_vida",
-                "id_bien_padre",
-                "maneja_hoja_vida",
-                "visible_solicitudes",
-                marca=F('id_marca__nombre'),
-                nombre_padre=F('id_bien_padre__nombre'),
-                unidad_medida=F('id_unidad_medida__abreviatura'),
-                unidad_medida_vida_util=F('id_unidad_medida_vida_util__abreviatura'),
-                porcentaje_iva=F('id_porcentaje_iva__porcentaje')
-            )
-        
-        # cache.set(cache_key, catalogo_bienes, timeout=30)
+    def get_full_catalogo(self, id_bien_padre):
+        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien').values(
+            "id_bien",
+            "codigo_bien",
+            "cod_tipo_bien",
+            "nro_elemento_bien",
+            "nombre",
+            "cod_tipo_activo",
+            "nivel_jerarquico",
+            "nombre_cientifico",
+            "descripcion",
+            "doc_identificador_nro",
+            "id_marca",
+            "id_unidad_medida",
+            "id_porcentaje_iva",
+            "cod_metodo_valoracion",
+            "cod_tipo_depreciacion",
+            "cantidad_vida_util",
+            "id_unidad_medida_vida_util",
+            "valor_residual",
+            "stock_minimo",
+            "stock_maximo",
+            "solicitable_vivero",
+            "es_semilla_vivero",
+            "cod_tipo_elemento_vivero",
+            "tiene_hoja_vida",
+            "id_bien_padre",
+            "maneja_hoja_vida",
+            "visible_solicitudes",
+            marca=F('id_marca__nombre'),
+            nombre_padre=F('id_bien_padre__nombre'),
+            unidad_medida=F('id_unidad_medida__abreviatura'),
+            unidad_medida_vida_util=F('id_unidad_medida_vida_util__abreviatura'),
+            porcentaje_iva=F('id_porcentaje_iva__porcentaje')
+        )
         
         return catalogo_bienes
 
     def get_catalogo_bienes(self, id_bien_padre, cont_padre):
-        catalogo_bienes = self.get_full_catalogo()
-        data_padre = [bien for bien in catalogo_bienes if bien["id_bien_padre"]==id_bien_padre]
+        data_padre = self.get_full_catalogo(id_bien_padre)
         
         cont = 0
         data_out = []
