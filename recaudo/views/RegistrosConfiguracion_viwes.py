@@ -477,6 +477,29 @@ class Actualizar_ConfigaraicionInteres(generics.UpdateAPIView):
         serializer.save()  # Guarda la instancia con los datos actualizados
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class Crear_ConfigaraicionInteres(generics.CreateAPIView):
+    queryset = ConfigaraicionInteres.objects.all()
+    serializer_class = ConfigaraicionInteresSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+           
+            
+            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
+            # serializer.validated_data['campo_adicional'] = valor
+
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+     
     
 #__________________________________________________________________
     
