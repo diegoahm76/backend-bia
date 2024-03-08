@@ -13,7 +13,7 @@ class CatalogoBienesSerializer(serializers.ModelSerializer):
     unidad_medida=serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
     unidad_medida_vida_util=serializers.ReadOnlyField(source='id_unidad_medida_vida_util.abreviatura',default=None)
     porcentaje_iva=serializers.ReadOnlyField(source='id_porcentaje_iva.porcentaje',default=None)
-    tipo_bien = serializers.CharField(source='get_cod_tipo_bien_display',default=None)
+    tipo_bien = serializers.CharField(source='get_cod_tipo_bien_display',read_only=True,default=None)
 
     class Meta:
         model= CatalogoBienes
