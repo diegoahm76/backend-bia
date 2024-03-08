@@ -2125,6 +2125,8 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
 
         if id_sucursal_especifica_implicada:
             queryset = queryset.filter(id_sucursal_especifica_implicada=id_sucursal_especifica_implicada)
+            # Verificar si id_sucursal_recepciona_fisica es None antes de acceder a descripcion_sucursal
+            queryset = queryset.exclude(id_sucursal_especifica_implicada__isnull=True)
 
         if id_medio_solicitud:
             queryset = queryset.filter(id_medio_solicitud=id_medio_solicitud)
@@ -2301,6 +2303,7 @@ class ConsultaEstadoPQRSDF(generics.ListAPIView):
                 'Asunto': pqrsdf.asunto,
                 'Radicado': f"{pqrsdf.id_radicado.prefijo_radicado}-{pqrsdf.id_radicado.agno_radicado}-{pqrsdf.id_radicado.nro_radicado}" if pqrsdf.id_radicado else 'N/A',
                 'Fecha de Radicado': pqrsdf.fecha_radicado,
+                'Fecha de registro': pqrsdf.fecha_registro,
                 'Persona Que Radicó': f"{pqrsdf.id_radicado.id_persona_radica.primer_nombre} {pqrsdf.id_radicado.id_persona_radica.segundo_nombre} {pqrsdf.id_radicado.id_persona_radica.primer_apellido} {pqrsdf.id_radicado.id_persona_radica.segundo_apellido}" if pqrsdf.id_radicado and pqrsdf.id_radicado.id_persona_radica else 'N/A',
                 'Tiempo Para Respuesta': dias_faltantes if dias_faltantes is not None else 'N/A',
                 'Id_estado': pqrsdf.id_estado_actual_solicitud.id_estado_solicitud,

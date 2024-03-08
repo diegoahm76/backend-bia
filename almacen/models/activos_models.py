@@ -13,7 +13,7 @@ class BajaActivos(models.Model):
     consecutivo_por_baja = models.SmallIntegerField(unique=True,db_column='T086consecutivoXBaja')
     concepto = models.CharField(max_length=250, db_column="T086concepto")
     fecha_baja = models.DateTimeField(db_column='T086fechaBaja')
-    cantidad_activos_baja = models.SmallIntegerField(unique=True,db_column='T086cantidadActivosDeBaja')
+    cantidad_activos_baja = models.SmallIntegerField(db_column='T086cantidadActivosDeBaja')
     id_persona_registro_baja = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T086Id_PersonaRegistroBaja')
     id_uni_org_registro_baja  = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T086Id_UnidadOrgRegistroBaja')
 
@@ -52,7 +52,7 @@ class AnexosDocsAlma(models.Model):
     nro_folios = models.SmallIntegerField(db_column="T087nroFolios")
     descripcion_anexo = models.CharField(max_length=255, db_column="T087descripcionAnexo")
     fecha_creacion_anexo = models.DateTimeField(db_column='T087fechaCreacionAnexo')
-    id_arhcivo_digital = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T087Id_ArchivoDigital')
+    id_archivo_digital = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T087Id_ArchivoDigital')
     
     def __str__(self):
         return str(self.id_anexo_doc_alma)

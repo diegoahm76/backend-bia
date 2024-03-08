@@ -1283,10 +1283,13 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
 
         if id_medio_solicitud:
             queryset = queryset.filter(id_medio_solicitud=id_medio_solicitud)
-            
-        if id_sucursal_recepciona_fisica:
-            queryset = queryset.filter(id_sucursal_recepciona_fisica=id_sucursal_recepciona_fisica)
 
+        if id_sucursal_recepciona_fisica:
+            # Filtrar por la sucursal de recepción física si se proporciona
+            queryset = queryset.filter(id_sucursal_recepciona_fisica=id_sucursal_recepciona_fisica)
+            # Verificar si id_sucursal_recepciona_fisica es None antes de acceder a descripcion_sucursal
+            queryset = queryset.exclude(id_sucursal_recepciona_fisica__isnull=True)
+            
         if id_persona_titular:
             queryset = queryset.filter(id_persona_titular=id_persona_titular)
 
@@ -1381,6 +1384,7 @@ class ConsultaEstadoOTROS(generics.ListAPIView):
                 'Asunto': otros.asunto,
                 'Radicado': f"{otros.id_radicados.prefijo_radicado}-{otros.id_radicados.agno_radicado}-{otros.id_radicados.nro_radicado}" if otros.id_radicados else 'N/A',
                 'Fecha de Radicado': otros.fecha_radicado,
+                'Fecha de Registro': otros.fecha_registro,
                 'Persona Que Radicó': f"{otros.id_radicados.id_persona_radica.primer_nombre} {otros.id_radicados.id_persona_radica.segundo_nombre} {otros.id_radicados.id_persona_radica.primer_apellido} {otros.id_radicados.id_persona_radica.segundo_apellido}" if otros.id_radicados and otros.id_radicados.id_persona_radica else 'N/A',
                 'Id_Estado': otros.id_estado_actual_solicitud.id_estado_solicitud,
                 'Estado': estado_nombre,
