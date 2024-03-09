@@ -4,6 +4,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 import unicodedata
 from rest_framework.pagination import PageNumberPagination
+from django.db.models import F
 
 
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
@@ -53,6 +54,34 @@ from datetime import datetime, timezone
 import copy
 
 class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
+    def validar_codigo_bien(self, bien_padre, nivel_jerarquico, codigo_bien):
+        niv_val = [[1,2,3,4,5],['0','0','00','00','00000000'],['9','9','99','99','99999999']]
+        
+        try:
+            posicion = niv_val[0].index(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+
+        catalago = CatalogoBienes.objects.filter(nivel_jerarquico=nivel_jerarquico)
+
+        if bien_padre != None:
+            catalago = catalago.filter(id_bien_padre = bien_padre.id_bien)
+
+        catalago = catalago.order_by('codigo_bien').last()
+        codigo_padre = bien_padre.codigo_bien if bien_padre != None else ''
+        codigo_anterior  = catalago.codigo_bien[len(codigo_padre):] if catalago != None else niv_val[1][posicion]
+
+        if codigo_anterior == niv_val[2][posicion]:
+            raise ValidationError('No se puede generar mas codigos de bienes para este nivel jerarquico')
+        
+        if not codigo_bien.startswith(codigo_padre):
+            raise ValidationError("El código ingresado debe empezar con el código del padre")
+        
+        codigo_existe = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, nro_elemento_bien=None).first()
+        if codigo_existe:
+            raise ValidationError('El código ingresado ya existe, no puede ingresar uno igual')
+        
+        return codigo_bien
 
     def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
         niv_val = [[1,2,3,4,5,6],['0','0','00','00','000','00000'],['9','9','99','99','999','99999']]
@@ -126,9 +155,11 @@ class CatalogoBienesCreate(generics.CreateAPIView):
     def create_catalogo_bienes(self, data):
         nivel_jerarquico = data['nivel_jerarquico']
         id_bien_padre = data['id_bien_padre']
+        codigo_bien = data['codigo_bien']
+        
         bien_padre = None
         
-        if nivel_jerarquico < 1 or nivel_jerarquico > 6 or nivel_jerarquico == None:
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
 
         if id_bien_padre != None:
@@ -143,7 +174,7 @@ class CatalogoBienesCreate(generics.CreateAPIView):
                 raise ValidationError('El nivel jerarquico esta fuera de rango')
             
         generador_instance = GeneradorCodigoCatalogo()
-        data['codigo_bien'] = generador_instance.generador_codigo_bien(bien_padre, nivel_jerarquico)
+        data['codigo_bien'] = generador_instance.validar_codigo_bien(bien_padre, nivel_jerarquico, codigo_bien)
 
         try:
             unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
@@ -331,23 +362,50 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
 
 class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
+    
+    def get_full_catalogo(self, id_bien_padre):
+        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien').values(
+            "id_bien",
+            "codigo_bien",
+            "cod_tipo_bien",
+            "nro_elemento_bien",
+            "nombre",
+            "cod_tipo_activo",
+            "nivel_jerarquico",
+            "nombre_cientifico",
+            "descripcion",
+            "doc_identificador_nro",
+            "id_marca",
+            "id_unidad_medida",
+            "id_porcentaje_iva",
+            "cod_metodo_valoracion",
+            "cod_tipo_depreciacion",
+            "cantidad_vida_util",
+            "id_unidad_medida_vida_util",
+            "valor_residual",
+            "stock_minimo",
+            "stock_maximo",
+            "solicitable_vivero",
+            "es_semilla_vivero",
+            "cod_tipo_elemento_vivero",
+            "tiene_hoja_vida",
+            "id_bien_padre",
+            "maneja_hoja_vida",
+            "visible_solicitudes",
+            marca=F('id_marca__nombre'),
+            nombre_padre=F('id_bien_padre__nombre'),
+            unidad_medida=F('id_unidad_medida__abreviatura'),
+            unidad_medida_vida_util=F('id_unidad_medida_vida_util__abreviatura'),
+            porcentaje_iva=F('id_porcentaje_iva__porcentaje')
+        )
+        
+        return catalogo_bienes
 
     def get_catalogo_bienes(self, id_bien_padre, cont_padre):
-        catalogo_bienes = CatalogoBienes.objects.prefetch_related(
-                'cod_tipo_activo',
-                'id_marca',
-                'id_unidad_medida',
-                'id_porcentaje_iva',
-                'cod_metodo_valoracion',
-                'cod_tipo_depreciacion',
-                'id_unidad_medida_vida_util',
-                'id_bien_padre'
-            ).filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
+        data_padre = self.get_full_catalogo(id_bien_padre)
         
-        serializer = self.serializer_class(catalogo_bienes, many=True)
         cont = 0
         data_out = []
-        data_padre = serializer.data
 
         for data in data_padre:
             key = cont_padre + '-' + str(cont) if cont_padre != None else str(cont)
@@ -359,7 +417,7 @@ class CatalogoBienesGetList(generics.ListAPIView):
                     'id_nodo': data['id_bien'],
                     'editar': True,
                     'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exists() else True,
-                    'crear': data['nivel_jerarquico'] != 6,
+                    'crear': data['nivel_jerarquico'] != 5,
                     'bien': data,
                 },
                 'children': self.get_catalogo_bienes(data['id_bien'], key)})

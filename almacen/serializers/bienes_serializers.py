@@ -13,19 +13,11 @@ class CatalogoBienesSerializer(serializers.ModelSerializer):
     unidad_medida=serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
     unidad_medida_vida_util=serializers.ReadOnlyField(source='id_unidad_medida_vida_util.abreviatura',default=None)
     porcentaje_iva=serializers.ReadOnlyField(source='id_porcentaje_iva.porcentaje',default=None)
-    cod_tipo_bien = serializers.SerializerMethodField()  # Agregar este campo
+    tipo_bien = serializers.CharField(source='get_cod_tipo_bien_display',read_only=True,default=None)
 
     class Meta:
         model= CatalogoBienes
         fields='__all__'
-    
-    def get_cod_tipo_bien(self, obj):  # Método para obtener el valor de cod_tipo_bien
-        if obj.cod_tipo_bien == 'A':
-            return 'Activo Fijo'
-        elif obj.cod_tipo_bien == 'C':
-            return 'Consumo'
-        else:
-            return obj.cod_tipo_bien
 
 # class CatalogoBienesCreateSerializer(serializers.ModelSerializer):
 #     marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
