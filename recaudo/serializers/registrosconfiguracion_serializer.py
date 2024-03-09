@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, RegistrosConfiguracion,TipoCobro,TipoRenta,Variables,ValoresVariables
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral, RegistrosConfiguracion,TipoCobro,TipoRenta,Variables,ValoresVariables
 
 
 
@@ -53,5 +53,10 @@ class ConfigaraicionInteresSerializer(serializers.ModelSerializer):
         model = ConfigaraicionInteres
         fields = '__all__'
 
+
+class IndicadoresSemestralSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IndicadoresSemestral
+        fields = '__all__'
 
 
