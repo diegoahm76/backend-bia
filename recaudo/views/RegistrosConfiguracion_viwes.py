@@ -441,7 +441,7 @@ class Vista_ConfigaraicionInteres (generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cuencas = RegistrosConfiguracion.objects.all()
+        cuencas = ConfigaraicionInteres.objects.all()
         serializer = self.serializer_class(cuencas,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
@@ -533,7 +533,7 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cuencas = RegistrosConfiguracion.objects.all()
+        cuencas = IndicadoresSemestral.objects.all()
         serializer = self.serializer_class(cuencas,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
