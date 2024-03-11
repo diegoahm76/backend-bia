@@ -26,5 +26,9 @@ clase_tercero_LIST = [
     {
         "value": 7,
         "label": "Conductor Externo"
+    },
+    {
+        "value": 8,
+        "label": "Practicante"
     }
 ]
