@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from gestion_documental.models.expedientes_models import  CierresReaperturasExpediente, ExpedientesDocumentales
 from django.db.models import Count
-
+from datetime import date, datetime
 
 
 
@@ -24,38 +24,69 @@ class ReporteIndicesTodosGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self,request):
-        
-        simples_counts = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='S').count()
-        complejos_counts = ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C').count()
+
+        filter={}
+        fecha_inicio = None
+        fecha_fin = None
+        for key, value in request.query_params.items():
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_apertura_expediente__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                
+        instance = self.get_queryset().filter(**filter)
+        simples_counts = instance.filter(cod_tipo_expediente='S').count()
+        complejos_counts = instance.filter(cod_tipo_expediente='C').count()
         data ={}
 
-        simples =ExpedientesDocumentales.objects.filter(cod_tipo_expediente='S')
+        simples =instance.filter(cod_tipo_expediente='S')
+        s_abierto = simples.filter(estado='A').count()
+        s_cerrado = simples.filter(estado='C').count()
+        
+        simples_counts = instance.filter(cod_tipo_expediente='S').count()
+        complejos_counts = instance.filter(cod_tipo_expediente='C').count()
+        data ={}
+
+        simples =instance.filter(cod_tipo_expediente='S')
         s_abierto = simples.filter(estado='A').count()
         s_cerrado = simples.filter(estado='C').count()
 
 
 
-        complejos =ExpedientesDocumentales.objects.filter(cod_tipo_expediente='C')
+        complejos =instance.filter(cod_tipo_expediente='C')
         c_abierto = complejos.filter(estado='A').count()
         c_cerrado = complejos.filter(estado='C').count()
 
         #Reaperturados
-        cierres_reaperturas = CierresReaperturasExpediente.objects.all()
+        filtros_adicionales= {}
+        filtros_adicionales['cod_operacion'] ='R'
+        filtros_adicionales['id_expediente_doc__cod_tipo_expediente'] = 'S' #filtro expediente SIMPLE
+        if fecha_inicio :
+            filtros_adicionales['id_expediente_doc__fecha_apertura_expediente__gte'] = fecha_inicio
 
+        if fecha_fin :
+            filtros_adicionales['fecha_apertura_expediente__lte'] = fecha_fin
 
         reaperturas_agrupados_simples = (
             CierresReaperturasExpediente.objects
-            .filter(cod_operacion='R',id_expediente_doc__cod_tipo_expediente='S')  # Filtrar por el campo cod_operacion
+            .filter(**filtros_adicionales)  # filtro para reapertura de un expendiente simple con un rango de fechas 
             .values('id_expediente_doc')
             .annotate(cantidad=Count('id_expediente_doc'))
         )
-        reaperturas_agrupados_simples = (
+        filtros_adicionales['id_expediente_doc__cod_tipo_expediente'] = 'C' #filtro expediente Complejo
+        reaperturas_agrupados_complejos = (
             CierresReaperturasExpediente.objects
-            .filter(cod_operacion='R',id_expediente_doc__cod_tipo_expediente='C')  # Filtrar por el campo cod_operacion
+            .filter(**filtros_adicionales)  # Filtrar por el campo cod_operacion
             .values('id_expediente_doc')
             .annotate(cantidad=Count('id_expediente_doc'))
         )
-        print(reaperturas_agrupados_simples)
+        #print(reaperturas_agrupados_simples)
 
 
         count_creados = [simples_counts,complejos_counts]
