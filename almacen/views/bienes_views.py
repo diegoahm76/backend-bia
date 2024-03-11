@@ -1,4 +1,6 @@
 import math
+import json
+import os
 from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -36,6 +38,7 @@ from almacen.models.inventario_models import (
     TiposEntradas
 )
 from almacen.utils import UtilAlmacen
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from transversal.models.personas_models import (
     Personas
 )
@@ -51,6 +54,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timezone
+from gestion_documental.utils import UtilsGestor
 import copy
 
 class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
@@ -364,7 +368,10 @@ class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     
     def get_full_catalogo(self, id_bien_padre):
-        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien').values(
+        catalogo_bienes = CatalogoBienes.objects.filter(
+            nro_elemento_bien=None,
+            id_bien_padre=id_bien_padre
+        ).exclude(nivel_jerarquico=6).order_by('codigo_bien').values(
             "id_bien",
             "codigo_bien",
             "cod_tipo_bien",
@@ -403,26 +410,24 @@ class CatalogoBienesGetList(generics.ListAPIView):
 
     def get_catalogo_bienes(self, id_bien_padre, cont_padre):
         data_padre = self.get_full_catalogo(id_bien_padre)
-        
-        cont = 0
         data_out = []
 
-        for data in data_padre:
-            key = cont_padre + '-' + str(cont) if cont_padre != None else str(cont)
+        for cont, data in enumerate(data_padre):
+            key = f"{cont_padre}-{cont}" if cont_padre else str(cont)
+            has_children = CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exclude(nivel_jerarquico=6).exists()
             data_out.append({
                 'key': key,
                 'data': {
                     'nombre': data['nombre'],
-                    'codigo': data['codigo_bien'],
+                    'codigo': data['codigo_bien'],  
                     'id_nodo': data['id_bien'],
                     'editar': True,
-                    'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exists() else True,
+                    'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exclude(nivel_jerarquico=6).exists() else True,
                     'crear': data['nivel_jerarquico'] != 5,
                     'bien': data,
                 },
-                'children': self.get_catalogo_bienes(data['id_bien'], key)})
-
-            cont += 1
+                'children': self.get_catalogo_bienes(data['id_bien'], key) if has_children else []
+            })
         return data_out
     
     def get(self, request):
@@ -1550,6 +1555,14 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             item_guardado = serializador_item_entrada.save()
             items_guardados.append(item_guardado)
             items_guardados_data.append(serializador_item_entrada.data)
+            
+        # # CREAR ARCHIVO EN T238
+        # if archivo_soporte:
+        #     archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
+        #     archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+        #     entrada_creada.id_archivo_soporte = archivo_creado_instance
+        #     entrada_creada.save()
     
         # AUDITORIA CREATE ENTRADA
         valores_creados_detalles = []
@@ -1674,6 +1687,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
 
     def update_maestro(self, request, id_entrada):
         data = request.data.get('info_entrada')
+        # archivo_soporte = request.FILES.get('archivo_soporte')
 
         # VALIDACIÓN QUE LA ENTRADA SELECCIONADA EXISTA
         entrada = EntradasAlmacen.objects.filter(
@@ -1744,6 +1758,14 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        
+        # # ACTUALIZAR ARCHIVO
+        # if archivo_soporte and not entrada.id_archivo_soporte:
+        #     archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
+        #     archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+        #     entrada.id_archivo_soporte = archivo_creado_instance
+        #     entrada.save()
         
         valores_actualizados_maestro = {'previous':entrada_previous, 'current':entrada}
         

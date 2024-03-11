@@ -864,7 +864,7 @@ class GetCargosList(generics.ListAPIView):
     queryset = Cargos.objects.all()
 
     def get(self, request):
-        cargos = Cargos.objects.all()
+        cargos = Cargos.objects.all().order_by('nombre')
         serializador = self.serializer_class(cargos, many=True)
         if cargos:
             return Response({'success':True, 'detail':'Se encontraron cargos', 'data':serializador.data}, status=status.HTTP_200_OK)
