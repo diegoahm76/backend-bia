@@ -181,8 +181,29 @@ class ReporteUnidadGet(generics.ListAPIView):
         cerrados = []
         reaperturados = []
         categorias = []
+
+
+        filter={}
+        fecha_inicio = None
+        fecha_fin = None
+        for key, value in request.query_params.items():
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_apertura_expediente__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+
+        
+   
+
         for unidad,nombre in unidades_hijas:
-            expedientes = ExpedientesDocumentales.objects.filter(id_unidad_org_oficina_respon_original=unidad)
+            filter['id_unidad_org_oficina_respon_original'] = unidad
+            expedientes = ExpedientesDocumentales.objects.filter(**filter)
             creados.append(expedientes.count())
             abiertos.append(expedientes.filter(estado='A').count())
             cerrados.append(expedientes.filter(estado='C').count())
@@ -209,11 +230,13 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
     serializer_class = None
     def get(self, request, uni):
         
+        unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=uni).first()
 
-
+        if not unidad:
+            raise NotFound('No existe registro')
         expedientes = ExpedientesDocumentales.objects.filter(id_unidad_org_oficina_respon_original=uni)
         ids_expedientes = expedientes.values_list('id_expediente_documental', flat=True)
-        creados = expedientes.filter(estado='A').count()
+        abiertos = expedientes.filter(estado='A').count()
         cerrados = expedientes.filter(estado='C').count()
 
         reaperturas_agrupados = (
@@ -222,14 +245,14 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
             .values('id_expediente_doc')
             .annotate(cantidad=Count('id_expediente_doc'))
         )
-        print(len(expedientes))
-        print(creados)
-        print(cerrados)
-        print(len(reaperturas_agrupados))
 
+        series =[]
+        series.append({'name':'CREADOS', 'data':len(expedientes)})
+        series.append({'name':'ABIERTOS', 'data':abiertos})
+        series.append({'name':'CERRADOS', 'data':cerrados})
+        series.append({'name':'REAPERTURADOS', 'data':len(reaperturas_agrupados)})
 
-
-        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':'series','categories':'ñao'}},status=status.HTTP_200_OK) 
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':series,'categories':[unidad.nombre]}},status=status.HTTP_200_OK) 
 
 
 
@@ -240,26 +263,38 @@ class ReporteUnidadTotalUnidadGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = None
     def get(self, request, uni):
-        
-        # instance = self.get_queryset().filter(id_und_seccion_propietaria_serie=uni).first()
-        # if not instance:
-        #     raise NotFound('No existe registro')
+        filter={}
+        fecha_inicio = None
+        fecha_fin = None
+        for key, value in request.query_params.items():
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_apertura_expediente__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
 
         unidades_hijas = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=uni).values_list('id_unidad_organizacional','nombre', named=True)
         creados =[]
         abiertos =[]
         cerrados = []
         reaperturados = []
+        
         categorias = []
         for unidad,nombre in unidades_hijas:
-            expedientes = ExpedientesDocumentales.objects.filter(id_unidad_org_oficina_respon_original=unidad)
+            filter['id_unidad_org_oficina_respon_original'] = unidad
+            expedientes = ExpedientesDocumentales.objects.filter(**filter)
             creados.append(expedientes.count())
             categorias.append(nombre)
         
         expedientes_por_unidad = list(zip(creados, categorias))
         expedientes_por_unidad.sort(reverse=True)
         top_dos_unidades = expedientes_por_unidad[:2]
-        print(top_dos_unidades)
+      
         categories = []
         data =[]
         series = []
