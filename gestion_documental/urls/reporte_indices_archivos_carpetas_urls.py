@@ -7,10 +7,10 @@ urlpatterns = [
     path('sedes/get/', views.SucursalesEmpresasGet.as_view(), name='tca-list-post'),
     path('reporte_sede/get/', views.ReporteIndicesSedesGet.as_view(), name='tca-list-get'),
     path('unidades/get/', views.UnidadesOrganigramaActualGet.as_view(), name='tca-list-get'),
-    #SerieSubserioUnidadGet
     path('catalogos/get/<str:uni>/', views.SerieSubserioUnidadGet.as_view(), name='tca-list-get'),
     path('reporte_unidad/get/<str:uni>/', views.ReporteUnidadGet.as_view(), name='tca-list-get'),
     path('reporte_unidad_total/get/<str:uni>/', views.ReporteUnidadTotalUnidadGet.as_view(), name='tca-list-get'),
+    path('reporte_unidad_oficina/get/<str:uni>/', views.ReporteUnidadOficinaGet.as_view(), name='tca-list-get'),
     
 
 ]
