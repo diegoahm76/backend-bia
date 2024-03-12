@@ -175,10 +175,6 @@ class ReporteUnidadGet(generics.ListAPIView):
     serializer_class = None
     def get(self, request, uni):
         
-        # instance = self.get_queryset().filter(id_und_seccion_propietaria_serie=uni).first()
-        # if not instance:
-        #     raise NotFound('No existe registro')
-
         unidades_hijas = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=uni).values_list('id_unidad_organizacional','nombre', named=True)
         creados =[]
         abiertos =[]
@@ -205,6 +201,38 @@ class ReporteUnidadGet(generics.ListAPIView):
         series.append({'name':'REAPERTURADOS', 'data':reaperturados})
 
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':series,'categories':categorias}},status=status.HTTP_200_OK) 
+
+
+class ReporteUnidadOficinaGet(generics.ListAPIView):
+    queryset = ExpedientesDocumentales.objects.all()
+    permission_classes = [IsAuthenticated]
+    serializer_class = None
+    def get(self, request, uni):
+        
+
+
+        expedientes = ExpedientesDocumentales.objects.filter(id_unidad_org_oficina_respon_original=uni)
+        ids_expedientes = expedientes.values_list('id_expediente_documental', flat=True)
+        creados = expedientes.filter(estado='A').count()
+        cerrados = expedientes.filter(estado='C').count()
+
+        reaperturas_agrupados = (
+            CierresReaperturasExpediente.objects
+            .filter(cod_operacion='R',id_expediente_doc__in=ids_expedientes)  # Filtrar por el campo cod_operacion
+            .values('id_expediente_doc')
+            .annotate(cantidad=Count('id_expediente_doc'))
+        )
+        print(len(expedientes))
+        print(creados)
+        print(cerrados)
+        print(len(reaperturas_agrupados))
+
+
+
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':'series','categories':'ñao'}},status=status.HTTP_200_OK) 
+
+
+
 
 
 class ReporteUnidadTotalUnidadGet(generics.ListAPIView):
