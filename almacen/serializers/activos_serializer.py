@@ -49,3 +49,4 @@ class RegistrarBajaAnexosCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnexosDocsAlma
         fields = '__all__'
+        
