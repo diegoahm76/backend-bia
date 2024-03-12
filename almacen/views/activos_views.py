@@ -17,7 +17,7 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import InventarioSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, BajaActivosSerializer, InventarioSerializer, ItemsBajaActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer
 from almacen.models.inventario_models import Inventario
 from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
@@ -520,3 +520,45 @@ class BorrarBajaActivosView(generics.DestroyAPIView):
                 return False  # Si hay algún movimiento posterior, no se puede eliminar el registro de baja
 
         return True  # Si no hay movimientos posteriores para ningún activo, se puede eliminar el registro de baja
+    
+
+
+class BajaActivosPorConsecutivo(generics.ListAPIView):
+    queryset = BajaActivos.objects.all()
+    serializer_class = BajaActivosSerializer
+
+    def list(self, request, *args, **kwargs):
+        consecutivo = self.kwargs.get('consecutivo')  # Obtener el consecutivo desde los argumentos de la URL
+        baja_activos = self.get_queryset().filter(consecutivo_por_baja=consecutivo).first()  # Filtrar por consecutivo
+        if not baja_activos:
+            return Response({"success": False, "detail": "No se encontró la baja de activos asociada al consecutivo proporcionado"}, status=404)
+        
+        # Serializar la baja de activos
+        serializer = self.get_serializer(baja_activos)
+        data = serializer.data
+
+        # Obtener los anexos relacionados con la baja de activos
+        anexos = AnexosDocsAlma.objects.filter(id_baja_activo=baja_activos.id_baja_activo)
+        anexos_serializer = AnexosDocsAlmaSerializer(anexos, many=True)
+        
+        # Agregar los anexos serializados al objeto de la respuesta
+        data['anexos'] = anexos_serializer.data
+
+        # Obtener los items de baja de activos asociados a la baja de activos
+        items_baja_activos = ItemsBajaActivos.objects.filter(id_baja_activo=baja_activos.id_baja_activo)
+        items_serializer = ItemsBajaActivosSerializer(items_baja_activos, many=True)
+        
+        # Agregar los items serializados al objeto de la respuesta
+        data['items'] = items_serializer.data
+
+        return Response({"success": True, "detail": "Baja de activos encontrada", "data": data})
+    
+
+class ListarBajasActivosView(generics.ListAPIView):
+    queryset = BajaActivos.objects.all()
+    serializer_class = BajaActivosSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"success": True, "detail": "Bajas de activos listadas correctamente", "data": serializer.data})
