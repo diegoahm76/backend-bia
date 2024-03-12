@@ -101,7 +101,7 @@ class ReporteIndicesTodosGet(generics.ListAPIView):
             filtros_adicionales['id_expediente_doc__fecha_apertura_expediente__gte'] = fecha_inicio
 
         if fecha_fin :
-            filtros_adicionales['fecha_apertura_expediente__lte'] = fecha_fin
+            filtros_adicionales['id_expediente_doc__fecha_apertura_expediente__lte'] = fecha_fin
 
         reaperturas_agrupados_simples = (
             CierresReaperturasExpediente.objects
