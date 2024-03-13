@@ -149,7 +149,8 @@ class InicioTramiteCreateSerializer(serializers.ModelSerializer):
             'id_medio_solicitud',
             'id_persona_registra',
             'id_estado_actual_solicitud',
-            'fecha_ini_estado_actual'
+            'fecha_ini_estado_actual',
+            'requiere_digitalizacion'
         ]
         extra_kwargs = {
             'id_solicitud_tramite': {'read_only': True},
@@ -162,7 +163,8 @@ class InicioTramiteCreateSerializer(serializers.ModelSerializer):
             'id_medio_solicitud': {'required': True, 'allow_null': False},
             'id_persona_registra': {'required': True, 'allow_null': False},
             'id_estado_actual_solicitud': {'required': True, 'allow_null': False},
-            'fecha_ini_estado_actual': {'required': True, 'allow_null': False}
+            'fecha_ini_estado_actual': {'required': True, 'allow_null': False},
+
         }
 
 class TramiteListGetSerializer(serializers.ModelSerializer):
@@ -330,3 +332,8 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'tamagno_kb',
             'ruta_archivo'
         ]
+
+class OPASSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PermisosAmbSolicitudesTramite
+        fields = '__all__'

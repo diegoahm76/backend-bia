@@ -105,7 +105,6 @@ urlpatterns = [
     path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
     path('api/gestor/bandeja-tareas/',include('gestion_documental.urls.bandeja_tareas_urls')),
     path('api/gestor/transferencias_documentales/',include('gestion_documental.urls.transferencias_documentales_urls')),
-    #consecutivo_unidad_urls
     path('api/gestor/consecutivos-unidades/',include('gestion_documental.urls.consecutivo_unidad_urls')),
     path('api/gestor/consultar-estado-solicitud-tramite/', include('gestion_documental.urls.consultar_estado_solicitud_tramite_urls')),
     path('api/gestor/reporte_indices_archivos_carpetas/',include('gestion_documental.urls.reporte_indices_archivos_carpetas_urls')),
