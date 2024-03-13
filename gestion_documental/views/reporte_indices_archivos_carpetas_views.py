@@ -202,7 +202,7 @@ class ReporteUnidadGet(generics.ListAPIView):
    
 
         for unidad,nombre in unidades_hijas:
-            filter['id_unidad_org_oficina_respon_original'] = unidad
+            filter['id_und_org_oficina_respon_actual'] = unidad
             expedientes = ExpedientesDocumentales.objects.filter(**filter)
             creados.append(expedientes.count())
             abiertos.append(expedientes.filter(estado='A').count())

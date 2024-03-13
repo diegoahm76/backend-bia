@@ -1,6 +1,7 @@
 import hashlib
 import os
 import json
+from django.db.models import F
 from django.db.models import Max
 from pyexpat import model
 from rest_framework import generics
@@ -34,11 +35,23 @@ class BuscarBien(generics.ListAPIView):
             id_bien__isnull=False,
             id_bodega__isnull=False,
             realizo_baja=False,
-            realizo_salida=False
+            realizo_salida=False,
+            
         ).select_related('id_bodega')  # Realizar una sola consulta a la tabla de bodegas
 
         # Filtrar las bodegas activas
         queryset = queryset.filter(id_bodega__activo=True)
+
+        # Excluir los bienes incluidos en salidas o bajas previas
+        queryset = queryset.exclude(realizo_baja=True).exclude(realizo_salida=True)
+
+        # Validar que el campo id_bien tenga un nivel jerárquico de 5
+        queryset = queryset.annotate(
+            nivel_jerarquico=F('id_bien__nivel_jerarquico')
+        ).filter(nivel_jerarquico=5)
+
+        # Validar que el campo cod_tipo_bien sea igual a "A"
+        queryset = queryset.filter(id_bien__cod_tipo_bien='A')
 
         return queryset
 

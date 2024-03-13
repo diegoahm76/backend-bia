@@ -688,4 +688,11 @@ class BitacoraLlegadaSerializer(serializers.ModelSerializer):
         model = BitacoraViaje
         fields = '__all__'
 
+
+class BusquedaSolicitudViajeIdSerializer(serializers.ModelSerializer):
+    estado_solicitud = serializers.CharField(source='get_estado_solicitud_display',read_only=True,default=None)
+    class Meta:
+        model = SolicitudesViajes
+        fields = ['id_solicitud_viaje','estado_solicitud']
+
     
