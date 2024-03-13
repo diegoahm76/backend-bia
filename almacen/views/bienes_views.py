@@ -1,6 +1,14 @@
+import math
+import json
+import os
 from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
 from rest_framework.views import APIView
+import unicodedata
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import F
+
+
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.serializers.bienes_serializers import (
     CatalogoBienesSerializer,
@@ -30,6 +38,7 @@ from almacen.models.inventario_models import (
     TiposEntradas
 )
 from almacen.utils import UtilAlmacen
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from transversal.models.personas_models import (
     Personas
 )
@@ -45,9 +54,38 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from datetime import datetime, timezone
+from gestion_documental.utils import UtilsGestor
 import copy
 
 class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
+    def validar_codigo_bien(self, bien_padre, nivel_jerarquico, codigo_bien):
+        niv_val = [[1,2,3,4,5],['0','0','00','00','00000000'],['9','9','99','99','99999999']]
+        
+        try:
+            posicion = niv_val[0].index(nivel_jerarquico)
+        except:
+            raise ValidationError('El nivel jerarquico esta fuera de rango')
+
+        catalago = CatalogoBienes.objects.filter(nivel_jerarquico=nivel_jerarquico)
+
+        if bien_padre != None:
+            catalago = catalago.filter(id_bien_padre = bien_padre.id_bien)
+
+        catalago = catalago.order_by('codigo_bien').last()
+        codigo_padre = bien_padre.codigo_bien if bien_padre != None else ''
+        codigo_anterior  = catalago.codigo_bien[len(codigo_padre):] if catalago != None else niv_val[1][posicion]
+
+        if codigo_anterior == niv_val[2][posicion]:
+            raise ValidationError('No se puede generar mas codigos de bienes para este nivel jerarquico')
+        
+        if not codigo_bien.startswith(codigo_padre):
+            raise ValidationError("El código ingresado debe empezar con el código del padre")
+        
+        codigo_existe = CatalogoBienes.objects.filter(codigo_bien=codigo_bien, nro_elemento_bien=None).first()
+        if codigo_existe:
+            raise ValidationError('El código ingresado ya existe, no puede ingresar uno igual')
+        
+        return codigo_bien
 
     def generador_codigo_bien(self, bien_padre, nivel_jerarquico):
         niv_val = [[1,2,3,4,5,6],['0','0','00','00','000','00000'],['9','9','99','99','999','99999']]
@@ -121,9 +159,11 @@ class CatalogoBienesCreate(generics.CreateAPIView):
     def create_catalogo_bienes(self, data):
         nivel_jerarquico = data['nivel_jerarquico']
         id_bien_padre = data['id_bien_padre']
+        codigo_bien = data['codigo_bien']
+        
         bien_padre = None
         
-        if nivel_jerarquico < 1 or nivel_jerarquico > 6 or nivel_jerarquico == None:
+        if nivel_jerarquico < 1 or nivel_jerarquico > 5 or nivel_jerarquico == None:
             raise ValidationError('El nivel jerarquico esta fuera de rango')
 
         if id_bien_padre != None:
@@ -138,7 +178,7 @@ class CatalogoBienesCreate(generics.CreateAPIView):
                 raise ValidationError('El nivel jerarquico esta fuera de rango')
             
         generador_instance = GeneradorCodigoCatalogo()
-        data['codigo_bien'] = generador_instance.generador_codigo_bien(bien_padre, nivel_jerarquico)
+        data['codigo_bien'] = generador_instance.validar_codigo_bien(bien_padre, nivel_jerarquico, codigo_bien)
 
         try:
             unidad_medida = UnidadesMedida.objects.get(id_unidad_medida=data['id_unidad_medida'])
@@ -326,30 +366,68 @@ class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
 
 class CatalogoBienesGetList(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
+    
+    def get_full_catalogo(self, id_bien_padre):
+        catalogo_bienes = CatalogoBienes.objects.filter(
+            nro_elemento_bien=None,
+            id_bien_padre=id_bien_padre
+        ).exclude(nivel_jerarquico=6).order_by('codigo_bien').values(
+            "id_bien",
+            "codigo_bien",
+            "cod_tipo_bien",
+            "nro_elemento_bien",
+            "nombre",
+            "cod_tipo_activo",
+            "nivel_jerarquico",
+            "nombre_cientifico",
+            "descripcion",
+            "doc_identificador_nro",
+            "id_marca",
+            "id_unidad_medida",
+            "id_porcentaje_iva",
+            "cod_metodo_valoracion",
+            "cod_tipo_depreciacion",
+            "cantidad_vida_util",
+            "id_unidad_medida_vida_util",
+            "valor_residual",
+            "stock_minimo",
+            "stock_maximo",
+            "solicitable_vivero",
+            "es_semilla_vivero",
+            "cod_tipo_elemento_vivero",
+            "tiene_hoja_vida",
+            "id_bien_padre",
+            "maneja_hoja_vida",
+            "visible_solicitudes",
+            marca=F('id_marca__nombre'),
+            nombre_padre=F('id_bien_padre__nombre'),
+            unidad_medida=F('id_unidad_medida__abreviatura'),
+            unidad_medida_vida_util=F('id_unidad_medida_vida_util__abreviatura'),
+            porcentaje_iva=F('id_porcentaje_iva__porcentaje')
+        )
+        
+        return catalogo_bienes
 
     def get_catalogo_bienes(self, id_bien_padre, cont_padre):
-        catalogo_bienes = CatalogoBienes.objects.filter(nro_elemento_bien=None, id_bien_padre=id_bien_padre).order_by('codigo_bien')
-        serializer = self.serializer_class(catalogo_bienes, many=True)
-        cont = 0
+        data_padre = self.get_full_catalogo(id_bien_padre)
         data_out = []
-        data_padre = serializer.data
 
-        for data in data_padre:
-            key = cont_padre + '-' + str(cont) if cont_padre != None else str(cont)
+        for cont, data in enumerate(data_padre):
+            key = f"{cont_padre}-{cont}" if cont_padre else str(cont)
+            has_children = CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exclude(nivel_jerarquico=6).exists()
             data_out.append({
                 'key': key,
                 'data': {
                     'nombre': data['nombre'],
-                    'codigo': data['codigo_bien'],
+                    'codigo': data['codigo_bien'],  
                     'id_nodo': data['id_bien'],
                     'editar': True,
-                    'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exists() else True,
-                    'crear': data['nivel_jerarquico'] != 6,
+                    'eliminar': False if CatalogoBienes.objects.filter(id_bien_padre=data['id_bien']).exclude(nivel_jerarquico=6).exists() else True,
+                    'crear': data['nivel_jerarquico'] != 5,
                     'bien': data,
                 },
-                'children': self.get_catalogo_bienes(data['id_bien'], key)})
-
-            cont += 1
+                'children': self.get_catalogo_bienes(data['id_bien'], key) if has_children else []
+            })
         return data_out
     
     def get(self, request):
@@ -1044,30 +1122,102 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
             return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
+# class SearchArticulos(generics.ListAPIView):
+#     serializer_class = CatalogoBienesSerializer
+#     queryset = CatalogoBienes.objects.all()
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         filter = {}
+#         for key, value in request.query_params.items():
+#             if key in ['nombre', 'codigo_bien', 'cod_tipo_activo']:
+#                 if key != 'cod_tipo_activo':
+#                     filter[key+'__icontains'] = value
+#                 else:
+#                     filter[key] = value
+#         filter['nro_elemento_bien'] = None
+#         filter['nivel_jerarquico'] = 5
+#         bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
+#         serializador = self.serializer_class(bien, many=True)
+#         if bien:
+#             return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
+#         else:
+#             try:
+#                 raise NotFound('No se encontró elementos')
+#             except NotFound as e:
+#                 return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class SearchArticulosPagination(PageNumberPagination):
+    page_size = 10  # Cantidad de elementos por página
+    page_size_query_param = 'page_size'  # Parámetro para especificar el tamaño de página
+    max_page_size = None  # Tamaño máximo permitido de página (ilimitado)
+
 class SearchArticulos(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
-    queryset = CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
+    pagination_class = SearchArticulosPagination  # Clase de paginación
+
+    def get_queryset(self):
+        queryset = CatalogoBienes.objects.all()
+
+        filters = {}
+        for key, value in self.request.query_params.items():
+            if key in ['nombre', 'codigo_bien', 'cod_tipo_activo'] and value:
+                if key != 'cod_tipo_activo':
+                    filters[key + '__icontains'] = value
+                else:
+                    filters[key] = value
+
+        if filters:
+            queryset = queryset.filter(**filters)
+
+        # Agregar filtros adicionales
+        filters['nro_elemento_bien'] = None
+        filters['nivel_jerarquico'] = 5
+        queryset = queryset.filter(**filters).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
+
+        return queryset
 
     def get(self, request):
-        filter = {}
-        for key, value in request.query_params.items():
-            if key in ['nombre', 'codigo_bien', 'cod_tipo_activo']:
-                if key != 'cod_tipo_activo':
-                    filter[key+'__icontains'] = value
-                else:
-                    filter[key] = value
-        filter['nro_elemento_bien'] = None
-        filter['nivel_jerarquico'] = 5
-        bien = CatalogoBienes.objects.filter(**filter).filter(Q(cod_tipo_activo__cod_tipo_activo__in=['Com','Veh','OAc']) | Q(cod_tipo_activo=None))
-        serializador = self.serializer_class(bien, many=True)
-        if bien:
-            return Response({'success':True, 'detail':'Se encontró los elementos', 'data': serializador.data}, status=status.HTTP_200_OK)
+        queryset = self.get_queryset()
+
+        # Aplicar paginación después de aplicar los filtros
+        page = self.paginate_queryset(queryset)
+
+        # Obtener el total de elementos
+        total_elements = queryset.count()
+
+        if page is not None:
+            serializer = self.serializer_class(page, many=True)
+            total_pages = self.get_total_pages(queryset)  # Calcular el número total de páginas
+            return self.get_paginated_response(serializer.data, self.paginator.page.number, total_pages,total_elements)
+
+        serializer = self.serializer_class(queryset, many=True)
+        if queryset.exists():
+            return Response({'success': True, 'detail': 'Se encontraron elementos', 'data': serializer.data, 'total_elements': total_elements}, status=status.HTTP_200_OK)
         else:
-            try:
-                raise NotFound('No se encontró elementos')
-            except NotFound as e:
-                return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'success': False, 'detail': 'No se encontraron elementos', 'total_elements': 0}, status=status.HTTP_404_NOT_FOUND)
+
+    def get_total_pages(self, queryset):
+        # Calcular el número total de páginas
+        total_items = queryset.count()
+        page_size = self.pagination_class.page_size
+        return math.ceil(total_items / page_size)
+
+    def get_paginated_response(self, data, current_page, total_pages,total_elements):
+        return Response({
+            'success': True,
+            'detail': 'Se encontraron elementos',
+            'pagination': {
+                'pagina_actual': current_page,
+                'total_paginas': total_pages,
+                'total_datos': total_elements
+
+            },
+            'data': data
+        }, status=status.HTTP_200_OK)
+    
 
 
 class GetCatalogoBienesByCodigo(generics.ListAPIView):
@@ -1405,6 +1555,14 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             item_guardado = serializador_item_entrada.save()
             items_guardados.append(item_guardado)
             items_guardados_data.append(serializador_item_entrada.data)
+            
+        # # CREAR ARCHIVO EN T238
+        # if archivo_soporte:
+        #     archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
+        #     archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+        #     entrada_creada.id_archivo_soporte = archivo_creado_instance
+        #     entrada_creada.save()
     
         # AUDITORIA CREATE ENTRADA
         valores_creados_detalles = []
@@ -1529,6 +1687,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
 
     def update_maestro(self, request, id_entrada):
         data = request.data.get('info_entrada')
+        # archivo_soporte = request.FILES.get('archivo_soporte')
 
         # VALIDACIÓN QUE LA ENTRADA SELECCIONADA EXISTA
         entrada = EntradasAlmacen.objects.filter(
@@ -1599,6 +1758,14 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer = EntradaUpdateSerializer(entrada, data=data, many=False)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        
+        # # ACTUALIZAR ARCHIVO
+        # if archivo_soporte and not entrada.id_archivo_soporte:
+        #     archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
+        #     archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+        #     entrada.id_archivo_soporte = archivo_creado_instance
+        #     entrada.save()
         
         valores_actualizados_maestro = {'previous':entrada_previous, 'current':entrada}
         

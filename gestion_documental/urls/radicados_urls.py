@@ -29,6 +29,7 @@ urlpatterns = [
 
      #Consulta_Estado_Solicitud_Otros_112
      path('otros/consulta-estado-otros/', views.ConsultaEstadoOTROS.as_view(), name='listar-estados-otros'),
+     path('otros/medios-solicitud-otros/', views.ListarMediosParaOTROS.as_view(), name='listar-medios-solicitud-otros'),
 
 
 

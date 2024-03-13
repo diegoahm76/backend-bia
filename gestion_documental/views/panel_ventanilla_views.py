@@ -11,7 +11,7 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
-from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
+from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 from seguridad.utils import Util
@@ -22,7 +22,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import F, Value, CharField
 from django.db.models.functions import Concat
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesDeJuridica, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from django.db.models import Max
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
@@ -1243,7 +1243,61 @@ class SolicitudDeDigitalizacionOPACreate(generics.CreateAPIView):
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'estados':respuesta_estado_asociado.data['data']}, status=status.HTTP_200_OK)
         #return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data}, status=status.HTTP_200_OK)
     
+class SolicitudJuridicaOPACreate(generics.CreateAPIView):
+    serializer_class = SolicitudJuridicaOPACreateSerializer
+    serializer_tramite = TramitePutSerializer
+    queryset = SolicitudesDeJuridica.objects.all()
+    permission_classes = [IsAuthenticated]
+    creador_estados = Estados_PQRCreate
+    
+    def post(self, request):
+        fecha_actual = datetime.now()
+      
+        data_in = request.data
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
 
+        if not solicitud_tramite:
+            raise NotFound("No existe el OPA seleccionado.")
+
+        if solicitud_tramite.requiere_digitalizacion and not solicitud_tramite.fecha_envio_definitivo_a_digitalizacion:
+            raise ValidationError("Se debe completar la digitalización del OPA antes de enviar la solicitud a jurídica")
+        
+        instance = AsignacionTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'])
+        for asignacion in instance:
+            if asignacion.cod_estado_asignacion != 'Ac':
+                raise ValidationError("El OPA tiene que ser asignado a un grupo antes de enviar la solicitud a jurídica")
+        
+        solicitud_juridica = self.queryset.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        if solicitud_juridica:
+            raise ValidationError("El OPA ya fue enviado a revisión jurídica")
+        
+        #CREA UN ESTADO NUEVO T255
+        data_estado = {}
+        data_estado['id_tramite'] = request.data['id_solicitud_tramite']
+        data_estado['estado_solicitud'] = 15
+        data_estado['fecha_iniEstado'] = fecha_actual
+        data_estado['persona_genera_estado'] = request.user.persona.id_persona
+        respuesta_estado = self.creador_estados.crear_estado(self,data_estado)
+        data_respuesta_estado_asociado = respuesta_estado.data['data']
+        
+        
+        #CAMBIAMOS EL ESTADO ACTUAL DEL OPA
+        serializador_opa = self.serializer_tramite(solicitud_tramite, data={'id_estado_actual_solicitud':15}, partial=True)
+        serializador_opa.is_valid(raise_exception=True)
+        serializador_opa.save()
+        
+        data_in['cod_tipo_solicitud_juridica'] = 'RE'
+        data_in['fecha_solicitud'] = fecha_actual
+        data_in['solicitud_completada'] = False
+        data_in['solicitud_sin_completar'] = True
+        data_in['id_persona_solicita_revision'] = request.user.persona.id_persona
+        data_in['cod_estado_tipo_solicitud_juridica'] = 'NR'
+        
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de jurídica', 'data':serializer.data, 'estados':data_respuesta_estado_asociado}, status=status.HTTP_201_CREATED)
 
 class OPAFGetHitorico(generics.ListAPIView):
     serializer_class = OPAGetHistoricoSerializer
@@ -1948,7 +2002,14 @@ class UnidadesOrganizacionalesRelacionadasListView(generics.ListAPIView):
 #PANEL DE VENTANILLA TRAMITES 
 class SolicitudesTramitesGet(generics.ListAPIView):
     serializer_class = SolicitudesTramitesGetSerializer
-    queryset = SolicitudesTramites.objects.all()           
+    queryset = SolicitudesTramites.objects.prefetch_related(
+        'id_persona_titular',
+        'id_persona_interpone',
+        'id_medio_solicitud',
+        'id_persona_registra',
+        'id_persona_rta_final_gestion',
+        'id_estado_actual_solicitud'
+    )         
     permission_classes = [IsAuthenticated]
 
     def get (self, request):
@@ -1991,12 +2052,12 @@ class SolicitudesTramitesGet(generics.ListAPIView):
         data_respuesta = serializador.data
         data_validada =[]
         if radicado_value and radicado_value != '':
-            data_validada = [item for item in serializador.data if radicado_value in item.get('radicado', '')]
+            data_validada = [item for item in data_respuesta if radicado_value in item.get('radicado', '')]
         else :
             data_validada = data_respuesta
             
         if nombre_titular and nombre_titular != '':
-            data_validada = [item for item in serializador.data if nombre_titular in item.get('nombre_completo_titular', '')]
+            data_validada = [item for item in data_respuesta if nombre_titular in item.get('nombre_completo_titular', '')]
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)
 
@@ -2251,7 +2312,7 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
                     # Mostrar el grillado con la información básica de la asignación de grupo
                     grillado_info_grupo = {
                         'Acción': 'ASIGNACIÓN DE TRÁMITE',
-                        'Fecha de asignación': registro_t279_grupo.T279fechaAsignacion,
+                        'Fecha de asignación': registro_t279_grupo.fecha_envio_solicitud,
                         'Fecha respuesta de asignación': '',
                         'Asignado para': lider_grupo.nombre_completo_persona,
                         'Subsección': {
@@ -2411,7 +2472,7 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
                 }, status=status.HTTP_200_OK)
 
             # Actualizar estado de asignación cuando el líder de Planeación acepta la asignación
-            estado_aceptado = 'Ac'
+            estado_aceptado = None
             fecha_aceptacion = timezone.now()
 
             # Actualizar estado y fecha de asignación

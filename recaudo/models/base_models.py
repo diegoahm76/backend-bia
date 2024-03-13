@@ -111,8 +111,6 @@ class Variables(models.Model):
     nombre = models.CharField(max_length=255, db_column='T443Nombre')
     tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
     tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
-    valor_varaible = models.DecimalField(max_digits=10, decimal_places=2, db_column='T443valor_varaible')
-    
     numero_dias_variable = models.IntegerField(db_column='T443numero_dias_variable', null=True, default=None)
     class Meta:
         db_table = 'T443Variables'
@@ -173,3 +171,83 @@ class Twwwprincipal(models.Model):
         verbose_name = 'Principal'
         verbose_name_plural = 'Principal'
 
+
+
+class AdministraciondePersonal(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T43IdV')
+    nivel = models.IntegerField(db_column='T464Nivel', unique=True)
+    director = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Director')
+    tecnicos = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Técnicos')
+    asesor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asesor')
+    profesional = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Profesional')
+    asistencial = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asistencial')
+
+    class Meta:
+        db_table = 'T464AdministraciondePersonal'
+        verbose_name = 'Administracion de Personal'
+        verbose_name_plural = 'Administracion de Personal'
+
+
+MONTH_CHOICES = [
+    (1, 'Enero'),
+    (2, 'Febrero'),
+    (3, 'Marzo'),
+    (4, 'Abril'),
+    (5, 'Mayo'),
+    (6, 'Junio'),
+    (7, 'Julio'),
+    (8, 'Agosto'),
+    (9, 'Septiembre'),
+    (10, 'Octubre'),
+    (11, 'Noviembre'),
+    (12, 'Diciembre')
+]
+
+class ConfigaraicionInteres(models.Model):
+    id = models.AutoField(primary_key=True, db_column='T466configuracionInteres')
+    año = models.IntegerField(db_column='T466Nivel')
+    mes = models.IntegerField(choices=MONTH_CHOICES, db_column='T466mes')
+    valor_interes = models.DecimalField(max_digits=10, decimal_places=0, db_column='T466ValorInteres')
+    estado_editable = models.BooleanField(default=False, db_column='T466EstadoEditable')
+
+    class Meta:
+        db_table = 'T466ConfigaraicionInteres'
+        verbose_name = 'Configaraicion Interes'
+        verbose_name_plural = 'Configaraicion Interes'
+        unique_together = ('año', 'mes')  # Restricción única para año y mes
+
+
+
+
+class IndicadoresSemestral(models.Model):
+    # Definición de opciones
+    TUA = 'tua'
+    TR = 'tr'
+    OTRA = 'otra'
+
+    OPCIONES = [
+        (TUA, 'TUA'),
+        (TR, 'TR'),
+        (OTRA, 'OTRA'),
+    ]
+
+    # Campos del modelo
+    id = models.AutoField(primary_key=True, db_column='T465configuracion')
+    proceso = models.CharField(max_length=255, db_column='T465Proceso')
+    nombre_indicador = models.CharField(max_length=255, db_column='T465Nombre_del_indicador')
+    frecuencia_medicion = models.CharField(max_length=255, db_column='T465Frecuencia_de_medicion')
+    variable_1 = models.CharField(max_length=255, db_column='T465Variable_1')
+    variable_2 = models.CharField(max_length=255, db_column='T465Variable_2')
+    formula_indicador = models.CharField(max_length=255, db_column='T465Formula_del_indicador')
+    vigencia_reporta = models.DateField(db_column='T465Vigencia_que_reporta')
+    dependencia_grupo_regional = models.CharField(max_length=255, db_column='T465Dependencia_grupo_regional')
+    objetivo_indicador = models.CharField(max_length=255, db_column='T465Objetivo_del_indicador')
+    unidad_medicion_reporte = models.CharField(max_length=255, db_column='T465Unidad_de_medicion_y_reporte')
+    descripcion_variable_1 = models.TextField(db_column='T465Descipccion_variable_1')
+    descripcion_variable_2 = models.TextField(db_column='T465Descripccion_variable_2')
+    origen_datos = models.CharField(max_length=255, db_column='T465Origen_de_datos')
+
+    class Meta:
+        db_table = 'T465IndicadoresSemestral'
+        verbose_name = 'Configuracion Interes'
+        verbose_name_plural = 'Configuracion Interes'

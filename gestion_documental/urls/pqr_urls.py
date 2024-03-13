@@ -30,6 +30,8 @@ urlpatterns = [
 
     #Consulta_Estado_Solicitud_PQRSDF_111
     path('consulta-estado-pqrsdf/', views.ConsultaEstadoPQRSDF.as_view(), name='listar-estados-solicitud'),
+    path('medio-solicitud-pqrsdf/', views.ListarMediosParaPQRSDF.as_view(), name='listar-medios-solicitud'),
+    path('sucursales-pqrsdf/', views.ListarSucursalesEmpresas.as_view(), name='listar-sucursales-solicitud'),
 
     #Consulta_Estado_Solicitud_PQRSDF_114
     path('consulta-estado-pqrsdf/', views.ConsultaEstadoPQRSDF.as_view(), name='listar-estados-solicitud'),

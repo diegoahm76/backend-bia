@@ -17,11 +17,11 @@ class ConfigTipoConsecAgno(models.Model):
     consecutivo_actual = models.IntegerField(null=True,db_column='T306consecutivoActual')
     fecha_consecutivo_actual = models.DateTimeField(null=True,db_column='T306fechaConsecutivoActual')
     id_persona_consecutivo_actual = models.ForeignKey('transversal.Personas',null=True, on_delete=models.SET_NULL, db_column='T306Id_PersonaConsecutivoActual',related_name='FK2_T306ConfigTiposRadicadoAgno')
-    #id_catalogo_serie_unidad = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad', null=True, on_delete=models.CASCADE, db_column='T306Id_CatalogoSerieUnidad',related_name='T306IdCatalogoSerieUnidad')
-    id_unidad = models.ForeignKey('transversal.UnidadesOrganizacionales', on_delete=models.CASCADE, db_column='T306Id_Unidad',related_name='T306IdUnidad')
+    id_catalogo_serie_unidad = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad', null=True, on_delete=models.CASCADE, db_column='T306Id_CatalogoSerieUnidad',related_name='T306IdCatalogoSerieUnidad')
+    id_unidad = models.ForeignKey('transversal.UnidadesOrganizacionales', null=True, on_delete=models.CASCADE, db_column='T306Id_Unidad',related_name='T306IdUnidad')
     class Meta:
         db_table = 'T306ConfigTiposConsecAgno'
-        unique_together = [('agno_consecutivo','id_unidad'),]
+        unique_together = [('agno_consecutivo','id_unidad', 'id_catalogo_serie_unidad'),]
 
 
 

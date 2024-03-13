@@ -78,6 +78,7 @@ class InspeccionesVehiculosDia(models.Model):
     botiquin_completo = models.BooleanField(default=True, db_column="T073botiquinCompleto")
     pito = models.BooleanField(default=True, db_column="T073pitoBueno")
     observaciones = models.CharField(max_length=255, null=True, blank=True, db_column="T073observaciones")
+    observaciones_verifi_sup = models.CharField(max_length=255, null=True, blank=True, db_column="T073observacionVerifiSuperior")
     requiere_verificacion = models.BooleanField(default=True, db_column="T073requiereVerificacionSuperior")
     verificacion_superior_realizada = models.BooleanField(default=True, db_column="T073verificacionSuperiorRealizada")
     id_persona_que_verifica = models.ForeignKey("transversal.Personas", on_delete=models.SET_NULL, null=True, blank=True, db_column="T073Id_PersonaQueVerifica", related_name="T073id_persona_que_verifica")
@@ -86,7 +87,7 @@ class InspeccionesVehiculosDia(models.Model):
         return str(self.id_inspeccion_vehiculo)
     
     class Meta:
-        db_table = "T073InspeccionesVehiculoDias"
+        db_table = "T073InspeccionesVehiculoDia"
         verbose_name = "InspeccionesVehiculoDia"
         verbose_name_plural = "InspeccionesVehiculoDias"
         

@@ -249,7 +249,7 @@ class AnexosTramite(models.Model):
         return str(self.id_anexo_tramite)
 
     class Meta:
-        db_table = 'T287AnexosTramite'
+        db_table = 'T287Anexos_Tramite'
         verbose_name = 'Anexo Tramite'
         verbose_name_plural = 'Anexos Tramites'
 
@@ -419,7 +419,7 @@ class SolicitudesDeJuridica(models.Model):
     solicitud_completada = models.BooleanField(null=True, blank=True, db_column='T296solicitudCompletada')
     solicitud_sin_completar = models.BooleanField(null=True, blank=True, db_column='T296solicitudSinCompletar')
     id_persona_solicita_revision = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='id_persona_solicita_revision_juridica', db_column='T296Id_PersonaSolicitaRevision')
-    id_persona_revisa = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='id_persona_revisa_juridica', db_column='T296Id_PersonaRevisa')
+    id_persona_revisa = models.ForeignKey(Personas, null=True, blank=True, on_delete=models.SET_NULL, related_name='id_persona_revisa_juridica', db_column='T296Id_PersonaRevisa')
     cod_estado_tipo_solicitud_juridica = models.CharField(max_length=2, choices=cod_estado_solicitud_juridica_CHOICES, db_column='T296codEstadoTipoSolicitudJuridica')
 
     def __str__(self):
@@ -429,3 +429,17 @@ class SolicitudesDeJuridica(models.Model):
         db_table = 'T296SolicitudesDeJuridica'
         verbose_name = 'Solicitud De Juridica'
         verbose_name_plural = 'Solicitudes De Juridica'
+        
+class Tramites(models.Model):
+    id_tramites = models.AutoField(primary_key=True, db_column='T318IdTramites')
+    procedure_id = models.IntegerField(null=True, blank=True, db_column='T318procedure_Id')
+    radicate_bia = models.CharField(max_length=50, null=True, blank=True, db_column='T318radicate_Bia')
+    proceeding_id = models.CharField(max_length=50, null=True, blank=True, db_column='T318proceeding_Id')
+    name_key = models.CharField(max_length=100, null=True, blank=True, db_column='T318name_Key')
+    type_key = models.CharField(max_length=100, null=True, blank=True, db_column='T318type_Key')
+    value_key = models.TextField(null=True, blank=True, db_column='T318value_Key')
+
+    class Meta:
+        db_table = 'T318Tramites'
+        verbose_name = 'Tramites'
+        verbose_name_plural = 'Tramites'

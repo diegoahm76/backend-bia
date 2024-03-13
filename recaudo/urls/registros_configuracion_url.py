@@ -41,7 +41,20 @@ urlpatterns = [
 
             #funcion para calcular los dias de el mes
         path('calculadoradiasmeses/', viwes.CalculadoraDiasMeses.as_view(), name='registros-calculadora-dias-meses'),
+        
+        path('administracionpersonal/', viwes.Vista_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
+        path('administracionpersonal/put/<str:pk>/', viwes.Actualizar_AdministraciondePersonal.as_view(), name='administracion-de-personal-update'),
+        path('administracionpersonal/post/', viwes.Crear_AdministraciondePersonal.as_view(), name='administracion-de-personal-delete'),
+
+        path('configuracioninterres/get/<int:year>/', viwes.Vista_ConfigaraicionInteres.as_view(), name='administracion-de-personal-year'),
+        path('configuracioninterres/post/', viwes.Crear_ConfigaraicionInteres.as_view(), name='administracion-de-personal'),
+        path('configuracioninterres/put/<str:pk>/', viwes.Actualizar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-update'),
+        path('configuracioninterres/delete/<str:pk>/', viwes.Borrar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-delete'),
 
 
+        path('indicadores/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+        path('indicadores/put/<str:pk>/', viwes.Actualizar_IndicadoresSemestral.as_view(), name='configuracion-interes-update'),
+        path('indicadores/delete/<str:pk>/', viwes.Borrar_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+        path('indicadores/post/', viwes.Crear_IndicadoresSemestral.as_view(), name='configuracion-interes'),
     ]
 

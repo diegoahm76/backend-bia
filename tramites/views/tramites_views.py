@@ -1,6 +1,7 @@
 import json
 import os
 import hashlib
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework import generics, views
 from rest_framework.views import APIView
@@ -9,17 +10,20 @@ from rest_framework.permissions import IsAuthenticated
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.models.expedientes_models import ArchivosDigitales
-from gestion_documental.models.radicados_models import Anexos, ConfigTiposRadicadoAgno, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
+from gestion_documental.models.radicados_models import Anexos, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, T262Radicados
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import RadicadoPostSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.pqr_views import RadicadoCreate
 from seguridad.utils import Util
+from datetime import datetime, date, timedelta
 from django.db.models import Max
-
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
-from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
+from django.db.models import Q
+from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionTramites, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites, Tramites
+from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, OPASSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
 from transversal.models.base_models import Municipio
 from transversal.models.personas_models import Personas
 
@@ -34,17 +38,28 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         data_tramite = json.loads(data['data_tramite'])
         archivos = request.FILES.getlist('archivos')
         current_date = datetime.now()
+        persona_logueada = request.user.persona
         
         data_tramite['fecha_inicio_tramite'] = datetime.now()
         data_tramite['id_persona_interpone'] = request.user.persona.id_persona
         data_tramite['id_persona_registra'] = request.user.persona.id_persona
         data_tramite['id_medio_solicitud'] = 2
-        data_tramite['id_estado_actual_solicitud'] = 1
+        data_tramite['id_estado_actual_solicitud'] = 13
+        data_tramite['requiere_digitalizacion'] = True
         data_tramite['fecha_ini_estado_actual'] = datetime.now()
         
         serializer = self.serializer_class(data=data_tramite)
         serializer.is_valid(raise_exception=True)
         tramite_creado = serializer.save()
+        
+        # Insertar en T255 con estado PENDIENTE POR RADICAR
+        estado_solicitud_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=13).first()
+        Estados_PQR.objects.create(
+            id_tramite = tramite_creado,
+            estado_solicitud = estado_solicitud_instance,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = persona_logueada
+        )
         
         # CREAR ANEXOS
         for index, (archivo) in enumerate(archivos):
@@ -131,6 +146,15 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         tramite_creado.id_estado_actual_solicitud = estado_solicitud
         tramite_creado.save()
         
+        # Insertar en T255 con estado RADICADO
+        estado_solicitud_radicado_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        Estados_PQR.objects.create(
+            id_tramite = tramite_creado,
+            estado_solicitud = estado_solicitud_radicado_instance,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = persona_logueada
+        )
+        
         tramite_instance_updated = SolicitudesTramites.objects.filter(id_solicitud_tramite=tramite_creado.id_solicitud_tramite).first()
         serializer_tramite = self.serializer_get_tramite_class(tramite_instance_updated)
         serializer_tramite_data = serializer_tramite.data
@@ -183,7 +207,7 @@ class InicioTramiteCreateView(generics.CreateAPIView):
     
     def create(self, request):
         data = request.data
-        
+        current_date = datetime.now()
         direccion = request.data.get('direccion', '')
         descripcion_direccion = request.data.get('descripcion_direccion', '')
         coordenada_x = data.get('coordenada_x')
@@ -217,17 +241,27 @@ class InicioTramiteCreateView(generics.CreateAPIView):
             data['cod_relacion_con_el_titular'] = 'RL' # VALIDAR PARA CASO DE APODERADOS
         
         data['cod_tipo_operacion_tramite'] = 'N'
+        data['requiere_digitalizacion'] = True
         data['nombre_proyecto'] = permiso_ambiental.nombre
         data['costo_proyecto'] = 0
         data['fecha_inicio_tramite'] = datetime.now()
         # data['id_medio_solicitud'] = 2 # QUE LO MANDE FRONTEND
         data['id_persona_registra'] = request.user.persona.id_persona
-        data['id_estado_actual_solicitud'] = 1
+        data['id_estado_actual_solicitud'] = 13
         data['fecha_ini_estado_actual'] = datetime.now()
         
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         tramite_creado = serializer.save()
+        
+        # Insertar en T255 con estado PENDIENTE POR RADICAR
+        estado_solicitud_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=13).first()
+        Estados_PQR.objects.create(
+            id_tramite = tramite_creado,
+            estado_solicitud = estado_solicitud_instance,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = request.user.persona
+        )
         
         # CREAR EN T280
         PermisosAmbSolicitudesTramite.objects.create(
@@ -482,6 +516,14 @@ class RadicarCreateView(generics.CreateAPIView):
         solicitud.id_estado_actual_solicitud = estado_solicitud
         solicitud.save()
         
+        # Insertar en T255 con estado RADICADO
+        Estados_PQR.objects.create(
+            id_tramite = solicitud,
+            estado_solicitud = estado_solicitud,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = request.user.persona
+        )
+        
         # ENVIAR CORREO CON RADICADO
         subject = "OPA radicado con éxito - "
         template = "envio-radicado-opas.html"
@@ -537,3 +579,204 @@ class RadicarVolverEnviarGetView(generics.ListAPIView):
         serializer_data['radicado_nuevo'] = radicado_nuevo
         
         return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer_data}, status=status.HTTP_200_OK)   
+
+
+
+################################################################################################################################################
+#CONSULTA_ESTADO_OPAS
+class ConsultaEstadoOPAS(generics.ListAPIView):
+    serializer_class = OPASSerializer
+
+    def get_queryset(self):
+        opas = PermisosAmbSolicitudesTramite.objects.filter(
+            id_permiso_ambiental__cod_tipo_permiso_ambiental='O'
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+        radicado = self.request.query_params.get('radicado')
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+
+
+
+        if fecha_radicado_desde:
+            opas = opas.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            opas = opas.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_radicado_hasta)
+
+        if radicado:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    opas = opas.filter(
+                        id_solicitud_tramite__id_radicado__prefijo_radicado__icontains=prefijo,
+                        id_solicitud_tramite__id_radicado__agno_radicado__icontains=agno,
+                        id_solicitud_tramite__id_radicado__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                opas = opas.filter(
+                    Q(id_solicitud_tramite__id_radicado__prefijo_radicado__icontains=radicado) |
+                    Q(id_solicitud_tramite__id_radicado__agno_radicado__icontains=radicado) |
+                    Q(id_solicitud_tramite__id_radicado__nro_radicado__icontains=radicado)
+                )
+
+            
+        if estado_solicitud:
+            opas = opas.filter(id_solicitud_tramite__id_estado_actual_solicitud__nombre=estado_solicitud)
+            
+        return opas
+
+    def get_location_info(self, tramites):
+        estado_actual = tramites.id_estado_actual_solicitud
+
+        if estado_actual and estado_actual.nombre in ['RADICADO', 'EN VENTANILLA CON PENDIENTES', 'EN VENTANILLA SIN PENDIENTES','PENDIENTE DE REVISIÓN JURIDICA DE VENTANILLA']:
+            return 'EN VENTANILLA'
+
+        elif estado_actual and estado_actual.nombre == 'EN GESTION':
+            try:
+                asignacion = AsignacionTramites.objects.filter(
+                    id_tramites=tramites,
+                    cod_estado_asignacion='Ac'
+                ).latest('fecha_asignacion')
+
+                tarea_reasignada = ReasignacionesTareas.objects.filter(
+                    id_tarea_asignada=asignacion.id_asignacion_otros,
+                    cod_estado_reasignacion='Ac'
+                ).first()
+
+                if tarea_reasignada:
+                    # Si hay reasignación
+                    if tarea_reasignada.cod_estado_reasignacion == 'Ep':
+                        # Reasignación en espera
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Re':
+                        # Reasignación rechazada
+                        unidad_reasignada = tarea_reasignada.id_und_org_reasignada
+                    elif tarea_reasignada.cod_estado_reasignacion == 'Ac':
+                        # Reasignación aceptada
+                        persona_reasignada = Personas.objects.get(id_persona=tarea_reasignada.id_persona_a_quien_se_reasigna)
+                        unidad_reasignada = persona_reasignada.id_unidad_organizacional_actual
+
+                    if unidad_reasignada:
+                        if unidad_reasignada.cod_agrupacion_documental == 'SEC':
+                            return f'SECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental == 'SUB':
+                            return f'SUBSECCION - {unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+                        elif unidad_reasignada.cod_agrupacion_documental is None:
+                            return f'{unidad_reasignada.codigo} - {unidad_reasignada.nombre}'
+
+                # Si no hay reasignación, mostrar la unidad original
+                unidad_asignada = asignacion.id_und_org_seccion_asignada
+                if unidad_asignada:
+                    if unidad_asignada.cod_agrupacion_documental == 'SEC':
+                        return f'SECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental == 'SUB':
+                        return f'SUBSECCION - {unidad_asignada.codigo} - {unidad_asignada.nombre}'
+                    elif unidad_asignada.cod_agrupacion_documental is None:
+                        return f'{unidad_asignada.codigo} - {unidad_asignada.nombre}'
+
+            except AsignacionTramites.DoesNotExist:
+                pass
+
+        return None
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = serializer.data
+
+        for item in data:
+            solicitud_id = item['id_solicitud_tramite']
+            solicitud = get_object_or_404(SolicitudesTramites, pk=solicitud_id)
+            if solicitud.id_persona_titular:
+                titular = solicitud.id_persona_titular
+                if titular.tipo_persona == 'N':
+                    titular_nombre = f'{titular.primer_nombre} {titular.segundo_nombre} {titular.primer_apellido} {titular.segundo_apellido}'
+                elif titular.tipo_persona == 'J':
+                    titular_nombre = titular.razon_social
+                else:
+                    titular_nombre = 'Anónimo'
+                item['Persona_titular'] = titular_nombre
+                item['ID_persona_titular'] = titular.id_persona
+            else:
+                item['Persona_titular'] = 'Anónimo'
+                item['ID_persona_titular'] = 'N/A'
+
+            solicitud = get_object_or_404(SolicitudesTramites, pk=solicitud_id)
+            radicado_id = solicitud.id_radicado_id
+            radicado = T262Radicados.objects.filter(id_radicado=radicado_id).first()
+            if radicado:
+                radicado_str = f"{radicado.prefijo_radicado}-{radicado.agno_radicado}-{radicado.nro_radicado}"
+                fecha_radicado = radicado.fecha_radicado.strftime("%Y-%m-%d %H:%M:%S")
+                persona_radica_id = radicado.id_persona_radica_id
+                persona_radica_nombre = f"{radicado.id_persona_radica.primer_nombre} {radicado.id_persona_radica.segundo_nombre} {radicado.id_persona_radica.primer_apellido} {radicado.id_persona_radica.segundo_apellido}"
+            else:
+                radicado_str = 'N/A'
+                fecha_radicado = 'N/A'
+                persona_radica_id = 'N/A'
+                persona_radica_nombre = 'N/A'
+            item['Radicado'] = radicado_str
+            item['Fecha_Radicado'] = fecha_radicado
+            item['Persona_radica_id'] = persona_radica_id
+            item['Persona_radica_nombre'] = persona_radica_nombre
+
+            estado_actual = solicitud.id_estado_actual_solicitud
+            if estado_actual:
+                item['Estado_actual_nombre'] = estado_actual.nombre
+                item['Estado_actual_id'] = estado_actual.id_estado_solicitud
+            else:
+                item['Estado_actual_nombre'] = 'N/A'
+                item['Estado_actual_id'] = 'N/A'
+
+            location_info = self.get_location_info(solicitud)
+            item['Location_info'] = location_info
+            item['Tiempo de respuesta'] = None
+            item['Documento'] = None
+            item['Tipo Solicitud'] = "OPAS"
+
+
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data}, status=status.HTTP_200_OK)
+    
+class TramitesPivotGetView(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        filter = {}
+        
+        for key, value in request.query_params.items():
+            if key in ['procedure_id','radicado']:
+                if key == 'radicado':
+                    if value != '':
+                        filter['radicate_bia__icontains'] = value
+                elif value != '':
+                    filter[key] = value
+        
+        tramites_values = Tramites.objects.filter(**filter).values()
+        
+        if tramites_values:
+            organized_data = {
+                'procedure_id': tramites_values[0]['procedure_id'],
+                'radicate_bia': tramites_values[0]['radicate_bia'],
+                'proceeding_id': tramites_values[0]['proceeding_id'],
+            }
+            
+            for item in tramites_values:
+                field_name = item['name_key']
+                if item['type_key'] == 'json':
+                    value = json.loads(item['value_key'])
+                else:
+                    value = item['value_key']
+                organized_data[field_name] = value
+        else:
+            raise NotFound('No se encontró el detalle del trámite elegido')
+        
+        return Response({'success':True, 'detail':'Se encontró el detalle del trámite', 'data':organized_data}, status=status.HTTP_200_OK)

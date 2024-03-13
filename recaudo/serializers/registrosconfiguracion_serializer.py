@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recaudo.models.base_models import RegistrosConfiguracion,TipoCobro,TipoRenta,Variables,ValoresVariables
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral, RegistrosConfiguracion,TipoCobro,TipoRenta,Variables,ValoresVariables
 
 
 
@@ -39,3 +39,22 @@ class ValoresVariablesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ValoresVariables
         fields = '__all__'
+
+
+
+class AdministraciondePersonalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdministraciondePersonal
+        fields = '__all__'
+class ConfigaraicionInteresSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfigaraicionInteres
+        fields = '__all__'
+
+
+class IndicadoresSemestralSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IndicadoresSemestral
+        fields = '__all__'
+
+

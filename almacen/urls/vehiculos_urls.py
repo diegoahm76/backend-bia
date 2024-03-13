@@ -21,6 +21,8 @@ urlpatterns = [
     path('listar-solicitudes-viajes/get/',views.ListaSolicitudesViaje.as_view(),name='listar-solicitudes-viaje'),
     path('eliminar-solicitudes-viajes/<int:pk>/',views.EliminarSolicitudViaje.as_view(),name='eliminar-solicitudes-viaje'),
     path('editar-solicitudes-viajes/<int:pk>/',views.EditarSolicitudViaje.as_view(),name='editar-solicitudes-viaje'),
+    path('obtener-informacion-viajes/<int:id_solicitud_viaje>/', views.ObtenerInformacionViajes.as_view(), name='obtener_informacion_viajes'),
+
 
     #Asignacion-vehiculo-conductor
     path('busqueda-vehiculos/get/',views.BusquedaVehiculos.as_view(),name='busqueda-vehiculos'),
@@ -35,6 +37,7 @@ urlpatterns = [
     path('inspeccion-vehiculo/create/',views.CrearInspeccionVehiculo.as_view(),name='crear-inspeccion-vehiculos'),
     path('novedades-vehiculo/get/',views.NovedadesVehiculosList.as_view(),name='novedades-vehiculos'),
     path('revisar-vehiculo/<int:pk>/',views.InspeccionVehiculoDetail.as_view(),name='revisar-vehiculos'),
+    path('listar-inspecciones-id/<int:pk>/',views.InspeccionVehiculoID.as_view(),name='listar-inspecciones-vehiculos'),
 
 
     #Agendamiento_vehiculos
@@ -44,8 +47,10 @@ urlpatterns = [
     path('solicitud-viaje/<int:id_solicitud_viaje>/', views.ObtenerSolicitudViaje.as_view(), name='obtener_solicitud_viaje'),
     path('busqueda-vehiculos-general/',views.BusquedaVehiculosGRL.as_view(),name='busqueda-vehiculos-general'),
     path('detalles-vehiculos-agendados/',views.DetallesViajeGet.as_view(),name='detalles-vehiculos-agendados'),
-    path('viajes-agendados/<int:pk>/', views.EditarAprobacion.as_view(), name='editar_aprobacion_viaje'),
-    path('eliminar-viaje-agendado/<int:pk>/', views.EliminarViajeAgendado.as_view(), name='eliminar_viaje_agendado'),
+    path('viajes-agendados/<int:pk>/', views.EditarAprobacion.as_view(), name='editar-aprobacion-viaje'),
+    path('eliminar-viaje-agendado/<int:pk>/', views.EliminarViajeAgendado.as_view(), name='eliminar-viaje-agendado'),
+    path('obtener-agendamiento-viajes/<int:id_solicitud_viaje>/', views.ObtenerInformacionAgendamiento.as_view(), name='obtener-informacion-agendamiento'),
+
 
 
     #Bitacora_Vehiculos
@@ -54,6 +59,9 @@ urlpatterns = [
     path('bitacora-salida/get/<int:id_viaje_agendado>/', views.ObtenerBitacoraSalida.as_view(), name='obtener_bitacora_salida'),
     path('bitacora-llegada/update/<int:id_viaje_agendado>/', views.ActualizarBitacoraLlegada.as_view(), name='actualizar_bitacora_llegada'),
     path('bitacora-llegada/get/<int:id_viaje_agendado>/', views.ObtenerBitacoraSalida.as_view(), name='obtener-bitacora-llegada'),
+
+    #Solicitud_Viaje
+   path('listar-solicitud-viaje/get/<int:pk>/',views.BusquedaEstadoSolicitudViaje.as_view(),name='listar-solicitud-viaje'),
 
 
     

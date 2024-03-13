@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from django.http import Http404, JsonResponse
 from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 from django.shortcuts import get_object_or_404
+from almacen.choices.estado_solicitud_choices import estado_solicitud_CHOICES
 
 
 
@@ -57,12 +58,17 @@ from almacen.serializers.vehiculos_serializers import (
     VehiculosAgendablesConductorSerializer,
     VehiculosArrendadosSerializer,
     ViajesAgendadosDeleteSerializer,
+    ViajesAgendadosPorIDSerializer,
     ViajesAgendadosSerializer,
+    ViajesAgendadosSolcitudSerializer,
+    BusquedaSolicitudViajeIdSerializer,
     )
 from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
 from seguridad.models import Personas
 from django.db.models import Value, CharField
+
+from transversal.views.alertas_views import AlertaEventoInmediadoCreate
 
 
 
@@ -573,7 +579,7 @@ class CrearSolicitudViaje(generics.CreateAPIView):
             'cod_municipio': cod_municipio,
             'motivo_viaje': data.get('motivo_viaje_solicitado', ''),  # Corregido el nombre del campo
             'indicaciones_destino': data.get('indicaciones_destino', ''),
-            'requiere_carga': data.get('requiere_carga', False),
+            'requiere_carga': data['requiere_carga'], 
             'fecha_partida': fecha_partida,
             'hora_partida': hora_partida,
             'fecha_retorno': fecha_retorno,
@@ -670,6 +676,11 @@ class EditarSolicitudViaje(generics.UpdateAPIView):
             serializer = self.get_serializer(instance, data=request.data)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
+
+            # Actualizar el estado a "En Espera"
+            instance.estado_solicitud = 'ES'
+            instance.save()
+            
             
             return Response({'success': True, 'detail': 'Solicitud editada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         except SolicitudesViajes.DoesNotExist:
@@ -925,7 +936,65 @@ class DatosBasicosConductorGet(generics.ListAPIView):
         # Obtener el nombre completo del conductor
         nombre_completo = f"{persona_logueada.primer_nombre} {persona_logueada.segundo_nombre} {persona_logueada.primer_apellido} {persona_logueada.segundo_apellido}"
 
-        return Response({'success': True, 'detail': 'Información del conductor', 'data': {'id_persona_logueada': id_persona_logueada, 'nombre_completo': nombre_completo}})
+
+        #obtener_email
+        email_persona = None
+        if persona_logueada.email:
+            email_persona = f"{persona_logueada.email}"
+        elif persona_logueada.email_empresarial:
+            telefono_celular = f"{persona_logueada.email_empresarial}"
+        else:
+            email_persona = "Correo electrónico no disponible"
+
+        #fecha_nacimiento
+        fecha_nacimiento = None
+        if persona_logueada.fecha_nacimiento:
+            fecha_nacimiento = f"{persona_logueada.fecha_nacimiento}"
+        else:
+            fecha_nacimiento = "Fecha de nacimiento no disponible"
+
+
+        #tipo_documento
+        tipo_documento = None
+        if persona_logueada.tipo_documento:
+            tipo_documento = f"{persona_logueada.tipo_documento}"
+        else:
+            tipo_documento = "tipo de documento no disponible"
+
+        #numero_documento
+        numero_documento = None
+        if persona_logueada.numero_documento:
+            numero_documento = f"{persona_logueada.numero_documento}"
+        else:
+            numero_documento = "numero de identificacion no disponible"
+
+        #telefono_celular
+        telefono_celular = None
+        if persona_logueada.telefono_celular:
+            telefono_celular = f"{persona_logueada.telefono_celular}"
+        elif persona_logueada.telefono_fijo_residencial:
+            telefono_celular = f"{persona_logueada.telefono_fijo_residencial}"
+        elif persona_logueada.telefono_celular_empresa:
+            telefono_celular = f"{persona_logueada.telefono_celular_empresa}"
+        elif persona_logueada.telefono_empresa:
+            telefono_celular = f"{persona_logueada.telefono_empresa}"
+        else:
+            telefono_celular = "numero de celular no disponible"
+
+        return Response({
+            'success': True,
+            'detail': 'Información del conductor',
+            'data': {
+                'id_persona_logueada': id_persona_logueada,
+                'nombre_completo': nombre_completo,
+                'email': email_persona,
+                'fecha_nacimiento': fecha_nacimiento,
+                'tipo_documento': tipo_documento,
+                'numero_documento': numero_documento,
+                'telefono_celular': telefono_celular,
+            }
+        })
+
 
 
 
@@ -986,13 +1055,74 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                     hoja_vida_vehiculo.es_agendable = es_agendable
                     hoja_vida_vehiculo.save()
 
-            print(es_agendable)
+            #print(es_agendable)
             # Creamos la inspección de vehículo
             with transaction.atomic():
                 instancia_inspeccion = serializer.save()
 
             data = serializer.data
             data['es_agendable'] = es_agendable
+
+
+
+            #GENERACION DE ALERTA
+
+            
+            if data['requiere_verificacion']:
+                
+                id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+                if not id_hoja_vida_vehiculo:
+                    raise ValidationError('El campo id_hoja_vida_vehiculo es obligatorio.')
+
+                hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
+                id_elemento=hoja_vida_vehiculo.id_hoja_de_vida
+
+                data_alerta = {}
+                vista_alertas_programadas = AlertaEventoInmediadoCreate()
+                data_alerta = {}
+                data_alerta['cod_clase_alerta'] = 'Alm_NvInsp'
+                #data_alerta['id_persona'] = id_persona_asiganada
+                data_alerta['id_elemento_implicado'] = id_elemento
+
+                inspeccion = instancia_inspeccion
+                #raise ValidationError(inspeccion.id_persona_inspecciona)
+                cadena = ""
+                if inspeccion.id_persona_inspecciona:
+
+                    nombre_completo_solicitante = None
+                    nombre_list = [inspeccion.id_persona_inspecciona.primer_nombre, inspeccion.id_persona_inspecciona.segundo_nombre,
+                                    inspeccion.id_persona_inspecciona.primer_apellido, inspeccion.id_persona_inspecciona.segundo_apellido]
+                    nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+                    nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+                    persona = nombre_completo_solicitante
+                
+                    fecha_inspeccion = inspeccion.dia_inspeccion
+                    hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
+                    tipo_vehiculo = hoja_vida_vehiculo.get_cod_tipo_vehiculo_display()
+                    if hoja_vida_vehiculo.es_arrendado:
+                        placa = hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+                        nombre = hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+                        marca = hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+                    else:
+                        placa = hoja_vida_vehiculo.id_articulo.doc_identificador_nro
+                        nombre = hoja_vida_vehiculo.id_articulo.nombre
+                        marca = hoja_vida_vehiculo.id_articulo.id_marca.nombre
+                    
+                    if not hoja_vida_vehiculo:
+                        cadena =  ""
+                    cadena = (
+                        "<p>Persona que inspecciona: " + persona + "</p>"
+                        "<p>Fecha de inspección: " + str(fecha_inspeccion) + "</p>"
+                        "<p>Placa del vehículo: " + placa + "</p>"
+                        "<p>Nombre del vehículo: " + nombre + "</p>"
+                        "<p>Marca del vehículo: " + marca + "</p>"
+                        )
+                    
+                data_alerta['informacion_complemento_mensaje'] = cadena
+                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+                if respuesta_alerta.status_code != status.HTTP_200_OK:
+                    return respuesta_alerta
+
 
             # Retornamos el registro creado con la variable es_agendable
             return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
@@ -1016,6 +1146,22 @@ class NovedadesVehiculosList(generics.ListAPIView):
             placa, marca = self.obtener_placa_y_marca(inspeccion)
             id_inspeccion = inspeccion.id_inspeccion_vehiculo
             id_hoja_de_vida = inspeccion.id_hoja_vida_vehiculo_id
+            fecha_registro = inspeccion.fecha_registro
+            dia_inspeccion = inspeccion.dia_inspeccion
+            id_persona_inspecciona = inspeccion.id_persona_inspecciona.id_persona
+            persona_inspecciona = Personas.objects.get(id_persona=id_persona_inspecciona)
+            nombre_inspecciona = persona_inspecciona.primer_nombre if persona_inspecciona else None
+            primer_apellido_inspecciona = persona_inspecciona.primer_apellido if persona_inspecciona else None
+            fecha_nacimiento_persona_inspecciona = persona_inspecciona.fecha_nacimiento if persona_inspecciona else None
+            tipo_documento_persona_inspecciona = persona_inspecciona.tipo_documento.nombre if persona_inspecciona else None
+            numero_documento_persona_inspecciona = persona_inspecciona.numero_documento if persona_inspecciona else None
+            numero_celular_persona_inspecciona = persona_inspecciona.telefono_celular if persona_inspecciona else None
+            numero_empresarial_celular_persona_inspecciona = persona_inspecciona.telefono_celular_empresa if persona_inspecciona else None
+            email_persona_inspecciona = persona_inspecciona.email if persona_inspecciona else None
+            email_empresarial_persona_inspecciona = persona_inspecciona.email_empresarial if persona_inspecciona else None
+
+            
+
 
             # Verificar las novedades
             novedades = self.verificar_novedades(inspeccion)
@@ -1025,7 +1171,21 @@ class NovedadesVehiculosList(generics.ListAPIView):
                     "id_inspeccion_vehiculo": id_inspeccion,
                     "id_hoja_de_vida": id_hoja_de_vida,
                     "placa": placa,
-                    "marca": marca
+                    "marca": marca,
+                    'fecha_registro': fecha_registro,
+                    'dia_inspeccion': dia_inspeccion,
+                    'id_persona_inspecciona': id_persona_inspecciona,
+                    'nombre_inspecciona': nombre_inspecciona,
+                    'apellido_inspecciona': primer_apellido_inspecciona,
+                    'fecha_nacimiento_persona_inspecciona': fecha_nacimiento_persona_inspecciona,
+                    'tipo_documento_persona_inspecciona': tipo_documento_persona_inspecciona,
+                    'numero_documento_persona_inspecciona': numero_documento_persona_inspecciona,
+                    'numero_celular_persona_inspecciona': numero_celular_persona_inspecciona,
+                    'numero_empresarial_celular_persona_inspecciona': numero_empresarial_celular_persona_inspecciona,
+                    'email_persona_inspecciona': email_persona_inspecciona,
+                    'email_empresarial_persona_inspecciona': email_empresarial_persona_inspecciona,
+                    "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada
+
                 })
             else:
                 placa_marca = f"{placa}-{marca}"
@@ -1034,14 +1194,42 @@ class NovedadesVehiculosList(generics.ListAPIView):
                         "id_inspeccion_vehiculo": id_inspeccion,
                         "id_hoja_de_vida": id_hoja_de_vida,
                         "placa_marca": placa_marca,
-                        "novedad": novedades[0]
+                        'fecha_registro': fecha_registro,
+                        'dia_inspeccion': dia_inspeccion,
+                        'id_persona_inspecciona': id_persona_inspecciona,
+                        'nombre_inspecciona': nombre_inspecciona,
+                        'apellido_inspecciona': primer_apellido_inspecciona,
+                        'fecha_nacimiento_persona_inspecciona': fecha_nacimiento_persona_inspecciona,
+                        'tipo_documento_persona_inspecciona': tipo_documento_persona_inspecciona,
+                        'numero_documento_persona_inspecciona': numero_documento_persona_inspecciona,
+                        'numero_celular_persona_inspecciona': numero_celular_persona_inspecciona,
+                        'numero_empresarial_celular_persona_inspecciona': numero_empresarial_celular_persona_inspecciona,
+                        'email_persona_inspecciona': email_persona_inspecciona,
+                        'email_empresarial_persona_inspecciona': email_empresarial_persona_inspecciona,
+                        "novedad": novedades[0],
+                        "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada
+
                     })
                 else:
                     vehiculos_con_novedad.append({
                         "id_inspeccion_vehiculo": id_inspeccion,
                         "id_hoja_de_vida": id_hoja_de_vida,
                         "placa_marca": placa_marca,
+                        'fecha_registro': fecha_registro,
+                        'dia_inspeccion': dia_inspeccion,
+                        'id_persona_inspecciona': id_persona_inspecciona,
+                        'nombre_inspecciona': nombre_inspecciona,
+                        'apellido_inspecciona': primer_apellido_inspecciona,
+                        'fecha_nacimiento_persona_inspecciona': fecha_nacimiento_persona_inspecciona,
+                        'tipo_documento_persona_inspecciona': tipo_documento_persona_inspecciona,
+                        'numero_documento_persona_inspecciona': numero_documento_persona_inspecciona,
+                        'numero_celular_persona_inspecciona': numero_celular_persona_inspecciona,
+                        'numero_empresarial_celular_persona_inspecciona': numero_empresarial_celular_persona_inspecciona,
+                        'email_persona_inspecciona': email_persona_inspecciona,
+                        'email_empresarial_persona_inspecciona': email_empresarial_persona_inspecciona,
+                        "verificacion_superior_realizada": inspeccion.verificacion_superior_realizada,
                         "cantidad_novedades": len(novedades)
+
                     })
 
         return Response({
@@ -1106,20 +1294,37 @@ class InspeccionVehiculoDetail(generics.RetrieveAPIView, generics.UpdateAPIView)
         # Obtener el ID de la persona logueada
         persona_id = request.user.persona.id_persona if request.user.is_authenticated else None
         
+        # Obtener la observación de verificación superior del request data
+        observacion_verificacion_superior = request.data.get('observaciones_verifi_sup')
+        
+        # Validar que la observación de verificación superior sea obligatoria
+        if not observacion_verificacion_superior:
+            return Response({'error': 'La observación de verificación superior es obligatoria.'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Actualizar los campos de la inspección
         instance.verificacion_superior_realizada = True
         instance.id_persona_que_verifica_id = persona_id  # Actualizamos el ID de la persona logueada
+        instance.observaciones_verifi_sup = observacion_verificacion_superior  # Agregar la observación de verificación superior
         instance.save()
 
         serializer = self.get_serializer(instance)
         return Response({'success': True, 'detail': 'La inspección ha sido verificada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#Inspeccion_Por_ID_inspeccion
+class InspeccionVehiculoID(generics.RetrieveAPIView):
+    queryset = InspeccionesVehiculosDia.objects.all()
+    serializer_class = InspeccionVehiculoSerializer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({'success': True, 'detail': 'La inspección ha sido consultada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
 
+        if instance:
+            serializer = self.get_serializer(instance)
+            return Response({'success': True, 'detail': 'La inspección ha sido consultada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': False, 'error': 'La inspección no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
 
 #Busqueda_Avanzada_Solicitud_Viajes
 class BusquedaSolicitudesViaje(generics.ListAPIView):
@@ -1228,7 +1433,7 @@ class CrearReprobacion(generics.CreateAPIView):
     serializer_class = ViajesAgendadosSerializer
     permission_classes = [IsAuthenticated]
 
-
+    
     def create(self, request, *args, **kwargs):
         data = request.data
 
@@ -1283,6 +1488,85 @@ class CrearReprobacion(generics.CreateAPIView):
         solicitud_viaje.justificacion_rechazo = observacion_no_autorizado
         solicitud_viaje.estado_solicitud = 'RC'
         solicitud_viaje.save()
+
+        #GENERACION DE ALERTA
+
+        data_alerta = {}
+        vista_alertas_programadas = AlertaEventoInmediadoCreate()
+        data_alerta = {}
+        data_alerta['cod_clase_alerta'] = 'Alm_SVRech'
+        data_alerta['cod_tipo_alerta'] = 'SV'
+        data_alerta['id_elemento_implicado'] = solicitud_viaje.id_solicitud_viaje
+        cadena =''
+        #CONSTRUIMOS EL MENSAJE 
+        persona_solicita = solicitud_viaje.id_persona_solicita
+        nombre_completo =''
+        nombre_unidad_solicitud = ''
+        nombre_unidad_rechazo =''
+        
+
+        if persona_solicita:
+
+            nombre_completo_solicitante = None
+            nombre_list = [persona_solicita.primer_nombre, persona_solicita.segundo_nombre,
+                            persona_solicita.primer_apellido, persona_solicita.segundo_apellido]
+            nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+            nombre_completo = nombre_completo_solicitante
+
+        unidad = solicitud_viaje.id_unidad_org_solicita
+
+        agrupacion = unidad.cod_agrupacion_documental
+        if agrupacion:
+            nombre_unidad_solicitud = unidad.codigo +" - " + agrupacion +" - "+unidad.nombre
+        else:
+            nombre_unidad_solicitud = unidad.codigo +" - " +unidad.nombre
+
+
+        persona_rechazo = solicitud_viaje.id_persona_responsable
+        if persona_rechazo:
+
+            nombre_completo_solicitante = None
+            nombre_list = [persona_rechazo.primer_nombre, persona_rechazo.segundo_nombre,
+                            persona_rechazo.primer_apellido, persona_rechazo.segundo_apellido]
+            nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+            nombre_completo_responsable = nombre_completo_solicitante
+
+        unidad_responsable = solicitud_viaje.id_unidad_org_responsable
+        agrupacion = unidad_responsable.cod_agrupacion_documental
+        if agrupacion:
+            nombre_unidad_rechazo = unidad_responsable.codigo +" - " + agrupacion +" - "+unidad_responsable.nombre
+        else:
+            nombre_unidad_rechazo = unidad_responsable.codigo +" - " +unidad_responsable.nombre
+
+        print(nombre_completo)
+        print(nombre_unidad_solicitud)
+        print(solicitud_viaje.fecha_solicitud)
+        print(solicitud_viaje.motivo_viaje)
+        print(solicitud_viaje.get_estado_solicitud_display())
+        print(solicitud_viaje.fecha_rechazo)
+        print(nombre_completo_responsable)
+        print(nombre_unidad_rechazo)
+
+        #cadena = "Persona solicitante: " + nombre_completo +"Unidad organizacional del solicitante: " + nombre_unidad_solicitud + "Fecha solicitud: "+str(solicitud_viaje.fecha_solicitud) + "Motivo del viaje solicitado:" + solicitud_viaje.motivo_viaje +"Estado solicitud: "+solicitud_viaje.get_estado_solicitud_display()+" Fecha de rechazo: "+str(solicitud_viaje.fecha_rechazo) +"Persona que rechazó la solicitud: "+nombre_completo_responsable+"Unidad organizacional de la Persona que rechazó la solicitud:"+nombre_unidad_rechazo
+
+        cadena = (
+            "<p><strong>Persona solicitante:</strong> " + nombre_completo + "</p>"
+            "<p><strong>Unidad organizacional del solicitante:</strong> " + nombre_unidad_solicitud + "</p>"
+            "<p><strong>Fecha solicitud:</strong> " + str(solicitud_viaje.fecha_solicitud) + "</p>"
+            "<p><strong>Motivo del viaje solicitado:</strong> " + solicitud_viaje.motivo_viaje + "</p>"
+            "<p><strong>Estado solicitud:</strong> " + solicitud_viaje.get_estado_solicitud_display() + "</p>"
+            "<p><strong>Fecha de rechazo:</strong> " + str(solicitud_viaje.fecha_rechazo) + "</p>"
+            "<p><strong>Persona que rechazó la solicitud:</strong> " + nombre_completo_responsable + "</p>"
+            "<p><strong>Unidad organizacional de la Persona que rechazó la solicitud:</strong> " + nombre_unidad_rechazo + "</p>"
+            )
+
+
+        data_alerta['informacion_complemento_mensaje'] = cadena
+        respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+        if respuesta_alerta.status_code != status.HTTP_200_OK:
+            return respuesta_alerta
 
         return JsonResponse({'success': True, 'detail': 'Reprobación de la petición creada exitosamente.', 'data': viaje_agendado_serializer.data}, status=status.HTTP_201_CREATED)
 
@@ -1497,6 +1781,80 @@ class ObtenerSolicitudViaje(generics.RetrieveAPIView):
         except SolicitudesViajes.DoesNotExist:
             # Si no se encuentra la solicitud de viaje, devolver una respuesta de error
             return Response({'success': False, 'detail': 'La solicitud de viaje no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class ObtenerInformacionViajes(generics.RetrieveAPIView):
+    queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
+    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  # Usar el serializador correspondiente para ViajesAgendados
+    solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
+
+    def get(self, request, id_solicitud_viaje):
+        try:
+            # Verificar si existe una solicitud de viaje con el id dado y estado 'Finalizada' o 'Respondida'
+            solicitud_viaje = SolicitudesViajes.objects.get(
+                id_solicitud_viaje=id_solicitud_viaje,
+                estado_solicitud__in=['FN', 'RE', 'RC']  # Estado 'Finalizada' o 'Respondida'
+            )
+
+            # Obtener el viaje agendado asociado a la solicitud de viaje
+            viaje_agendado = solicitud_viaje.viajesagendados_set.first()
+
+            # Serializar los datos según el estado de la solicitud
+            if solicitud_viaje.estado_solicitud == 'RC':
+                # Si el estado es 'Rechazado', retornar solo la fecha y observación de no autorización
+                response_data = {
+                    'id_solicitud_viaje': solicitud_viaje.id_solicitud_viaje,
+                    'id_viaje_agendado': viaje_agendado.id_viaje_agendado,
+                    'fecha_no_autorizado': solicitud_viaje.fecha_rechazo,
+                    'observacion_autorizacion': solicitud_viaje.justificacion_rechazo
+                }
+            else:
+                # Si no, serializar ambos modelos
+                viajes_data = self.viajes_serializer_class(viaje_agendado).data
+                solicitudes_data = self.solicitudes_serializer_class(solicitud_viaje).data
+
+                # Combinar los datos serializados en un solo diccionario de respuesta
+                response_data = {
+                    'solicitud_viaje': solicitudes_data,
+                    'viajes_agendados': viajes_data
+                }
+
+            return Response({'success': True, 'detail': 'Información de viajes obtenida exitosamente', 'data': response_data})
+        except SolicitudesViajes.DoesNotExist:
+            return Response({'success': False, 'detail': 'La solicitud de viaje no existe o no tiene el estado adecuado.'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class ObtenerInformacionAgendamiento(generics.RetrieveAPIView):
+    queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
+    viajes_serializer_class = ViajesAgendadosPorIDSerializer  # Usar el serializador correspondiente para ViajesAgendados
+    solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
+
+    def get(self, request, id_solicitud_viaje):
+        try:
+            # Verificar si existe una solicitud de viaje con el id dado y estado 'Finalizada' o 'Respondida'
+            solicitud_viaje = SolicitudesViajes.objects.get(
+                id_solicitud_viaje=id_solicitud_viaje,
+                estado_solicitud__in=['RE']  # Estado: 'Respondida'
+            )
+
+            # Obtener el viaje agendado asociado a la solicitud de viaje
+            viaje_agendado = solicitud_viaje.viajesagendados_set.first()
+
+            # Serializar los datos de ViajesAgendados y SolicitudesViajes
+            viajes_data = self.viajes_serializer_class(viaje_agendado).data
+            solicitudes_data = self.solicitudes_serializer_class(solicitud_viaje).data
+
+            # Combinar los datos serializados en un solo diccionario de respuesta
+            response_data = {
+                'viajes_agendados': viajes_data,
+            }
+
+            return Response({'success': True, 'detail': 'Información de viajes obtenida exitosamente', 'data': response_data})
+        except SolicitudesViajes.DoesNotExist:
+            return Response({'success': False, 'detail': 'La solicitud de viaje no existe o no tiene el estado adecuado.'}, status=status.HTTP_404_NOT_FOUND)
         
 
 
@@ -1781,3 +2139,17 @@ class ObtenerBitacoraLlegada(generics.ListAPIView):
             'data': data
         }
         return Response(response_data, status=status.HTTP_200_OK)
+    
+class BusquedaEstadoSolicitudViaje(generics.ListAPIView):
+    serializer_class = BusquedaSolicitudViajeIdSerializer
+    queryset = SolicitudesViajes.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        solicitud = SolicitudesViajes.objects.filter(id_solicitud_viaje=pk)
+        serializer = self.serializer_class(solicitud, many=True)
+        if not solicitud:
+            raise ValidationError("No existe la solicitud de viaje que busca.")
+        
+        return Response({'success':True,'detail':'Se encontro la solicitud de viaje buscada.','data':serializer.data},status=status.HTTP_200_OK)

@@ -69,6 +69,10 @@ class TareasAsignadasGetTramitesByPersona(generics.ListAPIView):
             if key == 'fecha_fin':
                 if value != '':
                     filter['id_tarea_asignada__fecha_asignacion__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+
+            if key == 'requerimiento':
+                if value != '':
+                    filter['id_tarea_asignada__requerimientos_pendientes_respuesta'] = value
         #id_tarea_asignada
                     
         print(filter)
@@ -317,7 +321,7 @@ class ReasignacionesTareasTramitesCreate(generics.CreateAPIView):
         serializer.save()
         ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA T316
         data_tarea = {}
-        data_tarea['cod_tipo_tarea'] = 'Rtra'
+        data_tarea['cod_tipo_tarea'] = tarea.cod_tipo_tarea
         data_tarea['id_asignacion'] = None
         data_tarea['fecha_asignacion'] = datetime.now()
         data_tarea['cod_estado_solicitud'] = 'Ep'
@@ -410,7 +414,7 @@ class RequerimientosTramite(generics.ListAPIView):
         #BUSCAMOS LA ID DEL TRAMITE 7266
         #instance = self.get_queryset().filter(id_solicitud_tramite=pk)
         complementos_tareas= AdicionalesDeTareas.objects.filter(id_tarea_asignada=pk)
-        print(complementos_tareas.first().id_complemento_usu_pqr)
+#        print(complementos_tareas.first().id_complemento_usu_pqr)
         if not complementos_tareas:
             raise NotFound('No se encontraron registros')
 

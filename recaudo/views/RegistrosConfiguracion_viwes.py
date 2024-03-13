@@ -2,8 +2,8 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recaudo.serializers.registrosconfiguracion_serializer import RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
-from recaudo.models.base_models import RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
+from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral, RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -379,3 +379,230 @@ class CalculadoraDiasMeses(generics.CreateAPIView):
             return Response({'error': 'Alguno de los meses proporcionados no es válido'}, status=400)
 
         
+
+#_______________________________________________________________________________________
+class Crear_AdministraciondePersonal(generics.CreateAPIView):
+    queryset = AdministraciondePersonal.objects.all()
+    serializer_class = AdministraciondePersonalSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+           
+            
+            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
+            # serializer.validated_data['campo_adicional'] = valor
+
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+    
+
+class Vista_AdministraciondePersonal(generics.ListAPIView):
+    queryset = AdministraciondePersonal.objects.all()
+    serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tipo_cobro = AdministraciondePersonal.objects.all()
+        serializer = self.serializer_class(tipo_cobro, many=True)
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data},
+                        status=status.HTTP_200_OK)
+
+
+
+class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
+    queryset = AdministraciondePersonal.objects.all()
+    serializer_class = AdministraciondePersonalSerializer
+
+    def put(self, request, *args, **kwargs):
+        instance = self.get_object()  # Obtiene la instancia existente
+        serializer = self.get_serializer(instance, data=request.data, partial=True)  # Utiliza partial=True
+        serializer.is_valid(raise_exception=True)  # Valida los datos
+        serializer.save()  # Guarda la instancia con los datos actualizados
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+#____________________________________________________
+    
+
+
+# Vista get para las 4 tablas de zonas hidricas
+class Vista_ConfigaraicionInteres(generics.ListAPIView):
+    queryset = ConfigaraicionInteres.objects.all()
+    serializer_class = ConfigaraicionInteresSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        year = self.kwargs.get('year')
+        if year:
+            queryset = queryset.filter(año=year)
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class Crear_ConfigaraicionInteres(generics.CreateAPIView):
+    queryset = ConfigaraicionInteres.objects.all()
+    serializer_class = ConfigaraicionInteresSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+           
+            
+            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
+            # serializer.validated_data['campo_adicional'] = valor
+
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+    
+
+class Borrar_ConfigaraicionInteres(generics.DestroyAPIView):
+    queryset = ConfigaraicionInteres.objects.all()
+    serializer_class = ConfigaraicionInteresSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+                            status=status.HTTP_200_OK)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({e.detail})
+        
+
+
+class Actualizar_ConfigaraicionInteres(generics.UpdateAPIView):
+    queryset = ConfigaraicionInteres.objects.all()
+    serializer_class = ConfigaraicionInteresSerializer
+
+    def put(self, request, *args, **kwargs):
+        # Obtiene la instancia existente
+        instance = self.get_object()
+        
+        # Datos enviados en la solicitud
+        request_data = {
+            'valor_interes': request.data.get('valor_interes'),
+            'estado_editable': request.data.get('estado_editable')
+        }
+        
+        # Actualiza los campos de la instancia
+        serializer = self.get_serializer(instance, data=request_data, partial=True)
+        serializer.is_valid(raise_exception=True)  # Valida los datos
+        serializer.save()  # Guarda la instancia con los datos actualizados
+        
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class Crear_ConfigaraicionInteres(generics.CreateAPIView):
+    queryset = ConfigaraicionInteres.objects.all()
+    serializer_class = ConfigaraicionInteresSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+           
+            
+            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
+            # serializer.validated_data['campo_adicional'] = valor
+
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+     
+    
+#__________________________________________________________________
+    
+
+    # Vista get para las 4 tablas de zonas hidricas
+class Vista_IndicadoresSemestral(generics.ListAPIView):
+    queryset = IndicadoresSemestral.objects.all()
+    serializer_class = IndicadoresSemestralSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        cuencas = IndicadoresSemestral.objects.all()
+        serializer = self.serializer_class(cuencas,many=True)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+
+
+class Crear_IndicadoresSemestral(generics.CreateAPIView):
+    queryset = IndicadoresSemestral.objects.all()
+    serializer_class = IndicadoresSemestralSerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+           
+            
+            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
+            # serializer.validated_data['campo_adicional'] = valor
+
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+    
+
+class Borrar_IndicadoresSemestral(generics.DestroyAPIView):
+    queryset = IndicadoresSemestral.objects.all()
+    serializer_class = IndicadoresSemestralSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+                            status=status.HTTP_200_OK)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({e.detail})
+        
+
+
+class Actualizar_IndicadoresSemestral(generics.UpdateAPIView):
+    queryset = IndicadoresSemestral.objects.all()
+    serializer_class = IndicadoresSemestralSerializer
+
+    def put(self, request, *args, **kwargs):
+        instance = self.get_object()  # Obtiene la instancia existente
+        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+        serializer.is_valid(raise_exception=True)  # Valida los datos
+        serializer.save()  # Guarda la instancia con los datos actualizados
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    

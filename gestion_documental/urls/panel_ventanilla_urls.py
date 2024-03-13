@@ -59,6 +59,7 @@ urlpatterns = [
     path('pqrsdf/asignacion/grupo/update/<str:pk>/',views.ComplementosUsu_PQRPut.as_view(),name='actualizar-asignacion-grupo'),
     #OPAS
     path('opas/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionOPACreate.as_view(),name='crear-solicitud-opas'),
+    path('opas/solicitud_juridica/create/',views.SolicitudJuridicaOPACreate.as_view(),name='crear-solicitud-juridica-opas'),
     path('opas/historico/get/',views.OPAFGetHitorico.as_view(),name='listar-historico-opas'),
     path('opas/asignacion/create/',views.AsignacionOPACreate.as_view(),name='crear-asignacion-opas'),
     path('asignacion-opas/get/<str:tra>/',views.AsignacionOPASGet.as_view(),name='listar-asignacion-opas'),

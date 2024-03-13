@@ -816,9 +816,10 @@ class UnidadOrganizacionalHijasByUnidadId(generics.ListAPIView):
             Lista de unidades asociadas.
         """
         unidades_asociadas = [unidad]
-
+    
         # Obtiene las unidades hijas recursivamente
         unidades_hijas = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad.id_unidad_organizacional)
+
         for unidad_hija in unidades_hijas:
             unidades_asociadas.extend(self.get_units_recursive(unidad_hija))
 
@@ -827,6 +828,9 @@ class UnidadOrganizacionalHijasByUnidadId(generics.ListAPIView):
     
 
         unidad_padre = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=pk)
+
+        if not unidad_padre:
+            raise NotFound("No existen registros")
 
         unidades_asociadas = self.get_units_recursive(unidad_padre)
 
