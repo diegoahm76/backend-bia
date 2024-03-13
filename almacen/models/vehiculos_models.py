@@ -87,7 +87,7 @@ class InspeccionesVehiculosDia(models.Model):
         return str(self.id_inspeccion_vehiculo)
     
     class Meta:
-        db_table = "T073InspeccionesVehiculoDias"
+        db_table = "T073InspeccionesVehiculoDia"
         verbose_name = "InspeccionesVehiculoDia"
         verbose_name_plural = "InspeccionesVehiculoDias"
         

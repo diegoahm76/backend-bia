@@ -17,7 +17,7 @@ import copy
 from transversal.models import UnidadesOrganizacionales
 from seguridad.utils import Util
 from transversal.views.configuracionEntidades_views import UpdateConfiguracionEntidad
-
+from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 class VinculacionColaboradorView(generics.UpdateAPIView):
     serializer_class = VinculacionColaboradorSerializer
     queryset = Personas.objects.filter(tipo_persona='N')
@@ -30,7 +30,11 @@ class VinculacionColaboradorView(generics.UpdateAPIView):
         id_cargo = data.get('id_cargo')
         id_unidad_organizacional_actual = data.get('id_unidad_organizacional_actual')
         fecha_a_finalizar_cargo_actual = data.get('fecha_a_finalizar_cargo_actual')
-
+        cadena_fecha_inicio_cargo_actual = None
+        if 'fecha_inicio_cargo_actual' in data:
+            cadena_fecha_inicio_cargo_actual = data.get('fecha_inicio_cargo_actual')
+        else:
+            raise ValidationError("Se debe asignar la fecha incial.")
         if persona:
             previous_persona = copy.copy(persona)
             cargo_inst = Cargos.objects.filter(id_cargo=id_cargo).first()
@@ -72,9 +76,14 @@ class VinculacionColaboradorView(generics.UpdateAPIView):
             else:
                 persona.fecha_a_finalizar_cargo_actual = fecha_finalizar_cargo
 
+            fecha_inicio = (datetime.strptime(cadena_fecha_inicio_cargo_actual, '%Y-%m-%d')).date()
+
+            
+
             # GUARDAR CAMPOS ASIGNADOS
             persona.es_unidad_organizacional_actual = True
-            persona.fecha_inicio_cargo_actual = datetime.now()
+            #persona.fecha_inicio_cargo_actual = datetime.now()
+            persona.fecha_inicio_cargo_actual = fecha_inicio
             persona.observaciones_vinculacion_cargo_actual = data.get('observaciones_vinculacion_cargo_actual')
             persona.fecha_asignacion_unidad = datetime.now()
             

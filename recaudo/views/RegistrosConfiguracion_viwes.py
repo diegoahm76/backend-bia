@@ -424,28 +424,32 @@ class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
-        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+        serializer = self.get_serializer(instance, data=request.data, partial=True)  # Utiliza partial=True
         serializer.is_valid(raise_exception=True)  # Valida los datos
         serializer.save()  # Guarda la instancia con los datos actualizados
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
 #____________________________________________________
     
 
 
 # Vista get para las 4 tablas de zonas hidricas
-class Vista_ConfigaraicionInteres (generics.ListAPIView):
+class Vista_ConfigaraicionInteres(generics.ListAPIView):
     queryset = ConfigaraicionInteres.objects.all()
     serializer_class = ConfigaraicionInteresSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        cuencas = RegistrosConfiguracion.objects.all()
-        serializer = self.serializer_class(cuencas,many=True)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        year = self.kwargs.get('year')
+        if year:
+            queryset = queryset.filter(año=year)
+        return queryset
 
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 
@@ -493,12 +497,22 @@ class Actualizar_ConfigaraicionInteres(generics.UpdateAPIView):
     serializer_class = ConfigaraicionInteresSerializer
 
     def put(self, request, *args, **kwargs):
-        instance = self.get_object()  # Obtiene la instancia existente
-        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+        # Obtiene la instancia existente
+        instance = self.get_object()
+        
+        # Datos enviados en la solicitud
+        request_data = {
+            'valor_interes': request.data.get('valor_interes'),
+            'estado_editable': request.data.get('estado_editable')
+        }
+        
+        # Actualiza los campos de la instancia
+        serializer = self.get_serializer(instance, data=request_data, partial=True)
         serializer.is_valid(raise_exception=True)  # Valida los datos
         serializer.save()  # Guarda la instancia con los datos actualizados
-
+        
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
 class Crear_ConfigaraicionInteres(generics.CreateAPIView):
     queryset = ConfigaraicionInteres.objects.all()
@@ -533,7 +547,7 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        cuencas = RegistrosConfiguracion.objects.all()
+        cuencas = IndicadoresSemestral.objects.all()
         serializer = self.serializer_class(cuencas,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)

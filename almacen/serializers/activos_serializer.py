@@ -1,6 +1,6 @@
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales
 from rest_framework import serializers
 
 
@@ -48,4 +48,35 @@ class RegistrarBajaAnexosCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AnexosDocsAlma
+        fields = '__all__'
+        
+class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnexosDocsAlma
+        fields = '__all__'  # Incluir todos los campos del modelo AnexosDocsAlma
+
+class ArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'  # Agrega aquí los campos que necesites para los archivos digitales
+
+class BajaActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BajaActivos
+        fields = ('id_baja_activo', 'consecutivo_por_baja', 'concepto', 'fecha_baja', 'cantidad_activos_baja', 'id_persona_registro_baja', 'id_uni_org_registro_baja')
+
+
+
+class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
+    id_baja_activo = BajaActivosSerializer()
+    id_archivo_digital = ArchivosDigitalesSerializer()  # Agrega el serializador para los archivos digitales
+
+    class Meta:
+        model = AnexosDocsAlma
+        fields = ('id_anexo_doc_alma', 'id_baja_activo', 'id_salida_espec_arti', 'nombre_anexo', 'nro_folios', 'descripcion_anexo', 'fecha_creacion_anexo', 'id_archivo_digital')
+
+
+class ItemsBajaActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsBajaActivos
         fields = '__all__'
