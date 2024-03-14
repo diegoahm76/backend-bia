@@ -12,7 +12,7 @@ from gestion_documental.models.bandeja_tareas_models import ReasignacionesTareas
 
 from gestion_documental.models.radicados_models import  AsignacionTramites, BandejaTareasPersona, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer
 from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPersonaUpdate
 from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 
@@ -257,3 +257,40 @@ class TareasAsignadasOpasRechazarUpdate(generics.UpdateAPIView):
        
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+
+#REQUERIMIENTO SOBRE OPA 
+    
+
+class OpaPersonaTitularGet(generics.ListAPIView):
+    serializer_class = OpaTramiteTitularGetBandejaTareasSerializer
+    queryset = SolicitudesTramites.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self,request,tra):
+        
+        instance = self.get_queryset().filter(id_solicitud_tramite=tra).first()
+
+        
+
+        if not instance:
+            raise NotFound("No existen registros")
+        persona_titular = instance.id_persona_titular 
+        serializer = self.serializer_class(persona_titular)
+
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+
+class OpaTramiteDetalleGet(generics.ListAPIView):
+    serializer_class = OpaTramiteDetalleGetBandejaTareasSerializer
+    queryset = SolicitudesTramites.objects.all()
+    permission_classes = [IsAuthenticated]
+    def get(self, request, tra):
+
+        instance = self.get_queryset().filter(id_solicitud_tramite=tra).first()
+
+
+        if not instance:
+            raise NotFound("No existen registros")
+        serializer = self.serializer_class(instance)
+
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)

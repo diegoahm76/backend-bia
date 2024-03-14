@@ -60,6 +60,9 @@ urlpatterns = [
     path('bitacora-llegada/update/<int:id_viaje_agendado>/', views.ActualizarBitacoraLlegada.as_view(), name='actualizar_bitacora_llegada'),
     path('bitacora-llegada/get/<int:id_viaje_agendado>/', views.ObtenerBitacoraSalida.as_view(), name='obtener-bitacora-llegada'),
 
+    #Solicitud_Viaje
+   path('listar-solicitud-viaje/get/<int:pk>/',views.BusquedaEstadoSolicitudViaje.as_view(),name='listar-solicitud-viaje'),
+
 
     
 

@@ -17,6 +17,7 @@ from rest_framework.response import Response
 from django.http import Http404, JsonResponse
 from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
 from django.shortcuts import get_object_or_404
+from almacen.choices.estado_solicitud_choices import estado_solicitud_CHOICES
 
 
 
@@ -60,6 +61,7 @@ from almacen.serializers.vehiculos_serializers import (
     ViajesAgendadosPorIDSerializer,
     ViajesAgendadosSerializer,
     ViajesAgendadosSolcitudSerializer,
+    BusquedaSolicitudViajeIdSerializer,
     )
 from transversal.models.base_models import ClasesTerceroPersona
 from seguridad.utils import Util
@@ -2138,3 +2140,17 @@ class ObtenerBitacoraLlegada(generics.ListAPIView):
             'data': data
         }
         return Response(response_data, status=status.HTTP_200_OK)
+    
+class BusquedaEstadoSolicitudViaje(generics.ListAPIView):
+    serializer_class = BusquedaSolicitudViajeIdSerializer
+    queryset = SolicitudesViajes.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request,pk):
+        
+        solicitud = SolicitudesViajes.objects.filter(id_solicitud_viaje=pk)
+        serializer = self.serializer_class(solicitud, many=True)
+        if not solicitud:
+            raise ValidationError("No existe la solicitud de viaje que busca.")
+        
+        return Response({'success':True,'detail':'Se encontro la solicitud de viaje buscada.','data':serializer.data},status=status.HTTP_200_OK)

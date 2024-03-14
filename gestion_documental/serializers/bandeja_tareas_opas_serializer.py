@@ -346,3 +346,59 @@ class TareasAsignadasOpasGetSerializer(serializers.ModelSerializer):
         else:
              cadena = unidad_actual.codigo+' ' + ' '+unidad_actual.nombre
         return cadena
+
+
+class OpaTramiteDetalleGetBandejaTareasSerializer(serializers.ModelSerializer):
+    radicado = serializers.SerializerMethodField()
+    estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre', default=None)
+    tipo_operacion_tramite = serializers.ReadOnlyField(source='get_cod_tipo_operacion_tramite_display', default=None)
+
+    class Meta:
+        model = SolicitudesTramites
+        fields = ['id_solicitud_tramite','radicado','fecha_radicado','tipo_operacion_tramite','estado_actual']
+
+
+        
+    def get_radicado(self, obj):
+        cadena = ""
+        radicado = obj.id_radicado
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        else: 
+            return 'SIN RADICAR'
+
+class OpaTramiteTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
+    nombres = serializers.SerializerMethodField()
+    apellidos = serializers.SerializerMethodField() 
+    tipo_documento = serializers.ReadOnlyField(source='tipo_documento.nombre',default=None)
+    unidad_organizacional_actual = serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)
+    class Meta:
+        model = Personas
+        fields = ['nombres','apellidos','tipo_documento','numero_documento','unidad_organizacional_actual']
+    def obtener_nombres(self, persona):
+        nombres = [
+            persona.primer_nombre,
+            persona.segundo_nombre,
+        ]
+        return ' '.join(item for item in nombres if item is not None)
+
+    def obtener_apellidos(self, persona):
+        apellidos = [
+            persona.primer_apellido,
+            persona.segundo_apellido,
+        ]
+        return ' '.join(item for item in apellidos if item is not None)
+
+    def get_nombres(self, obj):
+        if obj:
+            return self.obtener_nombres(obj)
+        return None
+
+    def get_apellidos(self, obj):
+        if obj:
+            return self.obtener_apellidos(obj)
+        return None

@@ -3,8 +3,8 @@ estado_solicitud_activo_CHOICES = (
     ('R','Respondido'),
     ('SR','Solicitud Rechazada'),
     ('SA','Solicitud Autorizado'),
-    ('DR','Despechado Rechazado'),
-    ('DA','Despechado Autorizado'),
+    ('DR','Despacho Rechazado'),
+    ('DA','Despacho Autorizado'),
     ('F','Finalizado'),
     ('C','Cancelado'),
 )
