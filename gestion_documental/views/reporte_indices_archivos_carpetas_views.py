@@ -266,10 +266,10 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
         )
 
         series =[]
-        series.append({'name':'CREADOS', 'data':len(expedientes)})
-        series.append({'name':'ABIERTOS', 'data':abiertos})
-        series.append({'name':'CERRADOS', 'data':cerrados})
-        series.append({'name':'REAPERTURADOS', 'data':len(reaperturas_agrupados)})
+        series.append({'name':'CREADOS', 'data':[len(expedientes)]})
+        series.append({'name':'ABIERTOS', 'data':[abiertos]})
+        series.append({'name':'CERRADOS', 'data':[cerrados]})
+        series.append({'name':'REAPERTURADOS', 'data':[len(reaperturas_agrupados)]})
 
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':series,'categories':[unidad.nombre]}},status=status.HTTP_200_OK) 
 
