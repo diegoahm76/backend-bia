@@ -108,6 +108,8 @@ urlpatterns = [
     path('api/gestor/consecutivos-unidades/',include('gestion_documental.urls.consecutivo_unidad_urls')),
     path('api/gestor/consultar-estado-solicitud-tramite/', include('gestion_documental.urls.consultar_estado_solicitud_tramite_urls')),
     path('api/gestor/reporte_indices_archivos_carpetas/',include('gestion_documental.urls.reporte_indices_archivos_carpetas_urls')),
+    #reporte_indices_pqrsdf_urls
+    path('api/gestor/reporte_indices_pqrsdf/', include('gestion_documental.urls.reporte_indices_pqrsdf_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
