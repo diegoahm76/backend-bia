@@ -1,6 +1,7 @@
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales
+from almacen.models.generics_models import Marcas, UnidadesMedida
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SolicitudesActivos
 from rest_framework import serializers
 
 
@@ -79,4 +80,36 @@ class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
 class ItemsBajaActivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemsBajaActivos
+        fields = '__all__'
+
+
+class SolicitudesActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesActivos
+        fields = '__all__'
+
+    
+    
+class ItemsSolicitudActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsSolicitudActivos
+        fields = '__all__'
+
+
+class UnidadesMedidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesMedida
+        fields = '__all__'
+
+
+class ItemSolicitudActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsSolicitudActivos
+        fields = '__all__'
+
+class DetalleSolicitudActivosSerializer(serializers.ModelSerializer):
+    items = ItemSolicitudActivosSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SolicitudesActivos
         fields = '__all__'
