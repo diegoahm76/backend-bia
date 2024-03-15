@@ -295,6 +295,18 @@ class AnexosGetSerializer(serializers.ModelSerializer):
     id_archivo_digital = serializers.SerializerMethodField()
     formato = serializers.SerializerMethodField()
     tamagno_kb = serializers.SerializerMethodField()
+    nro_folios_documento = serializers.SerializerMethodField()
+    cod_categoria_archivo = serializers.SerializerMethodField()
+    categoria_archivo = serializers.SerializerMethodField()
+    cod_origen_archivo = serializers.SerializerMethodField()
+    origen_archivo = serializers.SerializerMethodField()
+    es_version_original = serializers.SerializerMethodField()
+    tiene_replica_fisica = serializers.SerializerMethodField()
+    id_tipologia_doc = serializers.SerializerMethodField()
+    tipologia_doc = serializers.SerializerMethodField()
+    tipologia_no_creada_TRD = serializers.SerializerMethodField()
+    asunto = serializers.SerializerMethodField()
+    palabras_clave_doc = serializers.SerializerMethodField()
     ruta_archivo = serializers.SerializerMethodField()
     
     def get_nombre(self, obj):
@@ -311,6 +323,48 @@ class AnexosGetSerializer(serializers.ModelSerializer):
     
     def get_tamagno_kb(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.tamagno_kb
+    
+    def get_nro_folios_documento(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().nro_folios_documento
+    
+    def get_cod_categoria_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().cod_categoria_archivo
+    
+    def get_categoria_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().get_cod_categoria_archivo_display()
+    
+    def get_cod_origen_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().cod_origen_archivo
+    
+    def get_origen_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().get_cod_origen_archivo_display()
+    
+    def get_es_version_original(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().es_version_original
+    
+    def get_tiene_replica_fisica(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().tiene_replica_fisica
+    
+    def get_id_tipologia_doc(self, obj):
+        id_tipologia_doc = obj.id_anexo.metadatosanexostmp_set.first().id_tipologia_doc
+        if id_tipologia_doc:
+            return id_tipologia_doc.id_tipologia_documental
+        return id_tipologia_doc
+    
+    def get_tipologia_doc(self, obj):
+        tipologia_doc = obj.id_anexo.metadatosanexostmp_set.first().id_tipologia_doc
+        if tipologia_doc:
+            return tipologia_doc.nombre
+        return tipologia_doc
+    
+    def get_tipologia_no_creada_TRD(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().tipologia_no_creada_TRD
+    
+    def get_asunto(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().asunto
+    
+    def get_palabras_clave_doc(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().palabras_clave_doc
     
     def get_ruta_archivo(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.ruta_archivo.url
@@ -330,6 +384,18 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'id_archivo_digital',
             'formato',
             'tamagno_kb',
+            'nro_folios_documento',
+            'cod_categoria_archivo',
+            'categoria_archivo',
+            'cod_origen_archivo',
+            'origen_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'id_tipologia_doc',
+            'tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'asunto',
+            'palabras_clave_doc',
             'ruta_archivo'
         ]
 
