@@ -20,6 +20,7 @@ urlpatterns = [
     path('tipo-conductor/', views.TipoConductorChoices.as_view(), name='tipo-conductor'),
     path('estado-aprobacion-activo/', views.EstadoAprobacionActivo.as_view(), name='estado-aprobacion-activo'),
     path('estado-solicitud-activo/', views.EstadoSolicitudActivo.as_view(), name='estado-solicitud-activo'),
+    path('estado-despacho-activo/', views.EstadoDespacho.as_view(), name='estado-despacho-activo'),
 
     
 ]
