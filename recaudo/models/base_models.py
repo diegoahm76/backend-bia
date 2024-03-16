@@ -127,7 +127,7 @@ class ValoresVariables(models.Model):
     descripccion = models.CharField(max_length=255, db_column='T444Descripcion')  # Corregir el nombre de la columna
     estado=models.BooleanField(db_column='T444Estado',null=True,default=True)  # Cambiado a campo booleano
     class Meta:
-        db_table = 'T444ValoresVariables'
+        db_table = 'T444ValoresVariabless'
         verbose_name = 'Valores Variables'
         verbose_name_plural = 'Valores Variables'
 
