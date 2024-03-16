@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib import auth
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites
 from transversal.models.base_models import Departamento
@@ -168,8 +169,12 @@ class InicioTramiteCreateSerializer(serializers.ModelSerializer):
 
 class TramiteListGetSerializer(serializers.ModelSerializer):
     id_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.id_persona', default=None)
+    cod_tipo_documento_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_titular.numero_documento', default=None)
     nombre_persona_titular = serializers.SerializerMethodField()
     id_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.id_persona', default=None)
+    cod_tipo_documento_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_interpone = serializers.ReadOnlyField(source='id_solicitud_tramite.id_persona_interpone.numero_documento', default=None)
     nombre_persona_interpone = serializers.SerializerMethodField()
     cod_relacion_con_el_titular = serializers.ReadOnlyField(source='id_solicitud_tramite.cod_relacion_con_el_titular', default=None)
     relacion_con_el_titular = serializers.CharField(source='id_solicitud_tramite.get_cod_relacion_con_el_titular_display')
@@ -184,8 +189,20 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
     tipo_permiso_ambiental = serializers.CharField(source='id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display')
     permiso_ambiental = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
     municipio = serializers.ReadOnlyField(source='cod_municipio.nombre', default=None)
+    id_expediente = serializers.ReadOnlyField(source='id_solicitud_tramite.id_expediente.id_expediente_documental', default=None)
+    expediente = serializers.ReadOnlyField(source='id_solicitud_tramite.id_expediente.titulo_expediente', default=None)
     cod_departamento = serializers.SerializerMethodField()
     departamento = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_solicitud_tramite.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_solicitud_tramite.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_solicitud_tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_solicitud_tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_solicitud_tramite.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
     
     def get_nombre_persona_titular(self, obj):
         nombre_persona_titular = None
@@ -230,8 +247,12 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
         fields = [
             'id_solicitud_tramite',
             'id_persona_titular',
+            'cod_tipo_documento_persona_titular',
+            'numero_documento_persona_titular',
             'nombre_persona_titular',
             'id_persona_interpone',
+            'cod_tipo_documento_persona_interpone',
+            'numero_documento_persona_interpone',
             'nombre_persona_interpone',
             'cod_relacion_con_el_titular',
             'relacion_con_el_titular',
@@ -253,7 +274,10 @@ class TramiteListGetSerializer(serializers.ModelSerializer):
             'direccion',
             'descripcion_direccion',
             'coordenada_x',
-            'coordenada_y'
+            'coordenada_y',
+            'id_expediente',
+            'expediente',
+            'radicado'
         ]
         
 class AnexosUpdateSerializer(serializers.ModelSerializer):
@@ -263,11 +287,26 @@ class AnexosUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class AnexosGetSerializer(serializers.ModelSerializer):
+    numero_folios = serializers.ReadOnlyField(source='id_anexo.numero_folios', default=None)
+    cod_medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.cod_medio_almacenamiento', default=None)
+    medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.get_cod_medio_almacenamiento_display', default=None)
     nombre = serializers.SerializerMethodField()
     descripcion = serializers.SerializerMethodField()
     id_archivo_digital = serializers.SerializerMethodField()
     formato = serializers.SerializerMethodField()
     tamagno_kb = serializers.SerializerMethodField()
+    nro_folios_documento = serializers.SerializerMethodField()
+    cod_categoria_archivo = serializers.SerializerMethodField()
+    categoria_archivo = serializers.SerializerMethodField()
+    cod_origen_archivo = serializers.SerializerMethodField()
+    origen_archivo = serializers.SerializerMethodField()
+    es_version_original = serializers.SerializerMethodField()
+    tiene_replica_fisica = serializers.SerializerMethodField()
+    id_tipologia_doc = serializers.SerializerMethodField()
+    tipologia_doc = serializers.SerializerMethodField()
+    tipologia_no_creada_TRD = serializers.SerializerMethodField()
+    asunto = serializers.SerializerMethodField()
+    palabras_clave_doc = serializers.SerializerMethodField()
     ruta_archivo = serializers.SerializerMethodField()
     
     def get_nombre(self, obj):
@@ -285,6 +324,48 @@ class AnexosGetSerializer(serializers.ModelSerializer):
     def get_tamagno_kb(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.tamagno_kb
     
+    def get_nro_folios_documento(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().nro_folios_documento
+    
+    def get_cod_categoria_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().cod_categoria_archivo
+    
+    def get_categoria_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().get_cod_categoria_archivo_display()
+    
+    def get_cod_origen_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().cod_origen_archivo
+    
+    def get_origen_archivo(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().get_cod_origen_archivo_display()
+    
+    def get_es_version_original(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().es_version_original
+    
+    def get_tiene_replica_fisica(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().tiene_replica_fisica
+    
+    def get_id_tipologia_doc(self, obj):
+        id_tipologia_doc = obj.id_anexo.metadatosanexostmp_set.first().id_tipologia_doc
+        if id_tipologia_doc:
+            return id_tipologia_doc.id_tipologia_documental
+        return id_tipologia_doc
+    
+    def get_tipologia_doc(self, obj):
+        tipologia_doc = obj.id_anexo.metadatosanexostmp_set.first().id_tipologia_doc
+        if tipologia_doc:
+            return tipologia_doc.nombre
+        return tipologia_doc
+    
+    def get_tipologia_no_creada_TRD(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().tipologia_no_creada_TRD
+    
+    def get_asunto(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().asunto
+    
+    def get_palabras_clave_doc(self, obj):
+        return obj.id_anexo.metadatosanexostmp_set.first().palabras_clave_doc
+    
     def get_ruta_archivo(self, obj):
         return obj.id_anexo.metadatosanexostmp_set.first().id_archivo_sistema.ruta_archivo.url
     
@@ -297,9 +378,24 @@ class AnexosGetSerializer(serializers.ModelSerializer):
             'id_anexo',
             'nombre',
             'descripcion',
+            'numero_folios',
+            'cod_medio_almacenamiento',
+            'medio_almacenamiento',
             'id_archivo_digital',
             'formato',
             'tamagno_kb',
+            'nro_folios_documento',
+            'cod_categoria_archivo',
+            'categoria_archivo',
+            'cod_origen_archivo',
+            'origen_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'id_tipologia_doc',
+            'tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'asunto',
+            'palabras_clave_doc',
             'ruta_archivo'
         ]
 

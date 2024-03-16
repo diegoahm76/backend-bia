@@ -99,6 +99,7 @@ urlpatterns = [
     path('api/gestor/configuracion-tipos-expendientes/',include('gestion_documental.urls.conf__tipos_exp_urls')),
     path('api/gestor/resportes-permisos-doc/',include('gestion_documental.urls.documentacion_permisos_urls')),
     path('api/gestor/panel_ventanilla/',include('gestion_documental.urls.panel_ventanilla_urls')),
+    path('api/gestor/panel_juridica/',include('gestion_documental.urls.panel_juridica_urls')),
     path('api/gestor/radicados/',include('gestion_documental.urls.radicados_urls')),
     path('api/gestor/central-digitalizacion/',include('gestion_documental.urls.central_digitalizacion_urls')),
     path('api/gestor/complementos-pqr/',include('gestion_documental.urls.complementos_pqr_urls')),
@@ -106,6 +107,10 @@ urlpatterns = [
     path('api/gestor/transferencias_documentales/',include('gestion_documental.urls.transferencias_documentales_urls')),
     path('api/gestor/consecutivos-unidades/',include('gestion_documental.urls.consecutivo_unidad_urls')),
     path('api/gestor/consultar-estado-solicitud-tramite/', include('gestion_documental.urls.consultar_estado_solicitud_tramite_urls')),
+    path('api/gestor/reporte_indices_archivos_carpetas/',include('gestion_documental.urls.reporte_indices_archivos_carpetas_urls')),
+    #reporte_indices_pqrsdf_urls
+    path('api/gestor/reporte_indices_pqrsdf/', include('gestion_documental.urls.reporte_indices_pqrsdf_urls')),
+    
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
     path('api/almacen/bienes/', include('almacen.urls.bienes_urls')),
@@ -117,6 +122,7 @@ urlpatterns = [
     path('api/almacen/choices/', include('almacen.urls.choices_urls')),
     path('api/almacen/mantenimientos/', include('almacen.urls.mantenimientos_urls')),
     path('api/almacen/vehiculos/', include('almacen.urls.vehiculos_urls')),
+    path('api/almacen/activos/', include('almacen.urls.activos_urls')),
     path('api/almacen/inventario/', include('almacen.urls.inventario_urls')),
     path('api/almacen/reportes/', include('almacen.urls.reportes_urls')),
     

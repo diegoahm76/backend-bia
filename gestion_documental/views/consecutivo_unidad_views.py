@@ -261,13 +261,13 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         hoy = date.today()
         age=hoy.year
         # # Obtener la instancia existente para actualizar
-        instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad']).first()
+        instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
 
         if not instance:
            
 
             
-            auxiliar = ConfigTipoConsecAgno.objects.filter(id_unidad=data_in['id_unidad'],agno_consecutivo=age).first()
+            auxiliar = ConfigTipoConsecAgno.objects.filter(id_unidad=data_in['id_unidad'],agno_consecutivo=age, id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
             if not auxiliar:
                 conf_agno_anterior = ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age-1).first()
                 if not conf_agno_anterior:
@@ -280,13 +280,14 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
                                     'consecutivo_inicial':1,
                                     'cantidad_digitos':conf_agno_anterior.cantidad_digitos,
                                     'implementar':conf_agno_anterior.implementar,
+                                    'id_cat_serie_und': conf_agno_anterior.id_cat_serie_und,
                                     'id_unidad':conf_agno_anterior.id_unidad
                                     }
                 respuesta = self.vista_creacion_configuracion.crear_config_tipos_consecutivo_agno(nueva_configuracion)
                 if respuesta.status_code != status.HTTP_201_CREATED:
                     return respuesta
 
-            instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad']).first()
+            instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
 
         if not instance.implementar:
             raise ValidationError("La configuracion se encuentra pendiente")
@@ -296,6 +297,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         new_data['consecutivo_actual'] = instance.consecutivo_actual+1
         new_data['id_persona_consecutivo_actual'] = data_in['id_persona']
         new_data['fecha_consecutivo_actual'] = data_in['fecha_actual']
+       ##new_data['id_catalogo'] = data_in['id_cat_serie_und']
          
         serializer =ConfigTipoConsecAgnoPutConSerializer(instance, data=new_data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -313,6 +315,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
             
             
         instance = serializer.save()
+        print('Holaaaa'+str(instance.id_catalogo_serie_unidad))
         numero_con_ceros = str(instance.consecutivo_actual).zfill(instance.cantidad_digitos)
         if cod_se_sub != "":
 
@@ -432,6 +435,8 @@ class ConsecutivoCreateView(generics.CreateAPIView):
         usuario = request.user.persona.id_persona
         if not 'id_unidad' in data_in:
             raise ValidationError("Debe ingresar la unidad a la cual se le asignara el consecutivo.")
+        if not 'id_cat_serie_und' in data_in:
+            raise ValidationError("Debe ingresar el catalogo al cual se le va a crear el consecutivo.")
         
         respuesta = self.vista_generadora_numero.generar_n_radicado(data_in)
 
