@@ -146,30 +146,46 @@ class LeyesLiquidacion(models.Model):
 
 class AdministraciondePersonal(models.Model):
     id = models.AutoField(primary_key=True, db_column='T43IdV')
-    nivel = models.IntegerField(db_column='TMMMNivel')
-    director = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMDirector')
-    tecnicos = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMTécnicos')
-    asesor = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMAsesor')
-    profesional = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMProfesional')
-    asistencial = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMAsistencial')
+    nivel = models.IntegerField(db_column='T464Nivel', unique=True)
+    director = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Director')
+    tecnicos = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Técnicos')
+    asesor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asesor')
+    profesional = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Profesional')
+    asistencial = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asistencial')
 
     class Meta:
-        db_table = 'TMMMAdministraciondePersonal'
+        db_table = 'T464AdministraciondePersonal'
         verbose_name = 'Administracion de Personal'
         verbose_name_plural = 'Administracion de Personal'
-        
 
+
+MONTH_CHOICES = [
+    (1, 'Enero'),
+    (2, 'Febrero'),
+    (3, 'Marzo'),
+    (4, 'Abril'),
+    (5, 'Mayo'),
+    (6, 'Junio'),
+    (7, 'Julio'),
+    (8, 'Agosto'),
+    (9, 'Septiembre'),
+    (10, 'Octubre'),
+    (11, 'Noviembre'),
+    (12, 'Diciembre')
+]
 
 class ConfigaraicionInteres(models.Model):
-    id = models.AutoField(primary_key=True, db_column='TOOOconfiguracion')
-    año = models.IntegerField(db_column='TMMMNivel')
-    mes = models.CharField(max_length=255, db_column='T443Nombre')
-    valor_interes = models.DecimalField(max_digits=10, decimal_places=2, db_column='TMMMTécnicos')
+    id = models.AutoField(primary_key=True, db_column='T466configuracionInteres')
+    año = models.IntegerField(db_column='T466Nivel')
+    mes = models.IntegerField(choices=MONTH_CHOICES, db_column='T466mes')
+    valor_interes = models.DecimalField(max_digits=10, decimal_places=0, db_column='T466ValorInteres')
+    estado_editable = models.BooleanField(default=False, db_column='T466EstadoEditable')
 
     class Meta:
-        db_table = 'TMMMConfigaraicionInteres'
+        db_table = 'T466ConfigaraicionInteres'
         verbose_name = 'Configaraicion Interes'
         verbose_name_plural = 'Configaraicion Interes'
+        unique_together = ('año', 'mes')  # Restricción única para año y mes
 
 
 
