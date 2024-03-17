@@ -111,6 +111,9 @@ urlpatterns = [
     #reporte_indices_pqrsdf_urls
     path('api/gestor/reporte_indices_pqrsdf/', include('gestion_documental.urls.reporte_indices_pqrsdf_urls')),
     
+    # PAGOS
+    path('api/gestor/pagos/',include('gestion_documental.urls.pagos_urls')),
+    
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
     path('api/almacen/bienes/', include('almacen.urls.bienes_urls')),
