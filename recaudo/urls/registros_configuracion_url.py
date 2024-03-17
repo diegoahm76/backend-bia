@@ -56,5 +56,9 @@ urlpatterns = [
         path('indicadores/put/<str:pk>/', viwes.Actualizar_IndicadoresSemestral.as_view(), name='configuracion-interes-update'),
         path('indicadores/delete/<str:pk>/', viwes.Borrar_IndicadoresSemestral.as_view(), name='configuracion-interes'),
         path('indicadores/post/', viwes.Crear_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+
+
+        path('frecuencia-choices/', viwes.FrecuenciaMedicionListView.as_view(), name='frecuencia_choices'),
+
     ]
 

@@ -606,3 +606,13 @@ class Actualizar_IndicadoresSemestral(generics.UpdateAPIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+
+class FrecuenciaMedicionListView(generics.ListAPIView):
+    def get(self, request):
+        # Obtenemos los valores únicos de la frecuencia de medición
+        frecuencia_choices = IndicadoresSemestral.FRECUENCIA_CHOICES
+        # Creamos una lista de las opciones de frecuencia
+        frecuencia_list = [choice for choice in frecuencia_choices]
+        # Devolvemos la lista como respuesta
+        return Response(frecuencia_list, status=status.HTTP_200_OK)

@@ -123,11 +123,11 @@ class ValoresVariables(models.Model):
     variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
     fecha_inicio  =models.DateField(db_column='T444FechaInicio')
     fecha_fin = models.DateField(db_column='T444FechaFin')
-    valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
+    valor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T444Valor')
     descripccion = models.CharField(max_length=255, db_column='T444Descripcion')  # Corregir el nombre de la columna
     estado=models.BooleanField(db_column='T444Estado',null=True,default=True)  # Cambiado a campo booleano
     class Meta:
-        db_table = 'T444ValoresVariabless'
+        db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
         verbose_name_plural = 'Valores Variables'
 
@@ -147,11 +147,13 @@ class LeyesLiquidacion(models.Model):
 class AdministraciondePersonal(models.Model):
     id = models.AutoField(primary_key=True, db_column='T43IdV')
     nivel = models.IntegerField(db_column='T464Nivel', unique=True)
-    director = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Director')
-    tecnicos = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Técnicos')
-    asesor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asesor')
-    profesional = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Profesional')
-    asistencial = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asistencial')
+    nombre = models.CharField(max_length=255, db_column='T464Nombre'),
+    descripcion = models.CharField(max_length=255, db_column='T464Descripcion'),
+    # director = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Director')
+    # tecnicos = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Técnicos')
+    # asesor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asesor')
+    # profesional = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Profesional')
+    # asistencial = models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Asistencial')
 
     class Meta:
         db_table = 'T464AdministraciondePersonal'
@@ -191,22 +193,20 @@ class ConfigaraicionInteres(models.Model):
 
 
 class IndicadoresSemestral(models.Model):
-    # Definición de opciones
-    TUA = 'tua'
-    TR = 'tr'
-    OTRA = 'otra'
+    # Opciones para frecuencia_medicion
+    FRECUENCIA_CHOICES = [
+        ('mensual', 'Mensual'),
+        ('semestral', 'Semestral'),
+        ('trimestral', 'Trimestral'),
+        ('anual', 'Anual'),  # Agregamos el choice "anual"
 
-    OPCIONES = [
-        (TUA, 'TUA'),
-        (TR, 'TR'),
-        (OTRA, 'OTRA'),
     ]
 
     # Campos del modelo
     id = models.AutoField(primary_key=True, db_column='T465configuracion')
     proceso = models.CharField(max_length=255, db_column='T465Proceso')
     nombre_indicador = models.CharField(max_length=255, db_column='T465Nombre_del_indicador')
-    frecuencia_medicion = models.CharField(max_length=255, db_column='T465Frecuencia_de_medicion')
+    frecuencia_medicion = models.CharField(max_length=255, choices=FRECUENCIA_CHOICES, db_column='T465Frecuencia_de_medicion')
     variable_1 = models.CharField(max_length=255, db_column='T465Variable_1')
     variable_2 = models.CharField(max_length=255, db_column='T465Variable_2')
     formula_indicador = models.CharField(max_length=255, db_column='T465Formula_del_indicador')
@@ -217,8 +217,32 @@ class IndicadoresSemestral(models.Model):
     descripcion_variable_1 = models.TextField(db_column='T465Descipccion_variable_1')
     descripcion_variable_2 = models.TextField(db_column='T465Descripccion_variable_2')
     origen_datos = models.CharField(max_length=255, db_column='T465Origen_de_datos')
+    fecha_creacion = models.DateField(db_column='T465Fecha_creacion')  # Agregado el campo fecha_creacion
+    responsable_creacion = models.CharField(max_length=255, db_column='T465Responsable_creacion')  # Agregado el campo responsable_creacion
+    tipo_indicador = models.CharField(max_length=255, db_column='T465Tipo_indicador')  # Agregado el campo tipoIndicador
+    registros_cobro_fk = models.IntegerField(db_column='T465Registros_cobro_fk')
 
     class Meta:
         db_table = 'T465IndicadoresSemestral'
         verbose_name = 'Configuracion Interes'
         verbose_name_plural = 'Configuracion Interes'
+
+
+class RegistrosCobro(models.Model):
+    # Campos del modelo
+    indicador = models.ForeignKey(IndicadoresSemestral, on_delete=models.CASCADE, related_name='registros_cobro')  
+    enero = models.DateTimeField(blank=True, db_column='T467Enero')
+    febrero = models.DateTimeField(blank=True, db_column='T467Febrero')
+    marzo = models.DateTimeField(blank=True, db_column='T467Marzo')
+    abril = models.DateTimeField(blank=True, db_column='T467Abril')
+    mayo = models.DateTimeField(blank=True, db_column='T467Mayo')
+    junio = models.DateTimeField(blank=True, db_column='T467Junio')
+    julio = models.DateTimeField(blank=True, db_column='T467Julio')
+    agosto = models.DateTimeField(blank=True, db_column='T467Agosto')
+    septiembre = models.DateTimeField(blank=True, db_column='T467Septiembre')
+    octubre = models.DateTimeField(blank=True, db_column='T467Octubre')
+    noviembre = models.DateTimeField(blank=True, db_column='T467Noviembre')
+    diciembre = models.DateTimeField(blank=True, db_column='T467Diciembre')
+
+    class Meta:
+        db_table = 'T467RegistrosCobro'  # Cambiar el nombre de la tabla en la base de datos
