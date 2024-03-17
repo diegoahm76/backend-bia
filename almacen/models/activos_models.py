@@ -89,7 +89,7 @@ class ItemsBajaActivos(models.Model):
 
 
 class SolicitudesActivos(models.Model):
-    id_solicitud_viaje = models.AutoField(primary_key=True, db_column="T090IdSolicitudActivo")
+    id_solicitud_activo = models.AutoField(primary_key=True, db_column="T090IdSolicitudActivo")
     fecha_solicitud = models.DateTimeField(db_column='T090fechaSolicitud')
     motivo = models.CharField(max_length=255, db_column="T090motivo")
     observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T090observacion")
@@ -117,9 +117,10 @@ class SolicitudesActivos(models.Model):
     id_persona_alma_rechaza = models.ForeignKey(Personas, related_name='id_persona_alma_rechaza', on_delete=models.SET_NULL, blank=True, null=True, db_column='T090Id_PersonaAlmacenRechaza')
     solicitud_anulada_solicitante = models.BooleanField(db_column="T090solicitudAnuladaSolicitante")
     fecha_anulacion_solicitante = models.DateTimeField(blank=True, null=True,db_column='T090fechaAnulacionSolicitante')
+    justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column="T090justificacionAnulacionSolicitante")
 
     def __str__(self):
-        return str(self.id_solicitud_viaje)
+        return str(self.id_solicitud_activo)
     
     class Meta:
         db_table = 'T090SolicitudesActivos'
