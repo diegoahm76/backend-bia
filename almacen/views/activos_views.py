@@ -5,6 +5,7 @@ from wsgiref.types import FileWrapper
 from django.core.files.base import ContentFile
 from django.db.models import F
 import base64 
+from django.db.models import Count
 from django.db.models import Max
 from pyexpat import model
 from rest_framework import generics
@@ -24,7 +25,7 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, BajaActivosSerializer, DetalleSolicitudActivosSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, DetalleSolicitudActivosSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
 from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SolicitudesActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
@@ -34,6 +35,8 @@ from copy import copy
 
 class BuscarBien(generics.ListAPIView):
     serializer_class = InventarioSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def get_queryset(self):
         # Filtrar los registros de inventario según las validaciones requeridas
@@ -95,6 +98,8 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
     serializer_class = RegistrarBajaCreateSerializer
     serializer_bienes_class = RegistrarBajaBienesCreateSerializer
     serializer_anexos_class = RegistrarBajaAnexosCreateSerializer
+    permission_classes = [IsAuthenticated]
+
 
     @transaction.atomic
     def create(self, request):
@@ -213,17 +218,16 @@ class ActualizarBajaActivosView(generics.UpdateAPIView):
     serializer_class = RegistrarBajaCreateSerializer
     serializer_bienes_class = RegistrarBajaBienesCreateSerializer
     serializer_anexos_class = RegistrarBajaAnexosCreateSerializer
+    permission_classes = [IsAuthenticated] 
 
     @transaction.atomic
     def update(self, request, pk):
         data = request.data
         anexo = request.FILES.get('anexo')
-        anexos_opcionales = data.get('anexos_opcionales')
         current_date = datetime.now()
         persona_logueada = request.user.persona
 
         bienes = json.loads(data.get('bienes'))
-        anexos_opcionales_data = json.loads(anexos_opcionales)
 
         baja_activo = BajaActivos.objects.filter(id_baja_activo=pk).first()
         if not baja_activo:
@@ -336,79 +340,29 @@ class ActualizarBajaActivosView(generics.UpdateAPIView):
             archivo_class = ArchivosDgitalesCreate()
             anexo.name = nombre_anexo + extension
             respuesta = archivo_class.crear_archivo(data_archivo, anexo)
-
-            # Actualizar anexo en T094
-            data_anexo = {}
-            data_anexo['nro_folios'] = data.get('nro_folios')
-            data_anexo['descripcion_anexo'] = data.get('descripcion_anexo')
-            data_anexo['fecha_creacion_anexo'] = current_date # SE VA GUADAR FECHA ACTUALZIACION????
             data_anexo['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
-        
-            serializer_anexo = self.serializer_anexos_class(anexo_instance, data=data_anexo, partial=True)
-            serializer_anexo.is_valid(raise_exception=True)
-            serializer_anexo.save()
 
             # ELIMINAR ARCHIVO DIGITAL
             old_archivo_digital.delete()
+            
+
+        # Actualizar anexo en T094
+        data_anexo = {}
+        data_anexo['nro_folios'] = data.get('nro_folios')
+        data_anexo['descripcion_anexo'] = data.get('descripcion_anexo')
+        data_anexo['fecha_creacion_anexo'] = current_date # SE VA GUADAR FECHA ACTUALZIACION????
         
-        if anexos_opcionales_data:
-            for anexo in anexos_opcionales_data:
-                anexo_64 = anexo.get("archivo_anexo")
-                if anexo_64:
-                    archivo = base64.b64decode(anexo_64)
-                    archivo = ContentFile(archivo, name="prueba_opcional.pdf")
-                    nombre_anexo = anexo.get("nombre_anexo")
-                    extension_sin_punto = anexo.get("formato")
-                    
-                    formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
-                    
-                    if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
-                        raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
-                    
-                    # CREAR ARCHIVO EN T238
-                    # Obtiene el año actual para determinar la carpeta de destino
-                    current_year = current_date.year
-                    ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+        serializer_anexo = self.serializer_anexos_class(anexo_instance, data=data_anexo, partial=True)
+        serializer_anexo.is_valid(raise_exception=True)
+        serializer_anexo.save()
 
-                    # Calcula el hash MD5 del archivo
-                    md5_hash = hashlib.md5()
-                    for chunk in archivo.chunks():
-                        md5_hash.update(chunk)
-
-                    # Obtiene el valor hash MD5
-                    md5_value = md5_hash.hexdigest()
-
-                    # Crea el archivo digital y obtiene su ID
-                    data_archivo = {
-                        'es_Doc_elec_archivo': True,
-                        'ruta': ruta,
-                        'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
-                    }
-                    
-                    archivo_class = ArchivosDgitalesCreate()
-                    anexo.name = nombre_anexo + '.' + extension_sin_punto 
-                    respuesta = archivo_class.crear_archivo(data_archivo, anexo)
-
-                    # Insertar anexo en T094
-                    data_anexo = {}
-                    data_anexo['id_baja_activo'] = pk
-                    data_anexo['nombre_anexo'] = nombre_anexo # PONER NOMBRE FIJO ANEXO
-                    data_anexo['nro_folios'] = anexo.get('nro_folios')
-                    data_anexo['descripcion_anexo'] = anexo.get('descripcion_anexo')
-                    data_anexo['fecha_creacion_anexo'] = current_date
-                    data_anexo['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
-                    
-                    serializer_anexo = self.serializer_anexos_class(data=data_anexo)
-                    serializer_anexo.is_valid(raise_exception=True)
-                    serializer_anexo.save()
-
-
-        # return  HttpResponse(FileWrapper(archivo),content_type='application/pdf')
+        
 
         return Response({'success': True, 'detail': 'Se actualizó el registro de la baja correctamente', 'data': serializer_baja.data}, status=status.HTTP_201_CREATED)
 
 #Retorna_consecutivo_Siguiente
 class UltimoConsecutivoView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated] 
     def list(self, request, *args, **kwargs):
         # Obtener el último consecutivo más 1
         ultimo_consecutivo = BajaActivos.objects.aggregate(max_consecutivo=Max('consecutivo_por_baja'))
@@ -420,6 +374,7 @@ class UltimoConsecutivoView(generics.ListAPIView):
 #ELIMINAR_REGISTROS
 class BorrarBajaActivosView(generics.DestroyAPIView):
     queryset = BajaActivos.objects.all()
+    permission_classes = [IsAuthenticated] 
 
     @transaction.atomic
     def destroy(self, request, pk):
@@ -478,6 +433,7 @@ class BorrarBajaActivosView(generics.DestroyAPIView):
 class BajaActivosPorConsecutivo(generics.ListAPIView):
     queryset = BajaActivos.objects.all()
     serializer_class = BajaActivosSerializer
+    permission_classes = [IsAuthenticated] 
 
     def list(self, request, *args, **kwargs):
         consecutivo = self.kwargs.get('consecutivo')  # Obtener el consecutivo desde los argumentos de la URL
@@ -509,6 +465,7 @@ class BajaActivosPorConsecutivo(generics.ListAPIView):
 class ListarBajasActivosView(generics.ListAPIView):
     queryset = BajaActivos.objects.all()
     serializer_class = BajaActivosSerializer
+    permission_classes = [IsAuthenticated] 
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -517,6 +474,7 @@ class ListarBajasActivosView(generics.ListAPIView):
     
 class ListarUnidadesMedidaActivas(generics.ListAPIView):
     serializer_class = UnidadesMedidaSerializer
+    permission_classes = [IsAuthenticated] 
 
     def get_queryset(self):
         return UnidadesMedida.objects.filter(activo=True)
@@ -530,6 +488,7 @@ class ListarUnidadesMedidaActivas(generics.ListAPIView):
 class CrearSolicitudActivosView(generics.CreateAPIView):
     serializer_class = SolicitudesActivosSerializer
     items_serializer_class = ItemsSolicitudActivosSerializer
+    permission_classes = [IsAuthenticated] 
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -590,7 +549,7 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
         # Guardar información de los items de la solicitud
         items_data = data.get('items', [])
         for item_data in items_data:
-            item_data['id_solicitud_activo'] = solicitud.id_solicitud_viaje
+            item_data['id_solicitud_activo'] = solicitud.id_solicitud_activo
             item_serializer = self.items_serializer_class(data=item_data)
             item_serializer.is_valid(raise_exception=True)
             item_serializer.save()
@@ -601,23 +560,20 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
 
 class EditarSolicitudActivosView(generics.UpdateAPIView):
     serializer_class = SolicitudesActivosSerializer
+    queryset = SolicitudesActivos.objects.filter(estado_solicitud__in=["SR","S"])
     items_serializer_class = ItemsSolicitudActivosSerializer
+    permission_classes = [IsAuthenticated] 
 
-    def get_queryset(self):
-        # Filtrar las solicitudes que tengan estado_solicitud = "SR"
-        return SolicitudesActivos.objects.filter(estado_solicitud="SR")
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+    def update(self, request, pk):
+        instance = self.queryset.filter(id_solicitud_activo=pk).first()
+        if not instance:
+            raise NotFound ("No se encontro la solicitud activo.")
         data = request.data
         current_date = datetime.now()
 
-        # Verificar si la solicitud tiene estado_solicitud = "SR"
-        if instance.estado_solicitud != "SR":
-            return Response({'success': False, 'detail': 'La solicitud no se puede editar porque no está en estado "SR"'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            with transaction.atomic():
+        # try:
+        with transaction.atomic():
                 # Actualizar los campos de la solicitud
                 instance.fecha_solicitud = current_date
                 instance.motivo = data.get('motivo', instance.motivo)
@@ -633,42 +589,43 @@ class EditarSolicitudActivosView(generics.UpdateAPIView):
 
                 # Eliminar los items que no se envían en la solicitud
                 items_data = data.get('items', [])
-                item_ids_to_keep = [item['id'] for item in items_data if 'id' in item]
-                instance.itemsolicitudactivo_set.exclude(id__in=item_ids_to_keep).delete()
+                item_ids_to_keep = [item['id_item_solicitud_activo'] for item in items_data if 'id_item_solicitud_activo' in item]
+                instance.itemssolicitudactivos_set.exclude(id_item_solicitud_activo__in=item_ids_to_keep).delete()
 
                 # Guardar o actualizar los items enviados en la solicitud
                 for item_data in items_data:
-                    item_id = item_data.get('id')
+                    item_id = item_data.get('id_item_solicitud_activo')
                     if item_id:
                         # Si el ID del item existe, actualizar el item
-                        item_instance = instance.itemsolicitudactivo_set.get(id=item_id)
+                        item_instance = instance.itemssolicitudactivos_set.get(id_item_solicitud_activo=item_id)
                         item_instance.descripcion = item_data.get('descripcion', item_instance.descripcion)
                         item_instance.cantidad = item_data.get('cantidad', item_instance.cantidad)
                         item_instance.save()
                     else:
                         # Si el ID del item no existe, crear un nuevo item asociado a la solicitud
-                        item_data['id_solicitud_activo'] = instance.id
+                        item_data['id_solicitud_activo'] = instance.id_solicitud_activo
                         item_serializer = self.items_serializer_class(data=item_data)
                         item_serializer.is_valid(raise_exception=True)
                         item_serializer.save()
 
-                return Response({'success': True, 'detail': 'Solicitud de activos editada correctamente'}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Solicitud de activos editada correctamente'}, status=status.HTTP_200_OK)
 
-        except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # except Exception as e:
+        #     return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
 class DetalleSolicitudActivosView(generics.RetrieveAPIView):
     queryset = SolicitudesActivos.objects.all()
     serializer_class = SolicitudesActivosSerializer
-    lookup_field = 'id_solicitud_viaje'
+    lookup_field = 'id_solicitud_activo'
+    permission_classes = [IsAuthenticated] 
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
         # Obtener los items asociados a la solicitud de activos
-        items_queryset = ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance.id_solicitud_viaje)
+        items_queryset = ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance.id_solicitud_activo)
         items_serializer = ItemSolicitudActivosSerializer(items_queryset, many=True)
 
         # Agregar el nombre de la unidad de medida en los items
@@ -690,12 +647,13 @@ class DetalleSolicitudActivosView(generics.RetrieveAPIView):
 class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
     queryset = SolicitudesActivos.objects.all()
     serializer_class = None  # No necesitamos un serializador para esta vista
-    lookup_field = 'id_solicitud_viaje'  # Especifica el campo utilizado como PK en la URL
+    lookup_field = 'id_solicitud_activo'  # Especifica el campo utilizado como PK en la URL
+    permission_classes = [IsAuthenticated] 
 
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
         solicitud_data = {
-            'id_solicitud_viaje': instance.id_solicitud_viaje,
+            'id_solicitud_activo': instance.id_solicitud_activo,
             'fecha_solicitud': instance.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S'),
             'motivo': instance.motivo,
             'observacion': instance.observacion,
@@ -731,7 +689,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
         for item in items_solicitud:
             item_data = {
                 'id_item_solicitud_activo': item.id_item_solicitud_activo,
-                'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_viaje,
+                'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
                 'id_bien': item.id_bien.nombre,  
                 'cantidad': item.cantidad,
                 'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
@@ -793,3 +751,246 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
         solicitud_data['items_despacho'] = items_despacho_data
 
         return Response({'success': True, 'detail': 'Solicitud de activos recuperada correctamente', 'data': solicitud_data}, status=status.HTTP_200_OK)
+    
+
+class CancelarSolicitudActivos(generics.UpdateAPIView):
+    queryset = SolicitudesActivos.objects.all()
+    serializer_class = SolicitudesActivosSerializer
+    permission_classes = [IsAuthenticated]   
+  
+    lookup_field = 'id_solicitud_activo'  # Especifica el campo utilizado como PK en la URL
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # Verificar si la solicitud puede ser cancelada
+        if instance.gestionada_alma:
+            return Response({'error': 'No se puede cancelar una solicitud gestionada por el almacén.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener los datos de la solicitud
+        justificacion_anulacion = request.data.get('justificacion_anulacion')
+        fecha_actual = datetime.now()
+        
+        # Actualizar los campos de la solicitud
+        instance.solicitud_anulada_solicitante = True
+        instance.justificacion_anulacion = justificacion_anulacion
+        instance.fecha_anulacion_solicitante = fecha_actual
+        instance.estado_solicitud = 'C'
+        instance.fecha_cierra_solicitud = fecha_actual
+        
+        # Guardar los cambios en la base de datos
+        instance.save()
+        
+        # Serializar la instancia actualizada
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        
+        return Response({'success': True, 'detail': 'Solicitud cancelada correctamente.', 'data': data}, status=status.HTTP_200_OK)
+    
+
+class BusquedaAvanzadaSolicitudesActivos(generics.ListAPIView):
+    serializer_class = BusquedaSolicitudActivoSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        # Obtener parámetros de consulta
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+
+        # Filtrar las solicitudes por estado
+        queryset = SolicitudesActivos.objects.all()
+        if estado_solicitud:
+            queryset = queryset.filter(estado_solicitud=estado_solicitud)
+
+        # Filtrar las solicitudes por rango de fechas
+        if fecha_desde:
+            queryset = queryset.filter(fecha_solicitud__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_solicitud__lte=fecha_hasta)
+
+        # Anotar el número de activos relacionados a cada solicitud
+        queryset = queryset.annotate(numero_activos=Count('itemssolicitudactivos'))
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = {
+            'success': True,
+            'detail': 'Solicitudes obtenidas correctamente.',
+            'data': serializer.data
+        }
+        return Response(data)
+    
+
+
+class CrearArchivosOpcionales(generics.CreateAPIView):
+    serializer_class = AnexosOpcionalesDocsAlmaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self,request, id_baja_activo):
+        data = request.data
+        anexo = request.FILES.get('anexo_opcional')
+        current_date = datetime.now()
+        baja = BajaActivos.objects.filter(id_baja_activo=id_baja_activo).first()
+
+        if not baja:
+            raise NotFound("La Baja Activo no ha sido encontrada.")
+        
+        # Insertar archivo digital
+
+        # VALIDAR FORMATO ARCHIVO 
+        archivo_nombre = anexo.name 
+        nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        
+        formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+        
+        if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+            raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+        
+        # CREAR ARCHIVO EN T238
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = current_date.year
+        ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+
+        # Calcula el hash MD5 del archivo
+        md5_hash = hashlib.md5()
+        for chunk in anexo.chunks():
+            md5_hash.update(chunk)
+
+        # Obtiene el valor hash MD5
+        md5_value = md5_hash.hexdigest()
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+        }
+        
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+        # Insertar anexo en T094
+        data['id_baja_activo'] = baja.id_baja_activo
+        data['fecha_creacion_anexo'] = current_date
+        data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+        data.pop('anexo_opcional')
+        serializer_anexo = self.serializer_class(data=data)
+        serializer_anexo.is_valid(raise_exception=True)
+        serializer_anexo.save()
+
+        return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.', 'data': serializer_anexo.data}, status=status.HTTP_200_OK)
+
+
+
+class ActualizarAnexoOpcional(generics.UpdateAPIView):
+    serializer_class = AnexosOpcionalesDocsAlmaSerializer
+    permission_classes = [IsAuthenticated]
+
+    # Insertar archivo digital
+
+    # VALIDAR FORMATO ARCHIVO
+
+    def update(self, request,id_baja_activo):
+
+        data = request.data
+        data._mutable=True
+        anexo = request.FILES.get('anexo_opcional')
+        current_date = datetime.now()
+
+        anexo_instance = AnexosDocsAlma.objects.filter(id_anexo_doc_alma=data['id_anexo_doc_alma'],id_baja_activo = id_baja_activo ).first()
+        if not anexo_instance:
+            raise NotFound("No se encontro el anexo opcional para la baja de activos requerida.")
+
+
+        if anexo:
+            old_archivo_digital = copy(anexo_instance.id_archivo_digital)
+
+            archivo_nombre = anexo.name 
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = current_date.year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in anexo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+            # Actualizar anexo en T094
+            data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+            
+            # ELIMINAR ARCHIVO DIGITAL
+            old_archivo_digital.delete()
+            data.pop('anexo_opcional')
+
+        data['fecha_creacion_anexo'] = current_date
+        serializer_anexo = self.serializer_class(anexo_instance, data=data, partial=True)
+        serializer_anexo.is_valid(raise_exception=True)
+        serializer_anexo.save()
+
+        
+
+        return Response({'success': True, 'detail': 'Se actualizó el registro de la baja correctamente', 'data': serializer_anexo.data}, status=status.HTTP_200_OK)
+
+
+class EliminarAnexoOpcional(generics.DestroyAPIView):
+    queryset = AnexosDocsAlma.objects.all()
+    serializer_class = AnexosOpcionalesDocsAlmaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def destroy(self, request, id_baja_activo):
+        data = request.data 
+        anexo_opcional = AnexosDocsAlma.objects.filter(id_anexo_doc_alma = data["id_anexo_doc_alma"], id_baja_activo= id_baja_activo).first()
+
+        if not anexo_opcional:
+            raise NotFound ("No se encontro el Id de la baja de activo que se desea eliminar.")
+        
+        anexo_opcional.id_archivo_digital.ruta_archivo.delete()
+
+        anexo_opcional.id_archivo_digital.delete()
+
+        anexo_opcional.delete()
+
+        return Response({'success': True, 'detail': 'Anexo opcional eliminado exitosamente.'}, status=status.HTTP_200_OK)
+    
+class ListarAnexoOpcional(generics.ListAPIView):
+    queryset = AnexosDocsAlma.objects.all()
+    serializer_class = AnexosDocsAlmaSerializer
+
+    def get_queryset(self):
+        id_baja_activo = self.kwargs.get('id_baja_activo')
+        return AnexosDocsAlma.objects.filter(id_baja_activo=id_baja_activo)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Anexos opcionales obtenidos exitosamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
