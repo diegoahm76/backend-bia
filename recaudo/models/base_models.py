@@ -146,7 +146,7 @@ class LeyesLiquidacion(models.Model):
 
 class AdministraciondePersonal(models.Model):
     id = models.AutoField(primary_key=True, db_column='T43IdV')
-    nivel = models.IntegerField(db_column='T464Nivel', unique=True)
+    nivel = models.IntegerField(db_column='T464Nivel')
     nombre = models.CharField(max_length=255, db_column='T464Nombre')
     descripcion = models.CharField(max_length=255, db_column='T464Descripcion')
 
@@ -156,7 +156,7 @@ class AdministraciondePersonal(models.Model):
         verbose_name_plural = 'Administracion de Personal'
         unique_together = [['nivel', 'nombre']]
 
-        
+
 
 MONTH_CHOICES = [
     (1, 'Enero'),
