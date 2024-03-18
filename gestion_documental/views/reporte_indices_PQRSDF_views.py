@@ -1,6 +1,7 @@
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
+from gestion_documental.choices.pqrsdf_choices import TIPOS_PQR
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.expedientes_models import  CierresReaperturasExpediente, ExpedientesDocumentales
 from django.db.models import Count
@@ -117,63 +118,147 @@ class ReporteIndicesSucursalesGet(generics.ListAPIView):
         instance = self.get_queryset().filter(**filter)
         sucursales =SucursalesEmpresas.objects.all()
         #1 RADICADO
-        
         #2 EN GESTION
         #14 RESUELTA
-        estados = [1,2,14]
+        estados = [2,5,14]
         conteo_sucursales = []
+        categories = []
         for s in sucursales:
             pqrsdfs = instance.filter(id_sucursal_especifica_implicada=s)
             conteo_estados =[]
-            print(s.descripcion_sucursal)
+      
             for estado in estados:
                 radicados = pqrsdfs.filter(id_estado_actual_solicitud=estado).count()
                 conteo_estados.append(radicados)
-                print(radicados)
+        
             conteo_sucursales.append(conteo_estados)
-            print("#########################")
+          
+            categories.append(s.descripcion_sucursal)
 
-        print("MATRIZ")
-        print(conteo_sucursales)
-        for x in conteo_sucursales:
-            print(x)
+       
+        matriz_transpuesta = [[fila[i] for fila in conteo_sucursales] for i in range(len(conteo_sucursales[0]))]
+        
+        data =[]
+        for x in range (len(estados)):
+            nombre_estado = EstadosSolicitudes.objects.filter(id_estado_solicitud=estados[x]).first()
+            nombre = None
+            if nombre_estado:
+                nombre = nombre_estado.nombre
+            data.append({'name':nombre,'data':matriz_transpuesta[x]})
+
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':data, "categories":categories}},status=status.HTTP_200_OK)
+        
+class ReporteIndicesSucursalesTiposPQRSDFGet(generics.ListAPIView):
+    serializer_class = None
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+
+        filter={}
+        fecha_inicio = None
+        fecha_fin = None
+        for key, value in request.query_params.items():
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_registro__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_registro__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+             
+        instance = self.get_queryset().filter(**filter)
+        sucursales =SucursalesEmpresas.objects.all()
+        #1 RADICADO
+        #2 EN GESTION
+        #14 RESUELTA
+        
+        conteo_sucursales = []
+        categories = []
+        
+        for s in sucursales:
+            pqrsdfs = instance.filter(id_sucursal_especifica_implicada=s)
+
             
-        # conteo_por_sucursal = (
-        #     # filtro para reapertura de un expendiente simple con un rango de fechas 
-        #     instance.filter(id_estado_actual_solicitud__in=[2,5,14]).values('id_sucursal_especifica_implicada','id_sucursal_especifica_implicada__descripcion_sucursal','id_estado_actual_solicitud','id_estado_actual_solicitud__nombre')
-        #     #instance.values('id_sucursal_especifica_implicada','id_sucursal_especifica_implicada__descripcion_sucursal','id_estado_actual_solicitud','id_estado_actual_solicitud__nombre')
-        #     .annotate(cantidad=Count('id_sucursal_especifica_implicada'))
-        # )
-
-        # estados = EstadosSolicitudes.objects.filter(id_estado_solicitud__in=[2, 5, 14])
-        # print(estados)
-        # series =[]
-        # categories =[]
-        # nombres_estado = set()
-        # nombre_sucursales = set()
-        # #print(conteo_por_sucursal)
-        # for x in conteo_por_sucursal:
-        #     nombres_estado.add(x['id_estado_actual_solicitud__nombre'])
-        #     nombre_sucursales.add(x['id_sucursal_especifica_implicada__descripcion_sucursal'])
+            conteo_tipos =[]
+      
+            for tipo in TIPOS_PQR:
+                radicados = pqrsdfs.filter(cod_tipo_PQRSDF=tipo[0]).count()
+                conteo_tipos.append(radicados)
         
-        # #print(nombres_estado)
-        # print("###################")
-        # #print(nombre_sucursales)
+            conteo_sucursales.append(conteo_tipos)
+          
+            categories.append(s.descripcion_sucursal)
 
-        # for es in nombres_estado:
-        #     data_estado ={}
-        #     data_estado['name'] = es
-        #     data = []
-        #     for suc in nombre_sucursales:
-        #         contador = 0
-        #         for x in conteo_por_sucursal:
-        #             if x['id_estado_actual_solicitud__nombre'] == es and x['id_sucursal_especifica_implicada__descripcion_sucursal'] == suc:
-        #                 contador = x['cantidad']
-        #                 data.append(contador)
+       
+        matriz_transpuesta = [[fila[i] for fila in conteo_sucursales] for i in range(len(conteo_sucursales[0]))]
+        
+        data =[]
+        for x in range (len(TIPOS_PQR)):
+            nombre = TIPOS_PQR[x][1]
+            data.append({'name':nombre,'data':matriz_transpuesta[x]})
 
-
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':data, "categories":categories}},status=status.HTTP_200_OK)
         
 
 
-        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':'series', "categories":'categories'}},status=status.HTTP_200_OK)
+
+
+
+
+class ReporteIndicesTiposSucursalesPQRSDFGet(generics.ListAPIView):
+    serializer_class = None
+    queryset = PQRSDF.objects.all()
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+
+        filter={}
+        fecha_inicio = None
+        fecha_fin = None
+        for key, value in request.query_params.items():
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_registro__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_registro__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+             
+        instance = self.get_queryset().filter(**filter)
+        sucursales =SucursalesEmpresas.objects.all()
+        #1 RADICADO
+        #2 EN GESTION
+        #14 RESUELTA
+        
+        conteo_sucursales = []
+        categories = []
+        data =[]
+        for s in sucursales:
+            pqrsdfs = instance.filter(id_sucursal_especifica_implicada=s)
+
+            
+            conteo_tipos =[]
+      
+            for tipo in TIPOS_PQR:
+                radicados = pqrsdfs.filter(cod_tipo_PQRSDF=tipo[0]).count()
+                
+                conteo_tipos.append(radicados)
+        
+            conteo_sucursales.append(conteo_tipos)
+            data.append({'name':s.descripcion_sucursal,'data':conteo_tipos})
+        
+        
+       
+        for x in range (len(TIPOS_PQR)):
+            categories.append( TIPOS_PQR[x][1])
+            
+
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':data, "categories":categories}},status=status.HTTP_200_OK)
         

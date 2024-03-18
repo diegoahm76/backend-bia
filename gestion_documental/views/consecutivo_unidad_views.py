@@ -350,11 +350,7 @@ class SerieSubserioUnidadGet(generics.ListAPIView):
     
     def get (self, request,uni):
 
-
-        
-
         instance=CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=uni)
-
 
         if not instance:
             raise NotFound("No existen registros asociados.")
