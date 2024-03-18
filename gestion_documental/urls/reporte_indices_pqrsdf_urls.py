@@ -1,0 +1,12 @@
+
+
+from django.urls import path
+from gestion_documental.views import reporte_indices_PQRSDF_views as views
+
+urlpatterns = [
+    # Tabla de Control de Acceso
+    path('reporte_general/get/', views.ReporteIndicesTodosGet.as_view(), name='reporte-pqrsdf-general'),
+    path('reporte_sedes/get/', views.ReporteIndicesSucursalesGet.as_view(), name='reporte-pqrsdf-sedes'),
+    #
+
+]
