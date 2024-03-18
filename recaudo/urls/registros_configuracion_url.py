@@ -52,7 +52,7 @@ urlpatterns = [
         path('configuracioninterres/delete/<str:pk>/', viwes.Borrar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-delete'),
 
 
-        path('indicadores/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+        path('indicadores/<int:year>/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
         path('indicadores/put/<str:pk>/', viwes.Actualizar_IndicadoresSemestral.as_view(), name='configuracion-interes-update'),
         path('indicadores/delete/<str:pk>/', viwes.Borrar_IndicadoresSemestral.as_view(), name='configuracion-interes'),
         path('indicadores/post/', viwes.Crear_IndicadoresSemestral.as_view(), name='configuracion-interes'),

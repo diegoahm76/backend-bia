@@ -541,20 +541,33 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
     
 
     # Vista get para las 4 tablas de zonas hidricas
+# class Vista_IndicadoresSemestral(generics.ListAPIView):
+#     queryset = IndicadoresSemestral.objects.all()
+#     serializer_class = IndicadoresSemestralSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         cuencas = IndicadoresSemestral.objects.all()
+#         serializer = self.serializer_class(cuencas,many=True)
+
+#         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 class Vista_IndicadoresSemestral(generics.ListAPIView):
-    queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        cuencas = IndicadoresSemestral.objects.all()
-        serializer = self.serializer_class(cuencas,many=True)
+    def get_queryset(self):
+        queryset = IndicadoresSemestral.objects.all()
+        year = self.kwargs.get('year')
+        if year:
+            queryset = queryset.filter(vigencia_reporta=year)
+        return queryset
 
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
     
-
-
-
+    
 class Crear_IndicadoresSemestral(generics.CreateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
@@ -563,20 +576,19 @@ class Crear_IndicadoresSemestral(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-           
-            
-            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
-            # serializer.validated_data['campo_adicional'] = valor
-
-            serializer.save()
+            # data =request.data
+            # print(data['registro_cobro'])
+            # Guardar el objeto IndicadoresSemestral
+            self.perform_create(serializer)
 
             return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
                             status=status.HTTP_201_CREATED)
-        except ValidationError as e:
-            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
-            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
-        
-    
+        except Exception as e:
+            # Manejar la excepción de manera adecuada
+            return Response({'error': 'Error al crear el registro', 'detail': str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class Borrar_IndicadoresSemestral(generics.DestroyAPIView):
     queryset = IndicadoresSemestral.objects.all()
