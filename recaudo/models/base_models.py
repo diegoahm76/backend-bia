@@ -146,9 +146,9 @@ class LeyesLiquidacion(models.Model):
 
 class AdministraciondePersonal(models.Model):
     id = models.AutoField(primary_key=True, db_column='T43IdV')
-    nivel = models.IntegerField(db_column='T464Nivel')
-    nombre = models.CharField(max_length=255, db_column='T464Nombre')
-    descripcion = models.CharField(max_length=255, db_column='T464Descripcion')
+    nivel = models.IntegerField(db_column='T464Nivel',default=1)
+    nombre = models.CharField(max_length=255, db_column='T464Nombre',default='')
+    descripcion = models.CharField(max_length=255, db_column='T464Descripcion',default='')
 
     class Meta:
         db_table = 'T464AdministraciondePersonal'
