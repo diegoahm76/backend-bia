@@ -52,6 +52,8 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
             print(id_radicado)
             if id_radicado:
                 queryset = queryset.filter(id_radicado=id_radicado[0]['id_radicado'])
+            
+
 
 
         if grupo_solicitante:
@@ -64,11 +66,13 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
             else:
                 raise ValidationError(f'El estado {estado} no es válido.')
 
-        return queryset
+        return queryset, id_radicado
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset, radicado = self.get_queryset()
         print(queryset)
         serializer = self.get_serializer(queryset, many=True)
+
+
         return Response({'success': True, 'detail': 'Solicitudes obtenidas exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
     
