@@ -32,6 +32,9 @@ urlpatterns = [
     path('busqueda-solicitudes-realizadas/get/', views.BusquedaAvanzadaSolicitudesActivos.as_view(), name='busqueda-solicitud-activos'),
 
 
+    #Autorizacion_Solicitud_Activos
+
+
 
 
 

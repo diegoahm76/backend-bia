@@ -4,6 +4,8 @@ from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_documento_CHOICES
+from transversal.models.base_models import HistoricoCargosUndOrgPersona
+
 
 from gestion_documental.models.notificaciones_models import (
     NotificacionesCorrespondencia, 
@@ -42,14 +44,29 @@ class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     def get_funcuinario_solicitante(self, obj):
         return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
     
-    #def get_unidad_solicitante(self, obj):
-       # return f"{obj.id_und_org_oficina_solicita.nombre}"
+
     
     
-
-
 
 class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Registros_NotificacionesCorrespondecia
         fields = '__all__'
+
+
+class AsignacionNotificacionCorrespondenciaSerializer(serializers.ModelSerializer):
+    vigencia_contrato = serializers.SerializerMethodField()
+    class Meta:
+        model = AsignacionNotificacionCorrespondencia
+        fields = '__all__'
+
+
+    def get_vigencia_contrato(self, obj):
+        vigencia_contrato = HistoricoCargosUndOrgPersona.objects.filter(id_persona=obj.id_persona_asignada)
+        return HistoricoCargosUndOrgPersonaSerializer(vigencia_contrato, many=True).data
+
+class HistoricoCargosUndOrgPersonaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoricoCargosUndOrgPersona
+        fields = ['fecha_final_historico']
+
