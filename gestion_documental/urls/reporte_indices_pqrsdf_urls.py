@@ -7,6 +7,9 @@ urlpatterns = [
     # Tabla de Control de Acceso
     path('reporte_general/get/', views.ReporteIndicesTodosGet.as_view(), name='reporte-pqrsdf-general'),
     path('reporte_sedes/get/', views.ReporteIndicesSucursalesGet.as_view(), name='reporte-pqrsdf-sedes'),
+    path('reporte/sedes/tipo/get/',views.ReporteIndicesSucursalesTiposPQRSDFGet.as_view(),name='reporte-pqrsdf-sedes-tipo'),
+    path('reporte/tipos/sedes/get/',views.ReporteIndicesTiposSucursalesPQRSDFGet.as_view(),name='reporte-pqrsdf-sedes-tipo')
+    #
     #
 
 ]
