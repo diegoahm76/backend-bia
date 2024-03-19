@@ -1,7 +1,7 @@
 import hashlib
 import os
 import json
-from wsgiref.types import FileWrapper
+#from wsgiref.types import FileWrapper
 from django.core.files.base import ContentFile
 from django.db.models import F
 import base64 

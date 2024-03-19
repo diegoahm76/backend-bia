@@ -4,7 +4,8 @@ from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_documento_CHOICES
-from transversal.models.base_models import HistoricoCargosUndOrgPersona
+from transversal.models.base_models import HistoricoCargosUndOrgPersona, ClasesTercero
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 
 
 from gestion_documental.models.notificaciones_models import (
@@ -45,25 +46,43 @@ class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
         return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
     
 
-    
-    
-
 class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializer):
+    radicado = serializers.SerializerMethodField()
     class Meta:
         model = Registros_NotificacionesCorrespondecia
         fields = '__all__'
 
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado_salida:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado_salida.agno_radicado,cod_tipo_radicado=obj.id_radicado_salida.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado_salida.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+
 
 class AsignacionNotificacionCorrespondenciaSerializer(serializers.ModelSerializer):
     vigencia_contrato = serializers.SerializerMethodField()
+    persona_asignada = serializers.SerializerMethodField()
+    # pendientes = serializers.SerializerMethodField()
+    # resueltas = serializers.SerializerMethodField()
     class Meta:
         model = AsignacionNotificacionCorrespondencia
         fields = '__all__'
 
-
     def get_vigencia_contrato(self, obj):
         vigencia_contrato = HistoricoCargosUndOrgPersona.objects.filter(id_persona=obj.id_persona_asignada)
         return HistoricoCargosUndOrgPersonaSerializer(vigencia_contrato, many=True).data
+    
+    def get_persona_asignada(self, obj):
+        return f"{obj.id_persona_asignada.primer_nombre} {obj.id_persona_asignada.primer_apellido}"
+
+    
+class AsignacionNotiCorresCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignacionNotificacionCorrespondencia
+        fields = '__all__'
 
 class HistoricoCargosUndOrgPersonaSerializer(serializers.ModelSerializer):
     class Meta:
