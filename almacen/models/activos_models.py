@@ -103,7 +103,7 @@ class SolicitudesActivos(models.Model):
     solicitud_prestamo = models.BooleanField(db_column="T090solicitudPrestamo")
     fecha_devolucion = models.DateTimeField(blank=True, null=True,db_column='T090fechaDevolucion')
     fecha_cierra_solicitud = models.DateTimeField(blank=True, null=True, db_column='T090fechaCierreSolicitud')
-    revisada_responble = models.BooleanField(db_column="T090revisadaResponsable")
+    revisada_responsable = models.BooleanField(db_column="T090revisadaResponsable")
     estado_aprobacion_resp = models.CharField(max_length=2, choices=estado_aprobacion_activo_CHOICES, db_column="T090estadoAprobacionResponsable")
     justificacion_rechazo_resp = models.CharField(max_length=255, blank=True, null=True, db_column="T090justificacionRechazoResponsable")
     fecha_aprobacion_resp = models.DateTimeField(blank=True, null=True,db_column='T090fechaAprobacionResponsable')
