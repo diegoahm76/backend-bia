@@ -205,20 +205,6 @@ FORMULARIO_CHOICES = [
     ('4', 'COSTO RECAUDO TR'),
 ]
 
-# MONTH_CHOICES = [
-#     (1, 'Enero'),
-#     (2, 'Febrero'),
-#     (3, 'Marzo'),
-#     (4, 'Abril'),
-#     (5, 'Mayo'),
-#     (6, 'Junio'),
-#     (7, 'Julio'),
-#     (8, 'Agosto'),
-#     (9, 'Septiembre'),
-#     (10, 'Octubre'),
-#     (11, 'Noviembre'),
-#     (12, 'Diciembre')
-# ]
 
 class IndicadoresSemestral(models.Model):
     proceso = models.CharField(max_length=255, db_column='T465Proceso')
@@ -259,49 +245,3 @@ class IndicadorValor(models.Model):
     def __str__(self):
         return f"{self.indicador} - {self.mes_id}: {self.valor}"
     
-
-# class IndicadoresSemestral(models.Model):
-#     # Opciones para frecuencia_medicion
-#     FRECUENCIA_CHOICES = [
-#         ('mensual', 'Mensual'),
-#         ('semestral', 'Semestral'),
-#         ('trimestral', 'Trimestral'),
-#         ('anual', 'Anual'),  # Agregamos el choice "anual"
-#     ]
-
-#     # Campos del modelo
-#     id = models.AutoField(primary_key=True, db_column='T465configuracion')
-#     proceso = models.CharField(max_length=255, db_column='T465Proceso', blank=False)
-#     nombre_indicador = models.CharField(max_length=255, db_column='T465Nombre_del_indicador', blank=False)
-#     frecuencia_medicion = models.CharField(max_length=255, choices=FRECUENCIA_CHOICES, db_column='T465Frecuencia_de_medicion', blank=False)
-#     variable_1 = models.CharField(max_length=255, db_column='T465Variable_1', blank=False)
-#     variable_2 = models.CharField(max_length=255, db_column='T465Variable_2', blank=False)
-#     formula_indicador = models.CharField(max_length=255, db_column='T465Formula_del_indicador', blank=False)
-#     vigencia_reporta = models.IntegerField(db_column='T465Vigencia_que_reporta', unique=True, blank=False)  # Cambiado a unique=True
-#     dependencia_grupo_regional = models.CharField(max_length=255, db_column='T465Dependencia_grupo_regional', blank=False)
-#     objetivo_indicador = models.CharField(max_length=255, db_column='T465Objetivo_del_indicador', blank=False)
-#     unidad_medicion_reporte = models.CharField(max_length=255, db_column='T465Unidad_de_medicion_y_reporte', blank=False)
-#     descripcion_variable_1 = models.TextField(db_column='T465Descipccion_variable_1', blank=False)
-#     descripcion_variable_2 = models.TextField(db_column='T465Descripccion_variable_2', blank=False)
-#     origen_datos = models.CharField(max_length=255, db_column='T465Origen_de_datos', blank=False)
-#     fecha_creacion = models.DateField(db_column='T465Fecha_creacion', auto_now_add=True)  # Cambiado a auto_now_add=True
-#     responsable_creacion = models.CharField(max_length=255, db_column='T465Responsable_creacion', blank=False)  # Agregado el campo responsable_creacion
-#     tipo_indicador = models.CharField(max_length=255, db_column='T465Tipo_indicador', blank=False)  # Agregado el campo tipoIndicador
-
-#     enero = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Enero')
-#     febrero = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Febrero')
-#     marzo = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Marzo')
-#     abril = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Abril')
-#     mayo = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Mayo')
-#     junio = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Junio')
-#     julio = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Julio')
-#     agosto = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Agosto')
-#     septiembre = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Septiembre')
-#     octubre = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Octubre')
-#     noviembre = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Noviembre')
-#     diciembre = models.DecimalField(max_digits=10, decimal_places=0, blank=False, null=True, db_column='T467Diciembre')
-
-#     class Meta:
-#         db_table = 'T465IndicadoresSemestral'  # Nombre personalizado de la tabla en la base de datos
-#         verbose_name = 'Configuracion Interes'
-#         verbose_name_plural = 'Configuracion Interes'
