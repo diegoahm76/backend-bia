@@ -964,7 +964,6 @@ class GetPersonasResponsibleByFilters(generics.ListAPIView):
                     if value != "":
                         filter[key] = value
 
-        # Obtener los IDs de las personas asociadas al "Funcionario"
         personas_funcionario_ids = []
         try:
             clase_funcionario = ClasesTercero.objects.get(nombre='Funcionario')
@@ -976,13 +975,6 @@ class GetPersonasResponsibleByFilters(generics.ListAPIView):
 
         # Filtrar las personas por los IDs obtenidos
         personas = self.queryset.filter(id_persona__in=personas_funcionario_ids).filter(**filter)
-
-
-        # # Verificar la aprobación de la solicitud
-        # if id_funcionario:
-        #     personas = personas.filter(id_persona=id_funcionario)
-        # else:
-        #     personas = personas.none()  # No hay funcionario, entonces no hay resultados
 
         serializer = self.serializer_class(personas, many=True)
         return Response({'success': True, 'detail': 'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)

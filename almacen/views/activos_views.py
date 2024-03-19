@@ -534,7 +534,7 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
             'id_uni_org_operario': id_uni_org_operario,
             'estado_solicitud': 'S',
             'solicitud_prestamo': solicitud_prestamo,
-            'revisada_responble': False,
+            'revisada_responsable': False,
             'estado_aprobacion_resp': 'Ep',
             'gestionada_alma': False,
             'rechazada_almacen': False,
@@ -667,7 +667,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             'solicitud_prestamo': instance.solicitud_prestamo,
             'fecha_devolucion': instance.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_devolucion else None,
             'fecha_cierra_solicitud': instance.fecha_cierra_solicitud.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_cierra_solicitud else None,
-            'revisada_responble': instance.revisada_responble,
+            'revisada_responsable': instance.revisada_responsable,
             'estado_aprobacion_resp': instance.estado_aprobacion_resp,
             'justificacion_rechazo_resp': instance.justificacion_rechazo_resp,
             'fecha_aprobacion_resp': instance.fecha_aprobacion_resp.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_aprobacion_resp else None,
@@ -994,3 +994,107 @@ class ListarAnexoOpcional(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Anexos opcionales obtenidos exitosamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
+class BusquedaAvanzadaSolicitudesProcesos(generics.ListAPIView):
+    serializer_class = BusquedaSolicitudActivoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Obtener parámetros de consulta
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        id_persona_solicita = self.request.query_params.get('id_persona_solicita') 
+        # Obtener el ID de la persona logueada
+        persona_logueada = self.request.user.persona
+
+        # Filtrar las solicitudes por estado y por persona responsable de la unidad
+        queryset = SolicitudesActivos.objects.filter(id_funcionario_resp_unidad=persona_logueada)
+
+        if estado_solicitud:
+            queryset = queryset.filter(estado_solicitud=estado_solicitud)
+
+        # Filtrar por id_persona_solicita si se proporciona
+        if id_persona_solicita:
+            queryset = queryset.filter(id_persona_solicita=id_persona_solicita)
+
+        # Filtrar las solicitudes por rango de fechas
+        if fecha_desde:
+            queryset = queryset.filter(fecha_solicitud__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_solicitud__lte=fecha_hasta)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = {
+            'success': True,
+            'detail': 'Solicitudes obtenidas correctamente.',
+            'data': serializer.data
+        }
+        return Response(data)
+
+
+
+
+class RechazarSolicitud(generics.UpdateAPIView):
+    queryset = SolicitudesActivos.objects.all()
+    serializer_class = SolicitudesActivosSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Verificar si la solicitud puede ser rechazada
+        if instance.estado_solicitud != 'S':
+            return Response({'success': False, 'detail': 'No se puede rechazar una solicitud que no esté en estado "S".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener la justificación de rechazo y la fecha actual
+        justificacion_rechazo = request.data.get('justificacion_rechazo')
+        fecha_actual = datetime.now()
+
+        # Actualizar los campos de la solicitud
+        instance.estado_aprobacion_resp = 'Re'
+        instance.fecha_aprobacion_resp = fecha_actual
+        instance.justificacion_rechazo_resp = justificacion_rechazo
+        instance.revisada_responsable = True
+        instance.estado_solicitud = 'SR'
+
+        # Guardar los cambios en la base de datos
+        instance.save()
+
+        # Serializar y retornar la información actualizada
+        serializer = self.serializer_class(instance)
+        return Response({'success': True, 'detail': 'Solicitud rechazada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class AprobarSolicitud(generics.UpdateAPIView):
+    queryset = SolicitudesActivos.objects.all()
+    serializer_class = SolicitudesActivosSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Verificar si la solicitud puede ser rechazada
+        if instance.estado_solicitud != 'S':
+            return Response({'success': False, 'detail': 'No se puede rechazar una solicitud que no esté en estado "S".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Obtener la justificación de rechazo y la fecha actual
+        justificacion_rechazo = request.data.get('justificacion_rechazo')
+        fecha_actual = datetime.now()
+
+        # Actualizar los campos de la solicitud
+        instance.estado_aprobacion_resp = 'Ac'
+        instance.fecha_aprobacion_resp = fecha_actual
+        instance.revisada_responsable = True
+        instance.estado_solicitud = 'SA'
+
+        # Guardar los cambios en la base de datos
+        instance.save()
+
+        # Serializar y retornar la información actualizada
+        serializer = self.serializer_class(instance)
+        return Response({'success': True, 'detail': 'Solicitud aceptada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
