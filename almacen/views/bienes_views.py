@@ -1122,6 +1122,47 @@ class SearchArticulosByNombreDocIdentificador(generics.ListAPIView):
             return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
 
 
+
+    
+class BusquedaAvanzadaCatalogoBienes(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+
+    def get_queryset(self):
+        # Filtrar nodos de nivel 2-5 de activos según las condiciones especificadas
+        queryset = CatalogoBienes.objects.filter(nivel_jerarquico__range=(2, 5), visible_solicitudes=True, cod_tipo_bien='A')
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Obtener parámetros de la solicitud
+        cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
+        nombre = self.request.query_params.get('nombre')
+        doc_identificador_nro = self.request.query_params.get('doc_identificador_nro')
+
+        # Filtrar bienes por parámetros de búsqueda
+        data_filtrada = serializer.data
+
+        if cod_tipo_activo:
+            data_filtrada = [item for item in data_filtrada if cod_tipo_activo in (item['cod_tipo_activo'] if item['cod_tipo_activo'] else '')]
+
+        if nombre:
+            data_filtrada = [item for item in data_filtrada if nombre in (item['nombre'] if item['nombre'] else '')]
+
+        if doc_identificador_nro:
+            data_filtrada = [item for item in data_filtrada if doc_identificador_nro in (item['doc_identificador_nro'] if item['doc_identificador_nro'] else '')]
+
+        # Realizar validación adicional de nodos de 5to nivel
+        nodos_validos = []
+        for item in data_filtrada:
+            # Validar si el nodo es de 5to nivel o sus padres no tienen visible_solicitudes=True
+            if item['nivel_jerarquico'] == 5 or not CatalogoBienes.objects.filter(id_bien=item['id_bien'], visible_solicitudes=True).exists():
+                nodos_validos.append(item)
+
+        # Retornar la respuesta con la data procesada
+        return Response({'success': True, 'detail': 'Búsqueda realizada correctamente', 'data': nodos_validos}, status=status.HTTP_200_OK)
+
 # class SearchArticulos(generics.ListAPIView):
 #     serializer_class = CatalogoBienesSerializer
 #     queryset = CatalogoBienes.objects.all()

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral, RegistrosConfiguracion,TipoCobro,TipoRenta,Variables,ValoresVariables
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral, RegistrosConfiguracion,TipoCobro,TipoRenta,Variables,ValoresVariables  # Ajusta la ruta de importación según la estructura de tu proyecto
 
 
 
@@ -54,9 +54,12 @@ class ConfigaraicionInteresSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
+
 class IndicadoresSemestralSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = IndicadoresSemestral
         fields = '__all__'
 
-
+ 

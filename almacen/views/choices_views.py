@@ -15,6 +15,7 @@ from almacen.choices.estado_solicitud_choices import estado_solicitud_CHOICES
 from almacen.choices.tipo_conductor_choices import tipo_conductor_CHOICES
 from almacen.choices.estado_solicitud_activo_choices import estado_solicitud_activo_CHOICES
 from almacen.choices.estado_aprobacion_activo_choices import estado_aprobacion_activo_CHOICES
+from almacen.choices.estado_despacho_choices import estado_despacho_CHOICES
 
 tipo_conductor_CHOICES
 from rest_framework.views import APIView
@@ -105,4 +106,10 @@ class EstadoSolicitudActivo(APIView):
 class EstadoAprobacionActivo(APIView):
     def get(self,request):
         choices = estado_aprobacion_activo_CHOICES
+        return Response(choices)
+    
+
+class EstadoDespacho(APIView):
+    def get(self,request):
+        choices = estado_despacho_CHOICES
         return Response(choices)

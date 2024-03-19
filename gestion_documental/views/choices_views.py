@@ -33,6 +33,10 @@ from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHO
 from gestion_documental.choices.codigo_relacion_titular_choices import cod_relacion_persona_titular_CHOICES
 from gestion_documental.choices.codigo_forma_presentacion_choices import cod_forma_presentacion_CHOICES
 
+#NOTIFICACIONES CHOICES
+from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_documento_CHOICES
+from gestion_documental.choices.cod_estado_noti_choices import cod_estado_noti_CHOICES
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -259,3 +263,15 @@ class CodTipoProceso(APIView):
         choices = PROCESO_CHOICES
         return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
         #return Response(choices)
+
+#NOTIFICACIONES
+class CodTipoDocumento(APIView):
+    def get(self, request):
+        choices = cod_tipo_documento_CHOICES
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+
+class CodEstadoNotificaciones(APIView):
+    def get(self, request):
+        choices = cod_estado_noti_CHOICES
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+    
