@@ -308,7 +308,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
 
         ##buscamos los catalogos de serie subserie de la unidad 
         cod_se_sub = ""
-        if 'id_cat_serie_und' in data_in:
+        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und']:
             catalogos_unidad=CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_cat_serie_und']).first()
             cod_serie = catalogos_unidad.id_catalogo_serie.id_serie_doc.codigo
             cod_se_sub = cod_serie
@@ -450,7 +450,7 @@ class ConsecutivoCreateView(generics.CreateAPIView):
         data_consecutivo = {}
         data_consecutivo['id_unidad'] = data_respuesta['id_unidad']
 
-        if 'id_cat_serie_und' in data_in:
+        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und'] :
             data_consecutivo['id_catalogo'] = data_in['id_cat_serie_und']
         data_consecutivo['agno_consecutivo'] = data_respuesta['agno_consecutivo']
         data_consecutivo['nro_consecutivo'] = data_respuesta['consecutivo_actual']
