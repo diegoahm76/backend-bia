@@ -33,6 +33,10 @@ urlpatterns = [
 
 
     #Autorizacion_Solicitud_Activos
+    path('busqueda-solicitudes-proceso/get/', views.BusquedaAvanzadaSolicitudesProcesos.as_view(), name='busqueda-solicitud-procesos'),
+    path('rechazar-solicitud-activo/put/<int:pk>/', views.RechazarSolicitud.as_view(), name='rechazar-solicitud-activo'),
+    path('aprobar-solicitud-activo/put/<int:pk>/', views.AprobarSolicitud.as_view(), name='aprobar-solicitud-activo'),
+
 
 
 
