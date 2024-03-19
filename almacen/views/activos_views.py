@@ -8,6 +8,7 @@ import base64
 from django.db.models import Count
 from django.db.models import Max
 from pyexpat import model
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
@@ -966,19 +967,20 @@ class EliminarAnexoOpcional(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def destroy(self, request, id_baja_activo):
-        data = request.data 
-        anexo_opcional = AnexosDocsAlma.objects.filter(id_anexo_doc_alma = data["id_anexo_doc_alma"], id_baja_activo= id_baja_activo).first()
+        id_anexo_doc_alma = request.query_params.get('id_anexo_doc_alma')
 
-        if not anexo_opcional:
-            raise NotFound ("No se encontro el Id de la baja de activo que se desea eliminar.")
-        
+        # Obtener el anexo opcional
+        anexo_opcional = get_object_or_404(AnexosDocsAlma, id_anexo_doc_alma=id_anexo_doc_alma, id_baja_activo=id_baja_activo)
+
+        # Serializar el anexo opcional para incluir todos los datos
+        serializer = self.serializer_class(anexo_opcional)
+
+        # Eliminar el anexo opcional
         anexo_opcional.id_archivo_digital.ruta_archivo.delete()
-
         anexo_opcional.id_archivo_digital.delete()
-
         anexo_opcional.delete()
 
-        return Response({'success': True, 'detail': 'Anexo opcional eliminado exitosamente.'}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Anexo opcional eliminado exitosamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 class ListarAnexoOpcional(generics.ListAPIView):
     queryset = AnexosDocsAlma.objects.all()
