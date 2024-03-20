@@ -231,10 +231,29 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
     def get(self, request, uni):
         
         unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=uni).first()
-
+        filter={}
         if not unidad:
             raise NotFound('No existe registro')
-        expedientes = ExpedientesDocumentales.objects.filter(id_unidad_org_oficina_respon_original=uni)
+        
+
+        for key, value in request.query_params.items():
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_apertura_expediente__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'serie_suberie':
+                if value != '':
+                    filter['id_cat_serie_und_org_ccd_trd_prop__id_cat_serie_und'] = value
+        
+        filter['id_und_org_oficina_respon_actual'] = uni
+        
+        expedientes = ExpedientesDocumentales.objects.filter(**filter)
         ids_expedientes = expedientes.values_list('id_expediente_documental', flat=True)
         abiertos = expedientes.filter(estado='A').count()
         cerrados = expedientes.filter(estado='C').count()
@@ -247,10 +266,10 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
         )
 
         series =[]
-        series.append({'name':'CREADOS', 'data':len(expedientes)})
-        series.append({'name':'ABIERTOS', 'data':abiertos})
-        series.append({'name':'CERRADOS', 'data':cerrados})
-        series.append({'name':'REAPERTURADOS', 'data':len(reaperturas_agrupados)})
+        series.append({'name':'CREADOS', 'data':[len(expedientes)]})
+        series.append({'name':'ABIERTOS', 'data':[abiertos]})
+        series.append({'name':'CERRADOS', 'data':[cerrados]})
+        series.append({'name':'REAPERTURADOS', 'data':[len(reaperturas_agrupados)]})
 
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':{'series':series,'categories':[unidad.nombre]}},status=status.HTTP_200_OK) 
 

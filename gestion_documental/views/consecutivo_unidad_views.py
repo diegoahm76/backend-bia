@@ -261,7 +261,11 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         hoy = date.today()
         age=hoy.year
         # # Obtener la instancia existente para actualizar
-        instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+
+        if 'id_cat_serie_und' in data_in:
+            instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+        else :
+            instance =ConfigTipoConsecAgno.objects.filter(agno_consecutivo=age,id_unidad=data_in['id_unidad']).first()
 
         if not instance:
            
@@ -304,7 +308,7 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
 
         ##buscamos los catalogos de serie subserie de la unidad 
         cod_se_sub = ""
-        if 'id_cat_serie_und' in data_in:
+        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und']:
             catalogos_unidad=CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_cat_serie_und']).first()
             cod_serie = catalogos_unidad.id_catalogo_serie.id_serie_doc.codigo
             cod_se_sub = cod_serie
@@ -350,11 +354,7 @@ class SerieSubserioUnidadGet(generics.ListAPIView):
     
     def get (self, request,uni):
 
-
-        
-
         instance=CatalogosSeriesUnidad.objects.filter(id_unidad_organizacional=uni)
-
 
         if not instance:
             raise NotFound("No existen registros asociados.")
@@ -435,8 +435,8 @@ class ConsecutivoCreateView(generics.CreateAPIView):
         usuario = request.user.persona.id_persona
         if not 'id_unidad' in data_in:
             raise ValidationError("Debe ingresar la unidad a la cual se le asignara el consecutivo.")
-        if not 'id_cat_serie_und' in data_in:
-            raise ValidationError("Debe ingresar el catalogo al cual se le va a crear el consecutivo.")
+        # if not 'id_cat_serie_und' in data_in:
+        #     raise ValidationError("Debe ingresar el catalogo al cual se le va a crear el consecutivo.")
         
         respuesta = self.vista_generadora_numero.generar_n_radicado(data_in)
 
@@ -450,7 +450,7 @@ class ConsecutivoCreateView(generics.CreateAPIView):
         data_consecutivo = {}
         data_consecutivo['id_unidad'] = data_respuesta['id_unidad']
 
-        if 'id_cat_serie_und' in data_in:
+        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und'] :
             data_consecutivo['id_catalogo'] = data_in['id_cat_serie_und']
         data_consecutivo['agno_consecutivo'] = data_respuesta['agno_consecutivo']
         data_consecutivo['nro_consecutivo'] = data_respuesta['consecutivo_actual']

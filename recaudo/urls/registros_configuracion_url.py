@@ -52,9 +52,16 @@ urlpatterns = [
         path('configuracioninterres/delete/<str:pk>/', viwes.Borrar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-delete'),
 
 
-        path('indicadores/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+        path('indicadores/<int:year>/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
         path('indicadores/put/<str:pk>/', viwes.Actualizar_IndicadoresSemestral.as_view(), name='configuracion-interes-update'),
         path('indicadores/delete/<str:pk>/', viwes.Borrar_IndicadoresSemestral.as_view(), name='configuracion-interes'),
-        path('indicadores/post/', viwes.Crear_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+        path('indicadores/post/', viwes.CrearIndicadoresSemestral.as_view(), name='configuracion-interes'),
+
+
+        path('frecuencia-choices/', viwes.FrecuenciaMedicionListView.as_view(), name='frecuencia_choices'),
+        path('tipo-cobro-choices/', viwes.MONTH_CHOICESListVieas.as_view(), name='tipo_cobro_choices'),
+        path('indicador-choices/', viwes.FORMULARIO_CHOICESListView.as_view(), name='tipo_renta_choices'),
+    
+
     ]
 

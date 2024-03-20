@@ -10,7 +10,8 @@ urlpatterns = [
     path('catalogo-bienes/get-by-nro-identificador/',views.SearchArticuloByDocIdentificador.as_view(),name='get-by-nro-identificador'),
     path('catalogo-bienes/get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificador.as_view(),name='get-by-nombre-nroidentificador'),
     path('catalogo-bienes/validar-codigo/<str:nivel>/<str:codigo_bien>/',views.ValidacionCodigoBien.as_view(),name='validar-codigo'),
-    
+    path('catalogo-bienes/busqueda-articulo-activo/',views.BusquedaAvanzadaCatalogoBienes.as_view(),name='get-by-articulo'),
+
     #Catalogo Bienes Y
     path('catalogo-bienes-generador-codigo/', views.GeneradorCodigoCatalogo.as_view(), name='catalogo-bienes-generador-codigo'),
     path('catalogo-bienes/create-update/', views.CatalogoBienesCreateUpdate.as_view(), name='catalogo-bienes-create-update'),

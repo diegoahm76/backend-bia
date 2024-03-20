@@ -1,6 +1,8 @@
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales
+from almacen.models.generics_models import Marcas, UnidadesMedida
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SolicitudesActivos
+from transversal.models.base_models import ClasesTerceroPersona
 from rest_framework import serializers
 
 
@@ -53,7 +55,12 @@ class RegistrarBajaAnexosCreateSerializer(serializers.ModelSerializer):
 class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AnexosDocsAlma
-        fields = '__all__'  # Incluir todos los campos del modelo AnexosDocsAlma
+        fields = '__all__' 
+
+class AnexosOpcionalesDocsAlmaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnexosDocsAlma
+        fields = '__all__'  
 
 class ArchivosDigitalesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,4 +86,81 @@ class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
 class ItemsBajaActivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemsBajaActivos
+        fields = '__all__'
+
+
+class SolicitudesActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudesActivos
+        fields = '__all__'
+
+    
+    
+class ItemsSolicitudActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsSolicitudActivos
+        fields = '__all__'
+
+
+class UnidadesMedidaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnidadesMedida
+        fields = '__all__'
+
+
+class ItemSolicitudActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsSolicitudActivos
+        fields = '__all__'
+
+class DetalleSolicitudActivosSerializer(serializers.ModelSerializer):
+    items = ItemSolicitudActivosSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SolicitudesActivos
+        fields = '__all__'
+
+
+class BusquedaSolicitudActivoSerializer(serializers.ModelSerializer):
+    numero_activos = serializers.SerializerMethodField()  # Campo adicional para el cálculo del número de activos
+    primer_nombre_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_nombre', default=None)
+    primer_apellido_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_apellido', default=None)
+    primer_nombre_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.primer_nombre', default=None)
+    primer_apellido_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.primer_apellido', default=None)
+
+    
+
+    class Meta:
+        model = SolicitudesActivos
+        fields = (
+            'id_solicitud_activo',
+            'fecha_solicitud',
+            'motivo',
+            'estado_solicitud',
+            'id_persona_solicita',
+            'primer_nombre_persona_solicita',
+            'primer_apellido_persona_solicita',
+            'id_funcionario_resp_unidad',
+            'primer_nombre_funcionario_resp_unidad',
+            'primer_apellido_funcionario_resp_unidad',
+            'numero_activos',  # Campo adicional para el cálculo del número de activos
+        )
+
+    def get_numero_activos(self, instance):
+        # Obtener el número de activos relacionados con esta solicitud
+        return ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance).count()
+    
+
+
+class ClasesTerceroPersonaSerializer(serializers.ModelSerializer):
+    primer_nombre = serializers.ReadOnlyField(source='id_persona.primer_nombre', default=None)
+    segundo_nombre = serializers.ReadOnlyField(source='id_persona.segundo_nombre', default=None)
+    primer_apellido = serializers.ReadOnlyField(source='id_persona.primer_apellido', default=None)
+    segundo_apellido = serializers.ReadOnlyField(source='id_persona.segundo_apellido', default=None)
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
+    tipo_persona = serializers.ReadOnlyField(source='id_persona.tipo_persona', default=None)
+    nombre_clase_tercero = serializers.ReadOnlyField(source='id_clase_tercero.nombre', default=None)
+    class Meta:
+        model = ClasesTerceroPersona
         fields = '__all__'
