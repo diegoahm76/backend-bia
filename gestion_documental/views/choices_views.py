@@ -37,6 +37,9 @@ from gestion_documental.choices.codigo_forma_presentacion_choices import cod_for
 from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_documento_CHOICES
 from gestion_documental.choices.cod_estado_noti_choices import cod_estado_noti_CHOICES
 
+#PAGOS CHOICES
+from gestion_documental.choices.pagos_tipo_id_choices import pagos_tipo_id_CHOICES
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -273,5 +276,10 @@ class CodTipoDocumento(APIView):
 class CodEstadoNotificaciones(APIView):
     def get(self, request):
         choices = cod_estado_noti_CHOICES
+        return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
+    
+class PagosTipoId(APIView):
+    def get(self, request):
+        choices = pagos_tipo_id_CHOICES
         return Response({'success': True, 'detail':'Se encontraron los siguientes registros', 'data':choices}, status=status.HTTP_200_OK)
     

@@ -47,6 +47,7 @@ urlpatterns = [
     path('cod-tipo-proceso/',views.CodTipoProceso.as_view(), name='cod-tipo-proceso'),
     path('cod-tipo-documento/',views.CodTipoDocumento.as_view(), name='cod-tipo-documento'),
     path('cod-estado-notificaciones/',views.CodEstadoNotificaciones.as_view(), name='cod-estado-notificaciones'),
+    path('pagos-tipo-id/',views.PagosTipoId.as_view(), name='pagos-tipo-id'),
     
     
     
