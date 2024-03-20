@@ -207,7 +207,7 @@ FORMULARIO_CHOICES = [
 
 
 class IndicadoresSemestral(models.Model):
-    id_indicador = models.AutoField(primary_key=True)  # Campo autoincremental
+    id_indicador = models.AutoField(primary_key=True, db_column='T465IdIndicador')  # Campo autoincremental
     proceso = models.CharField(max_length=255, db_column='T465Proceso')
     nombre_indicador = models.CharField(max_length=255, db_column='T465Nombre_del_indicador')
     frecuencia_medicion = models.CharField(max_length=50, choices=FRECUENCIA_CHOICES, db_column='T465Frecuencia_de_medicion')
