@@ -76,7 +76,8 @@ urlpatterns = [
 
     #REQUERIMIENTO A LA OPA
     path('opa/persona/titular/get/<str:tra>/', views_opas.OpaPersonaTitularGet.as_view(), name='get-opa-persona-titular'),
-    #OpaTramiteDetalleGet
     path('opa/tramite/detalle/get/<str:tra>/', views_opas.OpaTramiteDetalleGet.as_view(), name='get-opa-tramite-detalle'),
+    path('opa/requerimiento/create/', views_opas.RequerimientoSobreOPACreate.as_view(), name='crear-requerimiento-opa'),
+    path('opa/requerimiento/get/<str:tra>/', views_opas.RequerimientosPQRSDFGetByTramiteOPA.as_view(), name='get-requerimiento-opa'),
 
 ]
