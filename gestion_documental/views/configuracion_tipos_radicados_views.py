@@ -16,7 +16,7 @@ from seguridad.models import Personas
 
 from seguridad.utils import Util
 from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
-
+from datetime import datetime, date, timedelta, timezone
 class GetLisPerfilesSistema(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data': cod_tipos_radicados_LIST}, status=status.HTTP_200_OK) 
@@ -376,6 +376,8 @@ class RadicadoCreate(generics.CreateAPIView):
     
     def post(self, request):
         data = request.data
+        fecha_actual = datetime.now()
+        print(fecha_actual)
         try:
             config_tipos_radicado = self.get_config_tipos_radicado(data)
             radicado_data = self.set_data_radicado(config_tipos_radicado, data['fecha_actual'], data['id_persona'], data['modulo_radica'])
@@ -384,7 +386,9 @@ class RadicadoCreate(generics.CreateAPIView):
             serializer.save()
             serializer_data = serializer.data
             serializer_data['radicado_nuevo'] = config_tipos_radicado['radicado_nuevo']
-            return serializer_data
+
+            return Response({"success":True,"detail":"Se creo el radicado correctamente",'data':serializer_data}, status=status.HTTP_201_CREATED)
+            
 
         except Exception as e:
             raise ValidationError(str(e))
