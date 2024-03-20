@@ -59,6 +59,9 @@ urlpatterns = [
 
 
         path('frecuencia-choices/', viwes.FrecuenciaMedicionListView.as_view(), name='frecuencia_choices'),
+        path('tipo-cobro-choices/', viwes.MONTH_CHOICESListVieas.as_view(), name='tipo_cobro_choices'),
+        path('indicador-choices/', viwes.FORMULARIO_CHOICESListView.as_view(), name='tipo_renta_choices'),
+    
 
     ]
 

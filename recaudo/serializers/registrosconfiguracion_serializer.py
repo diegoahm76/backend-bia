@@ -91,7 +91,7 @@ class IndicadoresSemestralSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IndicadoresSemestral
-        fields = ['proceso', 'nombre_indicador', 'frecuencia_medicion', 'formula_indicador',
+        fields = ['id_indicador', 'proceso', 'nombre_indicador', 'frecuencia_medicion', 'formula_indicador',
                   'vigencia_reporta', 'dependencia_grupo_regional', 'objetivo_indicador',
                   'unidad_medicion_reporte', 'descripcion_variable_1', 'descripcion_variable_2',
                   'origen_datos', 'fecha_creacion', 'responsable_creacion', 'tipo_indicador',
@@ -103,3 +103,20 @@ class IndicadoresSemestralSerializer(serializers.ModelSerializer):
         for indicador_valor_data in indicador_valores_data:
             IndicadorValor.objects.create(indicador=indicador_semestral, **indicador_valor_data)
         return indicador_semestral
+
+    def update(self, instance, validated_data):
+        indicador_valores_data = validated_data.pop('indicadorvalor_set', None)
+        indicador_valores = instance.indicadorvalor_set.all()
+
+        instance = super().update(instance, validated_data)
+
+        if indicador_valores_data is not None:
+            # Eliminar indicador_valores que no están presentes en los datos enviados
+            for indicador_valor in indicador_valores:
+                indicador_valor.delete()
+
+            # Crear o actualizar indicador_valores que se encuentran en los datos enviados
+            for indicador_valor_data in indicador_valores_data:
+                IndicadorValor.objects.create(indicador=instance, **indicador_valor_data)
+
+        return instance
