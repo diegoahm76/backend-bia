@@ -39,6 +39,8 @@ urlpatterns = [
 
     #Salida_Activos_Especiales
     path('busqueda-terceros-activos/get/', views.ClasesTerceroPersonaSearchView.as_view(), name='busqueda-terceros-activos'),
+    path('entradas-relacionadas-activos/get/<int:id_persona>/', views.EntradasRelacionadasAlmacenListView.as_view(), name='entradas-relacionadas-activos'),
+    path('activos-asociados/get/<int:id_entrada_almacen>/', views.ActivosAsociadosDetailView.as_view(), name='activos_asociados_detalles'),
 
 
 

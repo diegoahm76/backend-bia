@@ -20,6 +20,12 @@ from gestion_documental.models.notificaciones_models import (
     CausasOAnomalias
     )
 
+class NotificacionesCorrespondenciaCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = NotificacionesCorrespondencia
+        fields = '__all__'
+
 class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     cod_tipo_documento = serializers.CharField(source='get_cod_tipo_documento_display', read_only=True, default=None)
     registros_notificaciones = serializers.SerializerMethodField()
@@ -88,4 +94,31 @@ class HistoricoCargosUndOrgPersonaSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistoricoCargosUndOrgPersona
         fields = ['fecha_final_historico']
+
+
+class AnexosNotificacionPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_NotificacionesCorrespondencia
+        fields = '__all__'
+
+
+class TiposNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposNotificacionesCorrespondencia
+        fields = '__all__'
+
+class EstadosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstadosNotificacionesCorrespondencia
+        fields = '__all__'
+
+class CausasOAnomaliasNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CausasOAnomalias
+        fields = '__all__'
+
+class TiposAnexosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposAnexosSoporte
+        fields = '__all__'
 

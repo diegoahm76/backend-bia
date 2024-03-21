@@ -152,7 +152,7 @@ class TiposAnexosSoporte(models.Model):
 class Anexos_NotificacionesCorrespondencia(models.Model):
     id_anexo_notificacion_correspondencia = models.SmallAutoField(primary_key=True, db_column='T353IdAnexo_NotificacionCorrespondencia')
     id_notificacion_correspondecia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.CASCADE, db_column='T353Id_NotificacionCorrespondencia',related_name='T353Id_NotificacionCorrespondencia')
-    id_registro_notificacion = models.ForeignKey('Registros_NotificacionesCorrespondecia', on_delete=models.CASCADE, db_column='T353Id_RegistroNotificacion',related_name='T353Id_Registro_Notificacion')
+    id_registro_notificacion = models.ForeignKey('Registros_NotificacionesCorrespondecia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T353Id_RegistroNotificacion',related_name='T353Id_Registro_Notificacion')
     id_acto_administrativo = models.ForeignKey(ActosAdministrativos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T353Id_ActoAdministrativo',related_name='T353Id_ActoAdministrativo')
     doc_entrada_salida = models.CharField(choices=doc_entrada_salida_CHOICES, max_length=2, db_column='T353docEntradaSalida')
     uso_del_documento = models.CharField(choices=uso_del_documento_CHOICES, max_length=2, db_column='T353usoDelDocumento')
@@ -160,7 +160,7 @@ class Anexos_NotificacionesCorrespondencia(models.Model):
     doc_generado = models.CharField(choices=doc_generado_CHOICES, max_length=2, db_column='T353docGenerado')
     id_persona_anexa_documento = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T353Id_PersonaAnexaDocumento',related_name='T353Id_PersonaAnexaDocumento')
     fecha_anexo = models.DateTimeField(db_column='T353fechaAnexo')
-    id_causa_o_anomalia = models.ForeignKey('CausasOAnomalias', on_delete=models.CASCADE, db_column='T353Id_CausaOAnomalia',related_name='T353Id_CausaOAnomalia')
+    id_causa_o_anomalia = models.ForeignKey('CausasOAnomalias', on_delete=models.SET_NULL, null=True, blank=True, db_column='T353Id_CausaOAnomalia',related_name='T353Id_CausaOAnomalia')
     id_anexo = models.ForeignKey('gestion_documental.Anexos', on_delete=models.CASCADE, db_column='T353Id_Anexo',related_name='T353Id_Anexo')
 
     class Meta:
