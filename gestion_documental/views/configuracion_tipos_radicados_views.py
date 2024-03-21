@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 from gestion_documental.choices.tipo_radicado_choices import cod_tipos_radicados_LIST
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 from rest_framework import status
-from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, modulos_radican
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
-from gestion_documental.serializers.radicados_consecutivos_serializers import ConfigTiposRadicadoAgnoCreateSerializer, ConfigTiposRadicadoAgnoGetSerializer, ConfigTiposRadicadoAgnoUpDateSerializer
+from gestion_documental.serializers.radicados_consecutivos_serializers import ConfigTiposRadicadoAgnoCreateSerializer, ConfigTiposRadicadoAgnoGetSerializer, ConfigTiposRadicadoAgnoUpDateSerializer,RadicadoPostSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from datetime import date
@@ -16,7 +16,7 @@ from seguridad.models import Personas
 
 from seguridad.utils import Util
 from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
-
+from datetime import datetime, date, timedelta, timezone
 class GetLisPerfilesSistema(APIView):
     def get(self, request):
         return Response({'success':True, 'detail':'Los perfiles del sistema son los siguientes', 'data': cod_tipos_radicados_LIST}, status=status.HTTP_200_OK) 
@@ -367,6 +367,59 @@ class ConfigTiposRadicadoAgnoGenerarN(generics.UpdateAPIView):
         data_in['direccion']=Util.get_client_ip(request)
         response= self.generar_n_radicado(data_in,)
         return response
+
+
+
+class RadicadoCreate(generics.CreateAPIView):
+    serializer_class = RadicadoPostSerializer
+    config_radicados = ConfigTiposRadicadoAgnoGenerarN
+    
+    def post(self, request):
+        data = request.data
+        fecha_actual = datetime.now()
+        print(fecha_actual)
+        try:
+            config_tipos_radicado = self.get_config_tipos_radicado(data)
+            radicado_data = self.set_data_radicado(config_tipos_radicado, data['fecha_actual'], data['id_persona'], data['modulo_radica'])
+            serializer = self.serializer_class(data=radicado_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            serializer_data = serializer.data
+            serializer_data['radicado_nuevo'] = config_tipos_radicado['radicado_nuevo']
+
+            return Response({"success":True,"detail":"Se creo el radicado correctamente",'data':serializer_data}, status=status.HTTP_201_CREATED)
+            
+
+        except Exception as e:
+            raise ValidationError(str(e))
+
+
+    def get_config_tipos_radicado(self, request):
+        data_request = {
+            'id_persona': request['id_persona'],
+            'cod_tipo_radicado': request['tipo_radicado'],
+            'fecha_actual': request['fecha_actual']
+        }
+        config_tipos_radicados = self.config_radicados.generar_n_radicado(self, data_request)
+        config_tipos_radicado_data = config_tipos_radicados.data['data']
+        if config_tipos_radicado_data['implementar'] == False:
+            raise ValidationError("El sistema requiere que se maneje un radicado de entrada o unico, debe solicitar al administrador del sistema la configuración del radicado")
+        else:
+            return config_tipos_radicado_data
+        
+    def set_data_radicado(self, config_tipos_radicado, fecha_actual, id_persona, modulo_radica):
+        radicado = {}
+        radicado['cod_tipo_radicado'] = config_tipos_radicado['cod_tipo_radicado']
+        radicado['prefijo_radicado'] = config_tipos_radicado['prefijo_consecutivo']
+        radicado['agno_radicado'] = config_tipos_radicado['agno_radicado']
+        radicado['nro_radicado'] = config_tipos_radicado['consecutivo_actual']
+        radicado['fecha_radicado'] = fecha_actual
+        radicado['id_persona_radica'] = id_persona
+
+        modulo_radica = modulos_radican.objects.filter(nombre=modulo_radica).first()
+        radicado['id_modulo_que_radica'] = modulo_radica.id_ModuloQueRadica
+
+        return radicado
 
 
 

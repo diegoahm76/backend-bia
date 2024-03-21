@@ -1,4 +1,4 @@
-from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, T262Radicados
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
@@ -51,5 +51,8 @@ class ConfigTiposRadicadoAgnoGetSerializer(serializers.ModelSerializer):
     def get_cod_tipo_radicado_legible(self, obj):
         return obj.get_cod_tipo_radicado_display()
 
-
+class RadicadoPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = T262Radicados
+        fields = '__all__'
 
