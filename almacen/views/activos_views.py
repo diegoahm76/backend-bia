@@ -8,6 +8,7 @@ import base64
 from django.db.models import Count
 from django.db.models import Max
 from pyexpat import model
+from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.response import Response
@@ -25,11 +26,13 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, DetalleSolicitudActivosSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
 from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SolicitudesActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate, ArchivosDigitales
+from transversal.models.base_models import ClasesTerceroPersona
+
 from copy import copy
 
 
@@ -966,19 +969,20 @@ class EliminarAnexoOpcional(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def destroy(self, request, id_baja_activo):
-        data = request.data 
-        anexo_opcional = AnexosDocsAlma.objects.filter(id_anexo_doc_alma = data["id_anexo_doc_alma"], id_baja_activo= id_baja_activo).first()
+        id_anexo_doc_alma = request.query_params.get('id_anexo_doc_alma')
 
-        if not anexo_opcional:
-            raise NotFound ("No se encontro el Id de la baja de activo que se desea eliminar.")
-        
+        # Obtener el anexo opcional
+        anexo_opcional = get_object_or_404(AnexosDocsAlma, id_anexo_doc_alma=id_anexo_doc_alma, id_baja_activo=id_baja_activo)
+
+        # Serializar el anexo opcional para incluir todos los datos
+        serializer = self.serializer_class(anexo_opcional)
+
+        # Eliminar el anexo opcional
         anexo_opcional.id_archivo_digital.ruta_archivo.delete()
-
         anexo_opcional.id_archivo_digital.delete()
-
         anexo_opcional.delete()
 
-        return Response({'success': True, 'detail': 'Anexo opcional eliminado exitosamente.'}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Anexo opcional eliminado exitosamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 class ListarAnexoOpcional(generics.ListAPIView):
     queryset = AnexosDocsAlma.objects.all()
@@ -1041,6 +1045,8 @@ class BusquedaAvanzadaSolicitudesProcesos(generics.ListAPIView):
 class RechazarSolicitud(generics.UpdateAPIView):
     queryset = SolicitudesActivos.objects.all()
     serializer_class = SolicitudesActivosSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1073,6 +1079,7 @@ class RechazarSolicitud(generics.UpdateAPIView):
 class AprobarSolicitud(generics.UpdateAPIView):
     queryset = SolicitudesActivos.objects.all()
     serializer_class = SolicitudesActivosSerializer
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1098,3 +1105,49 @@ class AprobarSolicitud(generics.UpdateAPIView):
         # Serializar y retornar la información actualizada
         serializer = self.serializer_class(instance)
         return Response({'success': True, 'detail': 'Solicitud aceptada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class ClasesTerceroPersonaSearchView(generics.ListAPIView):
+    serializer_class = ClasesTerceroPersonaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = ClasesTerceroPersona.objects.all()
+        
+        # Filtrar por tipo de documento
+        tipo_documento = self.request.query_params.get('tipo_documento')
+        # Filtrar por nombre
+        nombre = self.request.query_params.get('nombre')
+        # Filtrar por apellido
+        apellido = self.request.query_params.get('apellido')
+        # Filtrar por id_clase_tercero
+        id_clase_tercero = self.request.query_params.get('id_clase_tercero')
+        # Filtrar por id_clase_tercero
+        numero_documento = self.request.query_params.get('numero_documento')
+
+
+        if tipo_documento:
+            queryset = queryset.filter(id_persona__tipo_documento=tipo_documento)
+        
+        
+        if nombre:
+            queryset = queryset.filter(id_persona__primer_nombre__icontains=nombre) | \
+                       queryset.filter(id_persona__segundo_nombre__icontains=nombre)
+            
+        if apellido:
+            queryset = queryset.filter(id_persona__primer_apellido__icontains=apellido) | \
+                       queryset.filter(id_persona__segundo_apellido__icontains=apellido)
+        
+        if id_clase_tercero:
+            queryset = queryset.filter(id_clase_tercero=id_clase_tercero)
+
+        if numero_documento:
+            queryset = queryset.filter(id_persona__numero_documento__icontains=numero_documento)
+        
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data})

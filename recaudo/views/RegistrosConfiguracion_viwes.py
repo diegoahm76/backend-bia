@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
-from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral, RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES,FORMULARIO_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -563,30 +563,49 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+        try:
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({
+                'success': True,
+                'detail': 'Se encontraron los siguientes registros',
+                'data': serializer.data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'error': f'Error al obtener los registros: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
     
-    
-class Crear_IndicadoresSemestral(generics.CreateAPIView):
+
+class CrearIndicadoresSemestral(generics.CreateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
 
     def create(self, request, *args, **kwargs):
         try:
+            nombre_indicador = request.data.get('nombre_indicador')
+            vigencia_reporta = request.data.get('vigencia_reporta')
+
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-            # data =request.data
-            # print(data['registro_cobro'])
-            # Guardar el objeto IndicadoresSemestral
+            
             self.perform_create(serializer)
 
-            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
-                            status=status.HTTP_201_CREATED)
+            return Response({
+                'success': True, 
+                'detail': 'Registro creado correctamente', 
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
         except Exception as e:
-            # Manejar la excepción de manera adecuada
-            return Response({'error': 'Error al crear el registro', 'detail': str(e)},
-                            status=status.HTTP_400_BAD_REQUEST)
+            if 'vigencia_reporta' in str(e):
+                error_message = f'Error al crear el registro: Ya existe un registro con vigencia_reporta {vigencia_reporta}'
+            else:
+                error_message = f'Error al crear el registro: {str(e)}'
+            
+            return Response({
+                'error': error_message
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
 
 
 
@@ -596,35 +615,52 @@ class Borrar_IndicadoresSemestral(generics.DestroyAPIView):
 
     def destroy(self, request, *args, **kwargs):
         try:
-            instance = self.get_object()
-            self.perform_destroy(instance)
-            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
-                            status=status.HTTP_200_OK)
-        except ValidationError as e:
-            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
-            raise ValidationError({e.detail})
-        
+            instance = self.get_object()  # Obtener la instancia existente
+            instance.delete()  # Eliminar la instancia
 
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+                            status=status.HTTP_204_NO_CONTENT)
+        except IndicadoresSemestral.DoesNotExist:
+            # Si el registro no existe, devolver un error 404
+            return Response({'error': 'El registro no existe'},
+                            status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            # Manejar cualquier otro error
+            return Response({'error': f'Error al eliminar el registro: {str(e)}'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
 class Actualizar_IndicadoresSemestral(generics.UpdateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
 
     def put(self, request, *args, **kwargs):
-        instance = self.get_object()  # Obtiene la instancia existente
-        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
-        serializer.is_valid(raise_exception=True)  # Valida los datos
-        serializer.save()  # Guarda la instancia con los datos actualizados
+        try:
+            instance = self.get_object()  # Obtiene la instancia existente
+            serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+            serializer.is_valid(raise_exception=True)  # Valida los datos
+            serializer.save()  # Guarda la instancia con los datos actualizados
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
-
-
+            return Response({'success': True, 'detail': 'Registro actualizado correctamente', 'data': serializer.data},
+                            status=status.HTTP_200_OK)
+        except Exception as e:
+            # Manejar la excepción de manera adecuada
+            return Response({'error': f'Error al actualizar el registro: {str(e)}'},
+                            status=status.HTTP_400_BAD_REQUEST)
 class FrecuenciaMedicionListView(generics.ListAPIView):
     def get(self, request):
-        # Obtenemos los valores únicos de la frecuencia de medición
-        frecuencia_choices = IndicadoresSemestral.FRECUENCIA_CHOICES
-        # Creamos una lista de las opciones de frecuencia
-        frecuencia_list = [choice for choice in frecuencia_choices]
-        # Devolvemos la lista como respuesta
-        return Response(frecuencia_list, status=status.HTTP_200_OK)
+        
+        formatted_choices = [{'value': choice[0], 'label': choice[1]} for choice in FRECUENCIA_CHOICES]
+        return Response({'frecuencia_choices': formatted_choices}, status=status.HTTP_200_OK)
+    
+class MONTH_CHOICESListVieas(generics.ListAPIView):
+    def get(self, request):
+        
+        formatted_choices = [{'value': choice[0], 'label': choice[1]} for choice in MONTH_CHOICES]
+        return Response({'meses_enumerados': formatted_choices}, status=status.HTTP_200_OK)
+    
+
+class FORMULARIO_CHOICESListView(generics.ListAPIView):
+    def get(self, request):
+        
+        formatted_choices = [{'value': choice[0], 'label': choice[1]} for choice in FORMULARIO_CHOICES]
+        return Response({'tipos_Indicador': formatted_choices}, status=status.HTTP_200_OK)

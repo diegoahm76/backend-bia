@@ -2,6 +2,7 @@ from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario
 from almacen.models.generics_models import Marcas, UnidadesMedida
 from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SolicitudesActivos
+from transversal.models.base_models import ClasesTerceroPersona
 from rest_framework import serializers
 
 
@@ -148,3 +149,18 @@ class BusquedaSolicitudActivoSerializer(serializers.ModelSerializer):
     def get_numero_activos(self, instance):
         # Obtener el número de activos relacionados con esta solicitud
         return ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance).count()
+    
+
+
+class ClasesTerceroPersonaSerializer(serializers.ModelSerializer):
+    primer_nombre = serializers.ReadOnlyField(source='id_persona.primer_nombre', default=None)
+    segundo_nombre = serializers.ReadOnlyField(source='id_persona.segundo_nombre', default=None)
+    primer_apellido = serializers.ReadOnlyField(source='id_persona.primer_apellido', default=None)
+    segundo_apellido = serializers.ReadOnlyField(source='id_persona.segundo_apellido', default=None)
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
+    tipo_persona = serializers.ReadOnlyField(source='id_persona.tipo_persona', default=None)
+    nombre_clase_tercero = serializers.ReadOnlyField(source='id_clase_tercero.nombre', default=None)
+    class Meta:
+        model = ClasesTerceroPersona
+        fields = '__all__'

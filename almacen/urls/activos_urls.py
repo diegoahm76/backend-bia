@@ -37,6 +37,10 @@ urlpatterns = [
     path('rechazar-solicitud-activo/put/<int:pk>/', views.RechazarSolicitud.as_view(), name='rechazar-solicitud-activo'),
     path('aprobar-solicitud-activo/put/<int:pk>/', views.AprobarSolicitud.as_view(), name='aprobar-solicitud-activo'),
 
+    #Salida_Activos_Especiales
+    path('busqueda-terceros-activos/get/', views.ClasesTerceroPersonaSearchView.as_view(), name='busqueda-terceros-activos'),
+
+
 
 
 
