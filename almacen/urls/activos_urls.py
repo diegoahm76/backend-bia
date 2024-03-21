@@ -40,7 +40,7 @@ urlpatterns = [
     path('busqueda-terceros-activos/get/', views.ClasesTerceroPersonaSearchView.as_view(), name='busqueda-terceros-activos'),
     path('entradas-relacionadas-activos/get/<int:id_persona>/', views.EntradasRelacionadasAlmacenListView.as_view(), name='entradas-relacionadas-activos'),
     path('activos-asociados/get/<int:id_entrada_almacen>/', views.ActivosAsociadosDetailView.as_view(), name='activos_asociados_detalles'),
-    path('crear-salida-especial-activo/', views.ActivosAsociadosDetailView.as_view(), name='activos_asociados_detalles'),
+    path('crear-salida-especial-activo/', views.CrearSalidaEspecialView.as_view(), name='activos_salida_especial_create'),
 
 
 

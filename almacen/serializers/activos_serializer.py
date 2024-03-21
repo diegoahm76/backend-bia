@@ -125,6 +125,12 @@ class UnidadesMedidaSerializer(serializers.ModelSerializer):
 
 
 class ItemSolicitudActivosSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    cod_tipo_bien = serializers.ReadOnlyField(source='id_bien.cod_tipo_bien', default=None)
+    descripcion_bien = serializers.ReadOnlyField(source='id_bien.descripcion', default=None)
+   
+    
     class Meta:
         model = ItemsSolicitudActivos
         fields = '__all__'
@@ -202,3 +208,12 @@ class SalidasEspecialesSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalidasEspecialesArticulos
         fields = '__all__'
+
+
+class SalidasEspecialesArticulosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalidasEspecialesArticulos
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return SalidasEspecialesArticulos.objects.create(**validated_data)

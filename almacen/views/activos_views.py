@@ -26,7 +26,7 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
 from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
@@ -1314,15 +1314,14 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
 #             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 
-class CrearArchivosOpcionales(generics.CreateAPIView):
+class CrearSalidaEspecialView(generics.CreateAPIView):
     serializer_class = AnexosOpcionalesDocsAlmaSerializer
     permission_classes = [IsAuthenticated]
 
-    def create(self, request, id_baja_activo):
+    def create(self, request):
         data = request.data
         anexo = request.FILES.get('anexo_opcional')
         current_date = datetime.now()
-        baja = get_object_or_404(BajaActivos, id_baja_activo=id_baja_activo)
 
         # Validar formato de archivo
         archivo_nombre = anexo.name 
@@ -1354,46 +1353,53 @@ class CrearArchivosOpcionales(generics.CreateAPIView):
         respuesta = archivo_class.crear_archivo(data_archivo, anexo)
 
         # Crear registro en T088SalidasEspeciales_Articulos
-        consecutivo_salida = SalidasEspecialesArticulos.objects.filter().count() + 1
+        consecutivo_salida = SalidasEspecialesArticulos.objects.count() + 1
         referencia_salida = data.get('referencia_salida')
         concepto_salida = data.get('concepto_salida')
         id_entrada_almacen = data.get('id_entrada_almacen')
 
         salida_especial_data = {
-            'consecutivoXSalida': consecutivo_salida,
-            'fechaSalida': current_date,
-            'referenciaDeSalida': referencia_salida,
+            'consecutivo_por_salida': consecutivo_salida,
+            'fecha_salida': current_date,
+            'referencia_salida': referencia_salida,
             'concepto': concepto_salida,
-            'Id_EntradaAlmacenReferenciada': id_entrada_almacen
+            'id_entrada_almacen_ref': id_entrada_almacen
         }
 
-        salida_especial_serializer = SalidasEspecialesArticulos(data=salida_especial_data)
+        salida_especial_serializer = SalidasEspecialesArticulosSerializer(data=salida_especial_data)
         salida_especial_serializer.is_valid(raise_exception=True)
         salida_especial_obj = salida_especial_serializer.save()
 
         # Crear registros en T087AnexosDocsAlma
         anexos_data = data.get('anexos', [])
         for anexo_data in anexos_data:
-            anexo_data['id_baja_activo'] = None
-            anexo_data['id_salida_espec_arti'] = salida_especial_obj.id_salida_espec_arti
-            anexo_data['fecha_creacion_anexo'] = current_date
-            anexo_data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
-            
-            serializer_anexo = self.serializer_class(data=anexo_data)
-            serializer_anexo.is_valid(raise_exception=True)
-            serializer_anexo.save()
+            if isinstance(anexo_data, dict):
+                anexo_data['id_baja_activo'] = None
+                anexo_data['id_salida_espec_arti'] = salida_especial_obj.id_salida_espec_arti
+                anexo_data['fecha_creacion_anexo'] = current_date
+                anexo_data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+                
+                serializer_anexo = self.serializer_class(data=anexo_data)
+                serializer_anexo.is_valid(raise_exception=True)
+                serializer_anexo.save()
 
         # Actualizar registros en T062Inventario
         activos_incluidos = data.get('activos_incluidos', [])
-        for activo_id in activos_incluidos:
-            inventario_obj = get_object_or_404(Inventario, T057IdBien=activo_id)
-
-            inventario_obj.realizo_salida = True
-            inventario_obj.ubicacion_en_bodega = False
-            inventario_obj.fecha_ultimo_movimiento = current_date
-            inventario_obj.tipo_doc_ultimo_movimiento = 'SAL_E'
-            inventario_obj.id_registro_doc_ultimo_movimiento = None
-            inventario_obj.save()
+        for id_bien in activos_incluidos:
+            # Verifica si id_bien es un entero
+            if isinstance(id_bien, int):
+                # Obtener el objeto de inventario por su ID
+                inventario_obj = get_object_or_404(Inventario, id_bien=id_bien)
+                
+                # Realizar las actualizaciones en el objeto de inventario
+                inventario_obj.realizo_salida = True
+                inventario_obj.ubicacion_en_bodega = False
+                inventario_obj.fecha_ultimo_movimiento = current_date
+                inventario_obj.tipo_doc_ultimo_movimiento = 'SAL_E'
+                inventario_obj.id_registro_doc_ultimo_movimiento = None
+                inventario_obj.save()
+        
 
         return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.', 'data': serializer_anexo.data}, status=status.HTTP_200_OK)
+
 
