@@ -1226,90 +1226,174 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
         
 
 
-class CrearSalidaEspecialView(generics.CreateAPIView):
-    serializer_class = SalidasEspecialesSerializer
-    serializer_anexo_class = AnexosDocsAlmaSerializer
+# class CrearSalidaEspecialView(generics.CreateAPIView):
+#     serializer_class = SalidasEspecialesSerializer
+#     serializer_anexo_class = AnexosDocsAlmaSerializer
 
-    @transaction.atomic
-    def create(self, request, *args, **kwargs):
-        try:
-            data = request.data
-            anexos = request.FILES.getlist('anexos')
-            fecha_salida = datetime.now()
+#     @transaction.atomic
+#     def create(self, request, *args, **kwargs):
+#         try:
+#             data = request.data
+#             anexos = request.FILES.getlist('anexos')
+#             fecha_salida = datetime.now()
 
-            # Crear registros de anexos y archivos digitales
-            for anexo in anexos:
-                # Validar formato de archivo
-                nombre_anexo = anexo.name
-                archivo_nombre, extension = os.path.splitext(nombre_anexo)
-                extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+#             # Crear registros de anexos y archivos digitales
+#             for anexo in anexos:
+#                 # Validar formato de archivo
+#                 nombre_anexo = anexo.name
+#                 archivo_nombre, extension = os.path.splitext(nombre_anexo)
+#                 extension_sin_punto = extension[1:] if extension.startswith('.') else extension
                 
-                # Obtener el año actual para determinar la carpeta de destino
-                current_year = fecha_salida.year
-                ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+#                 # Obtener el año actual para determinar la carpeta de destino
+#                 current_year = fecha_salida.year
+#                 ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
 
-                # Calcula el hash MD5 del archivo
-                md5_hash = hashlib.md5()
-                for chunk in anexo.chunks():
-                    md5_hash.update(chunk)
+#                 # Calcula el hash MD5 del archivo
+#                 md5_hash = hashlib.md5()
+#                 for chunk in anexo.chunks():
+#                     md5_hash.update(chunk)
 
-                # Obtiene el valor hash MD5
-                md5_value = md5_hash.hexdigest()
+#                 # Obtiene el valor hash MD5
+#                 md5_value = md5_hash.hexdigest()
 
-                # Crear el archivo digital y obtener su ID
-                archivo_digital = ArchivosDigitales.objects.create(
-                    nombre_de_Guardado=nombre_anexo,
-                    formato=extension_sin_punto.lower(),
-                    tamagno_kb=anexo.size,
-                    ruta_archivo=ruta,
-                    fecha_creacion_doc=fecha_salida,
-                    es_Doc_elec_archivo=True,
-                    md5_hash=md5_value
-                )
+#                 # Crear el archivo digital y obtener su ID
+#                 archivo_digital = ArchivosDigitales.objects.create(
+#                     nombre_de_Guardado=nombre_anexo,
+#                     formato=extension_sin_punto.lower(),
+#                     tamagno_kb=anexo.size,
+#                     ruta_archivo=ruta,
+#                     fecha_creacion_doc=fecha_salida,
+#                     es_Doc_elec_archivo=True,
+#                     md5_hash=md5_value
+#                 )
 
-                # Crear registro de anexo
-                anexo_obj = AnexosDocsAlma.objects.create(
-                    nombre_anexo=nombre_anexo,
-                    nro_folios=data.get('nro_folios'),
-                    id_baja_activo =None,
-                    descripcion_anexo=data.get('descripcion_anexo'),
-                    fecha_creacion_anexo=fecha_salida,
-                    id_salida_espec_arti=salida_especial.id_salida_espec_arti,  # Aún no se ha creado el registro de salida especial
-                    id_archivo_digital=archivo_digital.id_archivo_digital
-                )
+#                 # Crear registro de anexo
+#                 anexo_obj = AnexosDocsAlma.objects.create(
+#                     nombre_anexo=nombre_anexo,
+#                     nro_folios=data.get('nro_folios'),
+#                     id_baja_activo =None,
+#                     descripcion_anexo=data.get('descripcion_anexo'),
+#                     fecha_creacion_anexo=fecha_salida,
+#                     id_salida_espec_arti=salida_especial.id_salida_espec_arti,  # Aún no se ha creado el registro de salida especial
+#                     id_archivo_digital=archivo_digital.id_archivo_digital
+#                 )
 
-            # Obtener consecutivo de salida especial y otros datos necesarios
-            # Obtener el último consecutivo
-            ultimo_consecutivo = SalidasEspecialesArticulos.objects.aggregate(Max('consecutivo_por_salida'))
-            ultimo_consecutivo = ultimo_consecutivo['consecutivo_por_salida__max'] if ultimo_consecutivo['consecutivo_por_salida__max'] else 0
+#             # Obtener consecutivo de salida especial y otros datos necesarios
+#             # Obtener el último consecutivo
+#             ultimo_consecutivo = SalidasEspecialesArticulos.objects.aggregate(Max('consecutivo_por_salida'))
+#             ultimo_consecutivo = ultimo_consecutivo['consecutivo_por_salida__max'] if ultimo_consecutivo['consecutivo_por_salida__max'] else 0
 
-            # Crear registro de salida especial de activos
-            salida_especial = SalidasEspecialesArticulos.objects.create(
-                consecutivo_por_salida=ultimo_consecutivo + 1,
-                fecha_salida=fecha_salida,
-                referencia_salida=data.get('referenciaDeSalida'),
-                concepto=data.get('concepto'),
-                id_entrada_almacen_ref_id=data.get('id_EntradaAlmacenReferenciada')  # El campo ForeignKey espera el ID, no el objeto
-            )
+#             # Crear registro de salida especial de activos
+#             salida_especial = SalidasEspecialesArticulos.objects.create(
+#                 consecutivo_por_salida=ultimo_consecutivo + 1,
+#                 fecha_salida=fecha_salida,
+#                 referencia_salida=data.get('referenciaDeSalida'),
+#                 concepto=data.get('concepto'),
+#                 id_entrada_almacen_ref_id=data.get('id_EntradaAlmacenReferenciada')  # El campo ForeignKey espera el ID, no el objeto
+#             )
 
-            # Actualizar registros de inventario
-            for bien in data.get('activos'):
-                id_bien = bien.get('id_bien')
+#             # Actualizar registros de inventario
+#             for bien in data.get('activos'):
+#                 id_bien = bien.get('id_bien')
 
-                inventario = Inventario.objects.filter(id_bien=id_bien).first()
-                if inventario:
-                    inventario.realizo_salida = True
-                    inventario.ubicacion_en_bodega = False
-                    inventario.fecha_ultimo_movimiento = fecha_salida
-                    inventario.tipo_doc_ultimo_movimiento = 'SAL_E'
-                    inventario.id_registro_doc_ultimo_movimiento = None
-                    inventario.save()
+#                 inventario = Inventario.objects.filter(id_bien=id_bien).first()
+#                 if inventario:
+#                     inventario.realizo_salida = True
+#                     inventario.ubicacion_en_bodega = False
+#                     inventario.fecha_ultimo_movimiento = fecha_salida
+#                     inventario.tipo_doc_ultimo_movimiento = 'SAL_E'
+#                     inventario.id_registro_doc_ultimo_movimiento = None
+#                     inventario.save()
 
-            # Asignar el ID de la salida especial a los anexos creados
-            AnexosDocsAlma.objects.filter(id_SalidaEspecial_Articulo=None).update(id_SalidaEspecial_Articulo=salida_especial.id)
+#             # Asignar el ID de la salida especial a los anexos creados
+#             AnexosDocsAlma.objects.filter(id_SalidaEspecial_Articulo=None).update(id_SalidaEspecial_Articulo=salida_especial.id)
 
-            return Response({'success': True, 'detail': 'Se ha creado la salida especial correctamente'}, status=status.HTTP_201_CREATED)
+#             return Response({'success': True, 'detail': 'Se ha creado la salida especial correctamente'}, status=status.HTTP_201_CREATED)
 
-        except Exception as e:
-            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+#         except Exception as e:
+#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class CrearArchivosOpcionales(generics.CreateAPIView):
+    serializer_class = AnexosOpcionalesDocsAlmaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request, id_baja_activo):
+        data = request.data
+        anexo = request.FILES.get('anexo_opcional')
+        current_date = datetime.now()
+        baja = get_object_or_404(BajaActivos, id_baja_activo=id_baja_activo)
+
+        # Validar formato de archivo
+        archivo_nombre = anexo.name 
+        nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        
+        formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+        
+        if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+            raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+        
+        # Crear archivo en T238
+        current_year = current_date.year
+        ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+        md5_hash = hashlib.md5()
+        for chunk in anexo.chunks():
+            md5_hash.update(chunk)
+
+        md5_value = md5_hash.hexdigest()
+
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value
+        }
+        
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+        # Crear registro en T088SalidasEspeciales_Articulos
+        consecutivo_salida = SalidasEspecialesArticulos.objects.filter().count() + 1
+        referencia_salida = data.get('referencia_salida')
+        concepto_salida = data.get('concepto_salida')
+        id_entrada_almacen = data.get('id_entrada_almacen')
+
+        salida_especial_data = {
+            'consecutivoXSalida': consecutivo_salida,
+            'fechaSalida': current_date,
+            'referenciaDeSalida': referencia_salida,
+            'concepto': concepto_salida,
+            'Id_EntradaAlmacenReferenciada': id_entrada_almacen
+        }
+
+        salida_especial_serializer = SalidasEspecialesArticulos(data=salida_especial_data)
+        salida_especial_serializer.is_valid(raise_exception=True)
+        salida_especial_obj = salida_especial_serializer.save()
+
+        # Crear registros en T087AnexosDocsAlma
+        anexos_data = data.get('anexos', [])
+        for anexo_data in anexos_data:
+            anexo_data['id_baja_activo'] = None
+            anexo_data['id_salida_espec_arti'] = salida_especial_obj.id_salida_espec_arti
+            anexo_data['fecha_creacion_anexo'] = current_date
+            anexo_data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+            
+            serializer_anexo = self.serializer_class(data=anexo_data)
+            serializer_anexo.is_valid(raise_exception=True)
+            serializer_anexo.save()
+
+        # Actualizar registros en T062Inventario
+        activos_incluidos = data.get('activos_incluidos', [])
+        for activo_id in activos_incluidos:
+            inventario_obj = get_object_or_404(Inventario, T057IdBien=activo_id)
+
+            inventario_obj.realizo_salida = True
+            inventario_obj.ubicacion_en_bodega = False
+            inventario_obj.fecha_ultimo_movimiento = current_date
+            inventario_obj.tipo_doc_ultimo_movimiento = 'SAL_E'
+            inventario_obj.id_registro_doc_ultimo_movimiento = None
+            inventario_obj.save()
+
+        return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.', 'data': serializer_anexo.data}, status=status.HTTP_200_OK)
 

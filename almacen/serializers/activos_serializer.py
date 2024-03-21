@@ -91,6 +91,21 @@ class ItemsBajaActivosSerializer(serializers.ModelSerializer):
 
 
 class SolicitudesActivosSerializer(serializers.ModelSerializer):
+    primer_nombre_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_nombre', default=None)
+    primer_apellido_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_apellido', default=None)
+    tipo_documento_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_solicita = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
+    #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    primer_nombre_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.primer_nombre', default=None)
+    primer_apellido_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.primer_apellido', default=None)
+    tipo_documento_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.numero_documento', default=None)
+    #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    primer_nombre_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.primer_nombre', default=None)
+    primer_apellido_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.primer_apellido', default=None)
+    tipo_documento_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.numero_documento', default=None)
+
     class Meta:
         model = SolicitudesActivos
         fields = '__all__'
