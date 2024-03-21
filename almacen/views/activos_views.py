@@ -26,9 +26,10 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SolicitudesActivos
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate, ArchivosDigitales
 from transversal.models.base_models import ClasesTerceroPersona
@@ -551,8 +552,10 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
 
         # Guardar información de los items de la solicitud
         items_data = data.get('items', [])
-        for item_data in items_data:
+        for index, item_data in enumerate(items_data, start=1):
+            # Asignar el ID de la solicitud y el número de posición al item
             item_data['id_solicitud_activo'] = solicitud.id_solicitud_activo
+            item_data['nro_posicion'] = index
             item_serializer = self.items_serializer_class(data=item_data)
             item_serializer.is_valid(raise_exception=True)
             item_serializer.save()
@@ -1151,3 +1154,162 @@ class ClasesTerceroPersonaSearchView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data})
+    
+
+class EntradasRelacionadasAlmacenListView(generics.ListAPIView):
+    serializer_class = EntradasAlmacenSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']  # Obtener el id_persona de los parámetros de la URL
+
+        # Filtrar las entradas del almacén según las condiciones dadas
+        queryset = EntradasAlmacen.objects.filter(
+            Q(id_proveedor=id_persona) &  # El proveedor es igual al id_persona
+            Q(id_tipo_entrada__in=[5, 6, 7, 8]) &  # El tipo de entrada está en la lista dada
+            ~Q(id_bodega=None)  # La bodega no es NULL
+        )
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = serializer.data
+        return Response({'success': True, 'detail': 'Información de entradas de almacén obtenida correctamente', 'data': data})
+    
+
+
+class ActivosAsociadosDetailView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_entrada_almacen):
+        try:
+            # Filtrar los registros en el modelo ItemEntradaAlmacen
+            items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada_almacen)
+
+            # Lista para almacenar los datos serializados de los registros encontrados
+            serialized_data = []
+
+            for item in items_entrada:
+                # Filtrar el inventario por id_bien y realizo_salida=True
+                inventario = Inventario.objects.filter(id_bien=item.id_bien.id_bien, realizo_salida=False).first()
+                if inventario:
+                    # Consultar el registro en el modelo CatalogoBienes
+                    bien = item.id_bien
+
+                    # Obtener el nombre de la marca
+                    marca_nombre = None
+                    if bien.id_marca:
+                        marca_nombre = bien.id_marca.nombre
+
+                    # Crear un diccionario con la información necesaria
+                    data = {
+                        'id_item_entrada_almacen': item.id_item_entrada_almacen,  # Pk de ItemEntradaAlmacen
+                        'id_entrada_almacen': item.id_entrada_almacen.id_entrada_almacen,  # Fk de EntradaAlmacen
+                        'id_bien': bien.id_bien,  # Pk de CatalogoBienes
+                        'codigo': bien.codigo_bien,
+                        'serial_placa': bien.doc_identificador_nro,
+                        'nombre': bien.nombre,
+                        'marca': marca_nombre,
+                    }
+
+                    # Agregar el diccionario a la lista de datos serializados
+                    serialized_data.append(data)
+
+            # Devolver la respuesta con los datos serializados y un mensaje de éxito
+            return Response({'success': True, 'detail': 'Datos encontrados correctamente', 'data': serialized_data}, status=status.HTTP_200_OK)
+
+        except ItemEntradaAlmacen.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron elementos'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class CrearSalidaEspecialView(generics.CreateAPIView):
+    serializer_class = SalidasEspecialesSerializer
+    serializer_anexo_class = AnexosDocsAlmaSerializer
+
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            anexos = request.FILES.getlist('anexos')
+            fecha_salida = datetime.now()
+
+            # Crear registros de anexos y archivos digitales
+            for anexo in anexos:
+                # Validar formato de archivo
+                nombre_anexo = anexo.name
+                archivo_nombre, extension = os.path.splitext(nombre_anexo)
+                extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+                
+                # Obtener el año actual para determinar la carpeta de destino
+                current_year = fecha_salida.year
+                ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+
+                # Calcula el hash MD5 del archivo
+                md5_hash = hashlib.md5()
+                for chunk in anexo.chunks():
+                    md5_hash.update(chunk)
+
+                # Obtiene el valor hash MD5
+                md5_value = md5_hash.hexdigest()
+
+                # Crear el archivo digital y obtener su ID
+                archivo_digital = ArchivosDigitales.objects.create(
+                    nombre_de_Guardado=nombre_anexo,
+                    formato=extension_sin_punto.lower(),
+                    tamagno_kb=anexo.size,
+                    ruta_archivo=ruta,
+                    fecha_creacion_doc=fecha_salida,
+                    es_Doc_elec_archivo=True,
+                    md5_hash=md5_value
+                )
+
+                # Crear registro de anexo
+                anexo_obj = AnexosDocsAlma.objects.create(
+                    nombre_anexo=nombre_anexo,
+                    nro_folios=data.get('nro_folios'),
+                    id_baja_activo =None,
+                    descripcion_anexo=data.get('descripcion_anexo'),
+                    fecha_creacion_anexo=fecha_salida,
+                    id_salida_espec_arti=salida_especial.id_salida_espec_arti,  # Aún no se ha creado el registro de salida especial
+                    id_archivo_digital=archivo_digital.id_archivo_digital
+                )
+
+            # Obtener consecutivo de salida especial y otros datos necesarios
+            # Obtener el último consecutivo
+            ultimo_consecutivo = SalidasEspecialesArticulos.objects.aggregate(Max('consecutivo_por_salida'))
+            ultimo_consecutivo = ultimo_consecutivo['consecutivo_por_salida__max'] if ultimo_consecutivo['consecutivo_por_salida__max'] else 0
+
+            # Crear registro de salida especial de activos
+            salida_especial = SalidasEspecialesArticulos.objects.create(
+                consecutivo_por_salida=ultimo_consecutivo + 1,
+                fecha_salida=fecha_salida,
+                referencia_salida=data.get('referenciaDeSalida'),
+                concepto=data.get('concepto'),
+                id_entrada_almacen_ref_id=data.get('id_EntradaAlmacenReferenciada')  # El campo ForeignKey espera el ID, no el objeto
+            )
+
+            # Actualizar registros de inventario
+            for bien in data.get('activos'):
+                id_bien = bien.get('id_bien')
+
+                inventario = Inventario.objects.filter(id_bien=id_bien).first()
+                if inventario:
+                    inventario.realizo_salida = True
+                    inventario.ubicacion_en_bodega = False
+                    inventario.fecha_ultimo_movimiento = fecha_salida
+                    inventario.tipo_doc_ultimo_movimiento = 'SAL_E'
+                    inventario.id_registro_doc_ultimo_movimiento = None
+                    inventario.save()
+
+            # Asignar el ID de la salida especial a los anexos creados
+            AnexosDocsAlma.objects.filter(id_SalidaEspecial_Articulo=None).update(id_SalidaEspecial_Articulo=salida_especial.id)
+
+            return Response({'success': True, 'detail': 'Se ha creado la salida especial correctamente'}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+

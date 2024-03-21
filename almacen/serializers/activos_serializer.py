@@ -1,9 +1,10 @@
-from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.models.inventario_models import Inventario
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
+from almacen.models.inventario_models import Inventario, TiposEntradas
 from almacen.models.generics_models import Marcas, UnidadesMedida
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SolicitudesActivos
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from transversal.models.base_models import ClasesTerceroPersona
 from rest_framework import serializers
+
 
 
 
@@ -163,4 +164,26 @@ class ClasesTerceroPersonaSerializer(serializers.ModelSerializer):
     nombre_clase_tercero = serializers.ReadOnlyField(source='id_clase_tercero.nombre', default=None)
     class Meta:
         model = ClasesTerceroPersona
+        fields = '__all__'
+
+
+class EntradasAlmacenSerializer(serializers.ModelSerializer):
+    tipo_entrada = serializers.SerializerMethodField()
+    consecutivo = serializers.IntegerField(source='numero_entrada_almacen')
+    fecha_registro = serializers.DateTimeField(source='fecha_real_registro')
+
+    class Meta:
+        model = EntradasAlmacen
+        fields = '__all__'
+
+    def get_tipo_entrada(self, obj):
+        tipo_entrada_id = obj.id_tipo_entrada.cod_tipo_entrada
+        tipo_entrada = TiposEntradas.objects.filter(cod_tipo_entrada=tipo_entrada_id).values('nombre').first()
+        return tipo_entrada['nombre'] if tipo_entrada else None
+
+
+
+class SalidasEspecialesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalidasEspecialesArticulos
         fields = '__all__'
