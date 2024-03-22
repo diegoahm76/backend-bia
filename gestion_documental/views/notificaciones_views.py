@@ -99,6 +99,7 @@ class CrearTareasAsignacion(generics.CreateAPIView):
 
     def post(self, request, fecha_actual):
         data = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia=request.get('id_notificacion')).first()
+        print(request.get('id_notificacion'))
 
         notificacion_data = {
             'id_notificacion_correspondencia': request.get('id_notificacion'),
@@ -185,7 +186,7 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
             'id_und_org_seccion_asignada': id_persona_asigna.id_unidad_organizacional_actual.id_unidad_organizacional, 
         }
 
-        serializer = self.serializer_class(data=asignacion_data) 
+        serializer = self.serializer_class(data=asignacion_data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
@@ -238,7 +239,7 @@ class GetAsignacionesCorrespondencia(generics.ListAPIView):
                 pendientes = pendientes+1
             if notificacion_correspondencia.cod_estado == 'RE':
                 resueltas = resueltas+1
-        data_valida = {"Persona Asignada": persona_asignada, "ID Persona Asignada": id_persona_asignada, "Vigencia del Contrato": vigencia_contrato, "Asignadas": asignadas, "resueltas": resueltas, "pendientes": pendientes, "asignaciones": serializer.data}
+        data_valida = {"persona_asignada": persona_asignada, "id_persona_asignada": id_persona_asignada, "vigencia_contrato": vigencia_contrato, "asignadas": asignadas, "resueltas": resueltas, "pendientes": pendientes, "asignaciones": serializer.data}
         return Response({'succes': True, 'detail':'Tiene las siguientes asignaciones', 'data':data_valida,}, status=status.HTTP_200_OK) 
   
     
