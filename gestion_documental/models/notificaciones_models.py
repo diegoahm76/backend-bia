@@ -20,7 +20,7 @@ from tramites.models import ActosAdministrativos, SolicitudesTramites
 class NotificacionesCorrespondencia(models.Model):
     id_notificacion_correspondencia = models.SmallAutoField(primary_key=True, db_column='T350IdNotificacionCorrespondencia')
     cod_tipo_solicitud = models.CharField(choices=tipo_soli_noti_CHOICES, max_length=2, db_column='T350codTipoSolicitud')
-    cod_tipo_documento = models.ForeignKey('TiposDocumentos', on_delete=models.CASCADE, db_column='T350codTipoDocumento',related_name='T350codTipoDocumento')
+    #cod_tipo_documento = models.ForeignKey('TiposDocumentos', on_delete=models.CASCADE, db_column='T350codTipoDocumento',related_name='T350codTipoDocumento')
     id_expediente_documental = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_ExpedienteDocumental', related_name='T350IdExpedienteDocumental')
     id_solicitud_tramite = models.ForeignKey(SolicitudesTramites, on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_SolicitudTramite',related_name='T350IdSolicitudTramite')
     id_acto_administrativo = models.ForeignKey(ActosAdministrativos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_ActoAdministrativo',related_name='T350IdActoAdministrativo')
