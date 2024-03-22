@@ -163,6 +163,7 @@ class ItemsSolicitudActivos(models.Model):
     id_solicitud_activo = models.ForeignKey(SolicitudesActivos, on_delete=models.CASCADE,null=True, blank=True, db_column='T091Id_SolicitudActivos')
     id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T091Id_Bien')
     cantidad = models.SmallIntegerField(db_column="T091cantidad")
+    fecha_devolucion = models.DateTimeField(blank=True, null=True,db_column='T091fechaDevolucion')
     id_unidad_medida = models.ForeignKey(UnidadesMedida, on_delete=models.CASCADE, db_column='T091Id_UnidadMedida')
     observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T091observaciones")
     nro_posicion = models.SmallIntegerField(db_column="T091nroPosicion")
