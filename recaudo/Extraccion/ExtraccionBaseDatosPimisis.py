@@ -264,7 +264,7 @@ def consultar_tabla_mssql():
 
 def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 ,data_981 ,data_980,data_956):
     try:
-        # Intentar establecer la conexión PostgreSQL
+        # Intentar establecer la conexión PostgreSQL sd
         conn_postgresql = psycopg2.connect(
             host=os.environ['BIA_DB_HOST'], 
             port=os.environ['BIA_DB_PORT'],
