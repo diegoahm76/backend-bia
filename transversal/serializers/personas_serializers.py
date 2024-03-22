@@ -890,7 +890,8 @@ class PersonasFilterSerializer(serializers.ModelSerializer):
             'digito_verificacion',
             'cod_naturaleza_empresa',
             'tiene_usuario',
-            'tipo_usuario'
+            'tipo_usuario',
+            'id_unidad_organizacional_actual'
         ]
 
 class UsuarioAdminSerializer(serializers.ModelSerializer):

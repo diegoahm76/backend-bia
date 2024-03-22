@@ -658,17 +658,34 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
+
         solicitud_data = {
             'id_solicitud_activo': instance.id_solicitud_activo,
             'fecha_solicitud': instance.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S'),
             'motivo': instance.motivo,
             'observacion': instance.observacion,
-            'id_persona_solicita': instance.id_persona_solicita.id_persona,
+            #Persona_Solicitante
+            'id_persona_solicita': instance.id_persona_solicita.id_persona if instance.id_persona_solicita else None,
+            'primer_nombre_persona_solicitante': instance.id_persona_solicita.primer_nombre if instance.id_persona_solicita else None,
+            'primer_apellido_persona_solicitante': instance.id_persona_solicita.primer_apellido if instance.id_persona_solicita else None,
+            'tipo_documento_persona_solicitante': instance.id_persona_solicita.tipo_documento.cod_tipo_documento if instance.id_persona_solicita else None,
+            'numero_documento_persona_solicitante': instance.id_persona_solicita.numero_documento if instance.id_persona_solicita else None,
             'id_uni_org_solicitante': instance.id_uni_org_solicitante.id_unidad_organizacional,
-            'id_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.id_persona,
+            #Persona_Funcionario_Responsable_Unidad
+            'id_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.id_persona if instance.id_funcionario_resp_unidad else None,
+            'primer_nombre_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.primer_nombre if instance.id_funcionario_resp_unidad else None,
+            'primer_apellido_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.primer_apellido if instance.id_funcionario_resp_unidad else None,
+            'tipo_documento_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.tipo_documento.cod_tipo_documento if instance.id_funcionario_resp_unidad else None,
+            'numero_documento_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.numero_documento if instance.id_funcionario_resp_unidad else None,
             'id_uni_org_responsable': instance.id_uni_org_responsable.id_unidad_organizacional,
-            'id_persona_operario': instance.id_persona_operario.id_persona,
+            #Persona_Operario
+            'id_persona_operario': instance.id_persona_operario.id_persona if instance.id_persona_operario else None,
+            'primer_nombre_persona_operario': instance.id_persona_operario.primer_nombre if instance.id_persona_operario else None,
+            'primer_apellido_persona_operario': instance.id_persona_operario.primer_apellido if instance.id_persona_operario else None,
+            'tipo_documento_persona_operario': instance.id_persona_operario.tipo_documento.cod_tipo_documento if instance.id_persona_operario else None,
+            'numero_documento_persona_operario': instance.id_persona_operario.numero_documento if instance.id_persona_operario else None,
             'id_uni_org_operario': instance.id_uni_org_operario.id_unidad_organizacional,
+            #Resumen_Solcitiud
             'estado_solicitud': instance.estado_solicitud,
             'solicitud_prestamo': instance.solicitud_prestamo,
             'fecha_devolucion': instance.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_devolucion else None,
@@ -680,11 +697,22 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             'gestionada_alma': instance.gestionada_alma,
             'obser_cierre_no_dispo_alma': instance.obser_cierre_no_dispo_alma,
             'fecha_cierre_no_dispo_alma': instance.fecha_cierre_no_dispo_alma.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_cierre_no_dispo_alma else None,
+            #Persona_cierra_no_dispo_alma
             'id_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.id_persona if instance.id_persona_cierra_no_dispo_alma else None,
+            'primer_nombre_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.primer_nombre if instance.id_persona_cierra_no_dispo_alma else None,
+            'primer_apellido_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.primer_apellido if instance.id_persona_cierra_no_dispo_alma else None,
+            'tipo_documento_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.tipo_documento.cod_tipo_documento if instance.id_persona_cierra_no_dispo_alma else None,
+            'numero_documento_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.numero_documento if instance.id_persona_cierra_no_dispo_alma else None,
+            #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
             'rechazada_almacen': instance.rechazada_almacen,
             'fecha_rechazo_almacen': instance.fecha_rechazo_almacen.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_rechazo_almacen else None,
             'justificacion_rechazo_almacen': instance.justificacion_rechazo_almacen,
+            #persona_alma_rechaza
             'id_persona_alma_rechaza': instance.id_persona_alma_rechaza.id_persona if instance.id_persona_alma_rechaza else None,
+            'primer_nombre_persona_alma_rechaza': instance.id_persona_alma_rechaza.primer_nombre if instance.id_persona_alma_rechaza else None,
+            'primer_apellido_persona_alma_rechaza': instance.id_persona_alma_rechaza.primer_apellido if instance.id_persona_alma_rechaza else None,
+            'tipo_documento_persona_alma_rechaza': instance.id_persona_alma_rechaza.tipo_documento.cod_tipo_documento if instance.id_persona_alma_rechaza else None,
+            'numero_documento_persona_alma_rechaza': instance.id_persona_alma_rechaza.numero_documento if instance.id_persona_alma_rechaza else None,
             'solicitud_anulada_solicitante': instance.solicitud_anulada_solicitante,
             'fecha_anulacion_solicitante': instance.fecha_anulacion_solicitante.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_anulacion_solicitante else None,
         }
@@ -738,15 +766,31 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'justificacion_rechazo_resp': despacho.justificacion_rechazo_resp,
                 'fecha_solicitud': despacho.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S') if despacho.fecha_solicitud else None,
                 'fecha_despacho': despacho.fecha_despacho.strftime('%Y-%m-%d %H:%M:%S') if despacho.fecha_despacho else None,
+                #persona_despacha
                 'id_persona_despacha': despacho.id_persona_despacha.id_persona,
+                'primer_nombre_persona_despacha': despacho.id_persona_despacha.primer_nombre if despacho.id_persona_solicita else None,
+                'primer_apellido_persona_despacha': despacho.id_persona_despacha.primer_apellido if despacho.id_persona_solicita else None,
+                'tipo_documento_persona_despacha': despacho.id_persona_despacha.tipo_documento.cod_tipo_documento if despacho.id_persona_despacha else None,
+                'numero_documento_persona_despacha': despacho.id_persona_despacha.numero_documento if despacho.id_persona_despacha else None,
+                #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 'observacion': despacho.observacion,
+                #persona_solicita
                 'id_persona_solicita': despacho.id_persona_solicita.id_persona if despacho.id_persona_solicita else None,
+                'primer_nombre_persona_solicitante': despacho.id_persona_solicita.primer_nombre if despacho.id_persona_solicita else None,
+                'primer_apellido_persona_solicitante': despacho.id_persona_solicita.primer_apellido if despacho.id_persona_solicita else None,
+                'tipo_documento_persona_solicitante': despacho.id_persona_solicita.tipo_documento.cod_tipo_documento if despacho.id_persona_solicita else None,
+                'numero_documento_persona_solicitante': despacho.id_persona_solicita.numero_documento if despacho.id_persona_solicita else None,
                 'id_uni_org_solicitante': despacho.id_uni_org_solicitante.id_unidad_organizacional if despacho.id_uni_org_solicitante else None,
                 'id_bodega': despacho.id_bodega.id_bodega if despacho.id_bodega else None,
                 'despacho_anulado': despacho.despacho_anulado,
                 'justificacion_anulacion': despacho.justificacion_anulacion,
                 'fecha_anulacion': despacho.fecha_anulacion.strftime('%Y-%m-%d %H:%M:%S') if despacho.fecha_anulacion else None,
+                #Persona_Anula
                 'id_persona_anula': despacho.id_persona_anula.id_persona if despacho.id_persona_anula else None,
+                'primer_nombre_persona_anula': despacho.id_persona_anula.primer_nombre if despacho.id_persona_solicita else None,
+                'primer_apellido_persona_anula': despacho.id_persona_anula.primer_apellido if despacho.id_persona_solicita else None,
+                'tipo_documento_persona_anula': despacho.id_persona_anula.tipo_documento.cod_tipo_documento if despacho.id_persona_anula else None,
+                'numero_documento_persona_anula': despacho.id_persona_anula.numero_documento if despacho.id_persona_anula else None,
                 'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo if despacho.id_archivo_doc_recibido else None
             }
             despachos_data.append(despacho_data)
