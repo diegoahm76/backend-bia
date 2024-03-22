@@ -124,7 +124,7 @@ class ValoresVariables(models.Model):
     variables = models.ForeignKey(Variables, on_delete=models.CASCADE, db_column='T444IdVariables', related_name='valores_variables_variables')
     fecha_inicio  =models.DateField(db_column='T444FechaInicio')
     fecha_fin = models.DateField(db_column='T444FechaFin')
-    valor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T444Valor')
+    valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
     descripccion = models.CharField(max_length=255, db_column='T444Descripcion')  # Corregir el nombre de la columna
     estado=models.BooleanField(db_column='T444Estado',null=True,default=True)  # Cambiado a campo booleano
     class Meta:
@@ -213,7 +213,7 @@ class IndicadoresSemestral(models.Model):
     nombre_indicador = models.CharField(max_length=255, db_column='T465Nombre_del_indicador')
     frecuencia_medicion = models.CharField(max_length=50, choices=FRECUENCIA_CHOICES, db_column='T465Frecuencia_de_medicion')
     formula_indicador = models.CharField(max_length=255, db_column='T465Formula_del_indicador')
-    vigencia_reporta = models.IntegerField(unique=True, db_column='T465Vigencia_que_reporta')
+    vigencia_reporta = models.IntegerField( db_column='T465Vigencia_que_reporta')
     dependencia_grupo_regional = models.CharField(max_length=255, db_column='T465Dependencia_grupo_regional')
     objetivo_indicador = models.CharField(max_length=255, db_column='T465Objetivo_del_indicador')
     unidad_medicion_reporte = models.CharField(max_length=255, db_column='T465Unidad_de_medicion_y_reporte')
@@ -229,6 +229,8 @@ class IndicadoresSemestral(models.Model):
         db_table = 'T465IndicadoresSemestral'
         verbose_name = 'Configuracion Interes'
         verbose_name_plural = 'Configuracion Interes'
+        unique_together = ('vigencia_reporta', 'formulario')
+
 
     def __str__(self):
         return self.nombre_indicador
@@ -236,7 +238,6 @@ class IndicadoresSemestral(models.Model):
 class IndicadorValor(models.Model):
     indicador = models.ForeignKey(IndicadoresSemestral, on_delete=models.CASCADE)
     mes_id = models.IntegerField(choices=MONTH_CHOICES, db_column='T467mes')
-
     valor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T467Valor')
     variable_1 = models.DecimalField(max_digits=10, decimal_places=0, db_column='T467Variable_1')
     variable_2 = models.DecimalField(max_digits=10, decimal_places=0, db_column='T467Variable_2')
