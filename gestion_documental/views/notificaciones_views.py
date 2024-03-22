@@ -121,8 +121,7 @@ class CrearTareasAsignacion(generics.CreateAPIView):
             'nro_folios_totales': data.nro_folios_totales,
             'requiere_digitalizacion': data.requiere_digitalizacion,
             'fecha_inicial_registro': fecha_actual,
-            'fecha_eleccion_estado': fecha_actual,
-            'id_estado_actual_registro': 13,
+            'fecha_eleccion_estado': fecha_actual
         }
 
         serializer = self.serializer_class(data=notificacion_data)
@@ -186,7 +185,7 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
             'id_und_org_seccion_asignada': id_persona_asigna.id_unidad_organizacional_actual.id_unidad_organizacional, 
         }
 
-        serializer = self.serializer_class(data=asignacion_data)
+        serializer = self.serializer_class(data=asignacion_data) 
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
 
