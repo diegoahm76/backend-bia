@@ -781,6 +781,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'tipo_documento_persona_solicitante': despacho.id_persona_solicita.tipo_documento.cod_tipo_documento if despacho.id_persona_solicita else None,
                 'numero_documento_persona_solicitante': despacho.id_persona_solicita.numero_documento if despacho.id_persona_solicita else None,
                 'id_uni_org_solicitante': despacho.id_uni_org_solicitante.id_unidad_organizacional if despacho.id_uni_org_solicitante else None,
+                #//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 'id_bodega': despacho.id_bodega.id_bodega if despacho.id_bodega else None,
                 'despacho_anulado': despacho.despacho_anulado,
                 'justificacion_anulacion': despacho.justificacion_anulacion,
