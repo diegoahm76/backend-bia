@@ -27,7 +27,6 @@ urlpatterns = [
     path('listar-unidades-medida/get/',views.ListarUnidadesMedidaActivas.as_view(),name='listar-unidades-medida'),
     path('detalle-solicitud-activos/<int:id_solicitud_activo>/', views.DetalleSolicitudActivosView.as_view(), name='detalle-solicitud-activos'),
     path('resumen-solicitud-activos/<int:id_solicitud_activo>/', views.ResumenSolicitudGeneralActivosView.as_view(), name='resumen-solicitud-activos'),
-    path('resumen-solicitud-activos/<int:id_solicitud_activo>/', views.ResumenSolicitudGeneralActivosView.as_view(), name='resumen-solicitud-activos'),
     path('cancelar-solicitud-activos/<int:id_solicitud_activo>/', views.CancelarSolicitudActivos.as_view(), name='cancelar-solicitud-activos'),
     path('busqueda-solicitudes-realizadas/get/', views.BusquedaAvanzadaSolicitudesActivos.as_view(), name='busqueda-solicitud-activos'),
 
@@ -39,6 +38,9 @@ urlpatterns = [
 
     #Salida_Activos_Especiales
     path('busqueda-terceros-activos/get/', views.ClasesTerceroPersonaSearchView.as_view(), name='busqueda-terceros-activos'),
+    path('entradas-relacionadas-activos/get/<int:id_persona>/', views.EntradasRelacionadasAlmacenListView.as_view(), name='entradas-relacionadas-activos'),
+    path('activos-asociados/get/<int:id_entrada_almacen>/', views.ActivosAsociadosDetailView.as_view(), name='activos_asociados_detalles'),
+    path('crear-salida-especial-activo/', views.CrearSalidaEspecialView.as_view(), name='activos_salida_especial_create'),
 
 
 
