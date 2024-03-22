@@ -66,6 +66,11 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
+        
+class Registros_NotificacionesCorrespondeciaCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Registros_NotificacionesCorrespondecia
+        fields = '__all__'
 
 
 class AsignacionNotificacionCorrespondenciaSerializer(serializers.ModelSerializer):

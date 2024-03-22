@@ -37,14 +37,14 @@ class ConfigTipoConsecAgnoGetView(generics.ListAPIView):
     queryset = ConfigTipoConsecAgno.objects.all()
     
     def get(self, request,agno,uni):
-        instance = self.get_queryset().filter(agno_consecutivo=agno,id_unidad=uni).first()
+        instance = self.get_queryset().filter(agno_consecutivo=agno,id_unidad=uni)
 
 
 
         if not instance:
             raise NotFound('No existe registro')
         
-        serializer = self.serializer_class(instance)
+        serializer = self.serializer_class(instance, many=True)
         
         return Response({'success':True, 'detail':'se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
 
