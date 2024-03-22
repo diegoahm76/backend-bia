@@ -41,6 +41,8 @@ urlpatterns = [
     path('entradas-relacionadas-activos/get/<int:id_persona>/', views.EntradasRelacionadasAlmacenListView.as_view(), name='entradas-relacionadas-activos'),
     path('activos-asociados/get/<int:id_entrada_almacen>/', views.ActivosAsociadosDetailView.as_view(), name='activos_asociados_detalles'),
     path('crear-salida-especial-activo/', views.CrearSalidaEspecialView.as_view(), name='activos_salida_especial_create'),
+    path('info-salida-especial-activo/get/<int:consecutivo>/', views.ObtenerDatosSalidaEspecialView.as_view(), name='salida-especial-activo'),
+    path('obtener-ultimo-consecutivo-salida-especial/get/', views.ObtenerUltimoConsecutivoView.as_view(), name='ultimo-consecutivo-salida-especial'),
 
 
 
