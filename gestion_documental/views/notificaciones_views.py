@@ -26,7 +26,8 @@ from gestion_documental.models.notificaciones_models import (
     Anexos_NotificacionesCorrespondencia, 
     EstadosNotificacionesCorrespondencia, 
     HistoricosEstados, 
-    CausasOAnomalias
+    CausasOAnomalias,
+    TiposDocumentos
     )
 
 from gestion_documental.serializers.notificaciones_serializers import (
@@ -39,7 +40,9 @@ from gestion_documental.serializers.notificaciones_serializers import (
     EstadosNotificacionesCorrespondenciaSerializer,
     CausasOAnomaliasNotificacionesCorrespondenciaSerializer,
     TiposAnexosNotificacionesCorrespondenciaSerializer,
-    Registros_NotificacionesCorrespondeciaCreateSerializer
+    Registros_NotificacionesCorrespondeciaCreateSerializer,
+    TiposDocumentosNotificacionesCorrespondenciaSerializer,
+    AsignacionNotiCorresGetSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -125,9 +128,6 @@ class CrearTareasAsignacion(generics.CreateAPIView):
         serializer = self.serializer_class(data=notificacion_data)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        if instance:
-            print('Se creo la tarea')
-
         return instance
     
 class UpdateTareasAsignacion(generics.UpdateAPIView):
@@ -141,6 +141,21 @@ class UpdateTareasAsignacion(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return instance
+    
+class AsignacionesCorrespondenciaGet(generics.ListAPIView):
+    serializer_class = AsignacionNotiCorresGetSerializer
+
+    def get(self, idAsignacion_noti_corre):
+        queryset = AsignacionNotificacionCorrespondencia.objects.all() 
+        queryset = queryset.filter(idAsignacion_noti_corr=idAsignacion_noti_corre)
+        
+        serializer = self.get_serializer(queryset)
+        return serializer.data
+
+    # def get(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset(request)
+    #     serializer = self.get_serializer(queryset)
+    #     return serializer.data
 
 class CrearAsignacionNotificacion(generics.CreateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
@@ -160,7 +175,6 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
             'id_tipo_notificacion_correspondencia': data.get('id_tipo_notificacion_correspondencia'),
         }
         tarea = registro.post(data_tarea, fecha_actual)
-        print(tarea.id_registro_notificacion_correspondencia)
         asignacion_data = {
             'id_notificacion_correspondencia': data.get('id_notificacion_correspondencia'),
             'id_orden_notificacion': tarea.id_registro_notificacion_correspondencia,
@@ -186,8 +200,9 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
             tarea_actualizada = UpdateTareasAsignacion()
             if not tarea_actualizada.put(data_asignacion, tarea.id_registro_notificacion_correspondencia):
                 raise ValidationError({'id_notificacion_correspondencia': 'No se pudo actualizar el estado de la tarea'})
-
+        #response = AsignacionesCorrespondenciaGet()
         return Response({'succes': True, 'detail':'Se la asigncación correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+    
 
 class GetAsignacionesCorrespondencia(generics.ListAPIView):
     serializer_class = AsignacionNotificacionCorrespondenciaSerializer
@@ -670,3 +685,62 @@ class TiposAnexosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
         else:
             tipo_anexo_notificacion.delete()
         return Response({'succes': True, 'detail':'Se eliminó el tipo de anexo de notificación correctamente', 'data':{}}, status=status.HTTP_200_OK)
+    
+    
+#TiposDocumentosNotificacionesCorrespondencia
+class TiposDocumentosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
+    serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return Response({'succes': True, 'detail':'Se creo el tipo de documento de notificaciones y correspondecia correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+    
+
+class TiposDocumentosNotificacionesCorrespondenciaGet(generics.ListAPIView):
+    serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = TiposDocumentos.objects.all() 
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+class TiposDocumentosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
+    serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data = request.data
+        tipo_documento_notificacion = TiposDocumentos.objects.filter(id_tipo_documento=pk).first()
+        if not tipo_documento_notificacion:
+            raise ValidationError(f'El tipo de anexo de notificación con id {pk} no existe.')
+        if tipo_documento_notificacion.item_ya_usado and data['nombre']:
+            raise ValidationError(f'El nombre no se puede actualizar si ya se utilizo.')
+        else:
+            serializer = self.serializer_class(tipo_documento_notificacion, data=data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+        return Response({'succes': True, 'detail':'Se actualizó el tipo de documento de notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
+
+
+class TiposDocumentosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
+    serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        tipo_documento_notificacion = TiposDocumentos.objects.filter(id_tipo_documento=pk).first()
+        if not tipo_documento_notificacion:
+            raise ValidationError(f'El tipo de documento de notificación con id {pk} no existe.')
+        if tipo_documento_notificacion.item_ya_usado:
+            raise ValidationError(f'El tipo de documento de notificación con id {pk} ya fue utilizado.')
+        else:
+            tipo_documento_notificacion.delete()
+        return Response({'succes': True, 'detail':'Se eliminó el tipo de documento de notificación correctamente', 'data':{}}, status=status.HTTP_200_OK)

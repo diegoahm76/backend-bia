@@ -31,4 +31,10 @@ urlpatterns = [
     path('get-tipos-anexos-notificaciones/', views.TiposAnexosNotificacionesCorrespondenciaGet.as_view(),name='get-tipos-anexos-notificaciones'),
     path('update-tipos-anexos-notificaciones/<int:pk>/', views.TiposAnexosNotificacionesCorrespondenciaUpdate.as_view(),name='update-tipos-anexos-notificaciones'),
     path('delete-tipos-anexos-notificaciones/<int:pk>/', views.TiposAnexosNotificacionesCorrespondenciaDelete.as_view(),name='delete-tipos-anexos-notificaciones'),
+
+    # Tipos de Documentos de Notificaciones
+    path('create-tipos-documentos-notificaciones/', views.TiposDocumentosNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-documentos-notificaciones'),
+    path('get-tipos-documentos-notificaciones/', views.TiposDocumentosNotificacionesCorrespondenciaGet.as_view(),name='get-tipos-documentos-notificaciones'),
+    path('update-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaUpdate.as_view(),name='update-tipos-documentos-notificaciones'),
+    path('delete-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaDelete.as_view(),name='delete-tipos-documentos-notificaciones'),
 ]
