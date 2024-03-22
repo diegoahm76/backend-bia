@@ -17,7 +17,8 @@ from gestion_documental.models.notificaciones_models import (
     Anexos_NotificacionesCorrespondencia, 
     EstadosNotificacionesCorrespondencia, 
     HistoricosEstados, 
-    CausasOAnomalias
+    CausasOAnomalias,
+    TiposDocumentos
     )
 
 class NotificacionesCorrespondenciaCreateSerializer(serializers.ModelSerializer):
@@ -27,7 +28,7 @@ class NotificacionesCorrespondenciaCreateSerializer(serializers.ModelSerializer)
         fields = '__all__'
 
 class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
-    cod_tipo_documento = serializers.CharField(source='get_cod_tipo_documento_display', read_only=True, default=None)
+    nommbre_tipo_documento = serializers.CharField(source='cod_tipo_documento.nombre')
     registros_notificaciones = serializers.SerializerMethodField()
     expediente = serializers.SerializerMethodField()
     funcuinario_solicitante = serializers.SerializerMethodField()
@@ -66,6 +67,11 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
+        
+class Registros_NotificacionesCorrespondeciaCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Registros_NotificacionesCorrespondecia
+        fields = '__all__'
 
 
 class AsignacionNotificacionCorrespondenciaSerializer(serializers.ModelSerializer):
@@ -89,6 +95,19 @@ class AsignacionNotiCorresCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AsignacionNotificacionCorrespondencia
         fields = '__all__'
+
+class AsignacionNotiCorresGetSerializer(serializers.ModelSerializer):
+    id_orden_notificacion = serializers.SerializerMethodField()
+    class Meta:
+        model = AsignacionNotificacionCorrespondencia
+        fields = '__all__'
+
+    def get_id_orden_notificacion(self, obj):
+        print(obj.id_persona_asignada.primer_apellido)
+        orden_notificacion = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=obj.id_orden_notificacion).first()
+        return Registros_NotificacionesCorrespondeciaCreateSerializer(orden_notificacion).data
+    
+
 
 class HistoricoCargosUndOrgPersonaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -120,5 +139,11 @@ class CausasOAnomaliasNotificacionesCorrespondenciaSerializer(serializers.ModelS
 class TiposAnexosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposAnexosSoporte
+        fields = '__all__'
+
+
+class TiposDocumentosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposDocumentos
         fields = '__all__'
 
