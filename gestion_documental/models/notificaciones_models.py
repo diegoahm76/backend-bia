@@ -97,7 +97,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
     fecha_inicial_registro = models.DateTimeField(db_column='T352fechaInicialRegistro')
     fecha_final_registro = models.DateTimeField(null=True, db_column='T352fechaFinalRegistro')
     id_persona_finaliza_registro = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_PersonaFinalizaRegistro',related_name='T352IdPersonaFinalizaRegistro')
-    id_estado_actual_registro = models.ForeignKey('EstadosNotificacionesCorrespondencia', on_delete=models.CASCADE, db_column='T352Id_EstadoActualRegistro',related_name='T352IdEstadoActualRegistro')
+    id_estado_actual_registro = models.ForeignKey('EstadosNotificacionesCorrespondencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_EstadoActualRegistro',related_name='T352IdEstadoActualRegistro')
     id_doc_de_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente, on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_DocDeArch_Exp',related_name='T352IdDocDeArchExp')
 
     class Meta:
