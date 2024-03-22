@@ -26,7 +26,7 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
 from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
@@ -1320,37 +1320,10 @@ class CrearSalidaEspecialView(generics.CreateAPIView):
 
     def create(self, request):
         data = request.data
-        anexo = request.FILES.get('anexo_opcional')
+        anexos = request.FILES.getlist('anexo_opcional')
+        anexos_data = data.get('anexos')
         current_date = datetime.now()
 
-        # Validar formato de archivo
-        archivo_nombre = anexo.name 
-        nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
-        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
-        
-        formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
-        
-        if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
-            raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
-        
-        # Crear archivo en T238
-        current_year = current_date.year
-        ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
-
-        md5_hash = hashlib.md5()
-        for chunk in anexo.chunks():
-            md5_hash.update(chunk)
-
-        md5_value = md5_hash.hexdigest()
-
-        data_archivo = {
-            'es_Doc_elec_archivo': True,
-            'ruta': ruta,
-            'md5_hash': md5_value
-        }
-        
-        archivo_class = ArchivosDgitalesCreate()
-        respuesta = archivo_class.crear_archivo(data_archivo, anexo)
 
         # Crear registro en T088SalidasEspeciales_Articulos
         consecutivo_salida = SalidasEspecialesArticulos.objects.count() + 1
@@ -1370,36 +1343,126 @@ class CrearSalidaEspecialView(generics.CreateAPIView):
         salida_especial_serializer.is_valid(raise_exception=True)
         salida_especial_obj = salida_especial_serializer.save()
 
-        # Crear registros en T087AnexosDocsAlma
-        anexos_data = data.get('anexos', [])
-        for anexo_data in anexos_data:
-            if isinstance(anexo_data, dict):
-                anexo_data['id_baja_activo'] = None
-                anexo_data['id_salida_espec_arti'] = salida_especial_obj.id_salida_espec_arti
-                anexo_data['fecha_creacion_anexo'] = current_date
-                anexo_data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
-                
-                serializer_anexo = self.serializer_class(data=anexo_data)
-                serializer_anexo.is_valid(raise_exception=True)
-                serializer_anexo.save()
+        # Variable para almacenar el serializer_anexo
+        serializer_anexo = None
+
 
         # Actualizar registros en T062Inventario
-        activos_incluidos = data.get('activos_incluidos', [])
-        for id_bien in activos_incluidos:
-            # Verifica si id_bien es un entero
-            if isinstance(id_bien, int):
-                # Obtener el objeto de inventario por su ID
-                inventario_obj = get_object_or_404(Inventario, id_bien=id_bien)
-                
-                # Realizar las actualizaciones en el objeto de inventario
-                inventario_obj.realizo_salida = True
-                inventario_obj.ubicacion_en_bodega = False
-                inventario_obj.fecha_ultimo_movimiento = current_date
-                inventario_obj.tipo_doc_ultimo_movimiento = 'SAL_E'
-                inventario_obj.id_registro_doc_ultimo_movimiento = None
-                inventario_obj.save()
+        activos_incluidos = data.get('activos_incluidos', "")
         
+        if activos_incluidos == "":
+            raise ValidationError ("Debe enviar minimo un activo.")
+        
+        for id_bien in activos_incluidos.split(","):
+                
+            # Obtener el objeto de inventario por su ID
+            inventario_obj = get_object_or_404(Inventario, id_bien=id_bien)
+            
+            # Realizar las actualizaciones en el objeto de inventario
+            inventario_obj.realizo_salida = True
+            inventario_obj.ubicacion_en_bodega = False
+            inventario_obj.fecha_ultimo_movimiento = current_date
+            inventario_obj.tipo_doc_ultimo_movimiento = 'SAL_E'
+            inventario_obj.id_registro_doc_ultimo_movimiento = None
+            inventario_obj.save()
 
-        return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.', 'data': serializer_anexo.data}, status=status.HTTP_200_OK)
+        if anexos_data and anexos:
+            anexos_data = json.loads(data.get('anexos'))
+
+            for index, (data_anexo, anexo) in enumerate(zip(anexos_data, anexos)):
+                cont = index + 1
+                # Validar formato de archivo
+                archivo_nombre = anexo.name 
+                nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+                extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+                
+                formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+                
+                if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+                    raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+                
+                # Crear archivo en T238
+                current_year = current_date.year
+                ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+                md5_hash = hashlib.md5()
+                for chunk in anexo.chunks():
+                    md5_hash.update(chunk)
+
+                md5_value = md5_hash.hexdigest()
+
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
+                
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+                # Crear registros en T087AnexosDocsAlma
+                if isinstance(data_anexo, dict):
+                    data_anexo['id_baja_activo'] = None
+                    data_anexo['id_salida_espec_arti'] = salida_especial_obj.id_salida_espec_arti
+                    data_anexo['fecha_creacion_anexo'] = current_date
+                    data_anexo['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+                    
+                    serializer_anexo = self.serializer_class(data=data_anexo)
+                    serializer_anexo.is_valid(raise_exception=True)
+                    serializer_anexo.save()
 
 
+        # Verifica si se ha creado un serializer_anexo
+        if serializer_anexo:
+            return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.', 'data': salida_especial_serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.','data': salida_especial_serializer.data}, status=status.HTTP_200_OK)
+
+
+class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
+    def retrieve(self, request, consecutivo, *args, **kwargs):
+        # Buscar la salida especial por su consecutivo
+        salida_especial = get_object_or_404(SalidasEspecialesArticulos, consecutivo_por_salida=consecutivo)
+        
+        # Serializar la salida especial
+        salida_especial_serializer = SalidasEspecialesArticulosSerializer(salida_especial)
+        
+        # Buscar los anexos relacionados con la salida especial
+        anexos = AnexosDocsAlma.objects.filter(id_salida_espec_arti=salida_especial.id_salida_espec_arti)
+        
+        # Serializar los anexos
+        anexos_serializer = AnexosDocsAlmaSerializer(anexos, many=True)
+        
+        # Lista para almacenar la data de los archivos digitales
+        archivos_digital_data = []
+
+        # Iterar sobre los anexos y obtener los archivos digitales relacionados
+        for anexo in anexos:
+            archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=anexo.id_archivo_digital_id).first()
+            if archivo_digital:
+                archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
+                archivos_digital_data.append(archivo_digital_serializer.data)
+
+        print("Salida Especial encontrada:", salida_especial)
+        print("Anexos encontrados:", anexos)
+        print("Archivos Digitales encontrados:", archivos_digital_data)
+        
+        # Devolver la información como respuesta
+        return Response({
+            'salida_especial': salida_especial_serializer.data,
+            'anexos': anexos_serializer.data,  # Agregar los anexos serializados
+            'archivos_digitales': archivos_digital_data
+        }, status=status.HTTP_200_OK)
+    
+
+class ObtenerUltimoConsecutivoView(generics.ListAPIView):
+    def get(self, request):
+            # Obtener el último consecutivo en la base de datos
+            ultimo_consecutivo = SalidasEspecialesArticulos.objects.all().order_by('-consecutivo_por_salida').first()
+            if ultimo_consecutivo:
+                ultimo_consecutivo = ultimo_consecutivo.consecutivo_por_salida + 1
+            else:
+                ultimo_consecutivo = 1  # Si no hay ningún registro, empezar desde 1
+            
+            # Devolver el último consecutivo incrementado en 1
+            return Response({"success": True, "detail": "Último consecutivo obtenido correctamente.", "ultimo_consecutivo": ultimo_consecutivo}, status=status.HTTP_200_OK)
+        
