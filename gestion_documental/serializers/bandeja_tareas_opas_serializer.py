@@ -402,3 +402,35 @@ class OpaTramiteTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
         if obj:
             return self.obtener_apellidos(obj)
         return None
+
+
+
+class RequerimientoSobreOPACreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        fields = '__all__'
+
+
+class Anexos_RequerimientoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'
+
+
+class RequerimientoSobreOPAGetSerializer(serializers.ModelSerializer):
+    tipo_tramite = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
+    estado = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    class Meta:
+        model = SolicitudAlUsuarioSobrePQRSDF
+        # fields = ['id_solicitud_al_usuario_sobre_pqrsdf']
+        fields = ['id_solicitud_al_usuario_sobre_pqrsdf','tipo_tramite','fecha_radicado_salida','numero_radicado','estado']
+
+    def get_tipo_tramite(self,obj):
+        return "Requerimiento a una solicitud"
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado_salida:
+            cadena= str(obj.id_radicado_salida.prefijo_radicado)+'-'+str(obj.id_radicado_salida.agno_radicado)+'-'+str(obj.id_radicado_salida.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'

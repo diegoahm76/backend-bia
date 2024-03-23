@@ -3,6 +3,7 @@ from gestion_documental.views.configuracion_tipos_radicados_views import actuali
 from tramites.models.tramites_models import Tramites
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas
+from datetime import datetime, timedelta
 import json
 
 
@@ -40,3 +41,29 @@ def update_tramites_bia(radicado):
 			else:
 				value = item['value_key']
 			organized_data[field_name] = value
+
+
+def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
+	verificar_pago = VerificarPagoView()
+	request.query_params._mutable = True
+	request.query_params['id_pago'] = id_pago
+	response_pago = verificar_pago.create(request)
+ 
+	if response_pago.status_code == 201:
+		response_pago_data = response_pago.data.get('data').get('res_pago')[0]
+		estado_pago = response_pago_data.get('int_estado_pago').strip()
+		medio_pago = response_pago_data.get('int_id_forma_pago').strip()
+		execution_time = datetime.now() + timedelta(minutes=10)
+
+		if estado_pago not in ["1","1000","4000","4003"]:
+			print(f"PAGO {id_pago} PENDIENTE")
+			if estado_pago == '999' and medio_pago == '42':
+				print("PENDIENTE PAGO {id_pago} GANA - CAJAS")
+				execution_time = datetime.now() + timedelta(hours=1)
+            
+			if scheduler:
+				scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
+		else:
+			print("PAGO ACEPTADO/RECHAZADO")
+	else:
+		print("Ocurrió un error al intententar obtener el estado del pago")

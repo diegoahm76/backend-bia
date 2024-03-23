@@ -26,9 +26,10 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SolicitudesActivos
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate, ArchivosDigitales
 from transversal.models.base_models import ClasesTerceroPersona
@@ -551,8 +552,10 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
 
         # Guardar información de los items de la solicitud
         items_data = data.get('items', [])
-        for item_data in items_data:
+        for index, item_data in enumerate(items_data, start=1):
+            # Asignar el ID de la solicitud y el número de posición al item
             item_data['id_solicitud_activo'] = solicitud.id_solicitud_activo
+            item_data['nro_posicion'] = index
             item_serializer = self.items_serializer_class(data=item_data)
             item_serializer.is_valid(raise_exception=True)
             item_serializer.save()
@@ -655,17 +658,34 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         instance = self.get_object()
+
         solicitud_data = {
             'id_solicitud_activo': instance.id_solicitud_activo,
             'fecha_solicitud': instance.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S'),
             'motivo': instance.motivo,
             'observacion': instance.observacion,
-            'id_persona_solicita': instance.id_persona_solicita.id_persona,
+            #Persona_Solicitante
+            'id_persona_solicita': instance.id_persona_solicita.id_persona if instance.id_persona_solicita else None,
+            'primer_nombre_persona_solicitante': instance.id_persona_solicita.primer_nombre if instance.id_persona_solicita else None,
+            'primer_apellido_persona_solicitante': instance.id_persona_solicita.primer_apellido if instance.id_persona_solicita else None,
+            'tipo_documento_persona_solicitante': instance.id_persona_solicita.tipo_documento.cod_tipo_documento if instance.id_persona_solicita else None,
+            'numero_documento_persona_solicitante': instance.id_persona_solicita.numero_documento if instance.id_persona_solicita else None,
             'id_uni_org_solicitante': instance.id_uni_org_solicitante.id_unidad_organizacional,
-            'id_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.id_persona,
+            #Persona_Funcionario_Responsable_Unidad
+            'id_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.id_persona if instance.id_funcionario_resp_unidad else None,
+            'primer_nombre_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.primer_nombre if instance.id_funcionario_resp_unidad else None,
+            'primer_apellido_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.primer_apellido if instance.id_funcionario_resp_unidad else None,
+            'tipo_documento_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.tipo_documento.cod_tipo_documento if instance.id_funcionario_resp_unidad else None,
+            'numero_documento_funcionario_resp_unidad': instance.id_funcionario_resp_unidad.numero_documento if instance.id_funcionario_resp_unidad else None,
             'id_uni_org_responsable': instance.id_uni_org_responsable.id_unidad_organizacional,
-            'id_persona_operario': instance.id_persona_operario.id_persona,
+            #Persona_Operario
+            'id_persona_operario': instance.id_persona_operario.id_persona if instance.id_persona_operario else None,
+            'primer_nombre_persona_operario': instance.id_persona_operario.primer_nombre if instance.id_persona_operario else None,
+            'primer_apellido_persona_operario': instance.id_persona_operario.primer_apellido if instance.id_persona_operario else None,
+            'tipo_documento_persona_operario': instance.id_persona_operario.tipo_documento.cod_tipo_documento if instance.id_persona_operario else None,
+            'numero_documento_persona_operario': instance.id_persona_operario.numero_documento if instance.id_persona_operario else None,
             'id_uni_org_operario': instance.id_uni_org_operario.id_unidad_organizacional,
+            #Resumen_Solcitiud
             'estado_solicitud': instance.estado_solicitud,
             'solicitud_prestamo': instance.solicitud_prestamo,
             'fecha_devolucion': instance.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_devolucion else None,
@@ -677,11 +697,22 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             'gestionada_alma': instance.gestionada_alma,
             'obser_cierre_no_dispo_alma': instance.obser_cierre_no_dispo_alma,
             'fecha_cierre_no_dispo_alma': instance.fecha_cierre_no_dispo_alma.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_cierre_no_dispo_alma else None,
+            #Persona_cierra_no_dispo_alma
             'id_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.id_persona if instance.id_persona_cierra_no_dispo_alma else None,
+            'primer_nombre_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.primer_nombre if instance.id_persona_cierra_no_dispo_alma else None,
+            'primer_apellido_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.primer_apellido if instance.id_persona_cierra_no_dispo_alma else None,
+            'tipo_documento_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.tipo_documento.cod_tipo_documento if instance.id_persona_cierra_no_dispo_alma else None,
+            'numero_documento_persona_cierra_no_dispo_alma': instance.id_persona_cierra_no_dispo_alma.numero_documento if instance.id_persona_cierra_no_dispo_alma else None,
+            #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
             'rechazada_almacen': instance.rechazada_almacen,
             'fecha_rechazo_almacen': instance.fecha_rechazo_almacen.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_rechazo_almacen else None,
             'justificacion_rechazo_almacen': instance.justificacion_rechazo_almacen,
+            #persona_alma_rechaza
             'id_persona_alma_rechaza': instance.id_persona_alma_rechaza.id_persona if instance.id_persona_alma_rechaza else None,
+            'primer_nombre_persona_alma_rechaza': instance.id_persona_alma_rechaza.primer_nombre if instance.id_persona_alma_rechaza else None,
+            'primer_apellido_persona_alma_rechaza': instance.id_persona_alma_rechaza.primer_apellido if instance.id_persona_alma_rechaza else None,
+            'tipo_documento_persona_alma_rechaza': instance.id_persona_alma_rechaza.tipo_documento.cod_tipo_documento if instance.id_persona_alma_rechaza else None,
+            'numero_documento_persona_alma_rechaza': instance.id_persona_alma_rechaza.numero_documento if instance.id_persona_alma_rechaza else None,
             'solicitud_anulada_solicitante': instance.solicitud_anulada_solicitante,
             'fecha_anulacion_solicitante': instance.fecha_anulacion_solicitante.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_anulacion_solicitante else None,
         }
@@ -735,15 +766,32 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'justificacion_rechazo_resp': despacho.justificacion_rechazo_resp,
                 'fecha_solicitud': despacho.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S') if despacho.fecha_solicitud else None,
                 'fecha_despacho': despacho.fecha_despacho.strftime('%Y-%m-%d %H:%M:%S') if despacho.fecha_despacho else None,
+                #persona_despacha
                 'id_persona_despacha': despacho.id_persona_despacha.id_persona,
+                'primer_nombre_persona_despacha': despacho.id_persona_despacha.primer_nombre if despacho.id_persona_solicita else None,
+                'primer_apellido_persona_despacha': despacho.id_persona_despacha.primer_apellido if despacho.id_persona_solicita else None,
+                'tipo_documento_persona_despacha': despacho.id_persona_despacha.tipo_documento.cod_tipo_documento if despacho.id_persona_despacha else None,
+                'numero_documento_persona_despacha': despacho.id_persona_despacha.numero_documento if despacho.id_persona_despacha else None,
+                #/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 'observacion': despacho.observacion,
+                #persona_solicita
                 'id_persona_solicita': despacho.id_persona_solicita.id_persona if despacho.id_persona_solicita else None,
+                'primer_nombre_persona_solicitante': despacho.id_persona_solicita.primer_nombre if despacho.id_persona_solicita else None,
+                'primer_apellido_persona_solicitante': despacho.id_persona_solicita.primer_apellido if despacho.id_persona_solicita else None,
+                'tipo_documento_persona_solicitante': despacho.id_persona_solicita.tipo_documento.cod_tipo_documento if despacho.id_persona_solicita else None,
+                'numero_documento_persona_solicitante': despacho.id_persona_solicita.numero_documento if despacho.id_persona_solicita else None,
                 'id_uni_org_solicitante': despacho.id_uni_org_solicitante.id_unidad_organizacional if despacho.id_uni_org_solicitante else None,
+                #//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
                 'id_bodega': despacho.id_bodega.id_bodega if despacho.id_bodega else None,
                 'despacho_anulado': despacho.despacho_anulado,
                 'justificacion_anulacion': despacho.justificacion_anulacion,
                 'fecha_anulacion': despacho.fecha_anulacion.strftime('%Y-%m-%d %H:%M:%S') if despacho.fecha_anulacion else None,
+                #Persona_Anula
                 'id_persona_anula': despacho.id_persona_anula.id_persona if despacho.id_persona_anula else None,
+                'primer_nombre_persona_anula': despacho.id_persona_anula.primer_nombre if despacho.id_persona_solicita else None,
+                'primer_apellido_persona_anula': despacho.id_persona_anula.primer_apellido if despacho.id_persona_solicita else None,
+                'tipo_documento_persona_anula': despacho.id_persona_anula.tipo_documento.cod_tipo_documento if despacho.id_persona_anula else None,
+                'numero_documento_persona_anula': despacho.id_persona_anula.numero_documento if despacho.id_persona_anula else None,
                 'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo if despacho.id_archivo_doc_recibido else None
             }
             despachos_data.append(despacho_data)
@@ -1151,3 +1199,315 @@ class ClasesTerceroPersonaSearchView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail': 'Búsqueda exitosa', 'data': serializer.data})
+    
+
+class EntradasRelacionadasAlmacenListView(generics.ListAPIView):
+    serializer_class = EntradasAlmacenSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        id_persona = self.kwargs['id_persona']  # Obtener el id_persona de los parámetros de la URL
+
+        # Filtrar las entradas del almacén según las condiciones dadas
+        queryset = EntradasAlmacen.objects.filter(
+            Q(id_proveedor=id_persona) &  # El proveedor es igual al id_persona
+            Q(id_tipo_entrada__in=[5, 6, 7, 8]) &  # El tipo de entrada está en la lista dada
+            ~Q(id_bodega=None)  # La bodega no es NULL
+        )
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = serializer.data
+        return Response({'success': True, 'detail': 'Información de entradas de almacén obtenida correctamente', 'data': data})
+    
+
+
+class ActivosAsociadosDetailView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_entrada_almacen):
+        try:
+            # Filtrar los registros en el modelo ItemEntradaAlmacen
+            items_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=id_entrada_almacen)
+
+            # Lista para almacenar los datos serializados de los registros encontrados
+            serialized_data = []
+
+            for item in items_entrada:
+                # Filtrar el inventario por id_bien y realizo_salida=True
+                inventario = Inventario.objects.filter(id_bien=item.id_bien.id_bien, realizo_salida=False).first()
+                if inventario:
+                    # Consultar el registro en el modelo CatalogoBienes
+                    bien = item.id_bien
+
+                    # Obtener el nombre de la marca
+                    marca_nombre = None
+                    if bien.id_marca:
+                        marca_nombre = bien.id_marca.nombre
+
+                    # Crear un diccionario con la información necesaria
+                    data = {
+                        'id_item_entrada_almacen': item.id_item_entrada_almacen,  # Pk de ItemEntradaAlmacen
+                        'id_entrada_almacen': item.id_entrada_almacen.id_entrada_almacen,  # Fk de EntradaAlmacen
+                        'id_bien': bien.id_bien,  # Pk de CatalogoBienes
+                        'codigo': bien.codigo_bien,
+                        'serial_placa': bien.doc_identificador_nro,
+                        'nombre': bien.nombre,
+                        'marca': marca_nombre,
+                    }
+
+                    # Agregar el diccionario a la lista de datos serializados
+                    serialized_data.append(data)
+
+            # Devolver la respuesta con los datos serializados y un mensaje de éxito
+            return Response({'success': True, 'detail': 'Datos encontrados correctamente', 'data': serialized_data}, status=status.HTTP_200_OK)
+
+        except ItemEntradaAlmacen.DoesNotExist:
+            return Response({'success': False, 'detail': 'No se encontraron elementos'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+# class CrearSalidaEspecialView(generics.CreateAPIView):
+#     serializer_class = SalidasEspecialesSerializer
+#     serializer_anexo_class = AnexosDocsAlmaSerializer
+
+#     @transaction.atomic
+#     def create(self, request, *args, **kwargs):
+#         try:
+#             data = request.data
+#             anexos = request.FILES.getlist('anexos')
+#             fecha_salida = datetime.now()
+
+#             # Crear registros de anexos y archivos digitales
+#             for anexo in anexos:
+#                 # Validar formato de archivo
+#                 nombre_anexo = anexo.name
+#                 archivo_nombre, extension = os.path.splitext(nombre_anexo)
+#                 extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+                
+#                 # Obtener el año actual para determinar la carpeta de destino
+#                 current_year = fecha_salida.year
+#                 ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+
+#                 # Calcula el hash MD5 del archivo
+#                 md5_hash = hashlib.md5()
+#                 for chunk in anexo.chunks():
+#                     md5_hash.update(chunk)
+
+#                 # Obtiene el valor hash MD5
+#                 md5_value = md5_hash.hexdigest()
+
+#                 # Crear el archivo digital y obtener su ID
+#                 archivo_digital = ArchivosDigitales.objects.create(
+#                     nombre_de_Guardado=nombre_anexo,
+#                     formato=extension_sin_punto.lower(),
+#                     tamagno_kb=anexo.size,
+#                     ruta_archivo=ruta,
+#                     fecha_creacion_doc=fecha_salida,
+#                     es_Doc_elec_archivo=True,
+#                     md5_hash=md5_value
+#                 )
+
+#                 # Crear registro de anexo
+#                 anexo_obj = AnexosDocsAlma.objects.create(
+#                     nombre_anexo=nombre_anexo,
+#                     nro_folios=data.get('nro_folios'),
+#                     id_baja_activo =None,
+#                     descripcion_anexo=data.get('descripcion_anexo'),
+#                     fecha_creacion_anexo=fecha_salida,
+#                     id_salida_espec_arti=salida_especial.id_salida_espec_arti,  # Aún no se ha creado el registro de salida especial
+#                     id_archivo_digital=archivo_digital.id_archivo_digital
+#                 )
+
+#             # Obtener consecutivo de salida especial y otros datos necesarios
+#             # Obtener el último consecutivo
+#             ultimo_consecutivo = SalidasEspecialesArticulos.objects.aggregate(Max('consecutivo_por_salida'))
+#             ultimo_consecutivo = ultimo_consecutivo['consecutivo_por_salida__max'] if ultimo_consecutivo['consecutivo_por_salida__max'] else 0
+
+#             # Crear registro de salida especial de activos
+#             salida_especial = SalidasEspecialesArticulos.objects.create(
+#                 consecutivo_por_salida=ultimo_consecutivo + 1,
+#                 fecha_salida=fecha_salida,
+#                 referencia_salida=data.get('referenciaDeSalida'),
+#                 concepto=data.get('concepto'),
+#                 id_entrada_almacen_ref_id=data.get('id_EntradaAlmacenReferenciada')  # El campo ForeignKey espera el ID, no el objeto
+#             )
+
+#             # Actualizar registros de inventario
+#             for bien in data.get('activos'):
+#                 id_bien = bien.get('id_bien')
+
+#                 inventario = Inventario.objects.filter(id_bien=id_bien).first()
+#                 if inventario:
+#                     inventario.realizo_salida = True
+#                     inventario.ubicacion_en_bodega = False
+#                     inventario.fecha_ultimo_movimiento = fecha_salida
+#                     inventario.tipo_doc_ultimo_movimiento = 'SAL_E'
+#                     inventario.id_registro_doc_ultimo_movimiento = None
+#                     inventario.save()
+
+#             # Asignar el ID de la salida especial a los anexos creados
+#             AnexosDocsAlma.objects.filter(id_SalidaEspecial_Articulo=None).update(id_SalidaEspecial_Articulo=salida_especial.id)
+
+#             return Response({'success': True, 'detail': 'Se ha creado la salida especial correctamente'}, status=status.HTTP_201_CREATED)
+
+#         except Exception as e:
+#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class CrearSalidaEspecialView(generics.CreateAPIView):
+    serializer_class = AnexosOpcionalesDocsAlmaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        data = request.data
+        anexos = request.FILES.getlist('anexo_opcional')
+        anexos_data = data.get('anexos')
+        current_date = datetime.now()
+
+
+        # Crear registro en T088SalidasEspeciales_Articulos
+        consecutivo_salida = SalidasEspecialesArticulos.objects.count() + 1
+        referencia_salida = data.get('referencia_salida')
+        concepto_salida = data.get('concepto_salida')
+        id_entrada_almacen = data.get('id_entrada_almacen')
+
+        salida_especial_data = {
+            'consecutivo_por_salida': consecutivo_salida,
+            'fecha_salida': current_date,
+            'referencia_salida': referencia_salida,
+            'concepto': concepto_salida,
+            'id_entrada_almacen_ref': id_entrada_almacen
+        }
+
+        salida_especial_serializer = SalidasEspecialesArticulosSerializer(data=salida_especial_data)
+        salida_especial_serializer.is_valid(raise_exception=True)
+        salida_especial_obj = salida_especial_serializer.save()
+
+        # Variable para almacenar el serializer_anexo
+        serializer_anexo = None
+
+
+        # Actualizar registros en T062Inventario
+        activos_incluidos = data.get('activos_incluidos', "")
+        
+        if activos_incluidos == "":
+            raise ValidationError ("Debe enviar minimo un activo.")
+        
+        for id_bien in activos_incluidos.split(","):
+                
+            # Obtener el objeto de inventario por su ID
+            inventario_obj = get_object_or_404(Inventario, id_bien=id_bien)
+            
+            # Realizar las actualizaciones en el objeto de inventario
+            inventario_obj.realizo_salida = True
+            inventario_obj.ubicacion_en_bodega = False
+            inventario_obj.fecha_ultimo_movimiento = current_date
+            inventario_obj.tipo_doc_ultimo_movimiento = 'SAL_E'
+            inventario_obj.id_registro_doc_ultimo_movimiento = None
+            inventario_obj.save()
+
+        if anexos_data and anexos:
+            anexos_data = json.loads(data.get('anexos'))
+
+            for index, (data_anexo, anexo) in enumerate(zip(anexos_data, anexos)):
+                cont = index + 1
+                # Validar formato de archivo
+                archivo_nombre = anexo.name 
+                nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+                extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+                
+                formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+                
+                if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+                    raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+                
+                # Crear archivo en T238
+                current_year = current_date.year
+                ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+                md5_hash = hashlib.md5()
+                for chunk in anexo.chunks():
+                    md5_hash.update(chunk)
+
+                md5_value = md5_hash.hexdigest()
+
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
+                
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+                # Crear registros en T087AnexosDocsAlma
+                if isinstance(data_anexo, dict):
+                    data_anexo['id_baja_activo'] = None
+                    data_anexo['id_salida_espec_arti'] = salida_especial_obj.id_salida_espec_arti
+                    data_anexo['fecha_creacion_anexo'] = current_date
+                    data_anexo['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+                    
+                    serializer_anexo = self.serializer_class(data=data_anexo)
+                    serializer_anexo.is_valid(raise_exception=True)
+                    serializer_anexo.save()
+
+
+        # Verifica si se ha creado un serializer_anexo
+        if serializer_anexo:
+            return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.', 'data': salida_especial_serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success': True, 'detail': 'Archivo opcional creado exitosamente.','data': salida_especial_serializer.data}, status=status.HTTP_200_OK)
+
+
+class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
+    def retrieve(self, request, consecutivo, *args, **kwargs):
+        # Buscar la salida especial por su consecutivo
+        salida_especial = get_object_or_404(SalidasEspecialesArticulos, consecutivo_por_salida=consecutivo)
+        
+        # Serializar la salida especial
+        salida_especial_serializer = SalidasEspecialesArticulosSerializer(salida_especial)
+        
+        # Buscar los anexos relacionados con la salida especial
+        anexos = AnexosDocsAlma.objects.filter(id_salida_espec_arti=salida_especial.id_salida_espec_arti)
+        
+        # Serializar los anexos
+        anexos_serializer = AnexosDocsAlmaSerializer(anexos, many=True)
+        
+        # Lista para almacenar la data de los archivos digitales
+        archivos_digital_data = []
+
+        # Iterar sobre los anexos y obtener los archivos digitales relacionados
+        for anexo in anexos:
+            archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=anexo.id_archivo_digital_id).first()
+            if archivo_digital:
+                archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
+                archivos_digital_data.append(archivo_digital_serializer.data)
+
+        print("Salida Especial encontrada:", salida_especial)
+        print("Anexos encontrados:", anexos)
+        print("Archivos Digitales encontrados:", archivos_digital_data)
+        
+        # Devolver la información como respuesta
+        return Response({
+            'salida_especial': salida_especial_serializer.data,
+            'anexos': anexos_serializer.data,  # Agregar los anexos serializados
+            'archivos_digitales': archivos_digital_data
+        }, status=status.HTTP_200_OK)
+    
+
+class ObtenerUltimoConsecutivoView(generics.ListAPIView):
+    def get(self, request):
+            # Obtener el último consecutivo en la base de datos
+            ultimo_consecutivo = SalidasEspecialesArticulos.objects.all().order_by('-consecutivo_por_salida').first()
+            if ultimo_consecutivo:
+                ultimo_consecutivo = ultimo_consecutivo.consecutivo_por_salida + 1
+            else:
+                ultimo_consecutivo = 1  # Si no hay ningún registro, empezar desde 1
+            
+            # Devolver el último consecutivo incrementado en 1
+            return Response({"success": True, "detail": "Último consecutivo obtenido correctamente.", "ultimo_consecutivo": ultimo_consecutivo}, status=status.HTTP_200_OK)
+        
