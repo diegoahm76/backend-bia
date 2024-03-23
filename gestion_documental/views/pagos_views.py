@@ -10,6 +10,9 @@ from xml.etree import ElementTree
 from django.db.models import Q
 from django.db import transaction
 from rest_framework import generics
+from jobs.updater import scheduler
+from datetime import datetime, timedelta
+from jobs.jobs import update_estado_pago
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -19,7 +22,7 @@ class IniciarPagoView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        id_pago = 1000012345
+        id_pago = 1000012341
         
         headers = {'Content-Type': 'text/xml'}
         target_url = 'https://www.zonapagos.com/ws_inicio_pagov2/Zpagos.asmx'
@@ -91,6 +94,12 @@ class IniciarPagoView(generics.CreateAPIView):
                 raise ValidationError(error_message)
             
             redirect_url = f"https://www.zonapagos.com/{os.environ.get('ZPAGOS_CODIGO_RUTA')}/pago.asp?estado_pago=iniciar_pago&identificador={id_transaccion}"
+
+            # AÑADIR SONDA
+            if scheduler:
+                execution_time = datetime.now() + timedelta(minutes=10)
+                scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
+            
             return redirect(redirect_url)
             # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
         else:
@@ -138,23 +147,38 @@ class VerificarPagoView(generics.CreateAPIView):
             for pago in list_pagos:
                 if pago != '':
                     pago_data = pago.split('|')
-                    res_pago.append({
-                        "int_n_pago": pago_data[0],
-                        "int_estado_pago": pago_data[1],
-                        "dbl_valor_pagado": pago_data[2],
-                        "dbl_valor_iva_pagado": pago_data[3],
-                        "str_descripcion": pago_data[4],
-                        "str_id_cliente": pago_data[5],
-                        "str_nombre": pago_data[6],
-                        "str_apellido": pago_data[7],
-                        "str_telefono": pago_data[8],
-                        "str_email": pago_data[9],
-                        "str_campo1": pago_data[10],
-                        "str_campo2": pago_data[11],
-                        "str_campo3": pago_data[12],
-                        "dat_fecha": pago_data[13],
-                        "int_id_forma_pago": pago_data[14]
-                    })
+                    pago_obj = {
+                        "int_n_pago": pago_data[0].strip(),
+                        "int_estado_pago": pago_data[1].strip(),
+                        "dbl_valor_pagado": pago_data[2].strip(),
+                        "dbl_valor_iva_pagado": pago_data[3].strip(),
+                        "str_descripcion": pago_data[4].strip(),
+                        "str_id_cliente": pago_data[5].strip(),
+                        "str_nombre": pago_data[6].strip(),
+                        "str_apellido": pago_data[7].strip(),
+                        "str_telefono": pago_data[8].strip(),
+                        "str_email": pago_data[9].strip(),
+                        "str_campo1": pago_data[10].strip(),
+                        "str_campo2": pago_data[11].strip(),
+                        "str_campo3": pago_data[12].strip(),
+                        "dat_fecha": pago_data[13].strip(),
+                        "int_id_forma_pago": pago_data[14].strip()
+                    }
+                    if pago_data[14].strip() == '29':
+                        pago_obj['str_ticketID'] = pago_data[15].strip()
+                        pago_obj['int_codigo_servico'] = pago_data[16].strip()
+                        pago_obj['int_codigo_banco'] = pago_data[17].strip()
+                        pago_obj['str_nombre_banco'] = pago_data[18].strip()
+                        pago_obj['str_codigo_transaccion'] = pago_data[19].strip()
+                        pago_obj['int_ciclo_transaccion'] = pago_data[20].strip()
+                    elif pago_data[14].strip() == '32':
+                        pago_obj['str_ticketID'] = pago_data[15].strip()
+                        pago_obj['int_num_tarjeta'] = pago_data[16].strip()
+                        pago_obj['str_franquicia'] = pago_data[17].strip()
+                        pago_obj['int_cod_aprobacion'] = pago_data[18].strip()
+                        pago_obj['int_num_recibo'] = pago_data[19].strip()
+                        
+                    res_pago.append(pago_obj)
             
             data_response = {
                 "cantidad_pagos": cantidad_pagos.text,
