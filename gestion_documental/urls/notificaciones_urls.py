@@ -37,4 +37,10 @@ urlpatterns = [
     path('get-tipos-documentos-notificaciones/', views.TiposDocumentosNotificacionesCorrespondenciaGet.as_view(),name='get-tipos-documentos-notificaciones'),
     path('update-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaUpdate.as_view(),name='update-tipos-documentos-notificaciones'),
     path('delete-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaDelete.as_view(),name='delete-tipos-documentos-notificaciones'),
+
+
+    # Tramites y Actos Administrativos
+    path('get-tramites/', views.GetTramite.as_view(),name='get-tramites'),
+    path('get-tipos-actos/', views.TipoActosAdministrativos.as_view(),name='get-tipos-actos'),
+    path('get-actos/', views.ActosAdministrativosGet.as_view(),name='get-actos'),
 ]

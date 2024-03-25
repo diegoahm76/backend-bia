@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 import os
 import json
+from django.db.models import Q
 from rest_framework import status
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -14,8 +15,9 @@ from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer,
 from gestion_documental.views.pqr_views import Util_PQR
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.models.trd_models import FormatosTiposMedio
+from tramites.models.tramites_models import SolicitudesTramites, TiposActosAdministrativos, ActosAdministrativos
 
-from transversal.models.base_models import HistoricoCargosUndOrgPersona, ClasesTercero, Personas
+from transversal.models.base_models import Personas
 
 from gestion_documental.models.notificaciones_models import (
     NotificacionesCorrespondencia, 
@@ -42,7 +44,10 @@ from gestion_documental.serializers.notificaciones_serializers import (
     TiposAnexosNotificacionesCorrespondenciaSerializer,
     Registros_NotificacionesCorrespondeciaCreateSerializer,
     TiposDocumentosNotificacionesCorrespondenciaSerializer,
-    AsignacionNotiCorresGetSerializer
+    AsignacionNotiCorresGetSerializer,
+    TramitesSerializer,
+    TiposActosAdministrativosSerializer,
+    ActosAdministrativosSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -142,21 +147,6 @@ class UpdateTareasAsignacion(generics.UpdateAPIView):
         instance = serializer.save()
         return instance
     
-class AsignacionesCorrespondenciaGet(generics.ListAPIView):
-    serializer_class = AsignacionNotiCorresGetSerializer
-
-    def get(self, idAsignacion_noti_corre):
-        queryset = AsignacionNotificacionCorrespondencia.objects.all() 
-        queryset = queryset.filter(idAsignacion_noti_corr=idAsignacion_noti_corre)
-        
-        serializer = self.get_serializer(queryset)
-        return serializer.data
-
-    # def get(self, request, *args, **kwargs):
-    #     queryset = self.get_queryset(request)
-    #     serializer = self.get_serializer(queryset)
-    #     return serializer.data
-
 class CrearAsignacionNotificacion(generics.CreateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -744,3 +734,207 @@ class TiposDocumentosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView
         else:
             tipo_documento_notificacion.delete()
         return Response({'succes': True, 'detail':'Se eliminó el tipo de documento de notificación correctamente', 'data':{}}, status=status.HTTP_200_OK)
+    
+
+class ListaTareasFuncionario(generics.ListAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
+
+    def get_queryset(self):
+        queryset = Registros_NotificacionesCorrespondecia.objects.all()  
+        permission_classes = [IsAuthenticated]
+        id_radicado = ''
+
+        # Obtener parámetros de consulta
+        tipo_documento = self.request.query_params.get('tipo_documento')
+        radicado = self.request.query_params.get('radicado')
+        expediente = self.request.query_params.get('expediente')
+        grupo_solicitante = self.request.query_params.get('grupo_solicitante')
+        estado = self.request.query_params.get('estado')
+
+        # Filtrar por tipo de documento si es válido
+        if tipo_documento:
+            tipo_documento_valido = ['OF', 'AC', 'AA', 'AI', 'OT']
+            if tipo_documento in tipo_documento_valido:
+                queryset = queryset.filter(cod_tipo_documento=tipo_documento)
+            else:
+                raise ValidationError(f'El tipo de documento {tipo_documento} no es válido.')
+        
+
+        if grupo_solicitante:
+            queryset = queryset.filter(id_und_org_oficina_solicita=grupo_solicitante)
+
+        if estado:
+            estado_valido = ['RE', 'DE', 'EG', 'PE', 'NT']
+            if estado in estado_valido:
+                queryset = queryset.filter(cod_estado=estado)
+            else:
+                raise ValidationError(f'El estado {estado} no es válido.')
+            
+        if radicado:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                    numero = numero.lstrip('0')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_radicado__prefijo_radicado__icontains=prefijo,
+                        id_radicado__agno_radicado__icontains=agno,
+                        id_radicado__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicado__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicado__agno_radicado__icontains=radicado) |
+                    Q(id_radicado__nro_radicado__icontains=radicado)
+                )
+
+        if expediente:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente__codigo_exp_Agno__icontains=agno,
+                        id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        print(queryset)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+class GetTramite(generics.ListAPIView):
+    serializer_class = TramitesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = SolicitudesTramites.objects.all()  # Obtiene las notificaciones de correspondencia
+
+        nombre_proyecto = self.request.query_params.get('nombre_proyecto')
+        radicado = self.request.query_params.get('radicado')
+        expediente = self.request.query_params.get('expediente')
+        persona_titular = self.request.query_params.get('persona_titular')
+
+        
+        if radicado:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                    numero = numero.lstrip('0')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_radicado__prefijo_radicado__icontains=prefijo,
+                        id_radicado__agno_radicado__icontains=agno,
+                        id_radicado__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicado__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicado__agno_radicado__icontains=radicado) |
+                    Q(id_radicado__nro_radicado__icontains=radicado)
+                )
+
+        if nombre_proyecto:
+            queryset = queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
+
+        if expediente:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente__codigo_exp_Agno__icontains=agno,
+                        id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
+
+        if persona_titular:
+            queryset = queryset.filter(id_persona_titular=persona_titular)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class TipoActosAdministrativos(generics.ListAPIView):
+    serializer_class = TiposActosAdministrativosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset =  TiposActosAdministrativos.objects.all()  
+        
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+class ActosAdministrativosGet(generics.ListAPIView):
+    serializer_class = ActosAdministrativosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset =  ActosAdministrativos.objects.all()
+        
+        nro_acto = self.request.query_params.get('nro_acto')
+        fecha_acto = self.request.query_params.get('fecha_acto')
+        tipo_acto = self.request.query_params.get('tipo_acto')
+
+        # if nro_acto:
+        #     queryset = queryset.filter(numero_acto_administrativo__icontains=nro_acto)
+        
+        if fecha_acto:
+            queryset = queryset.filter(fecha_acto_administrativo=fecha_acto)
+        
+        if tipo_acto:
+            queryset = queryset.filter(id_tipo_acto_administrativo=tipo_acto)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
