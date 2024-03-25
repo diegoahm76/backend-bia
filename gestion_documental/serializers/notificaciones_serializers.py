@@ -7,6 +7,7 @@ from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_docum
 from transversal.models.base_models import HistoricoCargosUndOrgPersona, ClasesTercero
 from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 from datetime import timedelta, datetime
+from tramites.models.tramites_models import SolicitudesTramites, TiposActosAdministrativos, ActosAdministrativos
 
 
 from gestion_documental.models.notificaciones_models import (
@@ -160,3 +161,51 @@ class TiposDocumentosNotificacionesCorrespondenciaSerializer(serializers.ModelSe
         model = TiposDocumentos
         fields = '__all__'
 
+
+class TramitesSerializer(serializers.ModelSerializer):
+   #radicado = serializers.SerializerMethodField()
+    #expediente = serializers.SerializerMethodField()
+    class Meta:
+        model = SolicitudesTramites
+        fields = '__all__'
+
+    # def get_radicado(self, obj):
+    #     cadena = ""
+    #     if obj.id_radicado:
+    #         instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
+    #         numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+    #         cadena= obj.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+    #         return cadena
+    # def get_expediente(self, obj):
+    #     if obj.id_expediente:
+    #         return f"{obj.id_expediente.codigo_exp_und_serie_subserie}.{obj.id_expediente.codigo_exp_Agno}.{obj.id_expediente.codigo_exp_consec_por_agno}"
+    #     else:
+    #         return None
+
+
+class TiposActosAdministrativosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposActosAdministrativos
+        fields = '__all__'
+
+class ActosAdministrativosSerializer(serializers.ModelSerializer):
+    radicado = serializers.SerializerMethodField()
+    expediente = serializers.SerializerMethodField()
+    class Meta:
+        model = ActosAdministrativos
+        fields = '__all__'
+
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_solicitud_tramite.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_solicitud_tramite.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_solicitud_tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_solicitud_tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_solicitud_tramite.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+    def get_expediente(self, obj):
+        if obj.id_solicitud_tramite.id_expediente:
+            return f"{obj.id_solicitud_tramite.id_expediente.codigo_exp_und_serie_subserie}.{obj.id_solicitud_tramite.id_expediente.codigo_exp_Agno}.{obj.id_solicitud_tramite.id_expediente.codigo_exp_consec_por_agno}"
+        else:
+            return None
