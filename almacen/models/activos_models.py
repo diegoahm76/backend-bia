@@ -1,7 +1,7 @@
 from django.db import models
 from seguridad.models import Personas
 from almacen.models.generics_models import Marcas, UnidadesMedida
-from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas, EstadosArticulo
 from almacen.models.inventario_models import Inventario
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.expedientes_models import ArchivosDigitales
@@ -103,7 +103,7 @@ class SolicitudesActivos(models.Model):
     solicitud_prestamo = models.BooleanField(db_column="T090solicitudPrestamo")
     fecha_devolucion = models.DateTimeField(blank=True, null=True,db_column='T090fechaDevolucion')
     fecha_cierra_solicitud = models.DateTimeField(blank=True, null=True, db_column='T090fechaCierreSolicitud')
-    revisada_responble = models.BooleanField(db_column="T090revisadaResponsable")
+    revisada_responsable = models.BooleanField(db_column="T090revisadaResponsable")
     estado_aprobacion_resp = models.CharField(max_length=2, choices=estado_aprobacion_activo_CHOICES, db_column="T090estadoAprobacionResponsable")
     justificacion_rechazo_resp = models.CharField(max_length=255, blank=True, null=True, db_column="T090justificacionRechazoResponsable")
     fecha_aprobacion_resp = models.DateTimeField(blank=True, null=True,db_column='T090fechaAprobacionResponsable')
@@ -163,6 +163,7 @@ class ItemsSolicitudActivos(models.Model):
     id_solicitud_activo = models.ForeignKey(SolicitudesActivos, on_delete=models.CASCADE,null=True, blank=True, db_column='T091Id_SolicitudActivos')
     id_bien = models.ForeignKey(CatalogoBienes, on_delete=models.CASCADE, db_column='T091Id_Bien')
     cantidad = models.SmallIntegerField(db_column="T091cantidad")
+    fecha_devolucion = models.DateTimeField(blank=True, null=True,db_column='T091fechaDevolucion')
     id_unidad_medida = models.ForeignKey(UnidadesMedida, on_delete=models.CASCADE, db_column='T091Id_UnidadMedida')
     observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T091observaciones")
     nro_posicion = models.SmallIntegerField(db_column="T091nroPosicion")
@@ -199,3 +200,63 @@ class ItemsDespachoActivos(models.Model):
         db_table = 'T093Items_DespachoActivos'
         verbose_name = 'Item Despacho Activo'
         verbose_name_plural = 'Items Despachos Activos'
+
+
+class AsignacionActivos(models.Model):
+    id_asignacion_activos = models.AutoField(primary_key=True, db_column="T095IdAsignacionActivos")
+    id_despacho_asignado = models.ForeignKey(DespachoActivos, on_delete=models.CASCADE, db_column='T095Id_DespachoAsignado')
+    id_funcionario_resp_asignado = models.ForeignKey(Personas, related_name='id_funcionario_responsable_asignado', on_delete=models.CASCADE, db_column='T095Id_FuncionarioResAsignado')
+    id_uni_org_funcionario_resp_asignado = models.ForeignKey(UnidadesOrganizacionales, related_name='id_uni_org_funcionario_responsable_asignado', on_delete=models.CASCADE, db_column='T095Id_UnidadFuncionarioResAsig')
+    id_persona_operario_asignado = models.ForeignKey(Personas, related_name='id_operario_asignado', on_delete=models.CASCADE, db_column='T095Id_PersonaOperarioAsig')
+    id_uni_org_operario_asignado = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_org_operario_asignado', on_delete=models.CASCADE, db_column='T095Id_UnidadOperarioAsig')
+    actual = models.BooleanField(db_column="T095actual")
+    fecha_asignacion = models.DateTimeField(db_column='T095fechaAsignacion')
+    observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T095observacion")
+
+    def __str__(self):
+        return str(self.id_asignacion_activos)
+    
+    class Meta:
+        db_table = 'T095AsignacionActivos'
+        verbose_name = 'Asignacion De Activo'
+        verbose_name_plural = 'Asignaciones De Activos'
+
+
+
+class DevolucionActivos(models.Model):
+    id_devolucion_activos = models.AutoField(primary_key=True, db_column="T092IdDevolucionActivos")
+    id_asignacion_activo = models.ForeignKey(AsignacionActivos, on_delete=models.CASCADE, db_column='T092Id_AsignacionActivo')
+    id_despacho_activo = models.ForeignKey(DespachoActivos, on_delete=models.CASCADE, db_column='T092Id_DespachoActivo')
+    consecutivo_devolucion = models.SmallIntegerField(unique=True,db_column='T092consecutivoDevolucion')
+    fecha_devolucion = models.DateTimeField(db_column='T092fechaDevolucion')
+    id_persona_devolucion = models.ForeignKey(Personas, related_name='id_persona_devolucion', on_delete=models.CASCADE, db_column='T092Id_PersonaQueDevol')
+    id_uni_org_persona_devolucion = models.ForeignKey(UnidadesOrganizacionales, related_name='id_unidad_org_persona_devolucion', on_delete=models.CASCADE, db_column='T092Id_UndOrgPersonQueDevol')
+    devolucion_anulada = models.BooleanField(db_column="T092devolucionAnulada")
+    justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column="T092justificacionAnulacion")
+    fecha_anulacion = models.DateTimeField(blank=True, null=True, db_column='T092fechaAnulacion')
+    id_persona_anulacion = models.ForeignKey(Personas, related_name='id_persona_que_anula', on_delete=models.CASCADE, db_column='T092Id_PersonaQueAnula')
+
+    def __str__(self):
+        return str(self.id_devolucion_activos)
+    
+    class Meta:
+        db_table = 'T092DevolucionActivos'
+        verbose_name = 'Devolucion De Activo'
+        verbose_name_plural = 'Devoluciones De Activos'
+
+
+
+class ActivosDevolucionados(models.Model):
+    id_activo_devolucionado = models.AutoField(primary_key=True, db_column="T096IdActivoDevolucionado")
+    id_devolucion_activo = models.ForeignKey(DevolucionActivos, on_delete=models.CASCADE, db_column='T096Id_DevolucionActivo')
+    id_item_despacho_activo = models.ForeignKey(DespachoActivos, on_delete=models.CASCADE, db_column='T096Id_ItemDespachoActivo')
+    cod_estado_activo_devolucion = models.ForeignKey(EstadosArticulo, on_delete=models.CASCADE, db_column='T096Cod_EstadoActivoDevol')
+    justificacion_activo_devolucion = models.CharField(max_length=255, blank=True, null=True, db_column="T096justificacionActivoDevol")
+
+    def __str__(self):
+        return str(self.id_activo_devolucionado)
+    
+    class Meta:
+        db_table = 'T096ActivosDevolucionados'
+        verbose_name = 'Activo Devolcionado'
+        verbose_name_plural = 'Activos Devolcionados'

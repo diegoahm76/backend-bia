@@ -80,7 +80,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
             # CREAR ARCHIVO EN T238
             # Obtiene el año actual para determinar la carpeta de destino
             current_year = datetime.now().year
-            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+            ruta = os.path.join("home", "BIA", "Otros", "Tramites", str(current_year))
 
             # Calcula el hash MD5 del archivo
             md5_hash = hashlib.md5()
@@ -407,7 +407,7 @@ class AnexosUpdateView(generics.UpdateAPIView):
             # CREAR ARCHIVO EN T238
             # Obtiene el año actual para determinar la carpeta de destino
             current_year = datetime.now().year
-            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+            ruta = os.path.join("home", "BIA", "Otros", "OPAS", str(current_year))
 
             # Calcula el hash MD5 del archivo
             md5_hash = hashlib.md5()
@@ -458,7 +458,8 @@ class AnexosUpdateView(generics.UpdateAPIView):
         
         # ACTUALIZAR ANEXOS
         for anexo in anexos_actualizar:
-            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo['id_anexo_tramite']).first()
+            anexo_instance = anexos_instances.filter(id_anexo_tramite=anexo['id_anexo_tramite']).first()
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo_instance.id_anexo.id_anexo).first()
             if metadata_instance and anexo['descripcion'] != metadata_instance.descripcion:
                 metadata_instance.descripcion = anexo['descripcion']
                 metadata_instance.save()
@@ -843,7 +844,7 @@ class AnexosMetadatosUpdateView(generics.UpdateAPIView):
             # CREAR ARCHIVO EN T238
             # Obtiene el año actual para determinar la carpeta de destino
             current_year = datetime.now().year
-            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+            ruta = os.path.join("home", "BIA", "Otros", "OPAS", str(current_year))
 
             # Calcula el hash MD5 del archivo
             md5_hash = hashlib.md5()
@@ -894,7 +895,6 @@ class AnexosMetadatosUpdateView(generics.UpdateAPIView):
             # CREAR DOCUMENTO EN T287
             data['id_solicitud_tramite'] = id_solicitud_tramite
             data['id_permiso_amb_solicitud_tramite'] = solicitud_tramite.permisosambsolicitudestramite_set.first().id_permiso_amb_solicitud_tramite
-            data['id_anexo'] = anexo_creado.id_anexo
             
             serializer_crear = self.serializer_class(data=data)
             serializer_crear.is_valid(raise_exception=True)
@@ -902,10 +902,13 @@ class AnexosMetadatosUpdateView(generics.UpdateAPIView):
         
         # ACTUALIZAR ANEXOS
         for anexo in anexos_actualizar:
-            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo['id_anexo_tramite']).first()
-            serializer_anexo = self.serializer_class(metadata_instance, data=anexo, partial=True)
-            serializer_anexo.is_valid(raise_exception=True)
-            serializer_anexo.save()
+            anexo_instance = anexos_instances.filter(id_anexo_tramite=anexo['id_anexo_tramite']).first()
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo_instance.id_anexo.id_anexo).first()
+            if metadata_instance:
+                anexo['id_anexo'] = metadata_instance.id_anexo.id_anexo
+                serializer_anexo = self.serializer_metadatos_class(metadata_instance, data=anexo, partial=True)
+                serializer_anexo.is_valid(raise_exception=True)
+                serializer_anexo.save()
         
         anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
         serializer_get = self.serializer_get_class(anexos_instances, many=True, context={'request': request})

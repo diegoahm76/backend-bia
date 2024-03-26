@@ -1,8 +1,10 @@
-from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.models.inventario_models import Inventario
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
+from almacen.models.inventario_models import Inventario, TiposEntradas
 from almacen.models.generics_models import Marcas, UnidadesMedida
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SolicitudesActivos
+from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
+from transversal.models.base_models import ClasesTerceroPersona
 from rest_framework import serializers
+
 
 
 
@@ -89,6 +91,21 @@ class ItemsBajaActivosSerializer(serializers.ModelSerializer):
 
 
 class SolicitudesActivosSerializer(serializers.ModelSerializer):
+    primer_nombre_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_nombre', default=None)
+    primer_apellido_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.primer_apellido', default=None)
+    tipo_documento_persona_solicita = serializers.ReadOnlyField(source='id_persona_solicita.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_solicita = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
+    #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    primer_nombre_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.primer_nombre', default=None)
+    primer_apellido_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.primer_apellido', default=None)
+    tipo_documento_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_funcionario_resp_unidad = serializers.ReadOnlyField(source='id_funcionario_resp_unidad.numero_documento', default=None)
+    #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    primer_nombre_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.primer_nombre', default=None)
+    primer_apellido_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.primer_apellido', default=None)
+    tipo_documento_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_operario = serializers.ReadOnlyField(source='id_persona_operario.numero_documento', default=None)
+
     class Meta:
         model = SolicitudesActivos
         fields = '__all__'
@@ -108,6 +125,12 @@ class UnidadesMedidaSerializer(serializers.ModelSerializer):
 
 
 class ItemSolicitudActivosSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    cod_tipo_bien = serializers.ReadOnlyField(source='id_bien.cod_tipo_bien', default=None)
+    descripcion_bien = serializers.ReadOnlyField(source='id_bien.descripcion', default=None)
+   
+    
     class Meta:
         model = ItemsSolicitudActivos
         fields = '__all__'
@@ -148,3 +171,49 @@ class BusquedaSolicitudActivoSerializer(serializers.ModelSerializer):
     def get_numero_activos(self, instance):
         # Obtener el número de activos relacionados con esta solicitud
         return ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance).count()
+    
+
+
+class ClasesTerceroPersonaSerializer(serializers.ModelSerializer):
+    primer_nombre = serializers.ReadOnlyField(source='id_persona.primer_nombre', default=None)
+    segundo_nombre = serializers.ReadOnlyField(source='id_persona.segundo_nombre', default=None)
+    primer_apellido = serializers.ReadOnlyField(source='id_persona.primer_apellido', default=None)
+    segundo_apellido = serializers.ReadOnlyField(source='id_persona.segundo_apellido', default=None)
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
+    tipo_persona = serializers.ReadOnlyField(source='id_persona.tipo_persona', default=None)
+    nombre_clase_tercero = serializers.ReadOnlyField(source='id_clase_tercero.nombre', default=None)
+    class Meta:
+        model = ClasesTerceroPersona
+        fields = '__all__'
+
+
+class EntradasAlmacenSerializer(serializers.ModelSerializer):
+    tipo_entrada = serializers.SerializerMethodField()
+    consecutivo = serializers.IntegerField(source='numero_entrada_almacen')
+    fecha_registro = serializers.DateTimeField(source='fecha_real_registro')
+
+    class Meta:
+        model = EntradasAlmacen
+        fields = '__all__'
+
+    def get_tipo_entrada(self, obj):
+        tipo_entrada_id = obj.id_tipo_entrada.cod_tipo_entrada
+        tipo_entrada = TiposEntradas.objects.filter(cod_tipo_entrada=tipo_entrada_id).values('nombre').first()
+        return tipo_entrada['nombre'] if tipo_entrada else None
+
+
+
+class SalidasEspecialesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalidasEspecialesArticulos
+        fields = '__all__'
+
+
+class SalidasEspecialesArticulosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalidasEspecialesArticulos
+        fields = '__all__'
+
+    def create(self, validated_data):
+        return SalidasEspecialesArticulos.objects.create(**validated_data)
