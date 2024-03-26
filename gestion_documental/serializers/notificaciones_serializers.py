@@ -5,7 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_documento_CHOICES
 from transversal.models.base_models import HistoricoCargosUndOrgPersona, ClasesTercero
-from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Anexos, ArchivosDigitales
 from datetime import timedelta, datetime
 from tramites.models.tramites_models import SolicitudesTramites, TiposActosAdministrativos, ActosAdministrativos
 
@@ -30,7 +30,7 @@ class NotificacionesCorrespondenciaCreateSerializer(serializers.ModelSerializer)
         fields = '__all__'
 
 class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
-    nommbre_tipo_documento = serializers.CharField(source='cod_tipo_documento.nombre')
+    nombre_tipo_documento = serializers.CharField(source='cod_tipo_documento.nombre')
     registros_notificaciones = serializers.SerializerMethodField()
     expediente = serializers.SerializerMethodField()
     funcuinario_solicitante = serializers.SerializerMethodField()
@@ -54,6 +54,97 @@ class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     
     def get_funcuinario_solicitante(self, obj):
         return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
+    
+
+class NotificacionesCorrespondenciaAnexosSerializer(serializers.ModelSerializer):
+    nombre_tipo_documento = serializers.CharField(source='cod_tipo_documento.nombre')
+    anexos = serializers.SerializerMethodField()
+    registros_notificaciones = serializers.SerializerMethodField()
+    expediente = serializers.SerializerMethodField()
+    funcuinario_solicitante = serializers.SerializerMethodField()
+    unidad_solicitante = serializers.CharField(source='id_und_org_oficina_solicita.nombre')
+    estado_notificacion = estado_solicitud = serializers.CharField(source='get_cod_estado_display',read_only=True,default=None)
+
+    class Meta:
+        model = NotificacionesCorrespondencia
+        fields = '__all__'
+
+    def get_anexos(self, obj):
+        anexos_notificaciones = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia = obj.id_notificacion_correspondencia)
+        anexos = []
+
+        if anexos_notificaciones:
+            for anexo_notificacion in anexos_notificaciones:
+                anexo = Anexos.objects.filter(id_anexo = anexo_notificacion.id_anexo_id).first()
+                anexos.append(AnexosNotificacionesSerializer(anexo).data)
+        return anexos
+
+    def get_registros_notificaciones(self, obj):
+        registros_notificaciones = Registros_NotificacionesCorrespondecia.objects.filter(id_notificacion_correspondencia=obj.id_notificacion_correspondencia)
+        if registros_notificaciones:
+            return Registros_NotificacionesCorrespondeciaSerializer(registros_notificaciones, many=True).data
+        
+    def get_expediente(self, obj):
+        if obj.id_expediente_documental:
+            return f"{obj.id_expediente_documental.codigo_exp_und_serie_subserie}.{obj.id_expediente_documental.codigo_exp_Agno}.{obj.id_expediente_documental.codigo_exp_consec_por_agno}"
+        else:
+            return None
+    
+    def get_funcuinario_solicitante(self, obj):
+        return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
+    
+    
+class AnexosNotificacionesSerializer(serializers.ModelSerializer):
+    nombre_medio_almacenamiento = serializers.ReadOnlyField(source='get_cod_medio_almacenamiento_display')
+    metadatos = serializers.SerializerMethodField()
+
+    def get_metadatos(self, obj):
+        metadatos = MetadatosAnexosTmp.objects.filter(id_anexo = obj.id_anexo).first()
+        return MetadatoPanelSerializer(metadatos).data
+    class Meta:
+        model = Anexos
+        fields = [
+            'id_anexo',
+            'nombre_anexo',
+            'orden_anexo_doc',
+            'cod_medio_almacenamiento',
+            'nombre_medio_almacenamiento',
+            'medio_almacenamiento_otros_Cual',
+            'numero_folios',
+            'ya_digitalizado',
+            'observacion_digitalizacion',
+            'metadatos'
+        ]
+class MetadatoPanelSerializer(serializers.ModelSerializer):
+    archivo = serializers.SerializerMethodField()
+
+    def get_archivo(self, obj):
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital = obj.id_archivo_sistema_id).first()
+        return ArchivosSerializer(archivo).data
+    class Meta:
+        model = MetadatosAnexosTmp
+        fields = [
+            'id_metadatos_anexo_tmp',
+            'id_anexo',
+            'fecha_creacion_doc',
+            'asunto',
+            'descripcion',
+            'cod_categoria_archivo',
+            'es_version_original',
+            'tiene_replica_fisica',
+            'nro_folios_documento',
+            'cod_origen_archivo',
+            'id_tipologia_doc',
+            'tipologia_no_creada_TRD',
+            'palabras_clave_doc',
+            'id_archivo_sistema',
+            'archivo'
+        ]
+    
+class ArchivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
     
 
 class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializer):
