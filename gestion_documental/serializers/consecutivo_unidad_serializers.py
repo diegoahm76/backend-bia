@@ -71,10 +71,22 @@ class CatalogosSeriesUnidadGetSerializer(serializers.ModelSerializer):
     id_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
     cod_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.codigo',default=None)
     nombre_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.nombre',default=None)
+    tiene_configuracion = serializers.SerializerMethodField()
     class Meta:
         model = CatalogosSeriesUnidad
-        fields = ['id_cat_serie_und','id_serie_doc','cod_serie_doc','nombre_serie_doc','id_subserie_doc','cod_subserie_doc','nombre_subserie_doc']
+        fields = ['id_cat_serie_und','id_serie_doc','cod_serie_doc','nombre_serie_doc','id_subserie_doc','cod_subserie_doc','nombre_subserie_doc','tiene_configuracion']
+    def get_tiene_configuracion(self, obj):
+        id_configuracion = None
 
+        hoy = date.today()
+        age = hoy.year
+        instance = ConfigTipoConsecAgno.objects.filter(id_unidad=obj.id_unidad_organizacional, id_catalogo_serie_unidad=obj,agno_consecutivo=age).first()
+
+
+        if not instance:
+            return False
+
+        return True
 
 class ConsecutivoCreateSerializer(serializers.ModelSerializer):
     class Meta:
