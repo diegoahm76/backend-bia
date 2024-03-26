@@ -822,18 +822,20 @@ class TiposDocumentosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView
 
 class ListaTareasFuncionario(generics.ListAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
+    def get_queryset(self, request):
         queryset = Registros_NotificacionesCorrespondecia.objects.all()  
-        permission_classes = [IsAuthenticated]
-        id_radicado = ''
-
+        id_persona_logueada = request.user.persona.id_persona
         # Obtener parámetros de consulta
         tipo_documento = self.request.query_params.get('tipo_documento')
+        tipo_notificacion = self.request.query_params.get('tipo_notificacion')
         radicado = self.request.query_params.get('radicado')
         expediente = self.request.query_params.get('expediente')
         grupo_solicitante = self.request.query_params.get('grupo_solicitante')
         estado = self.request.query_params.get('estado')
+
+        queryset = queryset.filter(id_persona_asignada=id_persona_logueada)
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
@@ -846,6 +848,9 @@ class ListaTareasFuncionario(generics.ListAPIView):
 
         if grupo_solicitante:
             queryset = queryset.filter(id_und_org_oficina_solicita=grupo_solicitante)
+
+        if tipo_notificacion:
+            queryset = queryset.filter(id_tipo_notificacion_correspondencia=tipo_notificacion)
 
         if estado:
             estado_valido = ['RE', 'DE', 'EG', 'PE', 'NT']
@@ -887,22 +892,22 @@ class ListaTareasFuncionario(generics.ListAPIView):
                     pass
                 else:
                     queryset = queryset.filter(
-                        id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
-                        id_expediente__codigo_exp_Agno__icontains=agno,
-                        id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
+                        id_notificacion_correspondencia__id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_notificacion_correspondencia__id_expediente__codigo_exp_Agno__icontains=agno,
+                        id_notificacion_correspondencia__id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
                     )
             else:
                 # Si no hay guion ('-'), buscar en cualquier parte del radicado
                 queryset = queryset.filter(
-                    Q(id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
-                    Q(id_expediente__codigo_exp_Agno__icontains=agno) |
-                    Q(id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
+                    Q(id_notificacion_correspondencia__id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_notificacion_correspondencia__id_expediente__codigo_exp_Agno__icontains=agno) |
+                    Q(id_notificacion_correspondencia__id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
                 )
 
         return queryset
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.get_queryset(request)
         print(queryset)
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
