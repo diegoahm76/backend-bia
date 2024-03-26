@@ -184,7 +184,7 @@ class Requerimientos(models.Model):
     fecha_radicado = models.DateTimeField(null=True, blank=True, db_column='T284fechaRadicado')
     observaciones = models.CharField(max_length=500, null=True, blank=True, db_column='T284observaciones')
     plazo_inicial_entrega = models.DateTimeField(db_column='T284plazoInicialEntrega')
-    plazo_final_entrega = models.DateTimeField(db_column='T284plazoFinalEntrega')
+    plazo_final_entrega = models.DateTimeField(db_column='T284plazoFinalEntrega',null=True)
     id_persona_crea_requerimiento = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T284Id_PersonaCreaRequerimiento')
     estado = models.IntegerField(db_column='T284estado')
 
