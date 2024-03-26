@@ -47,7 +47,9 @@ from gestion_documental.serializers.notificaciones_serializers import (
     AsignacionNotiCorresGetSerializer,
     TramitesSerializer,
     TiposActosAdministrativosSerializer,
-    ActosAdministrativosSerializer
+    ActosAdministrativosSerializer,
+    Registros_NotificacionesCorrespondeciaSerializer,
+    NotificacionesCorrespondenciaAnexosSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -57,6 +59,7 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
         queryset = NotificacionesCorrespondencia.objects.all()  # Obtiene las notificaciones de correspondencia
         permission_classes = [IsAuthenticated]
         id_radicado = ''
+        data_final = []
 
         # Obtener parámetros de consulta
         tipo_documento = self.request.query_params.get('tipo_documento')
@@ -83,21 +86,103 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
                 queryset = queryset.filter(cod_estado=estado)
             else:
                 raise ValidationError(f'El estado {estado} no es válido.')
+            
+        if expediente:
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente_documental__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente_documental__codigo_exp_Agno__icontains=agno,
+                        id_expediente_documental__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                queryset = queryset.filter(
+                    Q(id_expediente_documental__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente_documental__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente_documental__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
 
-        return queryset, id_radicado
+
+
+        return  queryset, radicado
 
     def get(self, request, *args, **kwargs):
         queryset, radicado = self.get_queryset()
         print(queryset)
         serializer = self.get_serializer(queryset, many=True)
         data_validada =[]
-        data_validada = serializer.data
-        if radicado != '':
-            data_validada = [item for item in serializer.data if radicado in item.get('radicado', '')]
+        #data_validada = serializer.data
+        print(radicado)
+        if radicado != None:
+            #data_validada = [item for item in serializer.data if radicado in item.get('radicado', '')]
+            for item in serializer.data:
+                item_registro = item.get('registros_notificaciones')
+                print(item_registro)
+                if item_registro != None:
+                    for registro in item_registro:
+                        if radicado in registro.get('radicado', ''):
+                            data_validada.append(item)
         else :
             data_validada = serializer.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)    
     
+
+# class RegistrosNotificaciones(generics.ListAPIView):
+#     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
+
+#     def get_registros(self, radicado, id_notificacion_correspondencia):
+#         queryset =  Registros_NotificacionesCorrespondecia.objects.filter(id_notificacion_correspondencia=id_notificacion_correspondencia)  # Obtiene las notificaciones de correspondencia
+
+#         if radicado:
+#             # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+#             if '-' in radicado:
+#                 try:
+#                     prefijo, agno, numero = radicado.split('-')
+#                     numero = numero.lstrip('0')
+#                 except ValueError:
+#                     # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+#                     pass
+#                 else:
+#                     queryset = queryset.filter(
+#                         id_radicado_salida__prefijo_radicado__icontains=prefijo,
+#                         id_radicado_salida__agno_radicado__icontains=agno,
+#                         id_radicado_salida__nro_radicado__icontains=numero
+#                     )
+#             else:
+#                 # Si no hay guion ('-'), buscar en cualquier parte del radicado
+#                 queryset = queryset.filter(
+#                     Q(id_radicado_salida__prefijo_radicado__icontains=radicado) |
+#                     Q(id_radicado_salida__agno_radicado__icontains=radicado) |
+#                     Q(id_radicado_salida__nro_radicado__icontains=radicado)
+#                 )
+        
+#         return queryset
+
+#     def get(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.get_serializer(queryset, many=True)
+#         return serializer.data
+    
+class GetNotificacionesCorrespondeciaAnexos(generics.RetrieveAPIView):
+    serializer_class = NotificacionesCorrespondenciaAnexosSerializer
+    queryset = NotificacionesCorrespondencia.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_notificacion_correspondencia):
+        try:
+            data_notificaciones = self.queryset.filter(id_notificacion_correspondencia = id_notificacion_correspondencia).first()
+            
+            if data_notificaciones:
+                serializador = self.serializer_class(data_notificaciones, many = False)
+                return Response({'success':True, 'detail':'Se encontro la solicitud de notificación por el id consultado','data':serializador.data},status=status.HTTP_200_OK)
+            else:
+                return Response({'success':True, 'detail':'No Se encontro la solicitud de notificación por el id consultado'},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class CrearTareasAsignacion(generics.CreateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
@@ -190,7 +275,6 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
             tarea_actualizada = UpdateTareasAsignacion()
             if not tarea_actualizada.put(data_asignacion, tarea.id_registro_notificacion_correspondencia):
                 raise ValidationError({'id_notificacion_correspondencia': 'No se pudo actualizar el estado de la tarea'})
-        #response = AsignacionesCorrespondenciaGet()
         return Response({'succes': True, 'detail':'Se la asigncación correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
     
 

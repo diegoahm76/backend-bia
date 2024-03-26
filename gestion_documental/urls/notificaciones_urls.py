@@ -7,6 +7,7 @@ urlpatterns = [
     path('get-asignaciones/', views.GetAsignacionesCorrespondencia.as_view(),name='get-asignaciones'),
     path('create-asignacion/', views.CrearAsignacionNotificacion.as_view(),name='create-asignacion'),
     path('create-notificacion-manual/', views.CrearNotiicacionManual.as_view(),name='create-notificacion-manual'),
+    path('get-notificacion/<int:id_notificacion_correspondencia>/', views.GetNotificacionesCorrespondeciaAnexos.as_view(),name='get-notificaion'),
 
     # Tipos de Notificaciones
     path('create-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-notificaciones'),

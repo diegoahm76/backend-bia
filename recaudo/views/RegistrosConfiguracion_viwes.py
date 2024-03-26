@@ -539,18 +539,6 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
     
 #__________________________________________________________________
     
-
-    # Vista get para las 4 tablas de zonas hidricas
-# class Vista_IndicadoresSemestral(generics.ListAPIView):
-#     queryset = IndicadoresSemestral.objects.all()
-#     serializer_class = IndicadoresSemestralSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         cuencas = IndicadoresSemestral.objects.all()
-#         serializer = self.serializer_class(cuencas,many=True)
-
-#         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 class Vista_IndicadoresSemestral(generics.ListAPIView):
     serializer_class = IndicadoresSemestralSerializer
     permission_classes = [IsAuthenticated]
@@ -558,8 +546,13 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
     def get_queryset(self):
         queryset = IndicadoresSemestral.objects.all()
         year = self.kwargs.get('year')
+        formulario = self.kwargs.get('formulario')
+        
         if year:
             queryset = queryset.filter(vigencia_reporta=year)
+        if formulario:
+            queryset = queryset.filter(formulario=formulario)
+        
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -575,7 +568,6 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
             return Response({
                 'error': f'Error al obtener los registros: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
-    
 
 class CrearIndicadoresSemestral(generics.CreateAPIView):
     queryset = IndicadoresSemestral.objects.all()
