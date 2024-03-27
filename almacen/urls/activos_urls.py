@@ -45,6 +45,13 @@ urlpatterns = [
     path('obtener-ultimo-consecutivo-salida-especial/get/', views.ObtenerUltimoConsecutivoView.as_view(), name='ultimo-consecutivo-salida-especial'),
 
 
+    #Devolucion_Activos
+    path('Informacion-almacenista/get/', views.InfoAlmcenistaPersonaGet.as_view(), name='info-alamcenista'),
+    path('despachos-activos/get/<int:id_persona>/', views.DespachosDeActivosList.as_view(), name='despachos-activos'),
+    path('despachos-activos/detalle/<int:id_despacho>/', views.ActivosDespachadosDevolucionView.as_view(), name='activos-despachados-devolucion'),
+    path('info-estados-articulo/get/', views.EstadosArticuloListView.as_view(), name='info-estados-articulo'),
+
+
 
 
 

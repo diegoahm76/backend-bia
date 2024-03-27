@@ -25,11 +25,12 @@ from rest_framework import status
 from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen, EstadosArticulo
+from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, AlmacenistaLogueadoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DespachoActivosSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
+from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
+from almacen.models.activos_models import AnexosDocsAlma, AsignacionActivos, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate, ArchivosDigitales
 from transversal.models.base_models import ClasesTerceroPersona
@@ -543,7 +544,6 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
             'gestionada_alma': False,
             'rechazada_almacen': False,
             'solicitud_anulada_solicitante': False,
-            'fecha_devolucion': fecha_devolucion  
         }
 
         solicitud_serializer = self.serializer_class(data=solicitud_data)
@@ -724,7 +724,8 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             item_data = {
                 'id_item_solicitud_activo': item.id_item_solicitud_activo,
                 'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
-                'id_bien': item.id_bien.nombre,  
+                'id_bien': item.id_bien.id_bien,  
+                'nombre_bien': item.id_bien.nombre,  
                 'cantidad': item.cantidad,
                 'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
                 'nombre_unidad_medida': item.id_unidad_medida.nombre,
@@ -1510,4 +1511,107 @@ class ObtenerUltimoConsecutivoView(generics.ListAPIView):
             
             # Devolver el último consecutivo incrementado en 1
             return Response({"success": True, "detail": "Último consecutivo obtenido correctamente.", "ultimo_consecutivo": ultimo_consecutivo}, status=status.HTTP_200_OK)
+    
+
+
+
+class InfoAlmcenistaPersonaGet(generics.ListAPIView):
+    serializer_class = AlmacenistaLogueadoSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        # Obtener el ID de la persona logueada
+        id_persona_logueada = self.request.user.persona.id_persona  # Suponiendo que la relación entre usuario y persona existe
+
+        # Obtener los datos de la persona logueada
+        persona_logueada = Personas.objects.filter(id_persona=id_persona_logueada).first()
+
+        return persona_logueada
+
+    def list(self, request, *args, **kwargs):
+        persona_logueada = self.get_queryset()
+        serializer = self.serializer_class(persona_logueada)
+        return Response({'success': True, 'detail': 'Información de la persona logueada', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class DespachosDeActivosList(generics.ListAPIView):
+    serializer_class = DespachoActivosSerializer
+
+    def get_queryset(self):
+        # Obtener el ID de la persona responsable desde los parámetros de la URL
+        id_persona = self.kwargs.get('id_persona')
+
+        # Consultar los registros de AsignacionActivos para el responsable actual
+        asignaciones = AsignacionActivos.objects.filter(
+            id_funcionario_resp_asignado_id=id_persona,
+            actual=True
+        )
+
+        # Lista para almacenar los despachos encontrados
+        despachos_encontrados = []
+
+        # Iterar sobre las asignaciones encontradas
+        for asignacion in asignaciones:
+            # Obtener el despacho asociado a esta asignación
+            despacho = DespachoActivos.objects.filter(id_despacho_activo=asignacion.id_despacho_asignado).first()
+
+            # Verificar si se encontró un despacho válido
+            if despacho:
+                # Lógica para determinar el tipo de solicitud
+                if despacho.despacho_sin_solicitud:
+                    tipo_solicitud = 'Despacho sin solicitud'
+                    fecha_solicitud = 'No aplica'
+                else:
+                    tipo_solicitud = 'Despacho con solicitud ordinaria' if not despacho.id_solicitud_activo.solicitudPrestamo else 'Despacho con solicitud de préstamo'
+                    fecha_solicitud = despacho.fecha_solicitud.strftime('%Y-%m-%d') if despacho.fecha_solicitud else 'No aplica'
+
+                # Agregar el despacho encontrado a la lista de despachos
+                despachos_encontrados.append({
+                    'id_despacho': despacho.id_despacho_activo,
+                    'fecha_despacho': despacho.fecha_despacho,
+                    'persona_despachó': f"{despacho.id_persona_despacha.primer_nombre} {despacho.id_persona_despacha.primer_apellido}",
+                    'bodega': despacho.id_bodega.nombre,
+                    'observacion': despacho.observacion,
+                    'tipo_solicitud': tipo_solicitud,
+                    'fecha_solicitud': fecha_solicitud
+                })
+
+        # Retornar la lista de despachos encontrados
+        return despachos_encontrados
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
         
+        # Retornar la respuesta con la data procesada
+        return Response({'success': True, 'detail': 'Despachos de activos encontrados', 'data': queryset}, status=status.HTTP_200_OK)
+    
+
+class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
+    serializer_class = ActivosDespachadosDevolucionSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        # Obtener el ID del despacho de activos desde los parámetros de la URL
+        id_despacho = self.kwargs.get('id_despacho')
+
+        try:
+            # Consultar los registros de ItemsDespachoActivos asociados al despacho
+            items_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo=id_despacho)
+        except ItemsDespachoActivos.DoesNotExist:
+            return Response({'success': False, 'detail': 'El despacho de activos especificado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serializar los registros encontrados
+        serializer = self.serializer_class(items_despacho, many=True)
+
+        # Retornar la respuesta con la data procesada
+        return Response({'success': True, 'detail': 'Activos despachados - Devolución', 'data': serializer.data})
+    
+class EstadosArticuloListView(generics.ListAPIView):
+    queryset = EstadosArticulo.objects.all()
+    serializer_class = EstadosArticuloSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Estados de artículo obtenidos correctamente', 'data': serializer.data})
