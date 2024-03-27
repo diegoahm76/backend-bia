@@ -486,3 +486,10 @@ class Anexos_TramitresAnexosGetSerializer(serializers.ModelSerializer):
             data_archivo  = AnexoArchivosDigitalesSerializer(meta_data.id_archivo_sistema)
             return data_archivo.data['ruta_archivo']
         return "Archivo"
+
+
+#RESPUESTA OPA
+class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Requerimientos
+        fields = '__all__'

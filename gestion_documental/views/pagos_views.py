@@ -22,6 +22,7 @@ class IniciarPagoView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
+        codigo_servicio_principal = data.get('codigo_servicio_principal', os.environ.get('ZPAGOS_CODIGO_SERVICIO_PRINCIPAL'))
         id_pago = 1000012341
         
         headers = {'Content-Type': 'text/xml'}
@@ -62,7 +63,7 @@ class IniciarPagoView(generics.CreateAPIView):
                                 <!--Required:-->
                                 <info_opcional3>0</info_opcional3>
                                 <!--Required:-->
-                                <codigo_servicio_principal>{os.environ.get('ZPAGOS_CODIGO_SERVICIO_PRINCIPAL')}</codigo_servicio_principal>
+                                <codigo_servicio_principal>{codigo_servicio_principal}</codigo_servicio_principal>
                                 <!--Optional:-->
                                 <lista_codigos_servicio_multicredito>
                                     <!--Zero or more repetitions:-->
