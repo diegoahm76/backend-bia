@@ -44,8 +44,10 @@ urlpatterns = [
         
         path('administracionpersonal/', viwes.Vista_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
         path('administracionpersonal/put/<str:pk>/', viwes.Actualizar_AdministraciondePersonal.as_view(), name='administracion-de-personal-update'),
-        path('administracionpersonal/post/', viwes.Crear_AdministraciondePersonal.as_view(), name='administracion-de-personal-delete'),
-
+        path('administracionpersonal/post/', viwes.Crear_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
+        path('administracionpersonal/delete/<str:pk>/', viwes.Eliminar_AdministraciondePersonal.as_view(), name='administracion-de-personal-delete'),
+        path('administracionpersonal/get/', viwes.BusquedaAvanzadaPersonalProfesional.as_view(), name='administracion-de-personal-year-formulario'),
+ 
         path('configuracioninterres/get/', viwes.Vista_ConfigaraicionInteres.as_view(), name='administracion-de-personal-year-formulario'),
         path('configuracioninterres/post/', viwes.Crear_ConfigaraicionInteres.as_view(), name='administracion-de-personal'),
         path('configuracioninterres/put/<str:pk>/', viwes.Actualizar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-update'),
