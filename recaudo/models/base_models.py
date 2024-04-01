@@ -150,6 +150,7 @@ class AdministraciondePersonal(models.Model):
     nivel = models.IntegerField(db_column='T464Nivel')
     valor=models.DecimalField(max_digits=10, decimal_places=0, db_column='T464Valor')
     nombre = models.CharField(max_length=255, db_column='T464Nombre')
+    codigo_profesional = models.CharField(max_length=20, db_column='T464CodigoProfesional')
     descripcion = models.CharField(max_length=255, db_column='T464Descripcion')
 
     class Meta:

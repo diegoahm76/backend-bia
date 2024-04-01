@@ -3,7 +3,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesDeJuridica, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, RespuestasRequerimientos, SolicitudesDeJuridica, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -1029,6 +1029,12 @@ class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
            data = unidad.data
            return data['nombre_unidad']
         
+
+class RespuestasRequerimientosOpaGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
+
 #ENTREGA 99
 
 
