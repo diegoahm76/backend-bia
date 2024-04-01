@@ -184,7 +184,7 @@ class Requerimientos(models.Model):
     fecha_radicado = models.DateTimeField(null=True, blank=True, db_column='T284fechaRadicado')
     observaciones = models.CharField(max_length=500, null=True, blank=True, db_column='T284observaciones')
     plazo_inicial_entrega = models.DateTimeField(db_column='T284plazoInicialEntrega')
-    plazo_final_entrega = models.DateTimeField(db_column='T284plazoFinalEntrega')
+    plazo_final_entrega = models.DateTimeField(db_column='T284plazoFinalEntrega',null=True)
     id_persona_crea_requerimiento = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T284Id_PersonaCreaRequerimiento')
     estado = models.IntegerField(db_column='T284estado')
 
@@ -244,7 +244,7 @@ class AnexosTramite(models.Model):
     id_acto_administrativo = models.ForeignKey('ActosAdministrativos', on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_ActoAdministrativo')
     id_recurso_reposicion = models.ForeignKey(RecursosReposicion, on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_RecursoReposicion')
     id_anexo = models.ForeignKey(Anexos, on_delete=models.CASCADE, db_column='T287Id_Anexo')
-
+    id_respuesta_opa = models.ForeignKey('RespuestaOPA', on_delete=models.SET_NULL, null=True, blank=True, db_column='T287Id_Respuesta_OPA')
     def __str__(self):
         return str(self.id_anexo_tramite)
 
@@ -368,6 +368,7 @@ class ActosAdministrativos(models.Model):
     id_acto_administrativo = models.AutoField(primary_key=True, db_column='T294IdActoAdministrativo')
     id_solicitud_tramite = models.ForeignKey(SolicitudesTramites, on_delete=models.CASCADE, db_column='T294Id_SolicitudTramite')
     id_tipo_acto_administrativo = models.ForeignKey('TiposActosAdministrativos', on_delete=models.CASCADE, db_column='T294Id_TipoActoAdministrativo')
+    #numero_acto_administrativo = models.CharField(null=True, blank=True, max_length=50, db_column='T294numeroActoAdministrativo')
     fecha_acto_administrativo = models.DateTimeField(null=True, blank=True, db_column='T294fechaActoAdministrativo')
     id_consec_por_nivel_tipologias_doc_agno = models.ForeignKey(ConsecPorNivelesTipologiasDocAgno, on_delete=models.CASCADE, db_column='T294Id_ConsecPorNivel_TipologiasDocAgno')
     id_notificacion = models.IntegerField(db_column='T294Id_Notificacion')
@@ -443,3 +444,23 @@ class Tramites(models.Model):
         db_table = 'T318Tramites'
         verbose_name = 'Tramites'
         verbose_name_plural = 'Tramites'
+
+
+
+class RespuestaOPA(models.Model):
+    id_respuesta_opa = models.AutoField(db_column='T297IdRespuesta_OPA', primary_key=True)
+    id_solicitud_tramite = models.ForeignKey(SolicitudesTramites, on_delete=models.CASCADE, db_column='T297Id_SolicitudTramite')
+    fecha_respuesta = models.DateTimeField(db_column='T297fechaRespuesta', null=True, blank=True)
+    asunto = models.CharField(max_length=255, db_column='T297asunto')
+    descripcion = models.CharField(max_length=500, db_column='T297descripcion')
+    cantidad_anexos = models.SmallIntegerField(db_column='T297cantidadAnexos')
+    nro_folios_totales = models.SmallIntegerField(db_column='T297nroFoliosTotales')
+    id_persona_responde = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T297Id_PersonaResponde')
+    id_radicado_salida = models.ForeignKey(T262Radicados, on_delete=models.SET_NULL, null=True, blank=True, db_column='T297Id_RadicadoSalida')
+    fecha_radicado_salida = models.DateTimeField(db_column='T297fechaRadicadoSalida', null=True, blank=True)
+    id_doc_de_arch_exp = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T297Id_DocDeArch_Exp')
+
+    class Meta:
+        verbose_name = 'Respuesta OPA'
+        verbose_name_plural = 'Respuestas OPA'
+        db_table = 'T297Respuestas_OPA'

@@ -2,11 +2,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 import os
 import json
+from django.db.models import Q
 from rest_framework import status
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from gestion_documental.models.radicados_models import T262Radicados
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from tramites.models.tramites_models import SolicitudesTramites
@@ -14,8 +16,9 @@ from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer,
 from gestion_documental.views.pqr_views import Util_PQR
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.models.trd_models import FormatosTiposMedio
+from tramites.models.tramites_models import SolicitudesTramites, TiposActosAdministrativos, ActosAdministrativos
 
-from transversal.models.base_models import HistoricoCargosUndOrgPersona, ClasesTercero, Personas
+from transversal.models.base_models import Personas
 
 from gestion_documental.models.notificaciones_models import (
     NotificacionesCorrespondencia, 
@@ -42,7 +45,12 @@ from gestion_documental.serializers.notificaciones_serializers import (
     TiposAnexosNotificacionesCorrespondenciaSerializer,
     Registros_NotificacionesCorrespondeciaCreateSerializer,
     TiposDocumentosNotificacionesCorrespondenciaSerializer,
-    AsignacionNotiCorresGetSerializer
+    AsignacionNotiCorresGetSerializer,
+    TramitesSerializer,
+    TiposActosAdministrativosSerializer,
+    ActosAdministrativosSerializer,
+    Registros_NotificacionesCorrespondeciaSerializer,
+    NotificacionesCorrespondenciaAnexosSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -52,6 +60,7 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
         queryset = NotificacionesCorrespondencia.objects.all()  # Obtiene las notificaciones de correspondencia
         permission_classes = [IsAuthenticated]
         id_radicado = ''
+        data_final = []
 
         # Obtener parámetros de consulta
         tipo_documento = self.request.query_params.get('tipo_documento')
@@ -78,21 +87,103 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
                 queryset = queryset.filter(cod_estado=estado)
             else:
                 raise ValidationError(f'El estado {estado} no es válido.')
+            
+        if expediente:
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente_documental__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente_documental__codigo_exp_Agno__icontains=agno,
+                        id_expediente_documental__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                queryset = queryset.filter(
+                    Q(id_expediente_documental__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente_documental__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente_documental__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
 
-        return queryset, id_radicado
+
+
+        return  queryset, radicado
 
     def get(self, request, *args, **kwargs):
         queryset, radicado = self.get_queryset()
         print(queryset)
         serializer = self.get_serializer(queryset, many=True)
         data_validada =[]
-        data_validada = serializer.data
-        if radicado != '':
-            data_validada = [item for item in serializer.data if radicado in item.get('radicado', '')]
+        #data_validada = serializer.data
+        print(radicado)
+        if radicado != None:
+            #data_validada = [item for item in serializer.data if radicado in item.get('radicado', '')]
+            for item in serializer.data:
+                item_registro = item.get('registros_notificaciones')
+                print(item_registro)
+                if item_registro != None:
+                    for registro in item_registro:
+                        if radicado in registro.get('radicado', ''):
+                            data_validada.append(item)
         else :
             data_validada = serializer.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)    
     
+
+# class RegistrosNotificaciones(generics.ListAPIView):
+#     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
+
+#     def get_registros(self, radicado, id_notificacion_correspondencia):
+#         queryset =  Registros_NotificacionesCorrespondecia.objects.filter(id_notificacion_correspondencia=id_notificacion_correspondencia)  # Obtiene las notificaciones de correspondencia
+
+#         if radicado:
+#             # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+#             if '-' in radicado:
+#                 try:
+#                     prefijo, agno, numero = radicado.split('-')
+#                     numero = numero.lstrip('0')
+#                 except ValueError:
+#                     # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+#                     pass
+#                 else:
+#                     queryset = queryset.filter(
+#                         id_radicado_salida__prefijo_radicado__icontains=prefijo,
+#                         id_radicado_salida__agno_radicado__icontains=agno,
+#                         id_radicado_salida__nro_radicado__icontains=numero
+#                     )
+#             else:
+#                 # Si no hay guion ('-'), buscar en cualquier parte del radicado
+#                 queryset = queryset.filter(
+#                     Q(id_radicado_salida__prefijo_radicado__icontains=radicado) |
+#                     Q(id_radicado_salida__agno_radicado__icontains=radicado) |
+#                     Q(id_radicado_salida__nro_radicado__icontains=radicado)
+#                 )
+        
+#         return queryset
+
+#     def get(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.get_serializer(queryset, many=True)
+#         return serializer.data
+    
+class GetNotificacionesCorrespondeciaAnexos(generics.RetrieveAPIView):
+    serializer_class = NotificacionesCorrespondenciaAnexosSerializer
+    queryset = NotificacionesCorrespondencia.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_notificacion_correspondencia):
+        try:
+            data_notificaciones = self.queryset.filter(id_notificacion_correspondencia = id_notificacion_correspondencia).first()
+            
+            if data_notificaciones:
+                serializador = self.serializer_class(data_notificaciones, many = False)
+                return Response({'success':True, 'detail':'Se encontro la solicitud de notificación por el id consultado','data':serializador.data},status=status.HTTP_200_OK)
+            else:
+                return Response({'success':True, 'detail':'No Se encontro la solicitud de notificación por el id consultado'},status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class CrearTareasAsignacion(generics.CreateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
@@ -142,21 +233,18 @@ class UpdateTareasAsignacion(generics.UpdateAPIView):
         instance = serializer.save()
         return instance
     
-class AsignacionesCorrespondenciaGet(generics.ListAPIView):
-    serializer_class = AsignacionNotiCorresGetSerializer
+class UpdateSolicitudNotificacionAsignacion(generics.UpdateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
 
-    def get(self, idAsignacion_noti_corre):
-        queryset = AsignacionNotificacionCorrespondencia.objects.all() 
-        queryset = queryset.filter(idAsignacion_noti_corr=idAsignacion_noti_corre)
-        
-        serializer = self.get_serializer(queryset)
-        return serializer.data
+    def put(self, data_asignacion, pk):
+        data = data_asignacion
+        registro_tarea = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia=pk).first()
 
-    # def get(self, request, *args, **kwargs):
-    #     queryset = self.get_queryset(request)
-    #     serializer = self.get_serializer(queryset)
-    #     return serializer.data
-
+        serializer = self.serializer_class(registro_tarea, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return instance
+    
 class CrearAsignacionNotificacion(generics.CreateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -169,15 +257,15 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
         if not data.get('id_persona_asignada'):
             raise ValidationError({'id_persona_asignada': 'La persona asignada es obligatorio'})
         
-        registro = CrearTareasAsignacion()
-        data_tarea = {
-            'id_notificacion': data.get('id_notificacion_correspondencia'),
-            'id_tipo_notificacion_correspondencia': data.get('id_tipo_notificacion_correspondencia'),
-        }
-        tarea = registro.post(data_tarea, fecha_actual)
+        # registro = CrearTareasAsignacion()
+        # data_tarea = {
+        #     'id_notificacion': data.get('id_notificacion_correspondencia'),
+        #     'id_tipo_notificacion_correspondencia': data.get('id_tipo_notificacion_correspondencia'),
+        # }
+        #tarea = registro.post(data_tarea, fecha_actual)
         asignacion_data = {
             'id_notificacion_correspondencia': data.get('id_notificacion_correspondencia'),
-            'id_orden_notificacion': tarea.id_registro_notificacion_correspondencia,
+            #'id_orden_notificacion': tarea.id_registro_notificacion_correspondencia,
             'fecha_asignacion': fecha_actual,
             'id_persona_asigna': id_persona_asigna.id_persona,
             'id_persona_asignada': data.get('id_persona_asignada'),
@@ -197,10 +285,11 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
                 'id_persona_asignada': data.get('id_persona_asignada'),
                 'cod_estado_asignacion': 'Pe',
             }
-            tarea_actualizada = UpdateTareasAsignacion()
-            if not tarea_actualizada.put(data_asignacion, tarea.id_registro_notificacion_correspondencia):
+            #tarea_actualizada = UpdateTareasAsignacion()
+            actualizar_notificacion = UpdateSolicitudNotificacionAsignacion()
+            #if not tarea_actualizada.put(data_asignacion, tarea.id_registro_notificacion_correspondencia):
+            if not actualizar_notificacion.put(data_asignacion, data.get('id_notificacion_correspondencia')):
                 raise ValidationError({'id_notificacion_correspondencia': 'No se pudo actualizar el estado de la tarea'})
-        #response = AsignacionesCorrespondenciaGet()
         return Response({'succes': True, 'detail':'Se la asigncación correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
     
 
@@ -517,10 +606,19 @@ class EstadosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        return Response({'succes': True, 'detail':'Se creo el estado de notificaciones correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+
+        tipo_notificacion_correspondencia = get_object_or_404(TiposNotificacionesCorrespondencia, id_tipo_notificacion_correspondencia=data.get('cod_tipo_notificacion_correspondencia'))
+        if tipo_notificacion_correspondencia.activo == False:
+            raise ValidationError(f'El tipo de notificación con id {data.get("cod_tipo_notificacion_correspondencia")} no esta activo.')
+        else:
+            if tipo_notificacion_correspondencia.item_ya_usado == False:
+                tipo_notificacion_correspondencia.item_ya_usado = True
+                tipo_notificacion_correspondencia.save()
+
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            return Response({'succes': True, 'detail':'Se creo el estado de notificaciones correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
     
 
 class EstadosNotificacionesCorrespondenciaGet(generics.ListAPIView):
@@ -576,11 +674,20 @@ class CausaOAnomaliasNotificacionesCorrespondenciaCreate(generics.CreateAPIView)
 
     def post(self, request):
         data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        return Response({'succes': True, 'detail':'Se creo la causa o anomalia de notificaciones correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
-    
+
+        tipo_notificacion_correspondencia = get_object_or_404(TiposNotificacionesCorrespondencia, id_tipo_notificacion_correspondencia=data.get('id_tipo_notificacion_correspondencia'))
+        if tipo_notificacion_correspondencia.activo == False:
+            raise ValidationError(f'El tipo de notificación con id {data.get("id_tipo_notificacion_correspondencia")} no esta activo.')
+        else:
+            if tipo_notificacion_correspondencia.item_ya_usado == False:
+                tipo_notificacion_correspondencia.item_ya_usado = True
+                tipo_notificacion_correspondencia.save()
+
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            return Response({'succes': True, 'detail':'Se creo el estado de notificaciones correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+
 
 class CausaOAnomaliasNotificacionesCorrespondenciaGet(generics.ListAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
@@ -635,10 +742,19 @@ class TiposAnexosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        return Response({'succes': True, 'detail':'Se creo el tipo de anexo de notificaciones correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+
+        tipo_notificacion_correspondencia = get_object_or_404(TiposNotificacionesCorrespondencia, id_tipo_notificacion_correspondencia=data.get('id_tipo_notificacion_correspondencia'))
+        if tipo_notificacion_correspondencia.activo == False:
+            raise ValidationError(f'El tipo de notificación con id {data.get("id_tipo_notificacion_correspondencia")} no esta activo.')
+        else:
+            if tipo_notificacion_correspondencia.item_ya_usado == False:
+                tipo_notificacion_correspondencia.item_ya_usado = True
+                tipo_notificacion_correspondencia.save()
+
+            serializer = self.serializer_class(data=data)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            return Response({'succes': True, 'detail':'Se creo el estado de notificaciones correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
     
 
 class TiposAnexosNotificacionesCorrespondenciaGet(generics.ListAPIView):
@@ -744,3 +860,256 @@ class TiposDocumentosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView
         else:
             tipo_documento_notificacion.delete()
         return Response({'succes': True, 'detail':'Se eliminó el tipo de documento de notificación correctamente', 'data':{}}, status=status.HTTP_200_OK)
+    
+
+class ListaTareasFuncionario(generics.ListAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self, request):
+        queryset = Registros_NotificacionesCorrespondecia.objects.all()  
+        id_persona_logueada = request.user.persona.id_persona
+        # Obtener parámetros de consulta
+        tipo_documento = self.request.query_params.get('tipo_documento')
+        tipo_notificacion = self.request.query_params.get('tipo_notificacion')
+        radicado = self.request.query_params.get('radicado')
+        expediente = self.request.query_params.get('expediente')
+        grupo_solicitante = self.request.query_params.get('grupo_solicitante')
+        estado = self.request.query_params.get('estado')
+
+        queryset = queryset.filter(id_persona_asignada=id_persona_logueada)
+
+        # Filtrar por tipo de documento si es válido
+        if tipo_documento:
+            tipo_documento_valido = ['OF', 'AC', 'AA', 'AI', 'OT']
+            if tipo_documento in tipo_documento_valido:
+                queryset = queryset.filter(cod_tipo_documento=tipo_documento)
+            else:
+                raise ValidationError(f'El tipo de documento {tipo_documento} no es válido.')
+        
+
+        if grupo_solicitante:
+            queryset = queryset.filter(id_und_org_oficina_solicita=grupo_solicitante)
+
+        if tipo_notificacion:
+            queryset = queryset.filter(id_tipo_notificacion_correspondencia=tipo_notificacion)
+
+        if estado:
+            estado_valido = ['RE', 'DE', 'EG', 'PE', 'NT']
+            if estado in estado_valido:
+                queryset = queryset.filter(cod_estado=estado)
+            else:
+                raise ValidationError(f'El estado {estado} no es válido.')
+            
+        if radicado:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                    numero = numero.lstrip('0')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_radicado__prefijo_radicado__icontains=prefijo,
+                        id_radicado__agno_radicado__icontains=agno,
+                        id_radicado__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicado__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicado__agno_radicado__icontains=radicado) |
+                    Q(id_radicado__nro_radicado__icontains=radicado)
+                )
+
+        if expediente:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_notificacion_correspondencia__id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_notificacion_correspondencia__id_expediente__codigo_exp_Agno__icontains=agno,
+                        id_notificacion_correspondencia__id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_notificacion_correspondencia__id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_notificacion_correspondencia__id_expediente__codigo_exp_Agno__icontains=agno) |
+                    Q(id_notificacion_correspondencia__id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset(request)
+        print(queryset)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+class GetTramite(generics.ListAPIView):
+    serializer_class = TramitesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = SolicitudesTramites.objects.all()  # Obtiene las notificaciones de correspondencia
+
+        nombre_proyecto = self.request.query_params.get('nombre_proyecto')
+        radicado = self.request.query_params.get('radicado')
+        expediente = self.request.query_params.get('expediente')
+        persona_titular = self.request.query_params.get('persona_titular')
+
+        
+        if radicado:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in radicado:
+                try:
+                    prefijo, agno, numero = radicado.split('-')
+                    numero = numero.lstrip('0')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_radicado__prefijo_radicado__icontains=prefijo,
+                        id_radicado__agno_radicado__icontains=agno,
+                        id_radicado__nro_radicado__icontains=numero
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_radicado__prefijo_radicado__icontains=radicado) |
+                    Q(id_radicado__agno_radicado__icontains=radicado) |
+                    Q(id_radicado__nro_radicado__icontains=radicado)
+                )
+
+        if nombre_proyecto:
+            queryset = queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
+
+        if expediente:
+            # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente__codigo_exp_Agno__icontains=agno,
+                        id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                # Si no hay guion ('-'), buscar en cualquier parte del radicado
+                queryset = queryset.filter(
+                    Q(id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
+
+        if persona_titular:
+            queryset = queryset.filter(id_persona_titular=persona_titular)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class TipoActosAdministrativos(generics.ListAPIView):
+    serializer_class = TiposActosAdministrativosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset =  TiposActosAdministrativos.objects.all()  
+        
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+class ActosAdministrativosGet(generics.ListAPIView):
+    serializer_class = ActosAdministrativosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset =  ActosAdministrativos.objects.all()
+        
+        nro_acto = self.request.query_params.get('nro_acto')
+        fecha_acto = self.request.query_params.get('fecha_acto')
+        tipo_acto = self.request.query_params.get('tipo_acto')
+
+        # if nro_acto:
+        #     queryset = queryset.filter(numero_acto_administrativo__icontains=nro_acto)
+        
+        if fecha_acto:
+            queryset = queryset.filter(fecha_acto_administrativo=fecha_acto)
+        
+        if tipo_acto:
+            queryset = queryset.filter(id_tipo_acto_administrativo=tipo_acto)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class UpdateAsignacion(generics.UpdateAPIView):
+    serializer_class = AsignacionNotiCorresCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+
+        asignacion = get_object_or_404(AsignacionNotificacionCorrespondencia, idAsignacion_noti_corr=pk)
+
+        notificacion = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=asignacion.id_notificacion_correspondencia.id_notificacion_correspondencia)
+        
+        justificacion_rechazo = request.data.get('justificacion_rechazo')
+        flag = request.data.get('flag')
+
+        if flag:
+            asignacion.cod_estado_asignacion = 'Ac'
+            asignacion.fecha_eleccion_estado = timezone.now()
+            asignacion.save()
+            serializer = self.get_serializer(asignacion)
+            data = serializer.data
+
+            notificacion.cod_estado_notificacion = 'Ac'
+            notificacion.fecha_eleccion_estado = timezone.now()
+            notificacion.save()
+
+            return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
+        else:
+            if justificacion_rechazo:
+                asignacion.cod_estado_asignacion = 'Re'
+                asignacion.fecha_eleccion_estado = timezone.now()
+                asignacion.justificacion_rechazo = justificacion_rechazo
+                asignacion.save()
+                serializer = self.get_serializer(asignacion)
+                data = serializer.data
+
+                notificacion.cod_estado_notificacion = 'Re'
+                notificacion.fecha_eleccion_estado = timezone.now()
+                notificacion.save()
+
+                return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
+            else:
+                return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+

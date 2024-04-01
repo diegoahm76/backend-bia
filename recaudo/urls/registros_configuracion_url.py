@@ -44,15 +44,17 @@ urlpatterns = [
         
         path('administracionpersonal/', viwes.Vista_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
         path('administracionpersonal/put/<str:pk>/', viwes.Actualizar_AdministraciondePersonal.as_view(), name='administracion-de-personal-update'),
-        path('administracionpersonal/post/', viwes.Crear_AdministraciondePersonal.as_view(), name='administracion-de-personal-delete'),
-
-        path('configuracioninterres/get/<int:year>/', viwes.Vista_ConfigaraicionInteres.as_view(), name='administracion-de-personal-year'),
+        path('administracionpersonal/post/', viwes.Crear_AdministraciondePersonal.as_view(), name='administracion-de-personal'),
+        path('administracionpersonal/delete/<str:pk>/', viwes.Eliminar_AdministraciondePersonal.as_view(), name='administracion-de-personal-delete'),
+        path('administracionpersonal/get/', viwes.BusquedaAvanzadaPersonalProfesional.as_view(), name='administracion-de-personal-year-formulario'),
+ 
+        path('configuracioninterres/get/', viwes.Vista_ConfigaraicionInteres.as_view(), name='administracion-de-personal-year-formulario'),
         path('configuracioninterres/post/', viwes.Crear_ConfigaraicionInteres.as_view(), name='administracion-de-personal'),
         path('configuracioninterres/put/<str:pk>/', viwes.Actualizar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-update'),
         path('configuracioninterres/delete/<str:pk>/', viwes.Borrar_ConfigaraicionInteres.as_view(), name='administracion-de-personal-delete'),
 
 
-        path('indicadores/<int:year>/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
+        path('indicadores/<int:year>/<int:formulario>/', viwes.Vista_IndicadoresSemestral.as_view(), name='configuracion-interes'),
         path('indicadores/put/<str:pk>/', viwes.Actualizar_IndicadoresSemestral.as_view(), name='configuracion-interes-update'),
         path('indicadores/delete/<str:pk>/', viwes.Borrar_IndicadoresSemestral.as_view(), name='configuracion-interes'),
         path('indicadores/post/', viwes.CrearIndicadoresSemestral.as_view(), name='configuracion-interes'),

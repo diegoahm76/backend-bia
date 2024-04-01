@@ -11,14 +11,45 @@ from rest_framework.views import APIView
 import json
 
 
+from transversal.models.entidades_models import ConfiguracionEntidad
+from transversal.models.lideres_models import LideresUnidadesOrg
+from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertaEventoInmediadoCreate
-
-
+from django.template.loader import render_to_string
+from seguridad.utils import Util
 
 class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
     queryset = documento_formulario_recuado.objects.all()
     serializer_class = documento_formulario_recuados_serializer
     archivos_dgitales_create = ArchivosDgitalesCreate()
+
+
+
+    def buscar_persona_lider(self,id_unidad):
+            ids_personas =[]
+            lideres_unidad_orga=LideresUnidadesOrg.objects.filter(id_unidad_organizacional=id_unidad)
+            for lider in lideres_unidad_orga:
+                ids_personas.append(lider.id_persona.id_persona)
+            return ids_personas
+    
+    def buscar_persona_perfil(self,cod_perfil):
+        perfiles_actuales=ConfiguracionEntidad.objects.first()
+        if cod_perfil == 'Dire':
+            if perfiles_actuales.id_persona_director_actual:
+                id_responsable=(perfiles_actuales.id_persona_director_actual.id_persona)
+        elif cod_perfil == 'CAlm':
+            if perfiles_actuales.id_persona_coord_almacen_actual:
+                id_responsable=(perfiles_actuales.id_persona_coord_almacen_actual.id_persona)
+        elif cod_perfil == 'RTra':
+            if perfiles_actuales.id_persona_respon_transporte_actual:
+                id_responsable=(perfiles_actuales.id_persona_respon_transporte_actual.id_persona)
+        elif cod_perfil == 'CViv':
+            if perfiles_actuales.id_persona_coord_viveros_actual:
+                id_responsable=(perfiles_actuales.id_persona_coord_viveros_actual.id_persona)
+        elif cod_perfil == 'Alma':
+            if perfiles_actuales.id_persona_almacenista:
+                id_responsable=(perfiles_actuales.id_persona_almacenista.id_persona)
+        return id_responsable
 
     def create(self, request, *args, **kwargs):
         try:
@@ -59,18 +90,52 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                 instance.id_archivo = archivo_digital
                 instance.save()
 
+                #ENVIO DE DOCUMENTO POR CORREO
+                ids=[]
+
+                if 'ids_destinatarios_unidades' in data_in:
+                    ids_unidades = vector = json.loads(data_in['ids_destinatarios_unidades'])
+
+                    for id in ids_unidades:
+                        ids_persona = self.buscar_persona_lider(id)
+                        ids.extend(ids_persona)
+                if 'ids_destinatarios_perfiles' in data_in:
+                    ids_perfiles = vector = json.loads(data_in['ids_destinatarios_perfiles'])
+                    for id in ids_perfiles:
+                        id_persona = self.buscar_persona_perfil(id)
+                        #print("codigo:" +str(id)+" persona: "+str(id_persona))
+                        ids.append(id_persona)
+                if 'ids_destinatarios_personas' in data_in:
+                    ids_personas  = json.loads(data_in['ids_destinatarios_personas'])
+                    ids.extend(ids_personas)
+
+                #print("LIDERES DE UNIDAD")
+                #print(ids)
+                #raise ValidationError('aaui')
+                   
                 #GENERA ALERTA DE EVEMTO INMEDIATO 
 
-                vista_alertas_programadas = AlertaEventoInmediadoCreate()
-                data_alerta = {}
-                data_alerta['cod_clase_alerta'] = 'Rec_GenDoc'
-                #data_alerta['id_persona'] = id_persona_asiganada
-                data_alerta['id_elemento_implicado'] = data_archivo_id
+                # vista_alertas_programadas = AlertaEventoInmediadoCreate()
+                # data_alerta = {}
+                # data_alerta['cod_clase_alerta'] = 'Rec_GenDoc'
+                # #data_alerta['id_persona'] = id_persona_asiganada
+                # data_alerta['id_elemento_implicado'] = data_archivo_id
                 
-                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
-                if respuesta_alerta.status_code != status.HTTP_200_OK:
-                    return respuesta_alerta
+                # respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+                # if respuesta_alerta.status_code != status.HTTP_200_OK:
+                #     return respuesta_alerta
+                    
+                personas = Personas.objects.filter(id_persona__in=ids)
+                for per in personas:
+                    print(per)
 
+                    template = "alerta.html"
+                    context = {'Nombre_alerta':'Se generado un documento','primer_nombre': per.primer_nombre,"mensaje":'mensaje'}
+                    template = render_to_string((template), context)
+                    email_data = {'template': template, 'email_subject': 'Documento', 'to_email':per.email}
+                    Util.send_email_file(email_data,archivo)
+
+                #raise ValidationError('aaui')
                 return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
                                 status=status.HTTP_201_CREATED)
             else:

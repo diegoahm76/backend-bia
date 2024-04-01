@@ -387,7 +387,19 @@ class Crear_AdministraciondePersonal(generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         try:
-            serializer = self.get_serializer(data=request.data)
+
+            campo_adicional = request.data.get('campo_adicional','')
+
+            nivel=request.data.get('nivel', '')
+
+            codigo_profesional=str(campo_adicional)+str(nivel)
+
+            # Calcular el valor del campo 'codigo_profesional'
+            data = request.data.copy()  # Hacer una copia de los datos para evitar cambios en la solicitud original
+            data['codigo_profesional'] = codigo_profesional
+
+
+            serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
            
             
@@ -402,7 +414,26 @@ class Crear_AdministraciondePersonal(generics.CreateAPIView):
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
         
-    
+class BusquedaAvanzadaPersonalProfesional(generics.ListAPIView):
+    serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        nivel = self.request.query_params.get('nivel')
+        nombre = self.request.query_params.get('nombre')
+
+        queryset = AdministraciondePersonal.objects.all()
+        if nivel:
+            queryset = queryset.filter(nivel=nivel)
+        if nombre:
+            queryset = queryset.filter(nombre__icontains=nombre)  # Usar '__icontains' para búsqueda insensible a mayúsculas/minúsculas
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data},
+                        status=status.HTTP_200_OK)
 
 class Vista_AdministraciondePersonal(generics.ListAPIView):
     queryset = AdministraciondePersonal.objects.all()
@@ -429,6 +460,17 @@ class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
         serializer.save()  # Guarda la instancia con los datos actualizados
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class Eliminar_AdministraciondePersonal(generics.DestroyAPIView):
+    queryset = AdministraciondePersonal.objects.all()
+    serializer_class = AdministraciondePersonalSerializer
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()  # Obtiene la instancia existente
+        instance.delete()  # Elimina la instancia de la base de datos
+
+        return Response({'success': True, 'detail': 'El registro ha sido eliminado correctamente'}, status=status.HTTP_204_NO_CONTENT)
 #____________________________________________________
     
 
@@ -539,18 +581,6 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
     
 #__________________________________________________________________
     
-
-    # Vista get para las 4 tablas de zonas hidricas
-# class Vista_IndicadoresSemestral(generics.ListAPIView):
-#     queryset = IndicadoresSemestral.objects.all()
-#     serializer_class = IndicadoresSemestralSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def get(self, request):
-#         cuencas = IndicadoresSemestral.objects.all()
-#         serializer = self.serializer_class(cuencas,many=True)
-
-#         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 class Vista_IndicadoresSemestral(generics.ListAPIView):
     serializer_class = IndicadoresSemestralSerializer
     permission_classes = [IsAuthenticated]
@@ -558,8 +588,13 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
     def get_queryset(self):
         queryset = IndicadoresSemestral.objects.all()
         year = self.kwargs.get('year')
+        formulario = self.kwargs.get('formulario')
+        
         if year:
             queryset = queryset.filter(vigencia_reporta=year)
+        if formulario:
+            queryset = queryset.filter(formulario=formulario)
+        
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -575,7 +610,6 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
             return Response({
                 'error': f'Error al obtener los registros: {str(e)}'
             }, status=status.HTTP_400_BAD_REQUEST)
-    
 
 class CrearIndicadoresSemestral(generics.CreateAPIView):
     queryset = IndicadoresSemestral.objects.all()
