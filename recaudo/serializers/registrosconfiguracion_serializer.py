@@ -45,6 +45,7 @@ class ValoresVariablesSerializer(serializers.ModelSerializer):
 
 
 class AdministraciondePersonalSerializer(serializers.ModelSerializer):
+    codigo_profesional=serializers.CharField(required=False)
     class Meta:
         model = AdministraciondePersonal
         fields = '__all__'
