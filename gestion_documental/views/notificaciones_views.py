@@ -1090,7 +1090,7 @@ class UpdateAsignacion(generics.UpdateAPIView):
             serializer = self.get_serializer(asignacion)
             data = serializer.data
 
-            notificacion.cod_estado_notificacion = 'Ac'
+            notificacion.cod_estado_asignacion = 'Ac'
             notificacion.fecha_eleccion_estado = timezone.now()
             notificacion.save()
 
@@ -1104,7 +1104,7 @@ class UpdateAsignacion(generics.UpdateAPIView):
                 serializer = self.get_serializer(asignacion)
                 data = serializer.data
 
-                notificacion.cod_estado_notificacion = 'Re'
+                notificacion.cod_estado_asignacion = 'Re'
                 notificacion.fecha_eleccion_estado = timezone.now()
                 notificacion.save()
 
@@ -1113,3 +1113,24 @@ class UpdateAsignacion(generics.UpdateAPIView):
                 return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class RechazoNotificacionCorrespondencia(generics.UpdateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+
+        notificacion = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=pk)
+        
+        justificacion_rechazo = request.data.get('justificacion_rechazo')
+
+        if justificacion_rechazo:
+            notificacion.cod_estado = 'DE'
+            notificacion.fecha_devolucion = timezone.now()
+            notificacion.justificacion_rechazo = justificacion_rechazo
+            notificacion.save()
+            serializer = self.get_serializer(notificacion)
+            data = serializer.data
+
+            return Response({'succes': True, 'detail': 'La notificación se devolvio correctamente.', 'data': data}, status=status.HTTP_200_OK)
+        else:
+            return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)

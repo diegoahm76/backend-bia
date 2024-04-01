@@ -59,6 +59,7 @@ class NotificacionesCorrespondencia(models.Model):
     id_persona_rta_final_gestion = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_PersonaRtaFinalGestion',related_name='T350IdPersonaRtaFinalGestion')
     solicitud_aceptada_rechazada = models.BooleanField(null=True, db_column='T350solicitudAceptadaRechazada')
     fecha_devolucion = models.DateTimeField(null=True, db_column='T350fechaDevolucion')
+    justificacion_rechazo = models.CharField(max_length=250, null=True, db_column='T350justificacionRechazo')
     cod_estado = models.CharField(choices=cod_estado_noti_CHOICES, max_length=2, db_column='T350codEstado')
     id_doc_de_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente, on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_DocDeArchExp',related_name='T350IdDocDeArchExp')
 
