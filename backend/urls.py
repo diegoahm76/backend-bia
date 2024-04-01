@@ -112,6 +112,8 @@ urlpatterns = [
     path('api/gestor/notificaciones/',include('gestion_documental.urls.notificaciones_urls')),
     #reporte_indices_pqrsdf_urls
     path('api/gestor/reporte_indices_pqrsdf/', include('gestion_documental.urls.reporte_indices_pqrsdf_urls')),
+       
+    path('api/gestor/solicitudes/', include('gestion_documental.urls.solicitudes_OPAS_urls')),
     
     # PAGOS
     path('api/gestor/pagos/',include('gestion_documental.urls.pagos_urls')),
