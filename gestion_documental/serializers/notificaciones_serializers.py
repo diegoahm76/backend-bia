@@ -149,7 +149,9 @@ class ArchivosSerializer(serializers.ModelSerializer):
 
 class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializer):
     radicado = serializers.SerializerMethodField()
-    #estado = serializers.CharField(source='id_estado_actual_registro.nombre')
+    funcionario_asignado = serializers.SerializerMethodField()
+    estado_registro = serializers.CharField(source='id_estado_actual_registro.nombre')
+    fecha_actuacion = serializers.SerializerMethodField()
     plazo_entrega = serializers.SerializerMethodField()
     dias_faltantes = serializers.SerializerMethodField()
     class Meta:
@@ -172,6 +174,14 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
         fecha_actual = datetime.now()
         dias = fecha_actual - obj.fecha_registro
         return obj.id_tipo_notificacion_correspondencia.tiempo_en_dias - dias.days
+    
+    def get_funcionario_asignado(self, obj):
+        return f"{obj.id_persona_asignada.primer_nombre} {obj.id_persona_asignada.primer_apellido}"
+    
+    def get_fecha_actuacion(self, obj):
+        if obj.id_persona_asignada and  obj.cod_estado_asignacion == 'Ac':
+            return obj.fecha_eleccion_estado
+        
         
 class Registros_NotificacionesCorrespondeciaCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -254,25 +264,25 @@ class TiposDocumentosNotificacionesCorrespondenciaSerializer(serializers.ModelSe
 
 
 class TramitesSerializer(serializers.ModelSerializer):
-   #radicado = serializers.SerializerMethodField()
-    #expediente = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    expediente = serializers.SerializerMethodField()
     class Meta:
         model = SolicitudesTramites
         fields = '__all__'
 
-    # def get_radicado(self, obj):
-    #     cadena = ""
-    #     if obj.id_radicado:
-    #         instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
-    #         numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-    #         cadena= obj.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+    def get_radicado(self, obj):
+        cadena = ""
+        if obj.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
-    #         return cadena
-    # def get_expediente(self, obj):
-    #     if obj.id_expediente:
-    #         return f"{obj.id_expediente.codigo_exp_und_serie_subserie}.{obj.id_expediente.codigo_exp_Agno}.{obj.id_expediente.codigo_exp_consec_por_agno}"
-    #     else:
-    #         return None
+            return cadena
+    def get_expediente(self, obj):
+        if obj.id_expediente:
+            return f"{obj.id_expediente.codigo_exp_und_serie_subserie}.{obj.id_expediente.codigo_exp_Agno}.{obj.id_expediente.codigo_exp_consec_por_agno}"
+        else:
+            return None
 
 
 class TiposActosAdministrativosSerializer(serializers.ModelSerializer):
