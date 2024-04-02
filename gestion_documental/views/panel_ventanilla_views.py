@@ -1186,7 +1186,7 @@ class RespuestaRequerimientoOpaGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     def get(self, request,tra):
 
-        instance = self.get_queryset().filter(id_solicitud_tramite=tra).order_by('fecha_respuesta')
+        instance = self.get_queryset().filter(id_solicitud_tramite=tra,id_radicado__isnull=False).order_by('fecha_respuesta')
 
         if not instance:
             raise NotFound("No existen registros")

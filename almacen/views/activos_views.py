@@ -25,11 +25,12 @@ from rest_framework import status
 from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
-from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
-from almacen.serializers.activos_serializer import AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DetalleSolicitudActivosSerializer, EntradasAlmacenSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen, EstadosArticulo
+from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, ActivosDevolucionadosSerializer, AlmacenistaLogueadoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DespachoActivosSerializer, DetalleSolicitudActivosSerializer, DevolucionActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
+from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
+from almacen.models.activos_models import ActivosDevolucionados, AnexosDocsAlma, AsignacionActivos, BajaActivos, DespachoActivos, DevolucionActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate, ArchivosDigitales
 from transversal.models.base_models import ClasesTerceroPersona
@@ -543,7 +544,6 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
             'gestionada_alma': False,
             'rechazada_almacen': False,
             'solicitud_anulada_solicitante': False,
-            'fecha_devolucion': fecha_devolucion  
         }
 
         solicitud_serializer = self.serializer_class(data=solicitud_data)
@@ -688,7 +688,6 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             #Resumen_Solcitiud
             'estado_solicitud': instance.estado_solicitud,
             'solicitud_prestamo': instance.solicitud_prestamo,
-            'fecha_devolucion': instance.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_devolucion else None,
             'fecha_cierra_solicitud': instance.fecha_cierra_solicitud.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_cierra_solicitud else None,
             'revisada_responsable': instance.revisada_responsable,
             'estado_aprobacion_resp': instance.estado_aprobacion_resp,
@@ -724,9 +723,11 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             item_data = {
                 'id_item_solicitud_activo': item.id_item_solicitud_activo,
                 'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
-                'id_bien': item.id_bien.nombre,  
+                'id_bien': item.id_bien.id_bien,  
+                'nombre_bien': item.id_bien.nombre,  
                 'cantidad': item.cantidad,
                 'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
+                'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
                 'nombre_unidad_medida': item.id_unidad_medida.nombre,
                 'observacion': item.observacion,
                 'nro_posicion': item.nro_posicion
@@ -1510,4 +1511,172 @@ class ObtenerUltimoConsecutivoView(generics.ListAPIView):
             
             # Devolver el último consecutivo incrementado en 1
             return Response({"success": True, "detail": "Último consecutivo obtenido correctamente.", "ultimo_consecutivo": ultimo_consecutivo}, status=status.HTTP_200_OK)
+    
+
+
+
+class InfoAlmcenistaPersonaGet(generics.ListAPIView):
+    serializer_class = AlmacenistaLogueadoSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_queryset(self):
+        # Obtener el ID de la persona logueada
+        id_persona_logueada = self.request.user.persona.id_persona  # Suponiendo que la relación entre usuario y persona existe
+
+        # Obtener los datos de la persona logueada
+        persona_logueada = Personas.objects.filter(id_persona=id_persona_logueada).first()
+
+        return persona_logueada
+
+    def list(self, request, *args, **kwargs):
+        persona_logueada = self.get_queryset()
+        serializer = self.serializer_class(persona_logueada)
+        return Response({'success': True, 'detail': 'Información de la persona logueada', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class DespachosDeActivosList(generics.ListAPIView):
+    serializer_class = DespachoActivosSerializer
+
+    def get_queryset(self):
+        # Obtener el ID de la persona responsable desde los parámetros de la URL
+        id_persona = self.kwargs.get('id_persona')
+
+        # Consultar los registros de AsignacionActivos para el responsable actual
+        asignaciones = AsignacionActivos.objects.filter(
+            id_funcionario_resp_asignado_id=id_persona,
+            actual=True
+        )
+
+        # Lista para almacenar los despachos encontrados
+        despachos_encontrados = []
+
+        # Iterar sobre las asignaciones encontradas
+        for asignacion in asignaciones:
+            # Obtener el despacho asociado a esta asignación
+            despacho = DespachoActivos.objects.filter(id_despacho_activo=asignacion.id_despacho_asignado).first()
+
+            # Verificar si se encontró un despacho válido
+            if despacho:
+                # Lógica para determinar el tipo de solicitud
+                if despacho.despacho_sin_solicitud:
+                    tipo_solicitud = 'Despacho sin solicitud'
+                    fecha_solicitud = 'No aplica'
+                else:
+                    tipo_solicitud = 'Despacho con solicitud ordinaria' if not despacho.id_solicitud_activo.solicitudPrestamo else 'Despacho con solicitud de préstamo'
+                    fecha_solicitud = despacho.fecha_solicitud.strftime('%Y-%m-%d') if despacho.fecha_solicitud else 'No aplica'
+
+                # Agregar el despacho encontrado a la lista de despachos
+                despachos_encontrados.append({
+                    'id_despacho': despacho.id_despacho_activo,
+                    'fecha_despacho': despacho.fecha_despacho,
+                    'persona_despachó': f"{despacho.id_persona_despacha.primer_nombre} {despacho.id_persona_despacha.primer_apellido}",
+                    'bodega': despacho.id_bodega.nombre,
+                    'observacion': despacho.observacion,
+                    'tipo_solicitud': tipo_solicitud,
+                    'fecha_solicitud': fecha_solicitud
+                })
+
+        # Retornar la lista de despachos encontrados
+        return despachos_encontrados
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
         
+        # Retornar la respuesta con la data procesada
+        return Response({'success': True, 'detail': 'Despachos de activos encontrados', 'data': queryset}, status=status.HTTP_200_OK)
+    
+
+class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
+    serializer_class = ActivosDespachadosDevolucionSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        # Obtener el ID del despacho de activos desde los parámetros de la URL
+        id_despacho = self.kwargs.get('id_despacho')
+
+        try:
+            # Consultar los registros de ItemsDespachoActivos asociados al despacho
+            items_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo=id_despacho)
+        except ItemsDespachoActivos.DoesNotExist:
+            return Response({'success': False, 'detail': 'El despacho de activos especificado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serializar los registros encontrados
+        serializer = self.serializer_class(items_despacho, many=True)
+
+        # Retornar la respuesta con la data procesada
+        return Response({'success': True, 'detail': 'Activos despachados - Devolución', 'data': serializer.data})
+    
+class EstadosArticuloListView(generics.ListAPIView):
+    queryset = EstadosArticulo.objects.all()
+    serializer_class = EstadosArticuloSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Estados de artículo obtenidos correctamente', 'data': serializer.data})
+    
+class DevolucionActivosCreateView(generics.CreateAPIView):
+    serializer_class = DevolucionActivosSerializer
+
+    def create(self, request, *args, **kwargs):
+        # Serializar los datos de la devolución de activos
+        devolucion_serializer = self.get_serializer(data=request.data)
+        devolucion_serializer.is_valid(raise_exception=True)
+        devolucion_data = devolucion_serializer.validated_data
+
+        # Validar la justificación si el estado seleccionado lo requiere
+        estado_seleccionado = devolucion_data.get('cod_estado_activo')
+        justificacion = devolucion_data.get('justificacion_anulacion')
+        if estado_seleccionado and estado_seleccionado != 'O' and not justificacion:
+            return Response({'success': False, 'detail': 'Debe proporcionar una justificación para el estado seleccionado'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear el registro de devolución de activos
+        devolucion_activos = DevolucionActivos.objects.create(**devolucion_data)
+
+        # Actualizar los campos en la tabla T092DevolucionActivos
+        devolucion_activos.devolucion_anulada = False
+        devolucion_activos.justificacion_anulacion = None
+        devolucion_activos.fecha_anulacion = None
+        devolucion_activos.id_persona_anulacion = None
+        devolucion_activos.consecutivo_devolucion = DevolucionActivos.objects.latest('id').id_devolucion_activos  # Obtener el último consecutivo y asignar el siguiente
+        devolucion_activos.fecha_devolucion = datetime.now()
+        devolucion_activos.save()
+
+        # Obtener los datos de los activos devueltos
+        activos_devueltos_data = request.data.get('activos_devueltos', [])
+
+        # Lista para almacenar los activos devueltos creados
+        activos_devueltos_creados = []
+
+        # Iterar sobre los datos de los activos devueltos
+        for activo_devuelto_data in activos_devueltos_data:
+            # Serializar los datos del activo devuelto
+            activo_devuelto_serializer = ActivosDevolucionadosSerializer(data=activo_devuelto_data)
+            activo_devuelto_serializer.is_valid(raise_exception=True)
+            activo_devuelto_data = activo_devuelto_serializer.validated_data
+
+            # Crear el registro de activo devuelto
+            activo_devuelto = ActivosDevolucionados.objects.create(devolucion_activo=devolucion_activos, **activo_devuelto_data)
+
+            # Actualizar el atributo se_Devolvio en el item del despacho de activos
+            item_despacho = activo_devuelto.item_despacho_activo
+            item_despacho.se_devolvio = True
+            item_despacho.save()
+
+            # Actualizar el estado y la ubicación del activo en el inventario
+            inventario_activo = activo_devuelto.item_despacho_activo.bien_despachado.inventario
+            inventario_activo.cod_estado_del_activo = activo_devuelto.cod_estado_activo_devol
+            inventario_activo.ubicacion_en_bodega = True
+            inventario_activo.fecha_ultimo_mov = devolucion_activos.fecha_devolucion
+            inventario_activo.tipo_doc_ultimo_mov = 'DEV'
+            inventario_activo.save()
+
+            # Agregar el activo devuelto creado a la lista
+            activos_devueltos_creados.append(activo_devuelto)
+
+        # Retornar la respuesta con los activos devueltos creados
+        return Response({'success': True, 
+                         'detail': 'Devolución de activos creada correctamente', 
+                         'data': {'id_devolucion_activos': devolucion_activos.id_devolucion_activos, 
+                                  'activos_devueltos': [activo.id for activo in activos_devueltos_creados]}}, status=status.HTTP_201_CREATED)

@@ -374,6 +374,7 @@ class RadicadoCreate(generics.CreateAPIView):
     serializer_class = RadicadoPostSerializer
     config_radicados = ConfigTiposRadicadoAgnoGenerarN
     
+    
     def post(self, request):
         data = request.data
         fecha_actual = datetime.now()
