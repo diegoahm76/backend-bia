@@ -50,6 +50,7 @@ urlpatterns = [
     path('despachos-activos/get/<int:id_persona>/', views.DespachosDeActivosList.as_view(), name='despachos-activos'),
     path('despachos-activos/detalle/<int:id_despacho>/', views.ActivosDespachadosDevolucionView.as_view(), name='activos-despachados-devolucion'),
     path('info-estados-articulo/get/', views.EstadosArticuloListView.as_view(), name='info-estados-articulo'),
+    path('devolucion-activos/create/', views.DevolucionActivosCreateView.as_view(), name='devolucion-activos-creacion'),
 
 
 

@@ -1,7 +1,7 @@
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario, TiposEntradas
 from almacen.models.generics_models import Bodegas, Marcas, UnidadesMedida
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, DespachoActivos, ItemsBajaActivos, ArchivosDigitales, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
+from almacen.models.activos_models import ActivosDevolucionados, AnexosDocsAlma, BajaActivos, DespachoActivos, DevolucionActivos, ItemsBajaActivos, ArchivosDigitales, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from transversal.models.base_models import ClasesTerceroPersona
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas, EstadosArticulo
 from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVidaOtrosActivos, HojaDeVidaVehiculos, DocumentosVehiculo
@@ -326,3 +326,23 @@ class EstadosArticuloSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadosArticulo
         fields = '__all__'
+
+
+class ActivosDevolucionadosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivosDevolucionados
+        fields = '__all__'
+
+class DevolucionActivosSerializer(serializers.ModelSerializer):
+    activos_devueltos = ActivosDevolucionadosSerializer(many=True)
+
+    class Meta:
+        model = DevolucionActivos
+        fields = '__all__'
+
+    def create(self, validated_data):
+        activos_devueltos_data = validated_data.pop('activos_devueltos')
+        devolucion = DevolucionActivos.objects.create(**validated_data)
+        for activo_devuelto_data in activos_devueltos_data:
+            ActivosDevolucionados.objects.create(devolucion_activo=devolucion, **activo_devuelto_data)
+        return devolucion
