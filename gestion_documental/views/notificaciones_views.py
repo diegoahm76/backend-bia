@@ -280,7 +280,7 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
 
         if instance:
             data_asignacion = {
-                'fecha_asignacion': fecha_actual,
+                'fecha_eleccion_estado': fecha_actual,
                 'id_persona_asigna': id_persona_asigna.id_persona,
                 'id_persona_asignada': data.get('id_persona_asignada'),
                 'cod_estado_asignacion': 'Pe',
