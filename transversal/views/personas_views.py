@@ -1008,6 +1008,26 @@ class GetPersonasResponsibleByFilters(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+class GetFuncionariosByUniOrg(generics.ListAPIView):
+    serializer_class = PersonasFilterSerializer
+    queryset = Personas.objects.all()
+
+    def get(self, request, pk):
+        personas_funcionario_ids = []
+        try:
+            clase_funcionario = ClasesTercero.objects.get(nombre='Funcionario')
+            personas_funcionario = ClasesTerceroPersona.objects.filter(id_clase_tercero=clase_funcionario)
+            if personas_funcionario.exists():
+                personas_funcionario_ids = [persona.id_persona.id_persona for persona in personas_funcionario]
+        except ClasesTercero.DoesNotExist:
+            pass
+
+        # Filtrar las personas por los IDs obtenidos y por el campo id_unidad_organizacional_actual que no sea NULL
+        personas = self.queryset.filter(id_persona__in=personas_funcionario_ids, id_unidad_organizacional_actual=pk)
+
+        serializer = self.serializer_class(personas, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron las siguientes personas que coinciden con los criterios de búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 class BusquedaHistoricoCambios(generics.ListAPIView):
     serializer_class = BusquedaHistoricoCambiosSerializer
     permission_classes = [IsAuthenticated]

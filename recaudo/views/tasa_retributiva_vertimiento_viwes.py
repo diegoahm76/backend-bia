@@ -9,9 +9,10 @@ from rest_framework.views import APIView
 
 from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.models.lideres_models import LideresUnidadesOrg
+from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertaEventoInmediadoCreate
-
-
+from django.template.loader import render_to_string
+from seguridad.utils import Util
 
 class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
     queryset = documento_formulario_recuado.objects.all()
@@ -68,17 +69,6 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
 
-                #GENERA ALERTA DE EVEMTO INMEDIATO 
-
-                vista_alertas_programadas = AlertaEventoInmediadoCreate()
-                data_alerta = {}
-                data_alerta['cod_clase_alerta'] = 'Rec_GenDoc'
-                #data_alerta['id_persona'] = id_persona_asiganada
-                data_alerta['id_elemento_implicado'] = data_archivo_id
-                
-                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
-                if respuesta_alerta.status_code != status.HTTP_200_OK:
-                    return respuesta_alerta
                 #ENVIO DE DOCUMENTO POR CORREO
                 ids=[]
 
@@ -92,23 +82,39 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
                     ids_perfiles = vector = json.loads(data_in['ids_destinatarios_perfiles'])
                     for id in ids_perfiles:
                         id_persona = self.buscar_persona_perfil(id)
+                        #print("codigo:" +str(id)+" persona: "+str(id_persona))
                         ids.append(id_persona)
                 if 'ids_destinatarios_personas' in data_in:
                     ids_personas  = json.loads(data_in['ids_destinatarios_personas'])
                     ids.extend(ids_personas)
-                print("LIDERES DE UNIDAD")
 
-                print(ids)
-
-                raise ValidationError('aaui')
+                #print("LIDERES DE UNIDAD")
+                #print(ids)
+                #raise ValidationError('aaui')
                    
+                #GENERA ALERTA DE EVEMTO INMEDIATO 
 
+                # vista_alertas_programadas = AlertaEventoInmediadoCreate()
+                # data_alerta = {}
+                # data_alerta['cod_clase_alerta'] = 'Rec_GenDoc'
+                # #data_alerta['id_persona'] = id_persona_asiganada
+                # data_alerta['id_elemento_implicado'] = data_archivo_id
+                
+                # respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+                # if respuesta_alerta.status_code != status.HTTP_200_OK:
+                #     return respuesta_alerta
+                    
+                personas = Personas.objects.filter(id_persona__in=ids)
+                for per in personas:
+                    print(per)
 
+                    template = "alerta.html"
+                    context = {'Nombre_alerta':'Se generado un documento','primer_nombre': per.primer_nombre,"mensaje":'mensaje'}
+                    template = render_to_string((template), context)
+                    email_data = {'template': template, 'email_subject': 'Documento', 'to_email':per.email}
+                    Util.send_email_file(email_data,archivo)
 
-                if 'ids_destinatarios_personas' in data_in:
-                    ids_personas = vector = json.loads(data_in['ids_destinatarios_personas'])
-
-
+                #raise ValidationError('aaui')
                 return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
                                 status=status.HTTP_201_CREATED)
             else:

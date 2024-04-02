@@ -8,7 +8,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -405,6 +405,12 @@ class OpaTramiteTitularGetBandejaTareasSerializer(serializers.ModelSerializer):
 
 
 
+class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Requerimientos
+        fields = '__all__'
+
+
 class RequerimientoSobreOPACreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolicitudAlUsuarioSobrePQRSDF
@@ -415,7 +421,29 @@ class Anexos_RequerimientoCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Anexos_PQR
         fields = '__all__'
+class AnexosTramiteCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnexosTramite
+        fields = '__all__'
 
+
+class RequerimientoSobreOPATramiteGetSerializer(serializers.ModelSerializer):
+    tipo_tramite = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
+    estado = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre',default=None)
+    class Meta:
+        model = Requerimientos
+        # fields = ['id_solicitud_al_usuario_sobre_pqrsdf']
+        fields = ['id_requerimiento','tipo_tramite','fecha_radicado','numero_radicado','estado']
+
+    def get_tipo_tramite(self,obj):
+        return "Requerimiento a una solicitud"
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
 
 class RequerimientoSobreOPAGetSerializer(serializers.ModelSerializer):
     tipo_tramite = serializers.SerializerMethodField()
@@ -434,3 +462,41 @@ class RequerimientoSobreOPAGetSerializer(serializers.ModelSerializer):
             cadena= str(obj.id_radicado_salida.prefijo_radicado)+'-'+str(obj.id_radicado_salida.agno_radicado)+'-'+str(obj.id_radicado_salida.nro_radicado)
             return cadena
         return 'SIN RADICAR'
+    
+class AnexoArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = ['ruta_archivo','nombre_de_Guardado']
+
+class Anexos_TramitresAnexosGetSerializer(serializers.ModelSerializer):
+   
+    archivo = serializers.SerializerMethodField()
+    numero = serializers.ReadOnlyField(source='id_anexo.orden_anexo_doc',default=None)
+    nombre = serializers.ReadOnlyField(source='id_anexo.nombre_anexo',default=None)
+    n_folios= serializers.ReadOnlyField(source='id_anexo.numero_folios',default=None)
+    medio_almacenamiento = serializers.ReadOnlyField(source='id_anexo.get_cod_medio_almacenamiento_display',default=None)
+    class Meta:
+        model = AnexosTramite
+        fields = ['id_anexo_tramite','id_anexo','numero','nombre','n_folios','medio_almacenamiento','archivo']
+
+    def get_archivo(self,obj):
+        id_anexo = obj.id_anexo
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=id_anexo).first()
+        if meta_data:
+            data_archivo  = AnexoArchivosDigitalesSerializer(meta_data.id_archivo_sistema)
+            return data_archivo.data['ruta_archivo']
+        return "Archivo"
+
+
+#RESPUESTA OPA
+class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Requerimientos
+        fields = '__all__'
+
+
+#RESPUESTA REQUERIMIENTO OPA
+class RespuestaRequerimientoOPACreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'

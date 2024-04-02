@@ -77,7 +77,19 @@ urlpatterns = [
     #REQUERIMIENTO A LA OPA
     path('opa/persona/titular/get/<str:tra>/', views_opas.OpaPersonaTitularGet.as_view(), name='get-opa-persona-titular'),
     path('opa/tramite/detalle/get/<str:tra>/', views_opas.OpaTramiteDetalleGet.as_view(), name='get-opa-tramite-detalle'),
+    #REEMPLAZA
     path('opa/requerimiento/create/', views_opas.RequerimientoSobreOPACreate.as_view(), name='crear-requerimiento-opa'),
+    path('opa/requerimiento/tramite/create/', views_opas.RequerimienntoSobreOpaTramiteCreate.as_view(), name='crear-requerimiento-opa-tramite'),
+    #Remplazar
     path('opa/requerimiento/get/<str:tra>/', views_opas.RequerimientosPQRSDFGetByTramiteOPA.as_view(), name='get-requerimiento-opa'),
+    #RequerimientosTramiteGetByTramiteOPA
+    path('opa/requerimiento/tramite/get/<str:tra>/', views_opas.RequerimientosTramiteGetByTramiteOPA.as_view(), name='get-requerimiento-opa-tramite'),
+    #AnexosRequerimientoGetByRequerimiento
+    path('opa/requerimiento/anexo/get/<str:re>/', views_opas.AnexosRequerimientoGetByRequerimiento.as_view(), name='get-anexos-requerimiento'),
 
+    #RESPUESTA A REQUERIMIENTO OPA
+
+    #RespuestaRequerimientoOpaTramiteCreate
+    path('respuesta-requerimiento-opa/opa/respuesta-requerimiento/create/',views_opas.RespuestaRequerimientoOpaTramiteCreate.as_view(),name='crear-respuesta-requerimiento')
+    
 ]
