@@ -53,7 +53,6 @@ def consultar_tabla_mssql():
         cursor.execute(select_query_970)
         column_data_970 = cursor.fetchall()
 
-        # Consultar los datos de la tabla T987TRVERTIMIENTO
         select_query_987 = """
             SELECT 
                 T987CodCia,
@@ -199,7 +198,7 @@ def consultar_tabla_mssql():
         column_data_980 = cursor.fetchall()
 
 
-        # Consultar los datos de la tabla T980TUA
+        # Consultar los datos de la tabla T956FUENTEHID
         select_query_956 = """
         SELECT 
         T956CodCia,
@@ -216,7 +215,121 @@ def consultar_tabla_mssql():
         """
         cursor.execute(select_query_956)
         column_data_956 = cursor.fetchall()
+
+
+        # Consultar los datos de la tabla T904RENTACTABANCO
+        select_query_904 = """
+        SELECT 
+        T904CodCia,
+        T904CodTipoRenta,
+        T904CodCtaBanco 
         
+
+    FROM
+        T904RENTACTABANCO 
+        """
+        cursor.execute(select_query_904)
+        column_data_904 = cursor.fetchall()
+        
+
+    # Consultar los datos de la tabla T914DISTRIBUCION
+        select_query_914 = """
+        SELECT 
+        T914CodCia,
+        T914CodTipoRenta,
+        T914NumDistribucion,
+        T914Agno,
+        T914CodTipoDoc,
+        T914NumeroDoc,
+        T914CodCtaBanco,
+        T914CodGrupoRec,
+        T914Fecha,
+        T914NumOrigen,
+        T914CodOrigen,
+        T914AbonarLiq,
+        T914Anulado,
+        T914NumeroDocRnt
+        
+
+    FROM
+        T914DISTRIBUCION  
+        """
+        cursor.execute(select_query_914)
+        column_data_914 = cursor.fetchall()
+        
+
+         # Consultar los datos de la tabla T914DISTRIBUCION
+        select_query_913 = """
+        SELECT 
+        T913CodCia,
+        T913CodTipoRenta,
+        T913NumRecaudo,
+        T913Agno,
+        T913CodTipoDoc,
+        T913CodCtaBanco,
+        T913CodGrupoRec,
+        T913Nit,
+        T913Fecha,
+        T913FechaReal,
+        T913Valor,
+        T913TipoDistribucion,
+        T913CodTipoFormulario,
+        T913NumFormulario,
+        T913NumFormularioPago,
+        T913Anulado,
+        T913NumAnulacion,
+        T913CodFormaPago,
+        T913NumDocPago
+
+    FROM
+        T913RECAUDO  
+        """
+        cursor.execute(select_query_913)
+        column_data_913 = cursor.fetchall()
+
+        # Consultar los datos de la tabla T915DISTRIBUCIONLIQ 
+        select_query_915 = """
+        SELECT 
+        T915CodCia,
+        T915CodTipoRenta,
+        T915NumDistribucion,
+        T915NumLiquidacion,
+        T915CodConcepto,
+        T915ValorPagado,
+        T915ValorPrescripcion,
+        T915ValorPagadoDet 
+        
+
+    FROM
+        T915DISTRIBUCIONLIQ   
+        """
+        cursor.execute(select_query_915)
+        column_data_915 = cursor.fetchall()
+
+
+        # Consultar los datos de la tabla T915DISTRIBUCIONLIQ 
+        select_query_916 = """
+        SELECT 
+        T916CodCia,
+        T916CodTipoRenta,
+        T916NumDistribucion,
+        T916NumLiquidacion,
+        T916NumCuota,
+        T916ValorCapital,
+        T916ValorInteres,
+        T916FechaIniInt,
+        T916ValorInt1066,
+        T916ValorPrescripcion
+     
+        
+
+    FROM
+        T916DISTRIBUCIONCUOT    
+        """
+        cursor.execute(select_query_916)
+        column_data_916 = cursor.fetchall()
+        
+
 
         # Mostrar los datos obtenidos
         # print("Datos obtenidos de la tabla T970TRAMITE en MS SQL Server:")
@@ -247,34 +360,78 @@ def consultar_tabla_mssql():
         # for row in column_data_980:
         #     print(row)
 
-        print("Datos obtenidos de la tabla T980TUA en MS SQL Server:")
-        for row in column_data_956:
+        # print("Datos obtenidos de la tabla T980TUA en MS SQL Server:")
+        # for row in column_data_956:
+        #     print(row)
+
+        # print("Datos obtenidos de la tabla T904RENTACTABANCO  en MS SQL Server:")
+        # for row in column_data_904:
+        #     print(row)
+
+        # print("Datos obtenidos de la tabla T914DISTRIBUCION  en MS SQL Server:")
+        # for row in column_data_914:
+        #     print(row)
+
+        # print("Datos obtenidos de la tabla t913recaudo   en MS SQL Server:")
+        # for row in column_data_913:
+        #     print(row)
+
+        # print("Datos obtenidos de la tabla T915DISTRIBUCIONLIQ   en MS SQL Server:")
+        # for row in column_data_915:
+        #     print(row)
+
+        print("Datos obtenidos de la tabla T916DISTRIBUCIONCUOT    en MS SQL Server:")
+        for row in column_data_916:
             print(row)
+
+
 
         # Cerrar la conexión a MS SQL Server
         conn_mssql.close()
 
         # Retornar los datos obtenidos
-        return column_data_970, column_data_987, select_query_986 ,column_data_985,column_data_982,column_data_981,column_data_980,column_data_956
+        return column_data_970, column_data_987, select_query_986 ,column_data_985,column_data_982,column_data_981,column_data_980,column_data_956,column_data_904,column_data_914,column_data_913,column_data_915,column_data_916
 
     except Exception as e:
         # Manejar errores de conexión
         print("Error de conexión MS SQL Server:", e)
         return None, None, None
+    
 
-def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 ,data_981 ,data_980,data_956):
+
+
+def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 ,data_981 ,data_980,data_956,data_904,data_914,data_913,data_915,data_916):
     try:
-        # Intentar establecer la conexión PostgreSQL sd
+        # Intentar establecer la conexión PostgreSQL
         conn_postgresql = psycopg2.connect(
-            host=os.environ['BIA_DB_HOST'], 
-            port=os.environ['BIA_DB_PORT'],
-            database=os.environ['BIA_DB_NAME'], 
-            user=os.environ['BIA_DB_USER'],
-            password=os.environ['BIA_DB_PASSWORD']
+            host=os.environ['BIA_ESTACIONES_HOST'], 
+            port=os.environ['BIA_ESTACIONES_PORT'],
+            database=os.environ['BIA_ESTACIONES_NAME'], 
+            user=os.environ['BIA_ESTACIONES_USER'],
+            password=os.environ['BIA_ESTACIONES_PASSWORD']
         )
         print("Conexión PostgreSQL exitosa!")
 
         cursor = conn_postgresql.cursor()
+
+
+        # # Eliminar datos existentes de las tablas
+        # cursor.execute("DELETE FROM rt970tramite")
+        # cursor.execute("DELETE FROM rt987trvertimiento")
+        # cursor.execute("DELETE FROM rt986tractividad")
+        # cursor.execute("DELETE FROM rt985tr")
+        # cursor.execute("DELETE FROM rt982tuacaptacion")
+        # cursor.execute("DELETE FROM rt981tuaactividad")
+        # cursor.execute("DELETE FROM rt980tua")
+        # cursor.execute("DELETE FROM rt956fuentehid")
+        # cursor.execute("DELETE FROM rt904rentactabanco")
+        # cursor.execute("DELETE FROM rt914distribucion")
+        # cursor.execute("DELETE FROM rt913recaudo")
+        # cursor.execute("DELETE FROM rt915distribucionliq")
+        # cursor.execute("DELETE FROM rt916distribucioncuot")
+
+
+
 
         # Instrucción SQL de inserción para la tabla T970TRAMITE
         insert_query_970 = """
@@ -305,10 +462,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
             ) 
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """
-        # Insertar cada dato en la tabla T970TRAMITE
-        for dato_970 in data_970:
-            dato_970 = tuple(None if val is None else val for val in dato_970)
-            cursor.execute(insert_query_970, dato_970)
+        # # Insertar cada dato en la tabla T970TRAMITE
+        # for dato_970 in data_970:
+        #     dato_970 = tuple(None if val is None else val for val in dato_970)
+        #     cursor.execute(insert_query_970, dato_970)
 
         # Instrucción SQL de inserción para la tabla T987TRVERTIMIENTO
         insert_query_987 = """
@@ -326,10 +483,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
             ) 
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """
-        # Insertar cada dato en la tabla T987TRVERTIMIENTO
-        for dato_987 in data_987:
-            dato_987 = tuple(None if val is None else val for val in dato_987)
-            cursor.execute(insert_query_987, dato_987)
+        # # Insertar cada dato en la tabla T987TRVERTIMIENTO
+        # for dato_987 in data_987:
+        #     dato_987 = tuple(None if val is None else val for val in dato_987)
+        #     cursor.execute(insert_query_987, dato_987)
 
         # Instrucción SQL de inserción para la tabla T986TRACTIVIDAD
         insert_query_986 = """
@@ -341,10 +498,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
             ) 
             VALUES (%s,%s,%s,%s)
         """
-        #Insertar cada dato en la tabla T986TRACTIVIDAD
-        for dato_986 in data_986:
-            dato_986 = tuple(None if val is None else val for val in dato_986)
-            cursor.execute(insert_query_986, dato_986)
+        # #Insertar cada dato en la tabla T986TRACTIVIDAD
+        # for dato_986 in data_986:
+        #     dato_986 = tuple(None if val is None else val for val in dato_986)
+        #     cursor.execute(insert_query_986, dato_986)
 
 
 
@@ -384,10 +541,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
 """
 
-        # Insertar cada dato en la tabla T985TR
-        for dato_985 in data_985:
-         dato_985 = tuple(None if val is None else val for val in dato_985)
-         cursor.execute(insert_query_985, dato_985)
+        # # Insertar cada dato en la tabla T985TR
+        # for dato_985 in data_985:
+        #  dato_985 = tuple(None if val is None else val for val in dato_985)
+        #  cursor.execute(insert_query_985, dato_985)
 
          
         insert_query_982 = """
@@ -406,10 +563,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
 """
 
-        # Insertar cada dato en la tabla T982TUACAPTACION
-        for dato_982 in data_982:
-         dato_982 = tuple(None if val is None else val for val in dato_982)
-         cursor.execute(insert_query_982, dato_982)
+        # # Insertar cada dato en la tabla T982TUACAPTACION
+        # for dato_982 in data_982:
+        #  dato_982 = tuple(None if val is None else val for val in dato_982)
+        #  cursor.execute(insert_query_982, dato_982)
    
 
     
@@ -425,10 +582,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     VALUES (%s,%s,%s,%s)
 """
 
-         #Insertar cada dato en la tabla t981tuaactividad
-        for dato_981 in data_981:
-         dato_981 = tuple(None if val is None else val for val in dato_981)
-         cursor.execute(insert_query_981, dato_981)
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_981 in data_981:
+        #  dato_981 = tuple(None if val is None else val for val in dato_981)
+        #  cursor.execute(insert_query_981, dato_981)
 
 
 
@@ -464,10 +621,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
 """
 
-         #Insertar cada dato en la tabla t981tuaactividad
-        for dato_980 in data_980:
-         dato_980 = tuple(None if val is None else val for val in dato_980)
-         cursor.execute(insert_query_980, dato_980)
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_980 in data_980:
+        #  dato_980 = tuple(None if val is None else val for val in dato_980)
+        #  cursor.execute(insert_query_980, dato_980)
 
 
         insert_query_956 = """
@@ -488,12 +645,137 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 """
 
-         #Insertar cada dato en la tabla t981tuaactividad
-        for dato_956 in data_956:
-         dato_956 = tuple(None if val is None else val for val in dato_956)
-         cursor.execute(insert_query_956, dato_956)
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_956 in data_956:
+        #  dato_956 = tuple(None if val is None else val for val in dato_956)
+        #  cursor.execute(insert_query_956, dato_956)
+
+        insert_query_904 = """
+       INSERT INTO rt904rentactabanco (
+        t904codcia,
+        t904codtiporenta,
+        t904codctabanco
+    
 
 
+    
+       
+    ) 
+    VALUES (%s,%s,%s)
+"""
+
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_904 in data_904:
+        #   dato_904 = tuple(None if val is None else val for val in dato_904)
+        #   cursor.execute(insert_query_904, dato_904)
+
+
+        insert_query_914 = """
+       INSERT INTO rt914distribucion (
+        t914codcia,
+        t914codtiporenta,
+        t914numdistribucion,
+        t914agno,
+        t914codtipodoc,
+        t914numerodoc,
+        t914codctabanco,
+        t914codgruporec,
+        t914fecha,
+        t914numorigen,
+        t914codorigen,
+        t914abonarliq,
+        t914anulado,
+        t914numerodocrnt
+    ) 
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+"""
+
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_914 in data_914:
+        #   dato_914 = tuple(None if val is None else val for val in dato_914)
+        #   cursor.execute(insert_query_914, dato_914)
+
+
+        insert_query_913 = """
+       INSERT INTO rt913recaudo (
+        t913codcia,
+        t913codtiporenta,
+        t913numrecaudo,
+        t913agno,
+        t913codtipodoc,
+        t913codctabanco,
+        t913codgruporec,
+        t913nit,
+        t913fecha,
+        t913fechareal,
+        t913valor,
+        t913tipodistribucion,
+        t913codtipoformulario,
+        t913numformulario,
+        t913numformulariopago,
+        t913anulado,
+        t913numanulacion,
+        t913codformapago,
+        t913numdocpago
+    ) 
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+"""
+
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_913 in data_913:
+        #   dato_913 = tuple(None if val is None else val for val in dato_913)
+        #   cursor.execute(insert_query_913, dato_913)
+
+
+
+        insert_query_915 = """
+       INSERT INTO rt915distribucionliq  (
+        t915codcia,
+        t915codtiporenta,
+        t915numdistribucion,
+        t915numliquidacion,
+        t915codconcepto,
+        t915valorpagado,
+        t915valorprescripcion,
+        t915valorpagadodet
+    ) 
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+"""
+
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_915 in data_915:
+        #   dato_915 = tuple(None if val is None else val for val in dato_915)
+        #   cursor.execute(insert_query_915, dato_915)
+
+
+        insert_query_916 = """
+       INSERT INTO rt916distribucioncuot  (
+        t916codcia,
+        t916codtiporenta,
+        t916numdistribucion,
+        t916numliquidacion,
+        t916numcuota,
+        t916valorcapital,
+        t916valorinteres,
+        t916fechainiint,
+        t916valorint1066,
+        t916valorprescripcion
+    ) 
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+"""
+
+        #  #Insertar cada dato en la tabla t981tuaactividad
+        # for dato_916 in data_916:
+        #   dato_916 = tuple(None if val is None else val for val in dato_916)
+        #   cursor.execute(insert_query_916, dato_916)
+
+
+
+
+
+        
+
+      
 
       
 
@@ -513,10 +795,21 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
             conn_postgresql.close()
             print("Conexión PostgreSQL cerrada")
 
-# Obtener los datos de las columnas T970TRAMITE, T987TRVERTIMIENTO y T986TRACTIVIDAD
-datos_970, datos_987, datos_986 , datos_985 , datos_982 , datos_981 , datos_980 , datos_956  = consultar_tabla_mssql()
+# # Obtener los datos de las columnas T970TRAMITE, T987TRVERTIMIENTO y T986TRACTIVIDAD
+# datos_970, datos_987, datos_986 , datos_985 , datos_982 , datos_981 , datos_980 , datos_956 , datos_904 ,datos_914 ,datos_913 ,datos_915,datos_916= consultar_tabla_mssql()
 
-# Insertar los datos en PostgreSQL
-if datos_970 and datos_987 and datos_986 and datos_985 and datos_982 and datos_981 and datos_980 and datos_956:
-    insertar_datos_postgresql(datos_970, datos_987,datos_986,datos_985 ,datos_982 ,datos_981,datos_980 ,datos_956)
+# # Insertar los datos en PostgreSQL
+# if datos_970 and datos_987 and datos_986 and datos_985 and datos_982 and datos_981 and datos_980 and datos_956 and datos_904 and datos_914 and datos_913 and datos_915 and datos_916:
+#     insertar_datos_postgresql(datos_970, datos_987,datos_986,datos_985 ,datos_982 ,datos_981,datos_980 ,datos_956,datos_904 ,datos_914,datos_913,datos_915,datos_916)
 
+
+
+def extraccion_pimisis_job():
+    load_dotenv()
+    
+    # Obtener los datos de las columnas T970TRAMITE, T987TRVERTIMIENTO y T986TRACTIVIDAD
+    datos_970, datos_987, datos_986 , datos_985 , datos_982 , datos_981 , datos_980 , datos_956 , datos_904 ,datos_914 ,datos_913 ,datos_915,datos_916 = consultar_tabla_mssql()
+    
+    # Insertar los datos en PostgreSQL
+    if datos_970 and datos_987 and datos_986 and datos_985 and datos_982 and datos_981 and datos_980 and datos_956 and datos_904 and datos_914 and datos_913 and datos_915 and datos_916:
+        insertar_datos_postgresql(datos_970, datos_987,datos_986,datos_985 ,datos_982 ,datos_981,datos_980 ,datos_956,datos_904 ,datos_914,datos_913,datos_915,datos_916)

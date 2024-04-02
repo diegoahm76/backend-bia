@@ -580,7 +580,8 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
      
     
 #__________________________________________________________________
-    
+from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
+
 class Vista_IndicadoresSemestral(generics.ListAPIView):
     serializer_class = IndicadoresSemestralSerializer
     permission_classes = [IsAuthenticated]
@@ -600,6 +601,9 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
+            # extraccion_pimisis = extraccion_pimisis_job()
+            # # Llamar a la función desde la instancia creada
+            # extraccion_pimisis()
             serializer = self.get_serializer(queryset, many=True)
             return Response({
                 'success': True,
