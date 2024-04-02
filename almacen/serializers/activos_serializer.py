@@ -346,3 +346,14 @@ class DevolucionActivosSerializer(serializers.ModelSerializer):
         for activo_devuelto_data in activos_devueltos_data:
             ActivosDevolucionados.objects.create(devolucion_activo=devolucion, **activo_devuelto_data)
         return devolucion
+    
+class ItemEntradaAlmacenSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    serie_placa = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
+
+    class Meta:
+        model = ItemEntradaAlmacen
+        fields = '__all__'

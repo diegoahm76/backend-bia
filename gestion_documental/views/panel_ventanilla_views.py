@@ -2603,6 +2603,42 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
     
 
 
+# class SeccionSubseccionPlaneacionAsignacionGet(generics.ListAPIView):
+#     serializer_class = UnidadesOrganizacionalesSecSubVentanillaGetSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         # Obtener el organigrama actual
+#         organigrama = Organigramas.objects.filter(actual=True)
+#         if not organigrama:
+#             raise NotFound('No existe ningún organigrama activado')
+#         if len(organigrama) > 1:
+#             raise PermissionDenied('Existe más de un organigrama actual, contacte a soporte')
+#         organigrama_actual = organigrama.first()
+
+#         # Filtrar unidades organizacionales para obtener la subsección de Gestión Ambiental
+#         unidad_gestion_ambiental = UnidadesOrganizacionales.objects.filter(
+#             cod_agrupacion_documental='SUB',
+#             id_organigrama=organigrama_actual.id_organigrama,
+#             nombre__iexact='Planeación'
+#         ).first()
+
+#         # Verificar si hay subsección de Gestión Ambiental
+#         if not unidad_gestion_ambiental:
+#             raise NotFound('No hay subsección de Gestión Ambiental')
+
+#         # Serializar la subsección de Gestión Ambiental
+#         serializer = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(
+#             [unidad_gestion_ambiental],  
+#             many=True
+#         )
+
+#         return Response({
+#             'success': True,
+#             'detail': 'Se encontró la subsección de Planeación',
+#             'data': serializer.data
+#         }, status=status.HTTP_200_OK)
+    
 class SeccionSubseccionPlaneacionAsignacionGet(generics.ListAPIView):
     serializer_class = UnidadesOrganizacionalesSecSubVentanillaGetSerializer
     permission_classes = [IsAuthenticated]
@@ -2616,26 +2652,24 @@ class SeccionSubseccionPlaneacionAsignacionGet(generics.ListAPIView):
             raise PermissionDenied('Existe más de un organigrama actual, contacte a soporte')
         organigrama_actual = organigrama.first()
 
-        # Filtrar unidades organizacionales para obtener la subsección de Gestión Ambiental
-        unidad_gestion_ambiental = UnidadesOrganizacionales.objects.filter(
-            cod_agrupacion_documental='SUB',
-            id_organigrama=organigrama_actual.id_organigrama,
-            nombre__iexact='Planeación'
-        ).first()
+        # Buscar las series por nombre y obtener sus IDs
+        series_a_buscar = ['Licencias', 'Permisos', 'Determinantes', 'Certificaciones', 'Registros']
+        series_encontradas = SeriesDoc.objects.filter(nombre__in=series_a_buscar)
+        ids_series_encontradas = series_encontradas.values_list('id_serie_doc', flat=True)
 
-        # Verificar si hay subsección de Gestión Ambiental
-        if not unidad_gestion_ambiental:
-            raise NotFound('No hay subsección de Gestión Ambiental')
+        # Buscar las unidades organizacionales relacionadas a las series encontradas
+        unidades_relacionadas = CatalogosSeriesUnidad.objects.filter(id_catalogo_serie__id_serie_doc__in=ids_series_encontradas)
+        unidades_organizacionales = unidades_relacionadas.values_list('id_unidad_organizacional', flat=True)
 
-        # Serializar la subsección de Gestión Ambiental
-        serializer = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(
-            [unidad_gestion_ambiental],  
-            many=True
-        )
+        # Obtener las unidades organizacionales
+        unidades_organizacionales_info = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=unidades_organizacionales)
+
+        # Serializar las unidades organizacionales encontradas
+        serializer = UnidadesOrganizacionalesSecSubVentanillaGetSerializer(unidades_organizacionales_info, many=True)
 
         return Response({
             'success': True,
-            'detail': 'Se encontró la subsección de Planeación',
+            'detail': 'Unidades organizacionales encontradas para las series especificadas',
             'data': serializer.data
         }, status=status.HTTP_200_OK)
     
