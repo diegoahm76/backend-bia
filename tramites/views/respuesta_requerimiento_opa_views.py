@@ -154,6 +154,7 @@ class RespuestaRequerimientoOpaTramiteCreate(generics.CreateAPIView):
         data_radicado['modulo_radica'] = 'Trámites y servicios'
         radicadoCreate = RadicadoCreate()
         respuesta_radicado = radicadoCreate.post(data_radicado)
+        print(respuesta_radicado)
 
 
         data_in['id_radicado'] = respuesta_radicado['id_radicado']
