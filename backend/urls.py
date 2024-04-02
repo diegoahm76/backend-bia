@@ -190,6 +190,7 @@ urlpatterns = [
     path('api/tramites/',include('tramites.urls.tramites_urls')),
     path('api/tramites/choices/',include('tramites.urls.choices_urls')),
     path('api/tramites/listas/',include('tramites.urls.listas_urls')),
+    path('api/tramites/respuesta_requerimiento_opa/',include('tramites.urls.respuesta_requerimiento_opa_urls'))
 
 
     
