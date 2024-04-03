@@ -240,41 +240,7 @@ class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)   
 
-# class RegistrosNotificaciones(generics.ListAPIView):
-#     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
 
-#     def get_registros(self, radicado, id_notificacion_correspondencia):
-#         queryset =  Registros_NotificacionesCorrespondecia.objects.filter(id_notificacion_correspondencia=id_notificacion_correspondencia)  # Obtiene las notificaciones de correspondencia
-
-#         if radicado:
-#             # Filtrar por el radicado en la tabla T262Radicados con flexibilidad
-#             if '-' in radicado:
-#                 try:
-#                     prefijo, agno, numero = radicado.split('-')
-#                     numero = numero.lstrip('0')
-#                 except ValueError:
-#                     # Si no se puede dividir en prefijo, año y número, continuar sin filtrar por radicado
-#                     pass
-#                 else:
-#                     queryset = queryset.filter(
-#                         id_radicado_salida__prefijo_radicado__icontains=prefijo,
-#                         id_radicado_salida__agno_radicado__icontains=agno,
-#                         id_radicado_salida__nro_radicado__icontains=numero
-#                     )
-#             else:
-#                 # Si no hay guion ('-'), buscar en cualquier parte del radicado
-#                 queryset = queryset.filter(
-#                     Q(id_radicado_salida__prefijo_radicado__icontains=radicado) |
-#                     Q(id_radicado_salida__agno_radicado__icontains=radicado) |
-#                     Q(id_radicado_salida__nro_radicado__icontains=radicado)
-#                 )
-        
-#         return queryset
-
-#     def get(self, request, *args, **kwargs):
-#         queryset = self.get_queryset()
-#         serializer = self.get_serializer(queryset, many=True)
-#         return serializer.data
     
 class GetNotificacionesCorrespondeciaAnexos(generics.RetrieveAPIView):
     serializer_class = NotificacionesCorrespondenciaAnexosSerializer
@@ -346,6 +312,7 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
                 'id_persona_asigna': id_persona_asigna.id_persona,
                 'id_persona_asignada': data.get('id_persona_asignada'),
                 'cod_estado_asignacion': 'Pe',
+                'cod_estado': 'RE',
             }
             #tarea_actualizada = UpdateTareasAsignacion()
             actualizar_notificacion = UpdateSolicitudNotificacionAsignacion()
@@ -382,7 +349,8 @@ class CrearTareas(generics.CreateAPIView):
             'cantidad_anexos': data.cantidad_anexos,
             'nro_folios_totales': data.nro_folios_totales,
             'requiere_digitalizacion': data.requiere_digitalizacion,
-            'fecha_inicial_registro': fecha_actual
+            'fecha_inicial_registro': fecha_actual,
+            'cod_estado': request.get('cod_estado'),
         }
 
         serializer = self.serializer_class(data=notificacion_data)
@@ -420,6 +388,11 @@ class CrearAsignacionTarea(generics.CreateAPIView):
             'id_notificacion': data.get('id_notificacion_correspondencia'),
             'id_tipo_notificacion_correspondencia': data.get('id_tipo_notificacion_correspondencia'),
         }
+
+        if id_persona_asigna.id_persona == data.get('id_persona_asignada'):
+            data_tarea['cod_estado'] = 'RE'
+        else:
+            asignacion_data['cod_estado_asignacion'] = 'PE'
         tarea = registro.post(data_tarea, fecha_actual)
         asignacion_data = {
             'id_orden_notificacion': tarea.id_registro_notificacion_correspondencia,
@@ -458,36 +431,56 @@ class GetAsignacionesCorrespondencia(generics.ListAPIView):
     def get_queryset(self):
         queryset = AsignacionNotificacionCorrespondencia.objects.all()  # Obtiene las notificaciones de correspondencia # Obtiene las notificaciones de correspondencia
         permission_classes = [IsAuthenticated]
+        persona = {}
 
         id_persona_asignada = self.request.query_params.get('id_persona_asignada')
         if id_persona_asignada:
             queryset = queryset.filter(id_persona_asignada=id_persona_asignada)
+            if not queryset:
+                persona = Personas.objects.filter(id_persona=id_persona_asignada).first()
         else:
             raise ValidationError(f'La persona {id_persona_asignada} no es valida.')
 
-        return queryset
+        return queryset, persona
 
     def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset, persona = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         persona_asignada = ''
         vigencia_contrato = ''
         id_persona_asignada = 0
-        pendientes = 0
-        resueltas = 0
-        asignadas = 0
-        for item in serializer.data:
-            #print(item)
-            persona_asignada = item.get('persona_asignada')
-            vigencia_contrato = item.get('vigencia_contrato')
-            id_persona_asignada = item.get('id_persona_asignada')
-            asignadas = asignadas+1
-            notificacion_correspondencia = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia = item.get('id_notificacion_correspondencia')).first()
-            if notificacion_correspondencia.cod_estado == 'PE':
-                pendientes = pendientes+1
-            if notificacion_correspondencia.cod_estado == 'RE':
-                resueltas = resueltas+1
-        data_valida = {"persona_asignada": persona_asignada, "id_persona_asignada": id_persona_asignada, "vigencia_contrato": vigencia_contrato, "asignadas": asignadas, "resueltas": resueltas, "pendientes": pendientes, "asignaciones": serializer.data}
+        tarear_pendientes = 0
+        tarear_resueltas = 0
+        tarear_asignadas = 0
+        notificaciones_pendientes = 0
+        notificaciones_resueltas = 0
+        notificaciones_asignadas = 0
+        if queryset:
+            for item in serializer.data:
+                if item.get('id_notificacion_correspondencia'):
+                    persona_asignada = item.get('persona_asignada')
+                    vigencia_contrato = item.get('vigencia_contrato')
+                    id_persona_asignada = item.get('id_persona_asignada')
+                    notificaciones_asignadas = notificaciones_asignadas+1
+                    notificacion_correspondencia = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia = item.get('id_notificacion_correspondencia')).first()
+                    if notificacion_correspondencia.cod_estado == 'PE' or notificacion_correspondencia.cod_estado == 'EG' or notificacion_correspondencia.cod_estado == 'RE':
+                        notificaciones_pendientes = notificaciones_pendientes+1
+                    if notificacion_correspondencia.cod_estado == 'NT':
+                        notificaciones_resueltas = notificaciones_resueltas+1
+                else:
+                    persona_asignada = item.get('persona_asignada')
+                    vigencia_contrato = item.get('vigencia_contrato')
+                    id_persona_asignada = item.get('id_persona_asignada')
+                    tarear_asignadas = tarear_asignadas+1
+                    tarea = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia = item.get('id_orden_notificacion')).first()
+                    if tarea.cod_estado == 'PE' or tarea.cod_estado == 'EG' or tarea.cod_estado == 'RE':
+                        tarear_pendientes = tarear_pendientes+1
+                    if tarea.cod_estado == 'NT':
+                        tarear_resueltas = tarear_resueltas+1
+        else:
+            persona_asignada = persona.primer_nombre + ' ' + persona.segundo_nombre + ' ' + persona.primer_apellido + ' ' + persona.segundo_apellido
+            id_persona_asignada = persona.id_persona
+        data_valida = {"persona_asignada": persona_asignada, "id_persona_asignada": id_persona_asignada, "vigencia_contrato": vigencia_contrato, "tarear_asignadas": tarear_asignadas, "tarear_resueltas": tarear_resueltas, "tarear_pendientes": tarear_pendientes, "notificaciones_asignadas": notificaciones_asignadas, "notificaciones_resueltas": notificaciones_resueltas, "notificaciones_pendientes": notificaciones_pendientes, "asignaciones": serializer.data}
         return Response({'succes': True, 'detail':'Tiene las siguientes asignaciones', 'data':data_valida,}, status=status.HTTP_200_OK) 
   
     
@@ -528,7 +521,7 @@ class CrearNotiicacionManual(generics.CreateAPIView):
             'nro_folios_totales': data.get('nro_folios_totales'),
             'id_persona_recibe_solicitud_manual': id_persona_recibe_solicitud.id_persona,
             'requiere_digitalizacion': data.get('requiere_digitalizacion'),
-            'cod_estado': 'RE',
+            'cod_estado': 'PE',
         }
         
         
@@ -1235,7 +1228,7 @@ class UpdateAsignacionNotificacion(generics.UpdateAPIView):
 
     def put(self, request, pk):
 
-        asignacion = get_object_or_404(AsignacionNotificacionCorrespondencia, idAsignacion_noti_corr=pk)
+        asignacion = get_object_or_404(AsignacionNotificacionCorrespondencia, id_notificacion_correspondencia=pk, cod_estado_asignacion='Pe')
 
         notificacion = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=asignacion.id_notificacion_correspondencia.id_notificacion_correspondencia)
         
@@ -1251,6 +1244,7 @@ class UpdateAsignacionNotificacion(generics.UpdateAPIView):
 
             notificacion.cod_estado_asignacion = 'Ac'
             notificacion.fecha_eleccion_estado = timezone.now()
+            notificacion.cod_estado = 'EG'
             notificacion.save()
 
             return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
@@ -1265,6 +1259,8 @@ class UpdateAsignacionNotificacion(generics.UpdateAPIView):
 
                 notificacion.cod_estado_asignacion = 'Re'
                 notificacion.fecha_eleccion_estado = timezone.now()
+                notificacion.justificacion_rechazo_asignacion = justificacion_rechazo
+                notificacion.cod_estado = 'DE'
                 notificacion.save()
 
                 return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
@@ -1300,7 +1296,7 @@ class UpdateAsignacionTarea(generics.UpdateAPIView):
 
     def put(self, request, pk):
 
-        asignacion = get_object_or_404(AsignacionNotificacionCorrespondencia, idAsignacion_noti_corr=pk)
+        asignacion = get_object_or_404(AsignacionNotificacionCorrespondencia, id_orden_notificacion=pk, cod_estado_asignacion='Pe')
 
         tarea = get_object_or_404(Registros_NotificacionesCorrespondecia, id_registro_notificacion_correspondencia=asignacion.id_orden_notificacion.id_registro_notificacion_correspondencia)
         
@@ -1317,6 +1313,7 @@ class UpdateAsignacionTarea(generics.UpdateAPIView):
 
             tarea.cod_estado_asignacion = 'Ac'
             tarea.fecha_eleccion_estado = fecha_actual
+            tarea.cod_estado = 'EG'
             tarea.save()
 
             return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
@@ -1331,6 +1328,8 @@ class UpdateAsignacionTarea(generics.UpdateAPIView):
 
                 tarea.cod_estado_asignacion = 'Re'
                 tarea.fecha_eleccion_estado = fecha_actual
+                tarea.justificacion_rechazo_asignacion = justificacion_rechazo
+                tarea.cod_estado_asignacion = 'DE'
                 tarea.save()
 
                 return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
