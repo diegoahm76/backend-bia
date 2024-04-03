@@ -55,10 +55,11 @@ from gestion_documental.serializers.notificaciones_serializers import (
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
     serializer_class = NotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = NotificacionesCorrespondencia.objects.all()  # Obtiene las notificaciones de correspondencia
-        permission_classes = [IsAuthenticated]
+        
         id_radicado = ''
         data_final = []
 
@@ -68,6 +69,8 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
         expediente = self.request.query_params.get('expediente')
         grupo_solicitante = self.request.query_params.get('grupo_solicitante')
         estado = self.request.query_params.get('estado')
+        estado_asignacion = self.request.query_params.get('estado_asignacion')
+        funcionario_asignado = self.request.query_params.get('funcionario_asignado')
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
@@ -81,12 +84,22 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
         if grupo_solicitante:
             queryset = queryset.filter(id_und_org_oficina_solicita=grupo_solicitante)
 
+        if funcionario_asignado:
+            queryset = queryset.filter(id_persona_asignada=funcionario_asignado)
+
         if estado:
             estado_valido = ['RE', 'DE', 'EG', 'PE', 'NT']
             if estado in estado_valido:
                 queryset = queryset.filter(cod_estado=estado)
             else:
                 raise ValidationError(f'El estado {estado} no es válido.')
+            
+        if estado_asignacion:
+            estado_valido = ['Ac', 'Pe', 'Re']
+            if estado_asignacion in estado_valido:
+                queryset = queryset.filter(cod_estado_asignacion=estado_asignacion)
+            else:
+                raise ValidationError(f'El estado de la asignación {estado_asignacion} no es válido.')
             
         if expediente:
             if '-' in expediente:
@@ -125,12 +138,107 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
                 print(item_registro)
                 if item_registro != None:
                     for registro in item_registro:
-                        if radicado in registro.get('radicado', ''):
+                        if radicado == registro.get('radicado', ''):
                             data_validada.append(item)
         else :
             data_validada = serializer.data
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)    
     
+
+class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
+    serializer_class = NotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = NotificacionesCorrespondencia.objects.all()  # Obtiene las notificaciones de correspondencia
+        
+        id_radicado = ''
+        data_final = []
+
+        # Obtener parámetros de consulta
+        tipo_documento = self.request.query_params.get('tipo_documento')
+        radicado = self.request.query_params.get('radicado')
+        expediente = self.request.query_params.get('expediente')
+        grupo_solicitante = self.request.query_params.get('grupo_solicitante')
+        estado = self.request.query_params.get('estado')
+        estado_asignacion = self.request.query_params.get('estado_asignacion')
+        funcionario_asignado = self.request.query_params.get('funcionario_asignado')
+
+        # Filtrar por tipo de documento si es válido
+        if tipo_documento:
+            tipo_documento_valido = ['OF', 'AC', 'AA', 'AI', 'OT']
+            if tipo_documento in tipo_documento_valido:
+                queryset = queryset.filter(cod_tipo_documento=tipo_documento)
+            else:
+                raise ValidationError(f'El tipo de documento {tipo_documento} no es válido.')
+        
+
+        if grupo_solicitante:
+            queryset = queryset.filter(id_und_org_oficina_solicita=grupo_solicitante)
+
+        # if funcionario_asignado:
+        #     queryset = queryset.filter(id_persona_asignada=funcionario_asignado)
+
+        if estado:
+            estado_valido = ['RE', 'DE', 'EG', 'PE', 'NT']
+            if estado in estado_valido:
+                queryset = queryset.filter(cod_estado=estado)
+            else:
+                raise ValidationError(f'El estado {estado} no es válido.')
+            
+        if estado_asignacion:
+            estado_valido = ['Ac', 'Pe', 'Re']
+            if estado_asignacion in estado_valido:
+                queryset = queryset.filter(cod_estado_asignacion=estado_asignacion)
+            else:
+                raise ValidationError(f'El estado de la asignación {estado_asignacion} no es válido.')
+            
+        if expediente:
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente_documental__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente_documental__codigo_exp_Agno__icontains=agno,
+                        id_expediente_documental__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                queryset = queryset.filter(
+                    Q(id_expediente_documental__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente_documental__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente_documental__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
+
+
+
+        return  queryset, funcionario_asignado
+
+    def get(self, request, *args, **kwargs):
+        queryset, radicado = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        data_validada =[]
+        data_temporal = []
+        data_registro = []
+        radicado = int(radicado)
+        for item in serializer.data:
+            id_persona_asignada = item.get('id_persona_asignada')
+            if radicado == id_persona_asignada:
+                data_validada.append(item)
+            else:
+                data_temporal.append(item)
+        for temporal in data_temporal:
+            item_registro =  temporal.get('registros_notificaciones')
+            if item_registro != None:
+                for registro in item_registro:
+                    if radicado == registro.get('id_persona_asignada'):
+                        data_registro.append(registro)
+                        temporal['registros_notificaciones'] = data_registro
+                        data_validada.append(temporal)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)   
 
 # class RegistrosNotificaciones(generics.ListAPIView):
 #     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
@@ -185,53 +293,7 @@ class GetNotificacionesCorrespondeciaAnexos(generics.RetrieveAPIView):
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class CrearTareasAsignacion(generics.CreateAPIView):
-    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
 
-    def post(self, request, fecha_actual):
-        data = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia=request.get('id_notificacion')).first()
-        print(request.get('id_notificacion'))
-
-        notificacion_data = {
-            'id_notificacion_correspondencia': request.get('id_notificacion'),
-            'fecha_registro': fecha_actual,
-            'id_tipo_notificacion_correspondencia': request.get('id_tipo_notificacion_correspondencia'),
-            'id_persona_titular': data.id_persona_titular.id_persona,
-            'id_persona_interpone': data.id_persona_interpone.id_persona,
-            'cod_relacion_con_titular': data.cod_relacion_con_titular,
-            'cod_tipo_documentoID': data.cod_tipo_documentoID.cod_tipo_documento,
-            'numero_identificacion': data.nro_documentoID,
-            'persona_a_quien_se_dirige': data.persona_a_quien_se_dirige,
-            'dir_notificacion_nal': data.dir_notificacion_nal,
-            'cod_municipio_notificacion_nal': data.cod_municipio_notificacion_nal.cod_municipio,
-            'tel_fijo': data.tel_fijo,
-            'tel_celular': data.tel_celular,
-            'email_notificacion': data.email_notificacion,
-            'asunto': data.asunto,
-            'descripcion': data.descripcion,
-            'cantidad_anexos': data.cantidad_anexos,
-            'nro_folios_totales': data.nro_folios_totales,
-            'requiere_digitalizacion': data.requiere_digitalizacion,
-            'fecha_inicial_registro': fecha_actual,
-            'fecha_eleccion_estado': fecha_actual
-        }
-
-        serializer = self.serializer_class(data=notificacion_data)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        return instance
-    
-class UpdateTareasAsignacion(generics.UpdateAPIView):
-    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
-
-    def put(self, data_asignacion, pk):
-        data = data_asignacion
-        registro_tarea = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=pk).first()
-
-        serializer = self.serializer_class(registro_tarea, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        return instance
     
 class UpdateSolicitudNotificacionAsignacion(generics.UpdateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
@@ -289,6 +351,103 @@ class CrearAsignacionNotificacion(generics.CreateAPIView):
             actualizar_notificacion = UpdateSolicitudNotificacionAsignacion()
             #if not tarea_actualizada.put(data_asignacion, tarea.id_registro_notificacion_correspondencia):
             if not actualizar_notificacion.put(data_asignacion, data.get('id_notificacion_correspondencia')):
+                raise ValidationError({'id_notificacion_correspondencia': 'No se pudo actualizar el estado de la tarea'})
+        return Response({'succes': True, 'detail':'Se la asigncación correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+    
+
+class CrearTareas(generics.CreateAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
+
+    def post(self, request, fecha_actual):
+        data = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia=request.get('id_notificacion')).first()
+        print(request.get('id_notificacion'))
+
+        notificacion_data = {
+            'id_notificacion_correspondencia': request.get('id_notificacion'),
+            'fecha_registro': fecha_actual,
+            'id_tipo_notificacion_correspondencia': request.get('id_tipo_notificacion_correspondencia'),
+            'id_persona_titular': data.id_persona_titular.id_persona,
+            'id_persona_interpone': data.id_persona_interpone.id_persona,
+            'cod_relacion_con_titular': data.cod_relacion_con_titular,
+            'cod_tipo_documentoID': data.cod_tipo_documentoID.cod_tipo_documento,
+            'numero_identificacion': data.nro_documentoID,
+            'persona_a_quien_se_dirige': data.persona_a_quien_se_dirige,
+            'dir_notificacion_nal': data.dir_notificacion_nal,
+            'cod_municipio_notificacion_nal': data.cod_municipio_notificacion_nal.cod_municipio,
+            'tel_fijo': data.tel_fijo,
+            'tel_celular': data.tel_celular,
+            'email_notificacion': data.email_notificacion,
+            'asunto': data.asunto,
+            'descripcion': data.descripcion,
+            'cantidad_anexos': data.cantidad_anexos,
+            'nro_folios_totales': data.nro_folios_totales,
+            'requiere_digitalizacion': data.requiere_digitalizacion,
+            'fecha_inicial_registro': fecha_actual
+        }
+
+        serializer = self.serializer_class(data=notificacion_data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return instance
+    
+class UpdateTareasAsignacion(generics.UpdateAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
+
+    def put(self, data_asignacion, pk):
+        data = data_asignacion
+        registro_tarea = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=pk).first()
+
+        serializer = self.serializer_class(registro_tarea, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return instance
+    
+
+class CrearAsignacionTarea(generics.CreateAPIView):
+    serializer_class = AsignacionNotiCorresCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        fecha_actual = timezone.now()
+        id_persona_asigna = request.user.persona
+
+        if not data.get('id_persona_asignada'):
+            raise ValidationError({'id_persona_asignada': 'La persona asignada es obligatorio'})
+        
+        registro = CrearTareas()
+        data_tarea = {
+            'id_notificacion': data.get('id_notificacion_correspondencia'),
+            'id_tipo_notificacion_correspondencia': data.get('id_tipo_notificacion_correspondencia'),
+        }
+        tarea = registro.post(data_tarea, fecha_actual)
+        asignacion_data = {
+            'id_orden_notificacion': tarea.id_registro_notificacion_correspondencia,
+            'fecha_asignacion': fecha_actual,
+            'id_persona_asigna': id_persona_asigna.id_persona,
+            'id_persona_asignada': data.get('id_persona_asignada'),
+            'fecha_eleccion_estado': fecha_actual,
+            'id_und_org_seccion_asignada': id_persona_asigna.id_unidad_organizacional_actual.id_unidad_organizacional, 
+        }
+
+        if id_persona_asigna.id_persona == data.get('id_persona_asignada'):
+            asignacion_data['cod_estado_asignacion'] = 'Ac'
+        else:
+            asignacion_data['cod_estado_asignacion'] = 'Pe'
+        serializer = self.serializer_class(data=asignacion_data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        if instance:
+            data_asignacion = {
+                'fecha_asignacion': instance.fecha_asignacion,
+                'fecha_eleccion_estado': instance.fecha_eleccion_estado,
+                'id_persona_asigna': instance.id_persona_asigna.id_persona,
+                'id_persona_asignada': instance.id_persona_asignada.id_persona,
+                'cod_estado_asignacion': instance.cod_estado_asignacion,
+            }
+            tarea_actualizada = UpdateTareasAsignacion()
+            if not tarea_actualizada.put(data_asignacion, tarea.id_registro_notificacion_correspondencia):
                 raise ValidationError({'id_notificacion_correspondencia': 'No se pudo actualizar el estado de la tarea'})
         return Response({'succes': True, 'detail':'Se la asigncación correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
     
@@ -1070,7 +1229,7 @@ class ActosAdministrativosGet(generics.ListAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
 
-class UpdateAsignacion(generics.UpdateAPIView):
+class UpdateAsignacionNotificacion(generics.UpdateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
     permission_classes = [IsAuthenticated]
 
@@ -1134,3 +1293,46 @@ class RechazoNotificacionCorrespondencia(generics.UpdateAPIView):
             return Response({'succes': True, 'detail': 'La notificación se devolvio correctamente.', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+class UpdateAsignacionTarea(generics.UpdateAPIView):
+    serializer_class = AsignacionNotiCorresCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+
+        asignacion = get_object_or_404(AsignacionNotificacionCorrespondencia, idAsignacion_noti_corr=pk)
+
+        tarea = get_object_or_404(Registros_NotificacionesCorrespondecia, id_registro_notificacion_correspondencia=asignacion.id_orden_notificacion.id_registro_notificacion_correspondencia)
+        
+        justificacion_rechazo = request.data.get('justificacion_rechazo')
+        flag = request.data.get('flag')
+        fecha_actual = timezone.now()
+
+        if flag:
+            asignacion.cod_estado_asignacion = 'Ac'
+            asignacion.fecha_eleccion_estado = fecha_actual
+            asignacion.save()
+            serializer = self.get_serializer(asignacion)
+            data = serializer.data
+
+            tarea.cod_estado_asignacion = 'Ac'
+            tarea.fecha_eleccion_estado = fecha_actual
+            tarea.save()
+
+            return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
+        else:
+            if justificacion_rechazo:
+                asignacion.cod_estado_asignacion = 'Re'
+                asignacion.fecha_eleccion_estado = fecha_actual
+                asignacion.justificacion_rechazo = justificacion_rechazo
+                asignacion.save()
+                serializer = self.get_serializer(asignacion)
+                data = serializer.data
+
+                tarea.cod_estado_asignacion = 'Re'
+                tarea.fecha_eleccion_estado = fecha_actual
+                tarea.save()
+
+                return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
+            else:
+                return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)
