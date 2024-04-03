@@ -3,7 +3,7 @@ from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
 from gestion_documental.serializers.solicitudes_OPAS_serializers import OPAGetSerializer,RequerimientoSobreOPATramiteGetSerializer
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, Requerimientos
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, Requerimientos, RespuestasRequerimientos
 
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 import os
@@ -36,7 +36,8 @@ class RequerimientosTramiteGetByTramiteOPA(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     def get(self, request,tra):
         #Pendiente validar si estan sin responder
-        instance = self.get_queryset().filter(id_solicitud_tramite=tra)
+        ids_requerimientos_con_respuesta = RespuestasRequerimientos.objects.values_list('id_requerimiento', flat=True)
+        instance = self.get_queryset().filter(id_solicitud_tramite=tra).exclude(id_requerimiento__in=ids_requerimientos_con_respuesta)
         if not instance:
             raise NotFound("No existen registros")
         

@@ -55,6 +55,7 @@ class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     def get_funcuinario_solicitante(self, obj):
         return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
     
+    
 
 class NotificacionesCorrespondenciaAnexosSerializer(serializers.ModelSerializer):
     nombre_tipo_documento = serializers.CharField(source='cod_tipo_documento.nombre')
@@ -154,6 +155,7 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
     fecha_actuacion = serializers.SerializerMethodField()
     plazo_entrega = serializers.SerializerMethodField()
     dias_faltantes = serializers.SerializerMethodField()
+    tipo_gestion = serializers.CharField(source='id_tipo_notificacion_correspondencia.nombre')
     class Meta:
         model = Registros_NotificacionesCorrespondecia
         fields = '__all__'

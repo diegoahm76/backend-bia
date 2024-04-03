@@ -1209,11 +1209,15 @@ class RequerimientoOpaPut(generics.UpdateAPIView):#Continuar con asignacion a gr
         tarea = TareasAsignadas.objects.filter(id_asignacion=asignacion.id_asignacion_tramite).first()
         if not tarea:
             raise ValidationError("No se encontro una tarea asignada")
+        adiciones_tarea = AdicionalesDeTareas.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada,id_respuesta_requerimiento= instance.id_respuesta_requerimiento).first()
 
+        if adiciones_tarea:
+            raise ValidationError("Ya se agrego un complemento")
         data_adicion_tarea = {}
         data_adicion_tarea['id_respuesta_requerimiento'] = instance.id_respuesta_requerimiento
         data_adicion_tarea['id_tarea_asignada'] = tarea.id_tarea_asignada
         data_adicion_tarea['fecha_de_adicion'] = datetime.now()
+        data_adicion_tarea['id_complemento_usu_pqr'] = None
         serializador_adicion = self.serializer_adicion_tarea(data=data_adicion_tarea)
         serializador_adicion.is_valid(raise_exception=True)
         serializador_adicion.save()

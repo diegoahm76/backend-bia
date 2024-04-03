@@ -67,7 +67,7 @@ urlpatterns = [
     path('opas/anexo-documento/meta-data/get/<str:pk>/',views.OPAAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
     path('opas/requerimiento/get/<str:tra>/', views.RespuestaRequerimientoOpaGet.as_view(), name='get-requerimiento-opa'),#RESPUESTA DE LOS REQUERIMIENTOS
     #RequerimientoOpaPut
-    path('opas/respuesta-requerimiento/continuar-asignacion/',views.RequerimientoOpaPut.as_view(),name='continuar-asignacion-opa'),
+    path('opas/respuesta-requerimiento/continuar-asignacion/<str:pk>/',views.RequerimientoOpaPut.as_view(),name='continuar-asignacion-opa'),
     # OTROS
     path('otros/get/', views.OtrosGet.as_view(),name='listar-otros'),
     path('otros/estados_solicitudes/get/', views.OtrosEstadosSolicitudesGet.as_view(),name='listar-estados-solicitud-otros'),
