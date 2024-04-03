@@ -404,11 +404,11 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     try:
         # Intentar establecer la conexión PostgreSQL
         conn_postgresql = psycopg2.connect(
-            host=os.environ['BIA_ESTACIONES_HOST'], 
-            port=os.environ['BIA_ESTACIONES_PORT'],
-            database=os.environ['BIA_ESTACIONES_NAME'], 
-            user=os.environ['BIA_ESTACIONES_USER'],
-            password=os.environ['BIA_ESTACIONES_PASSWORD']
+            host=os.environ['BIA_DB_HOST'], 
+            port=os.environ['BIA_DB_PORT'],
+            database=os.environ['BIA_DB_PASSWORD'], 
+            user=os.environ['BIA_DB_USER'],
+            password=os.environ['BIA_DB_PASSWORD']
         )
         print("Conexión PostgreSQL exitosa!")
 
@@ -416,7 +416,7 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
         # # Eliminar datos existentes de las tablas
-        # cursor.execute("DELETE FROM rt970tramite")
+        #cursor.execute("DELETE FROM rt970tramite")
         # cursor.execute("DELETE FROM rt987trvertimiento")
         # cursor.execute("DELETE FROM rt986tractividad")
         # cursor.execute("DELETE FROM rt985tr")
@@ -806,7 +806,7 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 def extraccion_pimisis_job():
     load_dotenv()
-    
+
     # Obtener los datos de las columnas T970TRAMITE, T987TRVERTIMIENTO y T986TRACTIVIDAD
     datos_970, datos_987, datos_986 , datos_985 , datos_982 , datos_981 , datos_980 , datos_956 , datos_904 ,datos_914 ,datos_913 ,datos_915,datos_916 = consultar_tabla_mssql()
     

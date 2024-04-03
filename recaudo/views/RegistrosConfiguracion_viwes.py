@@ -590,6 +590,9 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
         queryset = IndicadoresSemestral.objects.all()
         year = self.kwargs.get('year')
         formulario = self.kwargs.get('formulario')
+        # extraccion_pimisis = extraccion_pimisis_job()
+        #     # Llamar a la función desde la instancia creada
+        # extraccion_pimisis()
         
         if year:
             queryset = queryset.filter(vigencia_reporta=year)
@@ -601,9 +604,7 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         try:
             queryset = self.get_queryset()
-            # extraccion_pimisis = extraccion_pimisis_job()
-            # # Llamar a la función desde la instancia creada
-            # extraccion_pimisis()
+           
             serializer = self.get_serializer(queryset, many=True)
             return Response({
                 'success': True,
