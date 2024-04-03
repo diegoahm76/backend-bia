@@ -9,13 +9,13 @@ from django.db import transaction
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.bandeja_tareas_models import ReasignacionesTareas, TareasAsignadas
+from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.views.pqr_views import RadicadoCreate
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import  AsignacionTramites, BandejaTareasPersona, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import Anexos_TramitresAnexosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import  AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import AnexosCreate, Estados_PQRCreate, MetadatosAnexosTmpCreate, TareaBandejaTareasPersonaUpdate
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
@@ -723,3 +723,56 @@ class RequerimienntoSobreOpaTramiteCreate(generics.CreateAPIView):
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":'data_respuesta_estado_asociado','anexos':data_anexos,'relacion_pqr':relacion_requerimiento}, status=status.HTTP_200_OK)
 
 
+
+
+class ComplementoTareaOPAGetByTarea(generics.ListAPIView):#RespuestaRequerimientos
+    serializer_class = AdicionalesDeTareasopaGetByTareaSerializer
+    queryset = AdicionalesDeTareas.objects.all()
+
+    def get(self, request,tarea):
+
+        instance = TareasAsignadas.objects.filter(id_tarea_asignada=tarea).first()
+        
+        if not instance.id_asignacion:
+            aux = instance
+            while aux:
+                aux=aux.id_tarea_asignada_padre_inmediata
+                if  aux and aux.id_asignacion:
+                    instance = aux 
+                    break
+            
+            #raise ValidationError('No se encontro la asignacion')
+        print(instance)
+        complemento = AdicionalesDeTareas.objects.filter(id_tarea_asignada=instance)
+        
+        print(complemento)
+        if not complemento:
+            raise NotFound("No se encontro el complemento")
+      
+        serializer = self.serializer_class(complemento,many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
+    
+
+
+class RespuestaTramitesOpasInfoAnexosGet(generics.ListAPIView):
+    serializer_class = AnexosRespuestaRequerimientosGetSerializer
+    queryset = RespuestasRequerimientos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+        data=[]
+        instance =self.queryset.filter(id_respuesta_requerimiento=pk).first()
+
+
+        if not instance:
+                raise NotFound("No existen registros")
+        anexos_opa = AnexosTramite.objects.filter(id_respuesta_requerimiento=instance)
+        for x in anexos_opa:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+    
