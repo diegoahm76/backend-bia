@@ -249,3 +249,30 @@ class IndicadorValor(models.Model):
     def __str__(self):
         return f"{self.indicador} - {self.mes_id}: {self.valor}"
     
+#_____modelosPimisis___________________________________________
+    
+class Rt970Tramite(models.Model):
+    t970codcia = models.CharField(max_length=5, null=True, default=None, db_column='t970codcia')
+    t970idtramite = models.CharField(max_length=255, db_column='t970idtramite')
+    t970agno = models.SmallIntegerField(null=True, blank=True, db_column='t970agno')
+    t970codtipotramite = models.CharField(max_length=5, null=True, blank=True, db_column='t970codtipotramite')
+    t970codexpediente = models.CharField(max_length=30, null=True, blank=True, db_column='t970codexpediente')
+    t970coddepen = models.CharField(max_length=20, null=True, blank=True, db_column='t970coddepen')
+    t970numradicadoentrada = models.CharField(max_length=30, null=True, blank=True, db_column='t970numradicadoentrada')
+    t970fecharadicadoentrada = models.DateTimeField(null=True, blank=True, db_column='t970fecharadicadoentrada')
+    t970descripcion = models.TextField(null=True, blank=True, db_column='t970descripcion')
+    t970idtramiteref = models.CharField(max_length=30, null=True, blank=True, db_column='t970idtramiteref')
+    t970observacion = models.TextField(null=True, blank=True, db_column='t970observacion')
+    t970codestadotram = models.CharField(max_length=5, null=True, blank=True, db_column='t970codestadotram')
+    t970tuafechainiperm = models.DateTimeField(null=True, blank=True, db_column='t970tuafechainiperm')
+    t970tuamesesplazo = models.CharField(max_length=100, null=True, blank=True, db_column='t970tuamesesplazo')
+    t970tuafechafinperm = models.DateTimeField(null=True, blank=True, db_column='t970tuafechafinperm')
+    t970numresolperm = models.CharField(max_length=30, null=True, blank=True, db_column='t970numresolperm')
+    t970fecharesperm = models.DateTimeField(null=True, blank=True, db_column='t970fecharesperm')
+    t970tuacaudalconcesi = models.CharField(max_length=200, null=True, blank=True, db_column='t970tuacaudalconcesi')
+    t970tuapredio = models.CharField(max_length=255, null=True, blank=True, db_column='t970tuapredio')
+    t970verifico_fun = models.CharField(max_length=1, null=True, blank=True, db_column='t970verifico_funn')
+
+    class Meta:
+        db_table = 'rt970tramite'  # Nombre de la tabla en la base de datos
+        unique_together = ('t970codcia', 't970idtramite')  # Clave primaria compuesta

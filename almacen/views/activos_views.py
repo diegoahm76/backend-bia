@@ -26,7 +26,7 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen, EstadosArticulo
-from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, ActivosDevolucionadosSerializer, AlmacenistaLogueadoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DespachoActivosSerializer, DetalleSolicitudActivosSerializer, DevolucionActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, ActivosDevolucionadosSerializer, AlmacenistaLogueadoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, BajaActivosSerializer, BusquedaSolicitudActivoSerializer, ClasesTerceroPersonaSerializer, DespachoActivosSerializer, DetalleSolicitudActivosSerializer, DevolucionActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemEntradaAlmacenSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
 from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
@@ -1488,17 +1488,23 @@ class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
                 archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
                 archivos_digital_data.append(archivo_digital_serializer.data)
 
-        print("Salida Especial encontrada:", salida_especial)
-        print("Anexos encontrados:", anexos)
-        print("Archivos Digitales encontrados:", archivos_digital_data)
+        # Obtener los bienes asociados a la entrada de almacén de referencia
+        bienes_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref)
+        
+        # Serializar los bienes
+        bienes_serializer = ItemEntradaAlmacenSerializer(bienes_entrada, many=True)
+
+        print("bienes encontrados:", bienes_serializer)
+      
         
         # Devolver la información como respuesta
         return Response({
             'salida_especial': salida_especial_serializer.data,
             'anexos': anexos_serializer.data,  # Agregar los anexos serializados
-            'archivos_digitales': archivos_digital_data
+            'archivos_digitales': archivos_digital_data,
+            'bienes': bienes_serializer.data,  # Agregar los bienes serializados
         }, status=status.HTTP_200_OK)
-    
+
 
 class ObtenerUltimoConsecutivoView(generics.ListAPIView):
     def get(self, request):
@@ -1625,6 +1631,9 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
         devolucion_serializer.is_valid(raise_exception=True)
         devolucion_data = devolucion_serializer.validated_data
 
+        # Obtener ID de unidad organizacional del solicitante
+        id_unidad_org_solicitante = devolucion_data.get('id_persona_devolucion').id_unidad_organizacional_actual.id_unidad_organizacional
+
         # Validar la justificación si el estado seleccionado lo requiere
         estado_seleccionado = devolucion_data.get('cod_estado_activo')
         justificacion = devolucion_data.get('justificacion_anulacion')
@@ -1639,8 +1648,10 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
         devolucion_activos.justificacion_anulacion = None
         devolucion_activos.fecha_anulacion = None
         devolucion_activos.id_persona_anulacion = None
-        devolucion_activos.consecutivo_devolucion = DevolucionActivos.objects.latest('id').id_devolucion_activos  # Obtener el último consecutivo y asignar el siguiente
-        devolucion_activos.fecha_devolucion = datetime.now()
+        devolucion_activos.consecutivo_devolucion = DevolucionActivos.objects.latest('id').id_devolucion_activos + 1  # Obtener el último consecutivo y asignar el siguiente
+        devolucion_activos.fecha_devolucion = timezone.now()
+        devolucion_activos.id_persona_devolucion = devolucion_data.get('id_persona_devolucion')  # Asignar el id de la persona que devolvió
+        devolucion_activos.id_uni_org_persona_devolucion = id_unidad_org_solicitante  # Asignar el id de la unidad organizacional del solicitante
         devolucion_activos.save()
 
         # Obtener los datos de los activos devueltos
