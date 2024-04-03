@@ -101,7 +101,6 @@ class SolicitudesActivos(models.Model):
     id_uni_org_operario = models.ForeignKey(UnidadesOrganizacionales, related_name='id_uni_org_del_operario', on_delete=models.CASCADE, db_column='T090Id_UnidadOrgOperario')
     estado_solicitud = models.CharField(max_length=2, choices=estado_solicitud_activo_CHOICES, db_column="T090estadoSolicitud")
     solicitud_prestamo = models.BooleanField(db_column="T090solicitudPrestamo")
-    fecha_devolucion = models.DateTimeField(blank=True, null=True,db_column='T090fechaDevolucion')
     fecha_cierra_solicitud = models.DateTimeField(blank=True, null=True, db_column='T090fechaCierreSolicitud')
     revisada_responsable = models.BooleanField(db_column="T090revisadaResponsable")
     estado_aprobacion_resp = models.CharField(max_length=2, choices=estado_aprobacion_activo_CHOICES, db_column="T090estadoAprobacionResponsable")
