@@ -5,6 +5,7 @@ from transversal.funtions.alertas import  generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas
 from datetime import datetime, timedelta
 import json
+from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
 
 
 def generar_alerta():
@@ -13,9 +14,13 @@ def generar_alerta():
 	#print(alertas_generadas)
 	print('TAREA FINALIZADA')
 
-# def generar_conf_radicado_gest():
-# 	actualizar_conf_agno_sig()
-# 	print("TAREA FINALIZADA")
+def generar_conf_radicado_gest():
+	actualizar_conf_agno_sig()
+	print("TAREA FINALIZADA")
+	
+def ExtraccionBaseDatosPimisis():
+     extraccion_pimisis_job()
+     print("Extraccion Exitoda")
 
 
 def actualizar_estado_variable_recuado():

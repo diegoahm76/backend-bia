@@ -1030,6 +1030,12 @@ class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
            return data['nombre_unidad']
         
 
+class RespuestasRequerimientosPutGetSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
 class RespuestasRequerimientosOpaGetSerializer(serializers.ModelSerializer):
 
     tipo = serializers.SerializerMethodField()

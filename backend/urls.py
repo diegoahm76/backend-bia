@@ -115,9 +115,6 @@ urlpatterns = [
        
     path('api/gestor/solicitudes/', include('gestion_documental.urls.solicitudes_OPAS_urls')),
     
-    # PAGOS
-    path('api/gestor/pagos/',include('gestion_documental.urls.pagos_urls')),
-    
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
     path('api/almacen/bienes/', include('almacen.urls.bienes_urls')),
@@ -159,6 +156,10 @@ urlpatterns = [
     path("api/estaciones/parametros/",include('estaciones.urls.parametros_urls')),
     path("api/estaciones/historial/",include('estaciones.urls.historial_alertas_urls')),
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
+    
+    # PAGOS
+    path('api/recaudo/choices/',include('recaudo.urls.choices_urls')),
+    path('api/recaudo/pagos/',include('recaudo.urls.pagos_urls')),
 
     #FACILIDADES PAGOS
     path('api/recaudo/planes-pagos/', include('recaudo.urls.planes_pagos_urls')),
