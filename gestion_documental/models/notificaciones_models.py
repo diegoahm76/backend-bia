@@ -110,7 +110,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
 
 class AsignacionNotificacionCorrespondencia(models.Model):
     idAsignacion_noti_corr = models.SmallAutoField(primary_key=True, db_column='T351IdAsignacion_Noti_Corr')
-    id_notificacion_correspondencia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.CASCADE, db_column='T350Id_NotificacionCorrespondencia',related_name='T351Id_NotificacionCorrespondencia')
+    id_notificacion_correspondencia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_NotificacionCorrespondencia',related_name='T351Id_NotificacionCorrespondencia')
     id_orden_notificacion = models.ForeignKey('Registros_NotificacionesCorrespondecia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T351Id_OrdenNotificacion',related_name='T351Id_OrdenNotificacion')
     fecha_asignacion = models.DateTimeField(db_column='T351fechaAsignacion')
     id_persona_asigna = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T351Id_PersonaAsigna',related_name='T351IdPersonaAsigna')
