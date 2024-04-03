@@ -580,7 +580,7 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
      
     
 #__________________________________________________________________
-from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
+ # Importa la función ExtraccionBaseDatosPimisis
 
 class Vista_IndicadoresSemestral(generics.ListAPIView):
     serializer_class = IndicadoresSemestralSerializer
