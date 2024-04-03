@@ -22,7 +22,6 @@ class IniciarPagoView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        codigo_servicio_principal = data.get('codigo_servicio_principal', os.environ.get('ZPAGOS_CODIGO_SERVICIO_PRINCIPAL'))
         id_pago = 1000012341
         
         headers = {'Content-Type': 'text/xml'}
@@ -63,7 +62,7 @@ class IniciarPagoView(generics.CreateAPIView):
                                 <!--Required:-->
                                 <info_opcional3>0</info_opcional3>
                                 <!--Required:-->
-                                <codigo_servicio_principal>{codigo_servicio_principal}</codigo_servicio_principal>
+                                <codigo_servicio_principal>{os.environ.get('ZPAGOS_CODIGO_SERVICIO_PRINCIPAL')}</codigo_servicio_principal>
                                 <!--Optional:-->
                                 <lista_codigos_servicio_multicredito>
                                     <!--Zero or more repetitions:-->
@@ -95,11 +94,6 @@ class IniciarPagoView(generics.CreateAPIView):
                 raise ValidationError(error_message)
             
             redirect_url = f"https://www.zonapagos.com/{os.environ.get('ZPAGOS_CODIGO_RUTA')}/pago.asp?estado_pago=iniciar_pago&identificador={id_transaccion}"
-
-            # AÑADIR SONDA
-            if scheduler:
-                execution_time = datetime.now() + timedelta(minutes=10)
-                scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
             
             return redirect(redirect_url)
             # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
@@ -107,10 +101,10 @@ class IniciarPagoView(generics.CreateAPIView):
             return ValidationError('Ocurrió un error obteniendo el ID de la transacción')
 
 class VerificarPagoView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
     
     def create(self, request):
         id_pago = request.query_params.get('id_pago')
+        id_comercio = request.query_params.get('id_comercio', os.environ.get('ZPAGOS_ID_TIENDA'))
         if not id_pago:
             raise ValidationError('El ID de la transacción es requerido')
 
@@ -119,7 +113,7 @@ class VerificarPagoView(generics.CreateAPIView):
         xml_data = f"""<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
                     <soap:Body>
                         <verificar_pago_v4 xmlns="http://www.zonapagos.com/ws_verificar_pagosV4">
-                            <int_id_comercio>{os.environ.get('ZPAGOS_ID_TIENDA')}</int_id_comercio>
+                            <int_id_comercio>{id_comercio}</int_id_comercio>
                             <str_usr_comercio>{os.environ.get('ZPAGOS_COMERCIO')}</str_usr_comercio>
                             <str_pwd_Comercio>{os.environ.get('ZPAGOS_CLAVE')}</str_pwd_Comercio>
                             <str_id_pago>{id_pago}</str_id_pago>
@@ -188,3 +182,33 @@ class VerificarPagoView(generics.CreateAPIView):
             return Response({"success": True, "message": "Verificación de pago exitosa", "data": data_response}, status=status.HTTP_201_CREATED)
         else:
             raise ValidationError(f'Ocurrió un error: {error_detail.text}')
+        
+class NotificarPagoView(generics.ListAPIView):
+
+    def get(self, request):
+        id_comercio = request.query_params.get('id_comercio')
+        id_pago = request.query_params.get('id_pago')
+
+        if not id_comercio and not id_pago:
+            raise ValidationError('El ID del comercio y el ID del pago son requeridos')
+        
+        verificar_pago = VerificarPagoView()
+        verificar_pago_response = verificar_pago.create(request)
+
+        if verificar_pago_response.status_code == 201:
+            response_verificar_data = verificar_pago_response.data.get('data').get('res_pago')[0]
+            estado_pago = response_verificar_data.get('int_estado_pago').strip()
+
+            if estado_pago not in ["1","1000","4000","4003"]:
+                # AÑADIR SONDA
+                if scheduler:
+                    execution_time = datetime.now() + timedelta(minutes=10)
+                    scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
+            else:
+                print("PAGO ACEPTADO/RECHAZADO")
+                # ACTUALIZAR EN TABLA PAGOS
+
+        else:
+            raise ValidationError("Ocurrió un error en la verificación del pago")
+
+        return Response({'success':True, 'detail':'Estado del pago actualizado correctamente'}, status=status.HTTP_201_CREATED)
