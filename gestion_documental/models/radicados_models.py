@@ -18,6 +18,7 @@ from gestion_documental.models.trd_models import TipologiasDoc
 from seguridad.models import Personas
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 # from tramites.models.tramites_models import SolicitudesTramites
+#from tramites.models.tramites_models import RespuestasRequerimientos
 from transversal.models.base_models import Municipio
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -316,6 +317,7 @@ class SolicitudDeDigitalizacion(models.Model):
     id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otro', blank=True, null=True)
     id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T263Id_SolicitudTramite', blank=True, null=True)
     fecha_solicitud = models.DateTimeField(db_column='T263fechaSolicitud')
+    id_respuesta_requerimiento = models.ForeignKey('tramites.RespuestasRequerimientos', models.SET_NULL, db_column='T263IdRespuestasRequerimientos', blank=True, null=True)
     fecha_rta_solicitud = models.DateTimeField(db_column='T263fechaRtaSolicitud', blank=True, null=True)
     observacion_digitalizacion = models.CharField(max_length=255, db_column='T263observacionDigitalizacion',null=True, blank=True)
     digitalizacion_completada = models.BooleanField(db_column='T263digitalizacionCompletada')
