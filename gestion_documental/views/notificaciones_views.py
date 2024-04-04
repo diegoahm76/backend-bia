@@ -351,6 +351,7 @@ class CrearTareas(generics.CreateAPIView):
             'requiere_digitalizacion': data.requiere_digitalizacion,
             'fecha_inicial_registro': fecha_actual,
             'cod_estado': request.get('cod_estado'),
+            'id_estado_actual_registro': 2,
         }
 
         serializer = self.serializer_class(data=notificacion_data)
