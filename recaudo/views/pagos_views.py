@@ -53,7 +53,7 @@ class IniciarPagoView(generics.CreateAPIView):
         telefono_cliente = data.get('telefono_cliente') if data.get('telefono_cliente') else persona.telefono_celular
 
         # INSERTAR EN MODELO
-        data['estado'] = 999 # PAGO PENDIENTE POR FINALIZAR
+        data['estado_pago'] = 999 # PAGO PENDIENTE POR FINALIZAR
         serializer_pago = self.serializer_class(data=data)
         serializer_pago.is_valid(raise_exception=True)
         pago_creado = serializer_pago.save()
@@ -217,9 +217,9 @@ class VerificarPagoView(generics.CreateAPIView):
         else:
             raise ValidationError(f'Ocurrió un error: {error_detail.text}')
         
-class NotificarPagoView(generics.ListAPIView):
+class NotificarPagoView(generics.CreateAPIView):
 
-    def get(self, request):
+    def create(self, request):
         id_comercio = request.query_params.get('id_comercio')
         id_pago = request.query_params.get('id_pago')
 
