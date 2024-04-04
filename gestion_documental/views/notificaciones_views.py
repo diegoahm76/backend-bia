@@ -49,7 +49,8 @@ from gestion_documental.serializers.notificaciones_serializers import (
     TiposActosAdministrativosSerializer,
     ActosAdministrativosSerializer,
     Registros_NotificacionesCorrespondeciaSerializer,
-    NotificacionesCorrespondenciaAnexosSerializer
+    NotificacionesCorrespondenciaAnexosSerializer,
+    RegistrosNotificacionesCorrespondeciaSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -1027,3 +1028,18 @@ class ActosAdministrativosGet(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
+
+class NotificacionGet(generics.RetrieveAPIView):
+    serializer_class = RegistrosNotificacionesCorrespondeciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_notificacion(self, id_notificacion):
+        notificacion = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=id_notificacion).first()
+        if not notificacion:
+            raise ValidationError(f'La notificación con id {id_notificacion} no existe.')
+        return notificacion
+    
+    def get(self, request, id_notificacion):
+        notificacion = self.get_notificacion(id_notificacion)
+        serializer = self.serializer_class(notificacion)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)

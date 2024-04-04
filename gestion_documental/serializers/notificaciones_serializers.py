@@ -300,3 +300,22 @@ class ActosAdministrativosSerializer(serializers.ModelSerializer):
             return f"{obj.id_solicitud_tramite.id_expediente.codigo_exp_und_serie_subserie}.{obj.id_solicitud_tramite.id_expediente.codigo_exp_Agno}.{obj.id_solicitud_tramite.id_expediente.codigo_exp_consec_por_agno}"
         else:
             return None
+
+class RegistrosNotificacionesCorrespondeciaSerializer(serializers.ModelSerializer):
+
+    tipo_documento = serializers.CharField(source='id_notificacion_correspondencia.cod_tipo_documento.nombre')
+    acto_administrativo = serializers.CharField(source='id_notificacion_correspondencia.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo')
+    expediente = serializers.CharField(source='id_notificacion_correspondencia.id_expediente_documental.codigo_exp_und_serie_subserie')
+    oficina_solicita = serializers.CharField(source='id_notificacion_correspondencia.id_und_org_oficina_solicita.nombre')
+    fecha_solcitud = serializers.DateField(source='id_notificacion_correspondencia.fecha_solicitud')
+  
+    class Meta:
+        model = Registros_NotificacionesCorrespondecia
+        fields = ['id_registro_notificacion_correspondencia',
+                  'tipo_documento',
+                  'acto_administrativo',
+                  'expediente',
+                  'oficina_solicita',
+                  'fecha_solcitud',
+                  'fecha_asignacion']
+
