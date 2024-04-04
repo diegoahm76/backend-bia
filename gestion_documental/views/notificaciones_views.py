@@ -393,7 +393,7 @@ class CrearAsignacionTarea(generics.CreateAPIView):
         if id_persona_asigna.id_persona == data.get('id_persona_asignada'):
             data_tarea['cod_estado'] = 'RE'
         else:
-            asignacion_data['cod_estado_asignacion'] = 'PE'
+            data_tarea['cod_estado'] = 'PE'
         tarea = registro.post(data_tarea, fecha_actual)
         asignacion_data = {
             'id_orden_notificacion': tarea.id_registro_notificacion_correspondencia,
