@@ -15,14 +15,48 @@ from datetime import datetime, timedelta
 from jobs.jobs import update_estado_pago
 
 from dotenv import load_dotenv
+
+from recaudo.models.liquidaciones_models import LiquidacionesBase
+from recaudo.models.pagos_models import Pagos
+from recaudo.serializers.pagos_serializers import InicioPagoSerializer
+from transversal.models.personas_models import Personas
 load_dotenv()
 
 class IniciarPagoView(generics.CreateAPIView):
+    serializer_class = InicioPagoSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        id_pago = 1000012341
+        # id_pago = 1000012341
+        # VALIDACIONES DATA
+        id_liquidacion = data.get('id_liquidacion')
+        if not id_liquidacion:
+            raise ValidationError('Debe asociar la liquidación a la que le realizará el pago')
+        
+        id_persona_pago = data.get('id_persona_pago')
+        if not id_persona_pago:
+            raise ValidationError('Debe asociar la persona responsable del pago')
+        
+        liquidacion = LiquidacionesBase.objects.filter(id=id_liquidacion).first()
+        if not liquidacion:
+            raise ValidationError('La liquidación asociada no existe en el sistema')
+        
+        persona = Personas.objects.filter(id_persona=id_persona_pago).first()
+        if not persona:
+            raise ValidationError('La persona asociada no existe en el sistema')
+        
+        email = data.get('email') if data.get('email') else persona.email
+        id_cliente = data.get('id_cliente') if data.get('id_cliente') else persona.numero_documento
+        nombre_cliente = data.get('nombre_cliente') if data.get('nombre_cliente') else persona.primer_nombre
+        apellido_cliente = data.get('apellido_cliente') if data.get('apellido_cliente') else persona.primer_apellido
+        telefono_cliente = data.get('telefono_cliente') if data.get('telefono_cliente') else persona.telefono_celular
+
+        # INSERTAR EN MODELO
+        data['estado'] = 999 # PAGO PENDIENTE POR FINALIZAR
+        serializer_pago = self.serializer_class(data=data)
+        serializer_pago.is_valid(raise_exception=True)
+        pago_creado = serializer_pago.save()
         
         headers = {'Content-Type': 'text/xml'}
         target_url = 'https://www.zonapagos.com/ws_inicio_pagov2/Zpagos.asmx'
@@ -36,25 +70,25 @@ class IniciarPagoView(generics.CreateAPIView):
                                 <!--Required:-->
                                 <clave>{os.environ.get('ZPAGOS_CLAVE')}</clave>
                                 <!--Required:-->
-                                <total_con_iva>{data['total_con_iva']}</total_con_iva>
+                                <total_con_iva>{liquidacion.valor}</total_con_iva>
                                 <!--Required:-->
-                                <valor_iva>{data['valor_iva']}</valor_iva>
+                                <valor_iva>0</valor_iva>
                                 <!--Required:-->
-                                <id_pago>{id_pago}</id_pago>
+                                <id_pago>{pago_creado.id_pago}</id_pago>
                                 <!--Required:-->
                                 <descripcion_pago>{data['descripcion_pago']}</descripcion_pago>
                                 <!--Required:-->
-                                <email>{data['email']}</email>
+                                <email>{email}</email>
                                 <!--Required:-->
-                                <id_cliente>{data['id_cliente'] if data.get('id_cliente') else 0}</id_cliente>
+                                <id_cliente>{id_cliente}</id_cliente>
                                 <!--Required:-->
                                 <tipo_id>{data['tipo_id'] if data.get('tipo_id') else 0}</tipo_id>
                                 <!--Required:-->
-                                <nombre_cliente>{data['nombre_cliente']}</nombre_cliente>
+                                <nombre_cliente>{nombre_cliente}</nombre_cliente>
                                 <!--Required:-->
-                                <apellido_cliente>{data['apellido_cliente']}</apellido_cliente>
+                                <apellido_cliente>{apellido_cliente}</apellido_cliente>
                                 <!--Required:-->
-                                <telefono_cliente>{data['telefono_cliente']}</telefono_cliente>
+                                <telefono_cliente>{telefono_cliente}</telefono_cliente>
                                 <!--Required:-->
                                 <info_opcional1>0</info_opcional1>
                                 <!--Required:-->
@@ -94,7 +128,7 @@ class IniciarPagoView(generics.CreateAPIView):
                 raise ValidationError(error_message)
             
             redirect_url = f"https://www.zonapagos.com/{os.environ.get('ZPAGOS_CODIGO_RUTA')}/pago.asp?estado_pago=iniciar_pago&identificador={id_transaccion}"
-            
+
             return redirect(redirect_url)
             # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
         else:
@@ -192,6 +226,8 @@ class NotificarPagoView(generics.ListAPIView):
         if not id_comercio and not id_pago:
             raise ValidationError('El ID del comercio y el ID del pago son requeridos')
         
+        id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA'))
+        
         verificar_pago = VerificarPagoView()
         verificar_pago_response = verificar_pago.create(request)
 
@@ -205,9 +241,22 @@ class NotificarPagoView(generics.ListAPIView):
                     execution_time = datetime.now() + timedelta(minutes=10)
                     scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
             else:
-                print("PAGO ACEPTADO/RECHAZADO")
-                # ACTUALIZAR EN TABLA PAGOS
+                if id_comercio == id_comercio_bia:
+                    pago = Pagos.objects.filter(id_pago=id_pago).first()
+                    if not pago:
+                        raise ValidationError("No existe el pago en Bia con el ID enviado")
+                    
+                    # ACTUALIZAR EN TABLA PAGOS
+                    pago.estado_pago = estado_pago
+                    pago.fecha_pago = datetime.now()
+                    pago.notificacion = True
+                    pago.save()
+                else:
+                    url_get_pimysis = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
+                    params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
+                    # ENVIAR NOTIFICACION A PIMYSIS
+                    notificacion_pimysis = requests.get(url_get_pimysis, params=params)
         else:
             raise ValidationError("Ocurrió un error en la verificación del pago")
 
