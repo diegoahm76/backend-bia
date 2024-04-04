@@ -14,7 +14,6 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.radicados_models import Anexos, T262Radicados
 from tramites.models import ActosAdministrativos, SolicitudesTramites
 
- 
 
 class NotificacionesCorrespondencia(models.Model):
     id_notificacion_correspondencia = models.SmallAutoField(primary_key=True, db_column='T350IdNotificacionCorrespondencia')
