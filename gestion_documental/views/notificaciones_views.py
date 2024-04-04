@@ -221,7 +221,6 @@ class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         data_validada =[]
         data_temporal = []
-        data_registro = []
         radicado = int(radicado)
         for item in serializer.data:
             id_persona_asignada = item.get('id_persona_asignada')
@@ -232,11 +231,13 @@ class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
         for temporal in data_temporal:
             item_registro =  temporal.get('registros_notificaciones')
             if item_registro != None:
+                data_registro = []
                 for registro in item_registro:
                     if radicado == registro.get('id_persona_asignada'):
                         data_registro.append(registro)
-                        temporal['registros_notificaciones'] = data_registro
-                        data_validada.append(temporal)
+                if data_registro:
+                    temporal['registros_notificaciones'] = data_registro
+                    data_validada.append(temporal)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)   
 
@@ -1330,7 +1331,7 @@ class UpdateAsignacionTarea(generics.UpdateAPIView):
                 tarea.cod_estado_asignacion = 'Re'
                 tarea.fecha_eleccion_estado = fecha_actual
                 tarea.justificacion_rechazo_asignacion = justificacion_rechazo
-                tarea.cod_estado_asignacion = 'DE'
+                tarea.cod_estado = 'DE'
                 tarea.save()
 
                 return Response({'succes': True, 'detail': 'La asignación se actualizo.', 'data': data}, status=status.HTTP_200_OK)
