@@ -553,13 +553,19 @@ class AnexosRespuestaRequerimientosGetSerializer(serializers.ModelSerializer):
 
 
 #RESPUESTA OPA
-class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
+
+class RespuestaOpaTramiteCreateserializer(serializers.ModelSerializer):
     class Meta:
-        model = Requerimientos
+        model = RespuestaOPA
         fields = '__all__'
 
 
 #RESPUESTA REQUERIMIENTO OPA
+
+class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = Requerimientos
+        fields = '__all__'
 class RespuestaRequerimientoOPACreateserializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestasRequerimientos
