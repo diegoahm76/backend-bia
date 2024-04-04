@@ -217,9 +217,9 @@ class VerificarPagoView(generics.CreateAPIView):
         else:
             raise ValidationError(f'Ocurrió un error: {error_detail.text}')
         
-class NotificarPagoView(generics.CreateAPIView):
+class NotificarPagoView(generics.ListAPIView):
 
-    def create(self, request):
+    def get(self, request):
         id_comercio = request.query_params.get('id_comercio')
         id_pago = request.query_params.get('id_pago')
 
