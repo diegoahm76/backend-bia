@@ -73,7 +73,9 @@ urlpatterns = [
     path('detalle-opas/get/<str:id>/', views_opas.DetalleOpaGetbyId.as_view(), name='get-detalle-opas-by-id'),
     path('tareas-asignadas/opas/aceptar/update/<str:pk>/', views_opas.TareasAsignadasAceptarOpaUpdate.as_view(), name='update-tareas-asignadas-opas'),
     path('tareas-asignadas/opas/rechazar/update/<str:pk>/', views_opas.TareasAsignadasOpasRechazarUpdate.as_view(), name='update-tareas-asignadas-opas'),
-
+    path('tareas-asignadas/opas/complemento/tarea/get/<str:tarea>/', views_opas.ComplementoTareaOPAGetByTarea.as_view(), name='get-complemento-tarea-opa'),
+    #RespuestaTramitesInfoAnexosGet
+    path('tareas-asignadas/opas/respuesta/anexo/get/<str:pk>/', views_opas.RespuestaTramitesOpasInfoAnexosGet.as_view(), name='get-respuesta-opa-anexo'),
     #REQUERIMIENTO A LA OPA
     path('opa/persona/titular/get/<str:tra>/', views_opas.OpaPersonaTitularGet.as_view(), name='get-opa-persona-titular'),
     path('opa/tramite/detalle/get/<str:tra>/', views_opas.OpaTramiteDetalleGet.as_view(), name='get-opa-tramite-detalle'),
