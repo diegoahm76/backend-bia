@@ -9,6 +9,12 @@ from datetime import datetime, date, timedelta
 class ConfigTipoConsecAgnoGetSerializer(serializers.ModelSerializer):
     nombre_unidad = serializers.ReadOnlyField(source='id_unidad.nombre', default=None)
     persona_configura = serializers.SerializerMethodField()
+    id_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie_unidad.id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
+    cod_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie_unidad.id_catalogo_serie.id_serie_doc.codigo',default=None)
+    nombre_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie_unidad.id_catalogo_serie.id_serie_doc.nombre',default=None)
+    id_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie_unidad.id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
+    cod_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie_unidad.id_catalogo_serie.id_subserie_doc.codigo',default=None)
+    nombre_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie_unidad.id_catalogo_serie.id_subserie_doc.nombre',default=None) 
     class Meta:
         model = ConfigTipoConsecAgno
         fields = '__all__'

@@ -8,7 +8,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -488,8 +488,85 @@ class Anexos_TramitresAnexosGetSerializer(serializers.ModelSerializer):
         return "Archivo"
 
 
+
+#COMPLEMENTOS DE UNA TAREA OPA
+class AdicionalesDeTareasopaGetByTareaSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+    titular = serializers.SerializerMethodField()
+    descripcion = serializers.ReadOnlyField(source='id_respuesta_requerimiento.descripcion',default=None)
+    cantidad_anexos = serializers.ReadOnlyField(source='id_complemento_usu_pqr.cantidad_anexos',default=None)
+    radicado = serializers.SerializerMethodField(default=None)
+    fecha_radicado = serializers.SerializerMethodField(default=None)
+    class Meta:
+        model = AdicionalesDeTareas
+      
+        fields =['id_adicional_de_tarea','id_respuesta_requerimiento','tipo','titular','descripcion','cantidad_anexos','radicado','fecha_radicado','fecha_de_adicion']
+
+    def get_tipo(self,obj):
+
+
+        return 'Respuesta a Solicitud'
+
+    
+    def get_titular(self, obj):
+        respuesta = obj.id_respuesta_requerimiento
+        if not respuesta:
+            return None
+        tramite = respuesta.id_solicitud_tramite
+     
+        nombre_completo_responsable = None
+        nombre_list = [tramite.id_persona_titular.primer_nombre, tramite.id_persona_titular.segundo_nombre,
+                        tramite.id_persona_titular.primer_apellido, tramite.id_persona_titular.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
+    def get_radicado(self, obj):
+        respuesta = obj.id_respuesta_requerimiento
+        tramite = respuesta.id_solicitud_tramite
+        cadena = ""
+        if tramite.id_radicado:
+            #radicado = obj.id_solicitud_tramite.id_radicado
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=tramite.id_radicado.agno_radicado,cod_tipo_radicado=tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+
+    def get_fecha_radicado(self, obj):
+        respuesta = obj.id_respuesta_requerimiento
+        tramite = respuesta.id_solicitud_tramite
+        
+        if tramite.id_radicado:
+            return tramite.id_radicado.fecha_radicado
+        return None
+
+
+class AnexosRespuestaRequerimientosGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+  
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+
+
+
 #RESPUESTA OPA
+
+class RespuestaOpaTramiteCreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaOPA
+        fields = '__all__'
+
+
+#RESPUESTA REQUERIMIENTO OPA
+
 class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
     class Meta:
         model = Requerimientos
+        fields = '__all__'
+class RespuestaRequerimientoOPACreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestasRequerimientos
         fields = '__all__'

@@ -12,5 +12,6 @@ def start():
 	scheduler.add_job(generar_alerta, trigger=trigger)
 	scheduler.add_job(actualizar_estado_variable_recuado, trigger=trigger_Actualizacion_variable_recaudo)
 	#scheduler.add_job(generar_conf_radicado_gest, 'interval', seconds=5)
+	scheduler.add_job(ExtraccionBaseDatosPimisis,trigger=trigger)
 			
 	scheduler.start()

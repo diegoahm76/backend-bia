@@ -9,6 +9,7 @@ from gestion_documental.choices.estado_solicitud_choices import ESTADO_SOLICITUD
 from gestion_documental.choices.tipos_tareas_choices import TIPOS_TAREA_CHOICES
 
 from gestion_documental.models.radicados_models import ComplementosUsu_PQR
+from tramites.models.tramites_models import RespuestasRequerimientos
 
 
 
@@ -79,7 +80,7 @@ class AdicionalesDeTareas(models.Model):
     id_complemento_usu_pqr = models.ForeignKey(
         ComplementosUsu_PQR,
         null=True,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         db_column='T317IdComplementoUsuPQR',
         related_name='adicionales_tareas'
     )
@@ -91,6 +92,13 @@ class AdicionalesDeTareas(models.Model):
     )
     fecha_de_adicion = models.DateTimeField(db_column='T317fechaDeAdicion')
 
+    id_respuesta_requerimiento = models.ForeignKey(RespuestasRequerimientos,
+    null = True,
+    on_delete=models.SET_NULL,
+    db_column='T317IdRespuestasRequerimientos',
+    default = None
+    ,
+    )
     class Meta:
         db_table = 'T317AdicionalesDeTareas'
         verbose_name = 'Adicional de Tarea'

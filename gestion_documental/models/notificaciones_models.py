@@ -8,7 +8,6 @@ from gestion_documental.choices.estado_asignacion_choices import ESTADO_ASIGNACI
 from gestion_documental.choices.doc_entrada_salida_choices import doc_entrada_salida_CHOICES
 from gestion_documental.choices.uso_del_documento_choices import uso_del_documento_CHOICES
 from gestion_documental.choices.doc_generado_choices import doc_generado_CHOICES
-
 from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from transversal.models.base_models import Municipio
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -47,6 +46,11 @@ class NotificacionesCorrespondencia(models.Model):
     cantidad_anexos = models.SmallIntegerField(null=True, db_column='T350cantidadAnexos')
     nro_folios_totales = models.SmallIntegerField(null=True, db_column='T350nroFoliosTotales')
     id_persona_recibe_solicitud_manual = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_PersonaRecibeSolicitudManual',related_name='T350IdPersonaRecibeSolicitudManual')
+    id_persona_asigna = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_PersonaAsigna',related_name='T350IdPersonaAsigna')
+    id_persona_asignada = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_PersonaAsignada',related_name='T350IdPersonaAsignada')
+    cod_estado_asignacion = models.CharField(choices=ESTADO_ASIGNACION_CHOICES, max_length=2, null=True, db_column='T350codEstadoAsignacion')
+    fecha_eleccion_estado = models.DateTimeField(null=True, db_column='T350fechaEleccionEstado')
+    justificacion_rechazo_asignacion = models.CharField(max_length=250, null=True, db_column='T350justificacionRechazoAsignacion')
     requiere_digitalizacion = models.BooleanField(null=True, db_column='T350requiereDigitalizacion')
     fecha_envio_definitivo_a_digitalizacion = models.DateTimeField(null=True, db_column='T350fechaEnvioDefinitivoADigitalizacion')
     fecha_digitalizacion_completada = models.DateTimeField(null=True, db_column='T350fechaDigitalizacionCompletada')
@@ -55,6 +59,7 @@ class NotificacionesCorrespondencia(models.Model):
     id_persona_rta_final_gestion = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_PersonaRtaFinalGestion',related_name='T350IdPersonaRtaFinalGestion')
     solicitud_aceptada_rechazada = models.BooleanField(null=True, db_column='T350solicitudAceptadaRechazada')
     fecha_devolucion = models.DateTimeField(null=True, db_column='T350fechaDevolucion')
+    justificacion_rechazo = models.CharField(max_length=250, null=True, db_column='T350justificacionRechazo')
     cod_estado = models.CharField(choices=cod_estado_noti_CHOICES, max_length=2, db_column='T350codEstado')
     id_doc_de_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente, on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_DocDeArchExp',related_name='T350IdDocDeArchExp')
 
@@ -85,6 +90,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
     id_persona_asignada = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_PersonaAsignada',related_name='T352IdPersonaAsignada')
     cod_estado_asignacion = models.CharField(choices=ESTADO_ASIGNACION_CHOICES, max_length=2, null=True, db_column='T352codEstadoAsignacion')
     fecha_eleccion_estado = models.DateTimeField(null=True, db_column='T352fechaEleccionEstado')
+    justificacion_rechazo_asignacion = models.CharField(max_length=250, null=True, db_column='T352justificacionRechazoAsignacion')
     cantidad_anexos = models.SmallIntegerField(null=True, db_column='T352cantidadAnexos')
     nro_folios_totales = models.SmallIntegerField(null=True, db_column='T352nroFoliosTotales')
     requiere_digitalizacion = models.BooleanField(null=True, db_column='T352requiereDigitalizacion')
@@ -95,6 +101,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
     fecha_radicado_salida = models.DateTimeField(null=True, db_column='T352fechaRadicadoSalida')
     fecha_inicial_registro = models.DateTimeField(db_column='T352fechaInicialRegistro')
     fecha_final_registro = models.DateTimeField(null=True, db_column='T352fechaFinalRegistro')
+    cod_estado = models.CharField(choices=cod_estado_noti_CHOICES, max_length=2, db_column='T352codEstado')
     id_persona_finaliza_registro = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_PersonaFinalizaRegistro',related_name='T352IdPersonaFinalizaRegistro')
     id_estado_actual_registro = models.ForeignKey('EstadosNotificacionesCorrespondencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_EstadoActualRegistro',related_name='T352IdEstadoActualRegistro')
     id_doc_de_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente, on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_DocDeArch_Exp',related_name='T352IdDocDeArchExp')
@@ -105,8 +112,8 @@ class Registros_NotificacionesCorrespondecia(models.Model):
 
 class AsignacionNotificacionCorrespondencia(models.Model):
     idAsignacion_noti_corr = models.SmallAutoField(primary_key=True, db_column='T351IdAsignacion_Noti_Corr')
-    id_notificacion_correspondencia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.CASCADE, db_column='T350Id_NotificacionCorrespondencia',related_name='T351Id_NotificacionCorrespondencia')
-    id_orden_notificacion = models.ForeignKey('Registros_NotificacionesCorrespondecia', on_delete=models.CASCADE, db_column='T351Id_OrdenNotificacion',related_name='T351Id_OrdenNotificacion')
+    id_notificacion_correspondencia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_NotificacionCorrespondencia',related_name='T351Id_NotificacionCorrespondencia')
+    id_orden_notificacion = models.ForeignKey('Registros_NotificacionesCorrespondecia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T351Id_OrdenNotificacion',related_name='T351Id_OrdenNotificacion')
     fecha_asignacion = models.DateTimeField(db_column='T351fechaAsignacion')
     id_persona_asigna = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T351Id_PersonaAsigna',related_name='T351IdPersonaAsigna')
     id_persona_asignada = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T351Id_PersonaAsignada',related_name='T351IdPersonaAsignada')

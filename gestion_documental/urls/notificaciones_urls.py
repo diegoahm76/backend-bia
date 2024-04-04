@@ -4,8 +4,13 @@ from gestion_documental.views import notificaciones_views as views
 urlpatterns = [
     # Notificaciones
     path('get-notificaciones/', views.ListaNotificacionesCorrespondencia.as_view(),name='get-notificaiones'),
+    path('get-notificaciones-tareas/', views.NotificacionesCorrespondenciaYTareasGet.as_view(),name='get-notificaiones-tareas'),
     path('get-asignaciones/', views.GetAsignacionesCorrespondencia.as_view(),name='get-asignaciones'),
     path('create-asignacion/', views.CrearAsignacionNotificacion.as_view(),name='create-asignacion'),
+    path('create-asignacion-tarea/', views.CrearAsignacionTarea.as_view(),name='create-asignacion-tarea'),
+    path('update-asignacion/<int:pk>/', views.UpdateAsignacionNotificacion.as_view(),name='update-asignacion'),
+    path('update-asignacion-tarea/<int:pk>/', views.UpdateAsignacionTarea.as_view(),name='update-asignacion-tarea'),
+    path('rechazo-notificacion/<int:pk>/', views.RechazoNotificacionCorrespondencia.as_view(),name='rechazo-notificacion'),
     path('create-notificacion-manual/', views.CrearNotiicacionManual.as_view(),name='create-notificacion-manual'),
     path('get-notificacion/<int:id_notificacion_correspondencia>/', views.GetNotificacionesCorrespondeciaAnexos.as_view(),name='get-notificaion'),
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
