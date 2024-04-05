@@ -541,14 +541,27 @@ class AdicionalesDeTareasopaGetByTareaSerializer(serializers.ModelSerializer):
             return tramite.id_radicado.fecha_radicado
         return None
 
-
+class AnexoArchivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = ['nombre_de_Guardado','ruta_archivo']
 class AnexosRespuestaRequerimientosGetSerializer(serializers.ModelSerializer):
 
     medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    archivo = serializers.SerializerMethodField()
   
     class Meta:
         model = Anexos
         fields = '__all__'  
+
+    def get_archivo(self,obj):
+        id_anexo = obj.id_anexo
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=id_anexo).first()
+        if meta_data:
+            data_archivo  = AnexoArchivoSerializer(meta_data.id_archivo_sistema)
+            data ={'nombre_archivo':meta_data.nombre_original_archivo,'ruta':data_archivo.data['ruta_archivo']}
+            return data
+        return None
 
 
 
