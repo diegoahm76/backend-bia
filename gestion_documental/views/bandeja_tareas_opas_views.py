@@ -556,7 +556,7 @@ class RespuestaOpaTramiteCreate(generics.CreateAPIView):
         if persona.id_unidad_organizacional_actual:
             id_unidad = persona.id_unidad_organizacional_actual.id_unidad_organizacional
         if not respuesta:
-            raise ValidationError("Se requiere informacion del Requerimiento")
+            raise ValidationError("Se requiere informacion de la respuesta")
         
         archivos = request.FILES.getlist('archivo')
         anexos = request.data.getlist('anexo')
@@ -571,6 +571,9 @@ class RespuestaOpaTramiteCreate(generics.CreateAPIView):
 
         data_in = json.loads(respuesta)
 
+        respuesta_opa = RespuestaOPA.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        if respuesta_opa:
+            raise ValidationError("La respuesta ya existe")
         #for archivo in archivos:
         for archivo in archivos:
             if  archivo:
@@ -639,20 +642,20 @@ class RespuestaOpaTramiteCreate(generics.CreateAPIView):
         data_in['cantidad_anexos'] = len(data_anexos)#
 
         #RespuestaOPA
-        data_radicado = {}
-        data_radicado['fecha_actual'] = fecha_actual
-        data_radicado['id_persona'] = request.user.persona.id_persona
-        data_radicado['tipo_radicado'] = "E" #validar cual tipo de radicado
-        data_radicado['modulo_radica'] = 'Trámites y servicios'
+        # data_radicado = {}
+        # data_radicado['fecha_actual'] = fecha_actual
+        # data_radicado['id_persona'] = request.user.persona.id_persona
+        # data_radicado['tipo_radicado'] = "E" #validar cual tipo de radicado
+        # data_radicado['modulo_radica'] = 'Trámites y servicios'
 
-        print(data_radicado)
-        radicadoCreate = RadicadoCreate()
+        # print(data_radicado)
+        # radicadoCreate = RadicadoCreate()
                 
-        respuesta_radicado = radicadoCreate.post(data_radicado)
-        print(respuesta_radicado)
+        # respuesta_radicado = radicadoCreate.post(data_radicado)
+        # print(respuesta_radicado)
 
-        data_in['id_radicado'] = respuesta_radicado['id_radicado']
-        data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
+        # data_in['id_radicado'] = respuesta_radicado['id_radicado']
+        # data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
 
 
 
@@ -702,10 +705,41 @@ class RespuestaOpaTramiteCreate(generics.CreateAPIView):
 
         if not tarea:
             raise ValidationError("No se encontro la tarea")
-        asignacion_tarea = TareaBandejaTareasPersona.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada,es_responsable_ppal=True)
-        if asignacion_tarea:
-            tarea.requerimientos_pendientes_respuesta = True
-            tarea.save()
+        
+
+
+        nombre_completo_responde = None
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                        persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo_responde = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responde = nombre_completo_responde if nombre_completo_responde != "" else None
+        nombre_persona = nombre_completo_responde
+
+
+        tarea.cod_estado_solicitud = 'Re'
+        tarea.fecha_respondido =intance.fecha_respuesta #fecha_respuesta
+        tarea.nombre_persona_que_responde = nombre_persona
+        tarea.save()
+        #SI LA TAREA FUE FRUTO DE UNA REASIGNACION 
+        if tarea.id_tarea_asignada_padre_inmediata:
+            tarea_padre = tarea.id_tarea_asignada_padre_inmediata
+
+            # Iterar a través de las tareas padres hasta encontrar la tarea original
+            while tarea_padre and not tarea_padre.id_asignacion:
+                tarea_padre.fecha_respondido = intance.fecha_respuesta #fecha_respuesta
+                tarea_padre.nombre_persona_que_responde = nombre_persona
+                tarea_padre.ya_respondido_por_un_delegado = True
+                tarea_padre.save()
+
+                # Ir a la siguiente tarea padre
+                tarea_padre = tarea_padre.id_tarea_asignada_padre_inmediata
+
+            # Si se encontró la tarea original, actualizarla
+            if tarea_padre:
+                tarea_padre.fecha_respondido = intance.fecha_respuesta #fecha_respuesta
+                tarea_padre.nombre_persona_que_responde = nombre_persona
+                tarea_padre.ya_respondido_por_un_delegado = True
+                tarea_padre.save()
         
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":'data_respuesta_estado_asociado','anexos':data_anexos,'relacion_pqr':relacion_requerimiento}, status=status.HTTP_200_OK)
 
@@ -721,6 +755,11 @@ class RespuestaOpaGet(generics.ListAPIView):
         
         serializer = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+
+
+
 
 class RespestaOpasInfoAnexosGet(generics.ListAPIView):
     serializer_class = AnexosRespuestaRequerimientosGetSerializer
