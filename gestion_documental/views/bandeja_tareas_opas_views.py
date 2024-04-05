@@ -15,7 +15,7 @@ from gestion_documental.models.configuracion_tiempos_respuesta_models import Con
 from gestion_documental.models.radicados_models import  AsignacionTramites, BandejaTareasPersona, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
 from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import  AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import  AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaOPAGetSerializer, RespuestaOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import AnexosCreate, Estados_PQRCreate, MetadatosAnexosTmpCreate, TareaBandejaTareasPersonaUpdate
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
@@ -709,9 +709,41 @@ class RespuestaOpaTramiteCreate(generics.CreateAPIView):
         
         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":'data_respuesta_estado_asociado','anexos':data_anexos,'relacion_pqr':relacion_requerimiento}, status=status.HTTP_200_OK)
 
+class RespuestaOpaGet(generics.ListAPIView):
+    serializer_class = RespuestaOPAGetSerializer
+    queryset = RespuestaOPA.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request,tra):
+        instance= self.get_queryset().filter(id_solicitud_tramite=tra).first()
+        if not instance:
+            raise ValidationError("La OPA no ha sido contestada")
+        
+        serializer = self.serializer_class(instance)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+class RespestaOpasInfoAnexosGet(generics.ListAPIView):
+    serializer_class = AnexosRespuestaRequerimientosGetSerializer
+    queryset = RespuestaOPA.objects.all()
+    permission_classes = [IsAuthenticated]
 
 
+    def get (self, request,pk):
+        data=[]
+        instance =self.queryset.filter(id_respuesta_opa=pk).first()
 
+
+        if not instance:
+                raise NotFound("No existen registros")
+        anexos_opa = AnexosTramite.objects.filter(id_respuesta_opa=instance)
+        for x in anexos_opa:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data,}, status=status.HTTP_200_OK)
+    
 
     
 class RequerimienntoSobreOpaTramiteCreate(generics.CreateAPIView):

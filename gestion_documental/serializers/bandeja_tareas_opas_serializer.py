@@ -559,7 +559,20 @@ class RespuestaOpaTramiteCreateserializer(serializers.ModelSerializer):
         model = RespuestaOPA
         fields = '__all__'
 
+class RespuestaOPAGetSerializer(serializers.ModelSerializer):
+    radicado = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaOPA
+        fields = '__all__'
 
+    def get_radicado(self, obj):
+        cadena = "SIN RADICAR"
+        if obj.id_radicado_salida:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado_salida.agno_radicado,cod_tipo_radicado=obj.id_radicado_salida.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado_salida.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_radicado_salida.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        return cadena
 #RESPUESTA REQUERIMIENTO OPA
 
 class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
