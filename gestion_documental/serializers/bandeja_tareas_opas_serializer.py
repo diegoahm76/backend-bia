@@ -559,7 +559,10 @@ class RespuestaOpaTramiteCreateserializer(serializers.ModelSerializer):
         model = RespuestaOPA
         fields = '__all__'
 
-
+class RespuestaOPAGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaOPA
+        fields = '__all__'
 #RESPUESTA REQUERIMIENTO OPA
 
 class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):

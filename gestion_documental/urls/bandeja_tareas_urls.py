@@ -87,6 +87,8 @@ urlpatterns = [
 
     #RESPUESTA A LA OPA
     path('opa/respuesta/create/', views_opas.RespuestaOpaTramiteCreate.as_view(), name='crear-respuesta-opa-tramite'),
+    path('opa/respuesta/get/<str:tra>/', views_opas.RespuestaOpaGet.as_view(), name='get-respuesta-opa-tramite'),
+    path('opa/respuesta/anexo/get/<str:pk>/', views_opas.RespestaOpasInfoAnexosGet.as_view(), name='get-anexos-respuesta'),
     
     
 ]
