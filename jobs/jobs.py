@@ -55,8 +55,8 @@ def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
 	verificar_pago = VerificarPagoView()
 	request.query_params._mutable = True
 
-	id_comercio = request.query_params.get('id_comercio')
-	id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA'))
+	# id_comercio = request.query_params.get('id_comercio')
+	# id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA'))
 
 	response_pago = verificar_pago.create(request)
  
@@ -76,20 +76,20 @@ def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
 				scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 		else:
 			print("PAGO ACEPTADO/RECHAZADO")
-			if id_comercio == id_comercio_bia:
-				pago = Pagos.objects.filter(id_pago=id_pago).first()
-				
-				# ACTUALIZAR EN TABLA PAGOS
-				if pago:
-					pago.estado_pago = estado_pago
-					pago.fecha_pago = datetime.now()
-					pago.notificacion = True
-					pago.save()
-			else:
-				url_get_pimysis = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
-				params = {'id_pago': id_pago, 'id_comercio': id_comercio}
+			# if id_comercio == id_comercio_bia:
+			pago = Pagos.objects.filter(id_pago=id_pago).first()
+			
+			# ACTUALIZAR EN TABLA PAGOS
+			if pago and pago.estado_pago != estado_pago:
+				pago.estado_pago = estado_pago
+				pago.fecha_pago = datetime.now()
+				pago.notificacion = True
+				pago.save()
+			# else:
+			# 	url_get_pimysis = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
+			# 	params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
-				# ENVIAR NOTIFICACION A PIMYSIS
-				notificacion_pimysis = requests.get(url_get_pimysis, params=params)
+			# 	# ENVIAR NOTIFICACION A PIMYSIS
+			# 	notificacion_pimysis = requests.get(url_get_pimysis, params=params)
 	else:
 		print("Ocurrió un error al intententar obtener el estado del pago")
