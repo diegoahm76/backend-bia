@@ -28,7 +28,7 @@ class IniciarPagoView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
-        # id_pago = 1000012341
+        
         # VALIDACIONES DATA
         id_liquidacion = data.get('id_liquidacion')
         if not id_liquidacion:
@@ -128,6 +128,11 @@ class IniciarPagoView(generics.CreateAPIView):
                 raise ValidationError(error_message)
             
             redirect_url = f"https://www.zonapagos.com/{os.environ.get('ZPAGOS_CODIGO_RUTA')}/pago.asp?estado_pago=iniciar_pago&identificador={id_transaccion}"
+
+            # AÑADIR SONDA
+            if scheduler:
+                execution_time = datetime.now() + timedelta(minutes=10)
+                scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
             return redirect(redirect_url)
             # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
@@ -235,12 +240,7 @@ class NotificarPagoView(generics.ListAPIView):
             response_verificar_data = verificar_pago_response.data.get('data').get('res_pago')[0]
             estado_pago = response_verificar_data.get('int_estado_pago').strip()
 
-            if estado_pago not in ["1","1000","4000","4003"]:
-                # AÑADIR SONDA
-                if scheduler:
-                    execution_time = datetime.now() + timedelta(minutes=10)
-                    scheduler.add_job(update_estado_pago, args=[id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
-            else:
+            if estado_pago in ["1","1000","4000","4003"]:
                 if id_comercio == id_comercio_bia:
                     pago = Pagos.objects.filter(id_pago=id_pago).first()
                     if not pago:
