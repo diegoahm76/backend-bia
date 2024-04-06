@@ -225,6 +225,9 @@ class VerificarPagoView(generics.CreateAPIView):
 class NotificarPagoView(generics.CreateAPIView):
 
     def create(self, request):
+        print("ENTRO AL SERVICIO DE NOTIFICAR PAGO")
+        print("LOS PARAMS ENVIADOS SON: ", request.query_params)
+        print("EL BODY ES: ", request.data)
         id_comercio = request.query_params.get('id_comercio')
         id_pago = request.query_params.get('id_pago')
 
