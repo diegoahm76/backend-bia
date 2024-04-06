@@ -52,6 +52,22 @@ urlpatterns = [
     path('info-estados-articulo/get/', views.EstadosArticuloListView.as_view(), name='info-estados-articulo'),
     path('devolucion-activos/create/', views.DevolucionActivosCreateView.as_view(), name='devolucion-activos-creacion'),
 
+    #Despacho_Activos
+    path('busqueda-solicitudes-despacho/get/', views.BusquedaAvanzadaSolicitudesDespacho.as_view(), name='busqueda-solicitud-despacho'),
+    path('cancelar-solicitud-despacho/<int:pk>/', views.CancelarSolicitudDespacho.as_view(), name='cancelar-solicitud-despacho'),
+    path('anular-solicitud-despacho/<int:pk>/', views.AnularSolicitudDespacho.as_view(), name='anular-solicitud-despacho'),
+    path('solicitudes-activos/<int:id_solicitud_activo>/', views.ObtenerDatosPersonasSolicitud.as_view(), name='detalle-solicitud-activos'),
+    path('bodegas/busqueda-avanzada/', views.BusquedaAvanzadaBodegas.as_view(), name='busqueda_avanzada_bodegas'),
+    path('despachos-sin-solicitud/get/', views.DespachosSinSolicitudGet.as_view(), name='despachos-sin-solicitud'),
+    path('busqueda-articulos-principal/<int:solicitud_id>/', views.BusquedaArticulosPrincipalView.as_view(), name='busqueda-articulos-princiapal'),
+    path('busqueda-articulos-sub/<int:id_bien>/', views.BusquedaArticulosSubView.as_view(), name='busqueda-articulos-sub'),
+    path('crear-despacho-activo/create/', views.CrearDespachoActivosView.as_view(), name='crear-despacho-activo'),
+
+
+
+
+
+
 
 
 
