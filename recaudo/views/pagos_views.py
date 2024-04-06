@@ -222,13 +222,15 @@ class VerificarPagoView(generics.CreateAPIView):
         else:
             raise ValidationError(f'Ocurrió un error: {error_detail.text}')
         
-class NotificarPagoView(generics.ListAPIView):
+class NotificarPagoView(generics.CreateAPIView):
 
-    def get(self, request):
-        id_comercio = request.query_params.get('id_comercio')
+    def create(self, request):
+        print("ENTRO AL SERVICIO DE NOTIFICAR PAGO")
+        print("LOS PARAMS ENVIADOS SON: ", request.query_params)
+        id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
 
-        if not id_comercio and not id_pago:
+        if not id_comercio or not id_pago:
             raise ValidationError('El ID del comercio y el ID del pago son requeridos')
         
         id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA'))
