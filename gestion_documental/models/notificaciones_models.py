@@ -166,6 +166,9 @@ class Anexos_NotificacionesCorrespondencia(models.Model):
     id_persona_anexa_documento = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T353Id_PersonaAnexaDocumento',related_name='T353Id_PersonaAnexaDocumento')
     fecha_anexo = models.DateTimeField(db_column='T353fechaAnexo')
     id_causa_o_anomalia = models.ForeignKey('CausasOAnomalias', on_delete=models.SET_NULL, null=True, blank=True, db_column='T353Id_CausaOAnomalia',related_name='T353Id_CausaOAnomalia')
+    link_publicacion = models.CharField(max_length=255, null=True, blank=True, db_column='T353linkPublicacion')
+    observaciones = models.CharField(max_length=255, null=True, blank=True, db_column='T353observaciones')
+    usuario_notificado = models.BooleanField(db_column='T353usuarioNotificado')
     id_anexo = models.ForeignKey('gestion_documental.Anexos', on_delete=models.CASCADE, db_column='T353Id_Anexo',related_name='T353Id_Anexo')
 
     class Meta:

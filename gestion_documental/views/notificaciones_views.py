@@ -51,7 +51,8 @@ from gestion_documental.serializers.notificaciones_serializers import (
     ActosAdministrativosSerializer,
     Registros_NotificacionesCorrespondeciaSerializer,
     NotificacionesCorrespondenciaAnexosSerializer,
-    RegistrosNotificacionesCorrespondeciaSerializer
+    RegistrosNotificacionesCorrespondeciaSerializer,
+    AnexosNotificacionesCorrespondenciaSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -1239,6 +1240,29 @@ class NotificacionGet(generics.RetrieveAPIView):
         notificacion = self.get_notificacion(id_notificacion)
         serializer = self.serializer_class(notificacion)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class AnexosNotificacionGet(generics.ListAPIView):
+
+    serializer_class = AnexosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_anexos(self, id_notificacion):
+
+        try:
+            notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_notificacion)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('La notificación no existe.')
+        
+        anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia)
+        return anexos
+    
+
+    def get(self, request, id_notificacion):
+        anexos = self.get_anexos(id_notificacion)
+        serializer = self.serializer_class(anexos, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
 
 
 class UpdateAsignacionNotificacion(generics.UpdateAPIView):
