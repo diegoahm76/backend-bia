@@ -53,6 +53,7 @@ urlpatterns = [
     # Correspondencia
 
     path('get-notificacion-pagina/<int:id_notificacion>/', views.NotificacionGet.as_view(),name='get-notificacion'),
+    path('get-notificacion-anexos/<int:id_notificacion>/', views.AnexosNotificacionGet.as_view(),name='get-notificacion-anexos'),
 
     
 
