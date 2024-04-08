@@ -26,6 +26,7 @@ urlpatterns = [
     path('get-personas-filters/', views.GetPersonasByFilters.as_view(), name='get-personas-filters'),
     path('get-operarios-filters/', views.GetPersonasOperariosByFilters.as_view(), name='get-operarios-filters'),#Busqueda-Operarios
     path('get-personas-responsible-filters/', views.GetPersonasResponsibleByFilters.as_view(), name='get-personas-responsible-filters'), #Busqueda-personas-responsible-filter
+    path('get-personas-funcionario/<int:pk>/', views.GetFuncionariosByUniOrg.as_view(), name='get-personas-funcionario'),
     
     # - Consultas Admin Usuarios
     

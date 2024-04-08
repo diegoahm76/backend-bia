@@ -15,9 +15,23 @@ import re, requests
 from django.template.loader import render_to_string
 from seguridad.lists.fields_abrv_list import fields_abrv_LIST
 import os
-
+from email.mime.application import MIMEApplication
 class Util:
-    
+
+    @staticmethod
+    def send_email_file(data,file=None):
+        email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
+        
+        email.content_subtype ='html'
+
+        if file:
+            file_name = file.name
+            attachment = MIMEApplication(file.read(), Name=file_name)
+            attachment['Content-Disposition'] = f'attachment; filename="{file_name}"'
+            email.attach(attachment)
+        response = email.send(fail_silently=True)
+        return response
+
     @staticmethod
     def send_email(data):
         email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)

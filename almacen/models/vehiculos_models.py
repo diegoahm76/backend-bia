@@ -48,7 +48,7 @@ class InspeccionesVehiculosDia(models.Model):
     id_persona_inspecciona = models.ForeignKey("transversal.Personas", on_delete=models.CASCADE, db_column="T073Id_PersonaQueInspecciona", related_name="T073id_persona_inspecciona")
     dia_inspeccion = models.DateField(db_column="T073diaInspeccion")
     fecha_registro = models.DateTimeField(db_column="T073fechaRegistro")
-    kilometraje = models.IntegerField(db_column="T073Kilometraje")
+    kilometraje = models.IntegerField(db_column="T073kilometraje")
     dir_llantas_delanteras = models.BooleanField(default=True, db_column="T073dirDelanterasBuenas")
     dir_llantas_Traseras = models.BooleanField(default=True, db_column="T073dirTraserasBuenas")
     limpiabrisas_delantero = models.BooleanField(default=True, db_column="T073limpiabrisasDelanterosBuenos")

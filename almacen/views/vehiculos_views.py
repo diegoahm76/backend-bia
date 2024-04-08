@@ -535,7 +535,8 @@ class CrearSolicitudViaje(generics.CreateAPIView):
 
         # Validar que si tiene_expediente_asociado es False, no se permita agregar el campo id_expediente_asociado
         tiene_expediente_asociado = data.get('tiene_expediente_asociado', False)
-        if not tiene_expediente_asociado and 'id_expediente_asociado' in data:
+        #if not tiene_expediente_asociado and 'id_expediente_asociado' in data:
+        if not tiene_expediente_asociado and data.get('id_expediente_asociado') != None:
             raise ValidationError({'id_expediente_asociado': 'No se puede especificar un expediente asociado si tiene_expediente_asociado es False'})
         
         # Validar que existe el ID de expediente asociado si tiene_expediente_asociado es True
