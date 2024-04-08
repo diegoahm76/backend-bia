@@ -596,3 +596,20 @@ class RespuestaRequerimientoOPACreateserializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestasRequerimientos
         fields = '__all__'
+
+
+class RespuestasOPAGetSeralizer(serializers.ModelSerializer):
+    persona_responde = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaOPA
+        fields = ['id_respuesta_opa','fecha_respuesta','persona_responde']
+
+    def get_persona_responde(self, obj):
+        persona = obj.id_persona_responde
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+        
