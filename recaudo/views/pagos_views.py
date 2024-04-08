@@ -130,7 +130,9 @@ class IniciarPagoView(generics.CreateAPIView):
             redirect_url = f"https://www.zonapagos.com/{os.environ.get('ZPAGOS_CODIGO_RUTA')}/pago.asp?estado_pago=iniciar_pago&identificador={id_transaccion}"
 
             # AÑADIR SONDA
+            print("SCHEDULER: ", scheduler)
             if scheduler:
+                print("ENTRÓ A SONDA")
                 execution_time = datetime.now() + timedelta(minutes=10)
                 scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
