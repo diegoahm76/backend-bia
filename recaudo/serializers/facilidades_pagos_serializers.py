@@ -117,6 +117,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     nombre_funcionario = serializers.SerializerMethodField()
     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
     tiene_plan_pago = serializers.SerializerMethodField()
+    id_persona = serializers.SerializerMethodField()
 
     def get_nombre_de_usuario(self, obj):
         return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
@@ -130,9 +131,18 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
             tiene_plan_pago = True
         return tiene_plan_pago
     
+    def get_id_persona(self, obj):
+        persona = Personas.objects.filter(numero_documento=obj.id_deudor.identificacion).first()
+        if persona:
+            id_persona = persona.id_persona
+        else:
+            id_persona = None
+        return id_persona
+    
+    
     class Meta:
         model = FacilidadesPago
-        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario', 'tiene_plan_pago')
+        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario', 'id_persona','tiene_plan_pago')
 
 
 class FacilidadesPagoFuncionarioPutSerializer(serializers.ModelSerializer):

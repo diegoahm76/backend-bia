@@ -50,10 +50,26 @@ urlpatterns = [
     path('get-tipos-actos/', views.TipoActosAdministrativos.as_view(),name='get-tipos-actos'),
     path('get-actos/', views.ActosAdministrativosGet.as_view(),name='get-actos'),
 
-    # Correspondencia
+    # Pagina Gaceta
+    path('get-datos-notificacion-gaceta/<int:id_notificacion>/', views.DatosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-gaceta'),
+    path('get-datos-notificacion-anexos-gaceta/<int:id_notificacion>/', views.AnexosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-anexos-gaceta'),
+    path('get-tipos-anexos-gaceta/<int:id_tipo_notificacion>/', views.TipoAnexosSoporteGacetaGet.as_view(),name='get-tipos-anexos-gaceta'),
+    path('get-causas-o-anomalias-gaceta/<int:id_tipo_notificacion>/', views.CausasOAnomaliasGacetaGet.as_view(),name='get-causas-o-anomalias-gaceta'),
+ 
 
-    path('get-notificacion-pagina/<int:id_notificacion>/', views.NotificacionGet.as_view(),name='get-notificacion'),
-    path('get-notificacion-anexos/<int:id_notificacion>/', views.AnexosNotificacionGet.as_view(),name='get-notificacion-anexos'),
+    # Pagina Edictos
+    path('get-datos-notificacion-edictos/<int:id_notificacion>/', views.DatosNotificacionEdictosGet.as_view(),name='get-datos-notificacion-edictos'),
+    path('get-datos-notificacion-anexos-edictos/<int:id_notificacion>/', views.AnexosNotificacionEdictosGet.as_view(),name='get-datos-notificacion-anexos-edictos'),
+
+    # Correo electronico
+    path('get-datos-notificacion-correo/<int:id_notificacion>/', views.DatosNotificacionCorreoGet.as_view(),name='get-datos-notificacion-correo'),
+    path('get-datos-notificacion-anexos-correo/<int:id_notificacion>/', views.AnexosNotificacionCorreoGet.as_view(),name='get-datos-notificacion-anexos-correo'),
+
+    # Correspondecia fisica
+    path('get-datos-notificacion-correspondencia/<int:id_notificacion>/', views.DatosNotificacionCorrespondenciaGet.as_view(),name='get-datos-notificacion-correspondencia'),
+    path('get-datos-notificacion-anexos-correspondencia/<int:id_notificacion>/', views.AnexosNotificacionCorrespondenciaGet.as_view(),name='get-datos-notificacion-anexos-correspondencia'),
+
+    
 
     
 
