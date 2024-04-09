@@ -741,15 +741,19 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             item_despacho_data = {
                 'id_item_despacho_activo': item_despacho.id_item_despacho_activo,
                 'id_despacho_activo': item_despacho.id_despacho_activo.id_despacho_activo,
-                'id_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado else None,
-                'id_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado else None,
+                'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado.id_bien else None,
+                'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado.nombre else None,
+                'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado.id_bien else None,
+                'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado.nombre else None,
                 'id_entrada_alma': item_despacho.id_entrada_alma.id_entrada_almacen if item_despacho.id_entrada_alma else None,
                 'id_bodega': item_despacho.id_bodega.id_bodega if item_despacho.id_bodega else None,
-                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega else None,
+                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega.nombre else None,
                 'cantidad_solicitada': item_despacho.cantidad_solicitada,
                 'fecha_devolucion': item_despacho.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if item_despacho.fecha_devolucion else None,
                 'se_devolvio': item_despacho.se_devolvio,
-                'id_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.nombre if item_despacho.id_uni_medida_solicitada else None,
+                'id_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.id_unidad_medida if item_despacho.id_uni_medida_solicitada else None,
+                'nombre_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.nombre if item_despacho.id_uni_medida_solicitada else None,
+                'abreviatura_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.abreviatura if item_despacho.id_uni_medida_solicitada else None,
                 'cantidad_despachada': item_despacho.cantidad_despachada,
                 'observacion': item_despacho.observacion,
                 'nro_posicion_despacho': item_despacho.nro_posicion_despacho
@@ -1544,57 +1548,83 @@ class InfoAlmcenistaPersonaGet(generics.ListAPIView):
     
 
 
-class DespachosDeActivosList(generics.ListAPIView):
+# class DespachosDeActivosList(generics.ListAPIView):
+#     serializer_class = DespachoActivosSerializer
+
+#     def get_queryset(self):
+#         # Obtener el ID de la persona responsable desde los parámetros de la URL
+#         id_persona = self.kwargs.get('id_persona')
+
+#         # Consultar los registros de AsignacionActivos para el responsable actual
+#         asignaciones = AsignacionActivos.objects.filter(
+#             id_funcionario_resp_asignado_id=id_persona,
+#             actual=True
+#         )
+
+#         # Lista para almacenar los despachos encontrados
+#         despachos_encontrados = []
+
+#         # Iterar sobre las asignaciones encontradas
+#         for asignacion in asignaciones:
+#             # Obtener el despacho asociado a esta asignación
+#             despacho = DespachoActivos.objects.filter(id_despacho_activo=asignacion.id_despacho_asignado).first()
+
+#             # Verificar si se encontró un despacho válido
+#             if despacho:
+#                 # Lógica para determinar el tipo de solicitud
+#                 if despacho.despacho_sin_solicitud:
+#                     tipo_solicitud = 'Despacho sin solicitud'
+#                     fecha_solicitud = 'No aplica'
+#                 else:
+#                     tipo_solicitud = 'Despacho con solicitud ordinaria' if not despacho.id_solicitud_activo.solicitud_prestamo else 'Despacho con solicitud de préstamo'
+#                     fecha_solicitud = despacho.fecha_solicitud.strftime('%Y-%m-%d') if despacho.fecha_solicitud else 'No aplica'
+
+#                 # Agregar el despacho encontrado a la lista de despachos
+#                 despachos_encontrados.append({
+#                     'id_despacho': despacho.id_despacho_activo,
+#                     'fecha_despacho': despacho.fecha_despacho,
+#                     'persona_despachó': f"{despacho.id_persona_despacha.primer_nombre} {despacho.id_persona_despacha.primer_apellido}",
+#                     'bodega': despacho.id_bodega.nombre,
+#                     'observacion': despacho.observacion,
+#                     'tipo_solicitud': tipo_solicitud,
+#                     'fecha_solicitud': fecha_solicitud
+#                 })
+
+#         # Retornar la lista de despachos encontrados
+#         return despachos_encontrados
+    
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+        
+#         # Retornar la respuesta con la data procesada
+#         return Response({'success': True, 'detail': 'Despachos de activos encontrados', 'data': queryset}, status=status.HTTP_200_OK)
+
+
+class DespachosDeActivosListGet(generics.ListAPIView):
     serializer_class = DespachoActivosSerializer
 
     def get_queryset(self):
-        # Obtener el ID de la persona responsable desde los parámetros de la URL
         id_persona = self.kwargs.get('id_persona')
 
-        # Consultar los registros de AsignacionActivos para el responsable actual
         asignaciones = AsignacionActivos.objects.filter(
-            id_funcionario_resp_asignado_id=id_persona,
+            id_funcionario_resp_asignado=id_persona,
             actual=True
         )
 
-        # Lista para almacenar los despachos encontrados
-        despachos_encontrados = []
+        if not asignaciones:
+            return []
+        
+        despachos = [asignacion.id_despacho_asignado for asignacion in asignaciones]
 
-        # Iterar sobre las asignaciones encontradas
-        for asignacion in asignaciones:
-            # Obtener el despacho asociado a esta asignación
-            despacho = DespachoActivos.objects.filter(id_despacho_activo=asignacion.id_despacho_asignado).first()
+        serializer_despachos = self.serializer_class(despachos, many=True)
 
-            # Verificar si se encontró un despacho válido
-            if despacho:
-                # Lógica para determinar el tipo de solicitud
-                if despacho.despacho_sin_solicitud:
-                    tipo_solicitud = 'Despacho sin solicitud'
-                    fecha_solicitud = 'No aplica'
-                else:
-                    tipo_solicitud = 'Despacho con solicitud ordinaria' if not despacho.id_solicitud_activo.solicitudPrestamo else 'Despacho con solicitud de préstamo'
-                    fecha_solicitud = despacho.fecha_solicitud.strftime('%Y-%m-%d') if despacho.fecha_solicitud else 'No aplica'
-
-                # Agregar el despacho encontrado a la lista de despachos
-                despachos_encontrados.append({
-                    'id_despacho': despacho.id_despacho_activo,
-                    'fecha_despacho': despacho.fecha_despacho,
-                    'persona_despachó': f"{despacho.id_persona_despacha.primer_nombre} {despacho.id_persona_despacha.primer_apellido}",
-                    'bodega': despacho.id_bodega.nombre,
-                    'observacion': despacho.observacion,
-                    'tipo_solicitud': tipo_solicitud,
-                    'fecha_solicitud': fecha_solicitud
-                })
-
-        # Retornar la lista de despachos encontrados
-        return despachos_encontrados
+ 
+        return serializer_despachos.data
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        
-        # Retornar la respuesta con la data procesada
         return Response({'success': True, 'detail': 'Despachos de activos encontrados', 'data': queryset}, status=status.HTTP_200_OK)
-    
+
 
 class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
     serializer_class = ActivosDespachadosDevolucionSerializer
@@ -2118,8 +2148,9 @@ class BusquedaArticulosSubView(generics.ListAPIView):
 
             # Crear un diccionario con la información recopilada
             item_data = {
-                'codigo_bien_solicitado': bien.codigo_bien,
-                'nombre_bien_solicitado': bien.nombre,
+                'id_bien_despachado': bien.id_bien,
+                'codigo_bien_espachado': bien.codigo_bien,
+                'nombre_bien_espachado': bien.nombre,
                 'cantidad_despachada': cantidad_despachada,
                 'observaciones': observaciones,
                 'nombre_bodega': nombre_bodega
@@ -2138,6 +2169,41 @@ class BusquedaArticulosSubView(generics.ListAPIView):
         else:
             # Si no se encontraron elementos, devolver respuesta de no encontrado
             return Response({'success': False, 'detail': 'No se encontraron items para este ID de bien.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+# class BusquedaArticulosSubView(generics.ListAPIView):
+#     def get(self, request, id_bien, *args, **kwargs):
+#         try:
+#             # Buscar coincidencias de registros en CatalogoBienes que tengan id_bien_padre igual a id_bien ingresado por el usuario
+#             catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien)
+            
+#             # Inicializar una lista para almacenar los datos de inventario
+#             inventario_data = []
+            
+#             # Recorrer los registros encontrados en CatalogoBienes
+#             for bien in catalogo_bienes:
+#                 # Obtener el nombre de la bodega del modelo Inventario relacionada al id_bien actual
+#                 inventario = Inventario.objects.filter(id_bien=bien.id_bien)
+#                 if inventario.exists():
+#                     # Obtener la primera instancia de Inventario encontrada
+#                     inventario = inventario.first()
+#                     # Crear un diccionario con la información requerida
+#                     data = {
+#                         'Codigo_Bien_Solicitado': bien.codigo_bien,
+#                         'Nombre_Bien_Solicitado': bien.nombre,
+#                         'Cantidad_de_articulos_despachado': 1,
+#                         'Observaciones': bien.observaciones,
+#                         'Nombre_Bodega': inventario.id_bodega.nombre  # Acceder al atributo nombre del modelo Bodegas
+#                     }
+#                     # Agregar el diccionario a la lista de datos de inventario
+#                     inventario_data.append(data)
+            
+#             # Retornar los datos de inventario en forma de respuesta JSON con éxito y detalle
+#             return Response({'success': True, 'detail': 'Datos de inventario recuperados correctamente', 'data': inventario_data}, status=status.HTTP_200_OK)
+        
+#         except Exception as e:
+#             # En caso de error, retornar un mensaje de error con el estado HTTP 500
+#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
