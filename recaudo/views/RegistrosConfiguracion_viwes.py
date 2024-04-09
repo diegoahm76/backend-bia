@@ -658,7 +658,7 @@ class Borrar_IndicadoresSemestral(generics.DestroyAPIView):
             instance.delete()  # Eliminar la instancia
 
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
-                            status=status.HTTP_204_NO_CONTENT)
+                            status=status.HTTP_200_OK)
         except IndicadoresSemestral.DoesNotExist:
             # Si el registro no existe, devolver un error 404
             return Response({'error': 'El registro no existe'},

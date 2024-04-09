@@ -240,8 +240,8 @@ class IndicadorValor(models.Model):
     indicador = models.ForeignKey(IndicadoresSemestral, on_delete=models.CASCADE)
     mes_id = models.IntegerField(choices=MONTH_CHOICES, db_column='T467mes')
     valor = models.DecimalField(max_digits=10, decimal_places=0, db_column='T467Valor')
-    variable_1 = models.DecimalField(max_digits=10, decimal_places=0, db_column='T467Variable_1')
-    variable_2 = models.DecimalField(max_digits=10, decimal_places=0, db_column='T467Variable_2')
+    variable_1 = models.DecimalField(max_digits=15, decimal_places=0, db_column='T467Variable_1')
+    variable_2 = models.DecimalField(max_digits=15, decimal_places=0, db_column='T467Variable_2')
 
     class Meta:
         db_table = 'T467IndicadorValor'
