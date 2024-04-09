@@ -3,7 +3,7 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesDeJuridica, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, RespuestasRequerimientos, SolicitudesDeJuridica, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -1029,6 +1029,54 @@ class AsignacionTramiteOpaGetSerializer(serializers.ModelSerializer):
            data = unidad.data
            return data['nombre_unidad']
         
+
+class RespuestasRequerimientosPutGetSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
+
+
+class RespuestasRequerimientosPutSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
+class RespuestasRequerimientosOpaGetSerializer(serializers.ModelSerializer):
+
+    tipo = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
+    nombre_persona_responde = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
+
+    def get_tipo(self,obj):
+        return "Respuesta Requerimiento"
+    
+    def get_radicado(self, obj):
+        cadena = ""
+        radicado = obj.id_radicado
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        else: 
+            return 'SIN RADICAR'
+
+    def get_nombre_persona_responde(self, obj):
+        nombre_completo_responsable = None
+        if obj.id_persona_responde:
+            nombre_list = [obj.id_persona_responde.primer_nombre, obj.id_persona_responde.segundo_nombre,
+                            obj.id_persona_responde.primer_apellido, obj.id_persona_responde.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
 #ENTREGA 99
 
 

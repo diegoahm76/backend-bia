@@ -312,7 +312,8 @@ class RespuestasRequerimientos(models.Model):
     id_persona_responde = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T291Id_PersonaResponde')
     id_radicado = models.ForeignKey(T262Radicados, on_delete=models.SET_NULL, blank=True, null=True, db_column='T291Id_Radicado')
     fecha_radicado = models.DateTimeField(blank=True, null=True, db_column='T291fechaRadicado')
-
+    complemento_asignado_unidad = models.BooleanField(db_column='T291RequerimientoAsignadoAUndOrg',default=False)
+    requiere_digitalizacion = models.BooleanField(db_column='T291requiereDigitalizacion',null=True)
     def __str__(self):
         return str(self.id_respuesta_requerimiento)
 

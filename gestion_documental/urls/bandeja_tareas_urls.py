@@ -73,23 +73,24 @@ urlpatterns = [
     path('detalle-opas/get/<str:id>/', views_opas.DetalleOpaGetbyId.as_view(), name='get-detalle-opas-by-id'),
     path('tareas-asignadas/opas/aceptar/update/<str:pk>/', views_opas.TareasAsignadasAceptarOpaUpdate.as_view(), name='update-tareas-asignadas-opas'),
     path('tareas-asignadas/opas/rechazar/update/<str:pk>/', views_opas.TareasAsignadasOpasRechazarUpdate.as_view(), name='update-tareas-asignadas-opas'),
-
+    path('tareas-asignadas/opas/complemento/tarea/get/<str:tarea>/', views_opas.ComplementoTareaOPAGetByTarea.as_view(), name='get-complemento-tarea-opa'),
+    #RespuestaTramitesInfoAnexosGet
+    path('tareas-asignadas/opas/respuesta/anexo/get/<str:pk>/', views_opas.RespuestaTramitesOpasInfoAnexosGet.as_view(), name='get-respuesta-opa-anexo'),
     #REQUERIMIENTO A LA OPA
     path('opa/persona/titular/get/<str:tra>/', views_opas.OpaPersonaTitularGet.as_view(), name='get-opa-persona-titular'),
     path('opa/tramite/detalle/get/<str:tra>/', views_opas.OpaTramiteDetalleGet.as_view(), name='get-opa-tramite-detalle'),
-    #REEMPLAZA
-    path('opa/requerimiento/create/', views_opas.RequerimientoSobreOPACreate.as_view(), name='crear-requerimiento-opa'),
+    #path('opa/requerimiento/create/', views_opas.RequerimientoSobreOPACreate.as_view(), name='crear-requerimiento-opa'),
     path('opa/requerimiento/tramite/create/', views_opas.RequerimienntoSobreOpaTramiteCreate.as_view(), name='crear-requerimiento-opa-tramite'),
-    #Remplazar
     path('opa/requerimiento/get/<str:tra>/', views_opas.RequerimientosPQRSDFGetByTramiteOPA.as_view(), name='get-requerimiento-opa'),
-    #RequerimientosTramiteGetByTramiteOPA
     path('opa/requerimiento/tramite/get/<str:tra>/', views_opas.RequerimientosTramiteGetByTramiteOPA.as_view(), name='get-requerimiento-opa-tramite'),
-    #AnexosRequerimientoGetByRequerimiento
     path('opa/requerimiento/anexo/get/<str:re>/', views_opas.AnexosRequerimientoGetByRequerimiento.as_view(), name='get-anexos-requerimiento'),
 
-    #RESPUESTA A REQUERIMIENTO OPA
 
-    #RespuestaRequerimientoOpaTramiteCreate
-    path('respuesta-requerimiento-opa/opa/respuesta-requerimiento/create/',views_opas.RespuestaRequerimientoOpaTramiteCreate.as_view(),name='crear-respuesta-requerimiento')
+    path('opa/respuesta/create/', views_opas.RespuestaOpaTramiteCreate.as_view(), name='crear-respuesta-opa-tramite'),
+    path('opa/respuesta/get/<str:tra>/', views_opas.RespuestaOpaGet.as_view(), name='get-respuesta-opa-tramite'),
+    path('opa/respuesta/anexo/get/<str:pk>/', views_opas.RespestaOpasInfoAnexosGet.as_view(), name='get-anexos-respuesta'),
+    
+    #RespuestaPQRSDFByTra
+    path('opa/respuesta/detalle/get/<str:tra>/', views_opas.RespuestaPQRSDFByTra.as_view(), name='get-respuesta-pqrsdf'),
     
 ]
