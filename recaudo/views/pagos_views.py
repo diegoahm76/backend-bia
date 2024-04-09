@@ -145,7 +145,7 @@ class VerificarPagoView(generics.CreateAPIView):
     
     def create(self, request):
         id_pago = request.query_params.get('id_pago')
-        id_comercio = request.query_params.get('id_comercio', os.environ.get('ZPAGOS_ID_TIENDA'))
+        id_comercio = request.query_params.get('idcomercio', os.environ.get('ZPAGOS_ID_TIENDA'))
         if not id_pago:
             raise ValidationError('El ID de la transacción es requerido')
 
@@ -259,6 +259,7 @@ class NotificarPagoView(generics.CreateAPIView):
 
                     # ENVIAR NOTIFICACION A PIMYSIS
                     notificacion_pimisys = requests.get(url_get_pimisys, params=params)
+                    print("NOTIFICACION PIMISYS: ", notificacion_pimisys)
         else:
             raise ValidationError("Ocurrió un error en la verificación del pago")
 

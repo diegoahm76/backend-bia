@@ -741,13 +741,13 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             item_despacho_data = {
                 'id_item_despacho_activo': item_despacho.id_item_despacho_activo,
                 'id_despacho_activo': item_despacho.id_despacho_activo.id_despacho_activo,
-                'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado.id_bien else None,
-                'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado.nombre else None,
-                'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado.id_bien else None,
-                'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado.nombre else None,
+                'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado else None,
+                'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado else None,
+                'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado else None,
+                'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado else None,
                 'id_entrada_alma': item_despacho.id_entrada_alma.id_entrada_almacen if item_despacho.id_entrada_alma else None,
                 'id_bodega': item_despacho.id_bodega.id_bodega if item_despacho.id_bodega else None,
-                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega.nombre else None,
+                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega else None,
                 'cantidad_solicitada': item_despacho.cantidad_solicitada,
                 'fecha_devolucion': item_despacho.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if item_despacho.fecha_devolucion else None,
                 'se_devolvio': item_despacho.se_devolvio,
@@ -759,6 +759,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'nro_posicion_despacho': item_despacho.nro_posicion_despacho
             }
             items_despacho_data.append(item_despacho_data)
+
         
         # Recuperar los despachos activos relacionados
         despachos = DespachoActivos.objects.filter(id_solicitud_activo=instance)
@@ -799,7 +800,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'primer_apellido_persona_anula': despacho.id_persona_anula.primer_apellido if despacho.id_persona_anula else None,
                 'tipo_documento_persona_anula': despacho.id_persona_anula.tipo_documento.cod_tipo_documento if despacho.id_persona_anula else None,
                 'numero_documento_persona_anula': despacho.id_persona_anula.numero_documento if despacho.id_persona_anula else None,
-                'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo if despacho.id_archivo_doc_recibido else None
+                'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo_digital if despacho.id_archivo_doc_recibido else None
             }
             despachos_data.append(despacho_data)
         
