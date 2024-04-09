@@ -1159,6 +1159,11 @@ class AprobarSolicitud(generics.UpdateAPIView):
 
         # Serializar y retornar la información actualizada
         serializer = self.serializer_class(instance)
+
+
+        #generacion de alerta
+
+        
         return Response({'success': True, 'detail': 'Solicitud aceptada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
