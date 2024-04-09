@@ -1049,6 +1049,7 @@ class RespuestasRequerimientosOpaGetSerializer(serializers.ModelSerializer):
     tipo = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField()
     nombre_persona_responde = serializers.SerializerMethodField()
+
     numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
     class Meta:
         model = RespuestasRequerimientos
