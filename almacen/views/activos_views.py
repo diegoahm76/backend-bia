@@ -2123,7 +2123,8 @@ class CrearDespachoActivosView(generics.CreateAPIView):
             nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
             
-            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list('nombre', flat=True)
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+
             
             if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
                 raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
@@ -2146,6 +2147,7 @@ class CrearDespachoActivosView(generics.CreateAPIView):
             
             archivo_class = ArchivosDgitalesCreate()
             respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
 
             id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
 
