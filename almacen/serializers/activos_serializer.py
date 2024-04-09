@@ -242,45 +242,47 @@ class AlmacenistaLogueadoSerializer(serializers.ModelSerializer):
         
 
 class DespachoActivosSerializer(serializers.ModelSerializer):
-    persona_despacha = serializers.SerializerMethodField()
-    bodega = serializers.SerializerMethodField()
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    nombre_persona_despacha = serializers.SerializerMethodField()
     tipo_solicitud = serializers.SerializerMethodField()
-    fecha_solicitud = serializers.SerializerMethodField()
 
     class Meta:
         model = DespachoActivos
-        fields = ['id_despacho_activo', 'fecha_despacho', 'persona_despacha', 'bodega', 'observacion', 'tipo_solicitud', 'fecha_solicitud']
+        fields = '__all__'
 
-    def get_persona_despacha(self, obj):
-        persona_despacha = obj.id_persona_despacha
-        if persona_despacha:
-            return f"{persona_despacha.primer_nombre} {persona_despacha.segundo_nombre} {persona_despacha.primer_apellido} {persona_despacha.segundo_apellido}"
-        return "Desconocido"
+    def get_nombre_persona_despacha(self, obj):
+        nombre_persona_despacha = None
+        if obj.id_persona_despacha:
+            nombre_list = [obj.id_persona_despacha.primer_nombre, obj.id_persona_despacha.segundo_nombre,
+                            obj.id_persona_despacha.primer_apellido, obj.id_persona_despacha.segundo_apellido]
+            nombre_persona_despacha = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_despacha = nombre_persona_despacha if nombre_persona_despacha != "" else None
+        return nombre_persona_despacha
+    
+    def get_tipo_solicitud(self,obj):
+        # Verificar si el despacho no tiene solicitud (despacho_sin_solicitud es True)
+        if obj.despacho_sin_solicitud :
+            return 'Despacho sin solicitud'
 
-    def get_bodega(self, obj):
-        bodega = obj.id_bodega
-        if bodega:
-            return bodega.nombre
-        return "Desconocido"
+        if obj.id_solicitud_activo and not obj.despacho_sin_solicitud:
 
-    def get_tipo_solicitud(self, obj):
-        if obj.despacho_sin_solicitud:
-            return "Despacho sin solicitud"
-        else:
-            if obj.id_solicitud_activo:
-                if obj.id_solicitud_activo.solicitud_prestamo:
-                    return "Despacho con solicitud de préstamo"
-                else:
-                    return "Despacho con solicitud ordinaria"
-        return "Desconocido"
+            solicitud_prestamo = obj.id_solicitud_activo.solicitud_prestamo
+            if not solicitud_prestamo:
+                return 'Despacho con solicitud ordinaria'
+            else:
+                return 'Despacho con solicitud de prestamo'
+            
+        if not obj.id_solicitud_activo:
+            # Si no hay una solicitud asociada, retornar 'Despacho sin solicitud'
+            return 'Despacho sin solicitud'
+        
 
-    def get_fecha_solicitud(self, obj):
-        if obj.despacho_sin_solicitud:
-            return "No aplica"
-        else:
-            if obj.id_solicitud_activo:
-                return obj.id_solicitud_activo.fecha_solicitud
-        return None
+    
+
+        
+
+    
         
 
 class ActivosDespachadosDevolucionSerializer(serializers.ModelSerializer):
