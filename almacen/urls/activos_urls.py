@@ -48,7 +48,7 @@ urlpatterns = [
     #Devolucion_Activos
     path('Informacion-almacenista/get/', views.InfoAlmcenistaPersonaGet.as_view(), name='info-alamcenista'),
     path('despachos-activos/get/<int:id_persona>/', views.DespachosDeActivosListGet.as_view(), name='despachos-activos'),
-    path('despachos-activos/detalle/<int:id_despacho>/', views.ActivosDespachadosDevolucionView.as_view(), name='activos-despachados-devolucion'),
+    path('despachos-activos/detalle/<int:id_despacho_activo>/', views.ActivosDespachadosDevolucionView.as_view(), name='activos-despachados-devolucion'),
     path('info-estados-articulo/get/', views.EstadosArticuloListView.as_view(), name='info-estados-articulo'),
     path('devolucion-activos/create/', views.DevolucionActivosCreateView.as_view(), name='devolucion-activos-creacion'),
 

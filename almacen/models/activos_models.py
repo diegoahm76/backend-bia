@@ -233,7 +233,7 @@ class DevolucionActivos(models.Model):
     devolucion_anulada = models.BooleanField(db_column="T092devolucionAnulada")
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column="T092justificacionAnulacion")
     fecha_anulacion = models.DateTimeField(blank=True, null=True, db_column='T092fechaAnulacion')
-    id_persona_anulacion = models.ForeignKey(Personas, related_name='id_persona_que_anula', on_delete=models.CASCADE, db_column='T092Id_PersonaQueAnula')
+    id_persona_anulacion = models.ForeignKey(Personas,blank=True, null=True, related_name='id_persona_que_anula', on_delete=models.SET_NULL, db_column='T092Id_PersonaQueAnula')
 
     def __str__(self):
         return str(self.id_devolucion_activos)

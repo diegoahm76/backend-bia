@@ -55,6 +55,7 @@ def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
 	verificar_pago = VerificarPagoView()
 	request.query_params._mutable = True
 
+	request.query_params['id_pago'] = id_pago
 	response_pago = verificar_pago.create(request)
 	print("LLEGÓ A LA SONDA")
  
