@@ -315,40 +315,28 @@ class ActosAdministrativosSerializer(serializers.ModelSerializer):
             return None
 
 
-class NotificacionesCorrespondeciaPaginasSerializer(serializers.ModelSerializer):
+class RegistroNotificacionesCorrespondenciaPaginasSerializer(serializers.ModelSerializer):
 
-    tipo_documento = serializers.CharField(source='cod_tipo_documento.nombre')
-    acto_administrativo = serializers.CharField(source='id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo', default=None)
-    expediente = serializers.CharField(source='id_expediente_documental.codigo_exp_und_serie_subserie', default=None)
-    oficina_solicita = serializers.CharField(source='id_und_org_oficina_solicita.nombre')
-    fecha_asignacion = serializers.SerializerMethodField()
-    id_tipo_notificacion_correspondencia = serializers.SerializerMethodField()
+    tipo_documento = serializers.CharField(source='id_notificacion_correspondencia.cod_tipo_documento.nombre')
+    acto_administrativo = serializers.CharField(source='id_notificacion_correspondencia.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo', default=None)
+    expediente = serializers.CharField(source='id_notificacion_correspondencia.id_expediente_documental.codigo_exp_und_serie_subserie', default=None)
+    oficina_solicita = serializers.CharField(source='id_notificacion_correspondencia.id_und_org_oficina_solicita.nombre')
+    fecha_solicitud = serializers.DateTimeField(source='id_notificacion_correspondencia.fecha_solicitud')
   
     class Meta:
-        model = NotificacionesCorrespondencia
+        model = Registros_NotificacionesCorrespondecia
         fields = ['id_notificacion_correspondencia',
+                  'id_registro_notificacion_correspondencia',
                   'tipo_documento',
                   'acto_administrativo',
                   'expediente',
                   'oficina_solicita',
                   'fecha_solicitud',
                   'fecha_asignacion',
-                  'id_tipo_notificacion_correspondencia',
+                  'id_tipo_notificacion_correspondencia'
                   ]
         
-    def get_fecha_asignacion(self, obj):
-        asignacion = AsignacionNotificacionCorrespondencia.objects.filter(id_notificacion_correspondencia = obj.id_notificacion_correspondencia).first()
-        if asignacion:
-            return asignacion.fecha_asignacion
-        else:
-            return None
-        
-    def get_id_tipo_notificacion_correspondencia(self, obj):
-        registro_notificacion = Registros_NotificacionesCorrespondecia.objects.filter(id_notificacion_correspondencia = obj.id_notificacion_correspondencia).first()
-        if registro_notificacion:
-            return registro_notificacion.id_tipo_notificacion_correspondencia.id_tipo_notificacion_correspondencia
-        else:
-            return None
+    
         
 
 class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
