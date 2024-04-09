@@ -54,7 +54,7 @@ class InspeccionesVehiculosDia(models.Model):
     limpiabrisas_delantero = models.BooleanField(default=True, db_column="T073limpiabrisasDelanterosBuenos")
     limpiabrisas_traseros = models.BooleanField(default=True, db_column="T073limpiabrisasTraseroBueno")
     nivel_aceite = models.BooleanField(default=True, db_column="T073nivelAceiteBueno")
-    estado_frenos = models.BooleanField(default=True, db_column="T073nivelfrenosBueno")
+    estado_frenos = models.BooleanField(default=True, db_column="T073nivelFrenosBueno")
     nivel_refrigerante = models.BooleanField(default=True, db_column="T073nivelRefrigeranteBueno")
     apoyo_cabezas_piloto = models.BooleanField(default=True, db_column="T073apoyaCabezasPilotoBueno")
     apoyo_cabezas_copiloto = models.BooleanField(default=True, db_column="T073apoyaCabezasCopilotoBueno")
