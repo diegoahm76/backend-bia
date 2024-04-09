@@ -15,7 +15,6 @@ urlpatterns = [
     path('get-notificacion/<int:id_notificacion_correspondencia>/', views.GetNotificacionesCorrespondeciaAnexos.as_view(),name='get-notificaion'),
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
 
-
     # Tipos de Notificaciones
     path('create-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-notificaciones'),
     path('get-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaGet.as_view(),name='get-tipos-notificaciones'),
@@ -46,9 +45,48 @@ urlpatterns = [
     path('update-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaUpdate.as_view(),name='update-tipos-documentos-notificaciones'),
     path('delete-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaDelete.as_view(),name='delete-tipos-documentos-notificaciones'),
 
-
     # Tramites y Actos Administrativos
     path('get-tramites/', views.GetTramite.as_view(),name='get-tramites'),
     path('get-tipos-actos/', views.TipoActosAdministrativos.as_view(),name='get-tipos-actos'),
     path('get-actos/', views.ActosAdministrativosGet.as_view(),name='get-actos'),
+
+    # Pagina Gaceta
+    path('get-datos-notificacion-gaceta/<int:id_registro_notificacion>/', views.DatosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-gaceta'),
+    path('get-datos-notificacion-anexos-gaceta/<int:id_registro_notificacion>/', views.AnexosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-anexos-gaceta'),
+    path('get-tipos-anexos-gaceta/<int:id_tipo_notificacion>/', views.TipoAnexosSoporteGacetaGet.as_view(),name='get-tipos-anexos-gaceta'),
+    path('get-causas-o-anomalias-gaceta/<int:id_tipo_notificacion>/', views.CausasOAnomaliasGacetaGet.as_view(),name='get-causas-o-anomalias-gaceta'),
+    path('create-soportes-anexos-gaceta/', views.AnexosSoporteGacetaCreate.as_view(),name='create-soportes-anexos-gaceta'),
+    path('create-registro-notificacion-gaceta/', views.RegistrosNotificacionesCorrespondenciaGacetaCreate.as_view(),name='create-registro-notificacion-gaceta'),
+
+    # Pagina Edictos
+    path('get-datos-notificacion-edictos/<int:id_registro_notificacion>/', views.DatosNotificacionEdictosGet.as_view(),name='get-datos-notificacion-edictos'),
+    path('get-datos-notificacion-anexos-edictos/<int:id_registro_notificacion>/', views.AnexosNotificacionEdictosGet.as_view(),name='get-datos-notificacion-anexos-edictos'),
+    path('create-soportes-anexos-edictos/', views.AnexosSoporteEdictosCreate.as_view(),name='create-soportes-anexos-edictos'),
+    path('create-registro-notificacion-edictos/', views.RegistrosNotificacionesCorrespondenciaEdictosCreate.as_view(),name='create-registro-notificacion-edictos'),
+
+    # Correo electronico
+    path('get-datos-notificacion-correo/<int:id_registro_notificacion>/', views.DatosNotificacionCorreoGet.as_view(),name='get-datos-notificacion-correo'),
+    path('get-datos-titular-correo/<int:id_registro_notificacion>/', views.DatosTitularesCorreoGet.as_view(),name='get-datos-titular-correo'),
+    path('get-datos-notificacion-anexos-correo/<int:id_registro_notificacion>/', views.AnexosNotificacionCorreoGet.as_view(),name='get-datos-notificacion-anexos-correo'),
+    path('create-soportes-anexos-correo/', views.AnexosSoporteCorreoCreate.as_view(),name='create-soportes-anexos-correo'),
+    path('create-registro-notificacion-correo/', views.RegistrosNotificacionesCorrespondenciaCorreoCreate.as_view(),name='create-registro-notificacion-correo'),
+
+    # Correspondecia fisica
+    path('get-datos-notificacion-correspondencia/<int:id_registro_notificacion>/', views.DatosNotificacionCorrespondenciaGet.as_view(),name='get-datos-notificacion-correspondencia'),
+    path('get-datos-titular-correspondencia/<int:id_registro_notificacion>/', views.DatosTitularesCorrespondenciaGet.as_view(),name='get-datos-titular-correo'),
+    path('get-datos-notificacion-anexos-correspondencia/<int:id_registro_notificacion>/', views.AnexosNotificacionCorrespondenciaGet.as_view(),name='get-datos-notificacion-anexos-correspondencia'),
+    path('create-soportes-anexos-correspondencia/', views.AnexosSoporteCorrespondenciaCreate.as_view(),name='create-soportes-anexos-correspondencia'),
+    path('create-registro-notificacion-correspondencia/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaCreate.as_view(),name='create-registro-notificacion-correspondencia'),
+
+ 
+
+    
+
+    
+
+    
 ]
+
+
+
+ 

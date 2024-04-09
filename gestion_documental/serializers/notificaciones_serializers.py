@@ -5,6 +5,7 @@ from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.choices.cod_tipo_documento_choices import cod_tipo_documento_CHOICES
 from transversal.models.base_models import HistoricoCargosUndOrgPersona, ClasesTercero
+from transversal.models.personas_models import Personas
 from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Anexos, ArchivosDigitales
 from datetime import timedelta, datetime
 from tramites.models.tramites_models import SolicitudesTramites, TiposActosAdministrativos, ActosAdministrativos
@@ -339,3 +340,148 @@ class ActosAdministrativosSerializer(serializers.ModelSerializer):
             return f"{obj.id_solicitud_tramite.id_expediente.codigo_exp_und_serie_subserie}.{obj.id_solicitud_tramite.id_expediente.codigo_exp_Agno}.{obj.id_solicitud_tramite.id_expediente.codigo_exp_consec_por_agno}"
         else:
             return None
+
+
+class RegistroNotificacionesCorrespondenciaPaginasSerializer(serializers.ModelSerializer):
+
+    tipo_documento = serializers.CharField(source='id_notificacion_correspondencia.cod_tipo_documento.nombre')
+    acto_administrativo = serializers.CharField(source='id_notificacion_correspondencia.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo', default=None)
+    expediente = serializers.CharField(source='id_notificacion_correspondencia.id_expediente_documental.codigo_exp_und_serie_subserie', default=None)
+    oficina_solicita = serializers.CharField(source='id_notificacion_correspondencia.id_und_org_oficina_solicita.nombre')
+    fecha_solicitud = serializers.DateTimeField(source='id_notificacion_correspondencia.fecha_solicitud')
+  
+    class Meta:
+        model = Registros_NotificacionesCorrespondecia
+        fields = ['id_notificacion_correspondencia',
+                  'id_registro_notificacion_correspondencia',
+                  'tipo_documento',
+                  'acto_administrativo',
+                  'expediente',
+                  'oficina_solicita',
+                  'fecha_solicitud',
+                  'fecha_asignacion',
+                  'id_tipo_notificacion_correspondencia'
+                  ]
+        
+    
+        
+
+class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    representante_legal = serializers.SerializerMethodField()
+    class Meta:
+        model = Personas
+        fields = ['id_persona',
+                    'nombre_completo',
+                    'tipo_documento',
+                    'numero_documento',
+                    'razon_social',
+                    'direccion_notificaciones',
+                    'email',
+                    'telefono_celular',
+                    'telefono_fijo_residencial',
+                    'direccion_residencia',
+                    'representante_legal'
+                    ]
+        
+    def get_nombre_completo(self, obj):
+        persona = Personas.objects.filter(id_persona = obj.id_persona).first()
+        nombre_completo = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+        return ' '.join(filter(None, nombre_completo))
+        
+        
+    def get_representante_legal(self, obj):
+            if obj.representante_legal:
+                representante = Personas.objects.filter(id_persona=obj.representante_legal.id_persona).first()
+                if representante:
+                    return DatosTitularesCorreoSerializer(representante).data
+                else:
+                    return None
+        
+# class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
+#     nombre_completo = serializers.SerializerMethodField()
+#     representante_legal = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = Personas
+#         fields = ['id_persona',
+#                   'nombre_completo',
+#                   'tipo_documento',
+#                   'numero_documento',
+#                   'razon_social',
+#                   'direccion_notificaciones',
+#                   'email',
+#                   'telefono_celular',
+#                   'telefono_fijo_residencial',
+#                   'direccion_residencia',
+#                   'representante_legal'
+#                  ]
+
+#     def get_nombre_completo(self, obj):
+#         return f"{obj.primer_nombre} {obj.segundo_nombre} {obj.primer_apellido} {obj.segundo_apellido}"
+
+#     def get_representante_legal(self, obj):
+#         if obj.representante_legal:
+#             representante = Personas.objects.filter(id_persona=obj.representante_legal).first()
+#             if representante:
+#                 return DatosTitularesCorreoSerializer(representante).data
+#             else:
+#                 return None
+        
+
+
+class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerializer):
+    tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
+    asunto = serializers.SerializerMethodField()
+    funcionario = serializers.SerializerMethodField()
+    archivo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Anexos_NotificacionesCorrespondencia
+        
+        fields = ['id_anexo',
+                  'tipo_documento',
+                  'asunto',
+                  'funcionario',
+                  'doc_entrada_salida',
+                  'archivo',
+                  'observaciones'
+                  ]
+    
+    def metadatos(self, obj):
+        metadatos = MetadatosAnexosTmp.objects.filter(id_anexo=obj.id_anexo).first()
+        return MetadatoPanelSerializer(metadatos).data
+        
+    def get_asunto(self, obj):
+        asunto  = self.metadatos(obj)
+        return asunto['asunto']
+    
+    def get_funcionario(self, obj):
+        funcionario = obj.id_persona_anexa_documento
+        if funcionario is not None:
+            return f"{funcionario.primer_nombre} {funcionario.primer_apellido}"
+        else:
+            return None
+        
+    def get_archivo(self, obj):
+        metadatos = self.metadatos(obj)
+        archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital = metadatos['id_archivo_sistema']).first()
+
+        return ArchivosSerializer(archivo_digital).data
+        
+
+class AnexosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_NotificacionesCorrespondencia
+        fields = '__all__'
+
+class TiposAnexosSoporteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposAnexosSoporte
+        fields = ('id_tipo_anexo', 'nombre_tipo_anexo')
+
+
+class CausasOAnomaliasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CausasOAnomalias
+        fields = ('id_causa_o_anomalia', 'nombre_causa_o_anomalia')

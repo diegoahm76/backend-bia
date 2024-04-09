@@ -1018,7 +1018,7 @@ class ReasignacionTareasGetByIdTarea(generics.UpdateAPIView):
         
         reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=pk)
         if not reasignacion:
-            raise ValidationError('la tarea no fue rechazada')
+            raise ValidationError('la tarea  fue rechazada')
 
 
         serializer = self.serializer_class(reasignacion,many=True)

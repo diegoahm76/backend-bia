@@ -142,7 +142,7 @@ class DespachoActivos(models.Model):
     id_persona_solicita = models.ForeignKey(Personas, related_name='id_persona_despacho_solicita', blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_PersonaSolicita')
     id_uni_org_solicitante = models.ForeignKey(UnidadesOrganizacionales, related_name='id_uni_org_despacho_solicitante',blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_UnidadOrgSolicitante')
     id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T089Id_BodegaGral')
-    despacho_anulado = models.BooleanField(db_column="T089despachoAnulado")
+    despacho_anulado = models.BooleanField(default=False, db_column="T089despachoAnulado")
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column="T089justificacionAnulacion")
     fecha_anulacion = models.DateTimeField(blank=True, null=True,db_column='T089fechaAnulacion')
     id_persona_anula = models.ForeignKey(Personas, related_name='id_persona_despacho_anula', blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_PersonaAnula')
