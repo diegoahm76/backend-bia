@@ -1717,17 +1717,19 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
         devolucion_serializer.is_valid(raise_exception=True)
         devolucion_obj = devolucion_serializer.save()
 
+
         #T096ActivosDevolucionados
         activos_devolucionados_data = data.get('activos_devolucionados', [])
         for activo_devolucionado_data in activos_devolucionados_data:
-
             activo_devolucionado_data['id_devolucion_activo'] = devolucion_obj.id_devolucion_activos
             activo_devolucionado_serializer = ActivosDevolucionadosSerializer(data=activo_devolucionado_data)
             activo_devolucionado_serializer.is_valid(raise_exception=True)
             activo_devolucionado_obj = activo_devolucionado_serializer.save()
+            
 
             # Actualizar T093Items_DespachoActivos
             id_item_despacho_activo = activo_devolucionado_data.get('id_item_despacho_activo')
+            print(id_item_despacho_activo)
             if id_item_despacho_activo:
                 item_despacho_activo = ItemsDespachoActivos.objects.get(id_item_despacho_activo=id_item_despacho_activo)
                 item_despacho_activo.se_devolvio = True
