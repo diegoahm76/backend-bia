@@ -1413,6 +1413,12 @@ class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
                 archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
                 archivos_digital_data.append(archivo_digital_serializer.data)
 
+        # Obtener los bienes asociados a la entrada de almacén de referencia
+        bienes_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref)
+        
+        # Serializar los bienes
+        bienes_serializer = ItemEntradaAlmacenSerializer(bienes_entrada, many=True)
+
         # Obtener la primera entrada de almacén asociada a la salida especial
         primera_entrada_almacen = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref).first()
         
@@ -1439,6 +1445,7 @@ class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
             'informacion_tercero': proveedores_data, 
             'anexos': anexos_serializer.data, 
             'archivos_digitales': archivos_digital_data,
+            'bienes': bienes_serializer.data,  
         }, status=status.HTTP_200_OK)
 
 
@@ -1712,7 +1719,7 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
         else:
             return Response({"success": False, 'detail': 'No hay asignaciones de activos disponibles'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Crear registro en T089DespachoActivos
+        # Crear registro en T092DevolucionActivos
         devolucion_data = {
             'id_asignacion_activo': id_asignacion_activo,
             'id_despacho_activo': id_despacho_activo,
@@ -1776,46 +1783,70 @@ class ObtenerUltimoConsecutivoDevolucionView(generics.ListAPIView):
             return Response({"success": True, "detail": "Último consecutivo obtenido correctamente.", "ultimo_consecutivo": ultimo_consecutivo}, status=status.HTTP_200_OK)
     
 
+
+
 class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
     def retrieve(self, request, consecutivo, *args, **kwargs):
-        # Buscar la salida especial por su consecutivo
-        salida_especial = get_object_or_404(DevolucionActivos, consecutivo_devolucion=consecutivo)
+        # Buscar la devolución de activos por su consecutivo
+        devolucion_activos = get_object_or_404(DevolucionActivos, consecutivo_devolucion=consecutivo)
         
-        # Serializar la salida especial
-        salida_especial_serializer = SalidasEspecialesArticulosSerializer(salida_especial)
-        
-        # Buscar los anexos relacionados con la salida especial
-        anexos = AnexosDocsAlma.objects.filter(id_salida_espec_arti=salida_especial.id_salida_espec_arti)
-        
-        # Serializar los anexos
-        anexos_serializer = AnexosDocsAlmaSerializer(anexos, many=True)
-        
-        # Lista para almacenar la data de los archivos digitales
-        archivos_digital_data = []
+        # Serializar la devolución de activos
+        devolucion_activos_serializer = DevolucionActivosSerializer(devolucion_activos)
 
-        # Iterar sobre los anexos y obtener los archivos digitales relacionados
-        for anexo in anexos:
-            archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=anexo.id_archivo_digital_id).first()
-            if archivo_digital:
-                archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
-                archivos_digital_data.append(archivo_digital_serializer.data)
-
-        # Obtener los bienes asociados a la entrada de almacén de referencia
-        bienes_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref)
+        # Buscar los activos devueltos asociados a esta devolución
+        activos_devueltos = ActivosDevolucionados.objects.filter(id_devolucion_activo=devolucion_activos.id_devolucion_activos)
         
-        # Serializar los bienes
-        bienes_serializer = ItemEntradaAlmacenSerializer(bienes_entrada, many=True)
-
-        print("bienes encontrados:", bienes_serializer)
-      
+        # Serializar los activos devueltos
+        activos_devueltos_serializer = ActivosDevolucionadosSerializer(activos_devueltos, many=True)
         
         # Devolver la información como respuesta
         return Response({
-            'salida_especial': salida_especial_serializer.data,
-            'anexos': anexos_serializer.data,  # Agregar los anexos serializados
-            'archivos_digitales': archivos_digital_data,
-            'bienes': bienes_serializer.data,  # Agregar los bienes serializados
+            'success': True,
+            'detail': 'Devolución de activos encontrada exitosamente.',
+            'devolucion_activos': devolucion_activos_serializer.data,
+            'activos_devueltos': activos_devueltos_serializer.data
         }, status=status.HTTP_200_OK)
+
+# class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
+#     def retrieve(self, request, consecutivo, *args, **kwargs):
+#         # Buscar la salida especial por su consecutivo
+#         salida_especial = get_object_or_404(DevolucionActivos, consecutivo_devolucion=consecutivo)
+        
+#         # Serializar la salida especial
+#         salida_especial_serializer = SalidasEspecialesArticulosSerializer(salida_especial)
+        
+#         # Buscar los anexos relacionados con la salida especial
+#         anexos = AnexosDocsAlma.objects.filter(id_salida_espec_arti=salida_especial.id_salida_espec_arti)
+        
+#         # Serializar los anexos
+#         anexos_serializer = AnexosDocsAlmaSerializer(anexos, many=True)
+        
+#         # Lista para almacenar la data de los archivos digitales
+#         archivos_digital_data = []
+
+#         # Iterar sobre los anexos y obtener los archivos digitales relacionados
+#         for anexo in anexos:
+#             archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=anexo.id_archivo_digital_id).first()
+#             if archivo_digital:
+#                 archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
+#                 archivos_digital_data.append(archivo_digital_serializer.data)
+
+#         # Obtener los bienes asociados a la entrada de almacén de referencia
+#         bienes_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref)
+        
+#         # Serializar los bienes
+#         bienes_serializer = ItemEntradaAlmacenSerializer(bienes_entrada, many=True)
+
+#         print("bienes encontrados:", bienes_serializer)
+      
+        
+#         # Devolver la información como respuesta
+#         return Response({
+#             'salida_especial': salida_especial_serializer.data,
+#             'anexos': anexos_serializer.data,  # Agregar los anexos serializados
+#             'archivos_digitales': archivos_digital_data,
+#             'bienes': bienes_serializer.data,  # Agregar los bienes serializados
+#         }, status=status.HTTP_200_OK)
 
 
 
