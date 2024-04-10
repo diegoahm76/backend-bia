@@ -317,6 +317,22 @@ class DevolucionActivosSerializer(serializers.ModelSerializer):
         model = DevolucionActivos
         fields = '__all__'
 
+class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
+    nombre_proveedor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EntradasAlmacen
+        fields = ['id_proveedor', 'nombre_proveedor']
+
+    def get_nombre_proveedor(self, obj):
+        nombre_proveedor = None
+        proveedor = obj.id_proveedor
+        if proveedor:
+            nombre_list = [proveedor.primer_nombre, proveedor.segundo_nombre,
+                           proveedor.primer_apellido, proveedor.segundo_apellido]
+            nombre_proveedor = ' '.join(item for item in nombre_list if item is not None)
+            nombre_proveedor = nombre_proveedor if nombre_proveedor != "" else None
+        return nombre_proveedor
 
     
 class ItemEntradaAlmacenSerializer(serializers.ModelSerializer):
