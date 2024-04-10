@@ -726,6 +726,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
                 'id_bien': item.id_bien.id_bien,  
                 'nombre_bien': item.id_bien.nombre,  
+                'codigo_bien': item.id_bien.codigo_bien,  
                 'cantidad': item.cantidad,
                 'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
                 'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
@@ -1799,13 +1800,31 @@ class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
         
         # Serializar los activos devueltos
         activos_devueltos_serializer = ActivosDevolucionadosSerializer(activos_devueltos, many=True)
-        
+
+        # Obtener información del id_item_despacho_activo para cada activo devuelto
+        item_despacho_activos_data = []
+        for activo_devuelto in activos_devueltos:
+            item_despacho_activo = activo_devuelto.id_item_despacho_activo
+            if item_despacho_activo:
+                item_despacho_activo_serializer = ItemsDespachoActivosSerializer(item_despacho_activo)
+                item_despacho_activos_data.append(item_despacho_activo_serializer.data)
+
+        # Obtener la información de id_despacho_activo
+        id_despacho_activo = devolucion_activos.id_despacho_activo
+        if id_despacho_activo:
+            despacho_activos_serializer = DespachoActivosSerializer(id_despacho_activo)
+            id_despacho_activo_data = despacho_activos_serializer.data
+        else:
+            id_despacho_activo_data = None
+
         # Devolver la información como respuesta
         return Response({
             'success': True,
             'detail': 'Devolución de activos encontrada exitosamente.',
             'devolucion_activos': devolucion_activos_serializer.data,
-            'activos_devueltos': activos_devueltos_serializer.data
+            'activos_devueltos': activos_devueltos_serializer.data,
+            'item_despacho_activos': item_despacho_activos_data,
+            'despacho_activo': id_despacho_activo_data
         }, status=status.HTTP_200_OK)
 
 # class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
