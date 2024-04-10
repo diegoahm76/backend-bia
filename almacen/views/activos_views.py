@@ -582,6 +582,7 @@ class EditarSolicitudActivosView(generics.UpdateAPIView):
         with transaction.atomic():
                 # Actualizar los campos de la solicitud
                 instance.fecha_solicitud = current_date
+                instance.estado_solicitud = 'S'
                 instance.motivo = data.get('motivo', instance.motivo)
                 instance.observacion = data.get('observacion', instance.observacion)
                 instance.solicitud_prestamo = data.get('solicitud_prestamo', instance.solicitud_prestamo)
