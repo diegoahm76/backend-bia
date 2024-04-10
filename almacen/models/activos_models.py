@@ -248,7 +248,7 @@ class DevolucionActivos(models.Model):
 class ActivosDevolucionados(models.Model):
     id_activo_devolucionado = models.AutoField(primary_key=True, db_column="T096IdActivoDevolucionado")
     id_devolucion_activo = models.ForeignKey(DevolucionActivos, on_delete=models.CASCADE, db_column='T096Id_DevolucionActivo')
-    id_item_despacho_activo = models.ForeignKey(DespachoActivos, on_delete=models.CASCADE, db_column='T096Id_ItemDespachoActivo')
+    id_item_despacho_activo = models.ForeignKey(ItemsDespachoActivos, on_delete=models.CASCADE, db_column='T096Id_ItemDespachoActivo')
     cod_estado_activo_devolucion = models.ForeignKey(EstadosArticulo, on_delete=models.CASCADE, db_column='T096Cod_EstadoActivoDevol')
     justificacion_activo_devolucion = models.CharField(max_length=255, blank=True, null=True, db_column="T096justificacionActivoDevol")
 
