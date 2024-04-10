@@ -52,7 +52,7 @@ urlpatterns = [
     path('info-estados-articulo/get/', views.EstadosArticuloListView.as_view(), name='info-estados-articulo'),
     path('devolucion-activos/create/', views.DevolucionActivosCreateView.as_view(), name='devolucion-activos-creacion'),
     path('obtener-ultimo-consecutivo-devolucion-activo/get/', views.ObtenerUltimoConsecutivoDevolucionView.as_view(), name='ultimo-consecutivo-devolucion-activo'),
-    path('info-salida-devolucion-activo/get/<int:consecutivo>/', views.ObtenerDatosSalidaEspecialView.as_view(), name='salida-especial-activo'),
+    path('info-salida-devolucion-activo/get/<int:consecutivo>/', views.ObtenerDatosDevolucionActivos.as_view(), name='salida-especial-activo'),
 
     #Despacho_Activos
     path('busqueda-solicitudes-despacho/get/', views.BusquedaAvanzadaSolicitudesDespacho.as_view(), name='busqueda-solicitud-despacho'),

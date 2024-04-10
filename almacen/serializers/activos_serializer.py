@@ -313,9 +313,31 @@ class AnexoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DevolucionActivosSerializer(serializers.ModelSerializer):
+    nombre_persona_devolucion = serializers.SerializerMethodField()
+    nombre_persona_anulacion = serializers.SerializerMethodField()
     class Meta:
         model = DevolucionActivos
         fields = '__all__'
+    
+    def get_nombre_persona_devolucion(self, obj):
+        nombre_persona_devolucion = None
+        persona_devolucion = obj.id_persona_devolucion
+        if persona_devolucion:
+            nombre_list = [persona_devolucion.primer_nombre, persona_devolucion.segundo_nombre,
+                           persona_devolucion.primer_apellido, persona_devolucion.segundo_apellido]
+            nombre_persona_devolucion = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_devolucion = nombre_persona_devolucion if nombre_persona_devolucion != "" else None
+        return nombre_persona_devolucion
+    
+    def get_nombre_persona_anulacion(self, obj):
+        nombre_persona_anulacion = None
+        persona_anulacion = obj.id_persona_anulacion
+        if persona_anulacion:
+            nombre_list = [persona_anulacion.primer_nombre, persona_anulacion.segundo_nombre,
+                           persona_anulacion.primer_apellido, persona_anulacion.segundo_apellido]
+            nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
+        return nombre_persona_anulacion
 
 class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()
