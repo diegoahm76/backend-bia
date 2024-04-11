@@ -58,12 +58,19 @@ urlpatterns = [
     path('busqueda-solicitudes-despacho/get/', views.BusquedaAvanzadaSolicitudesDespacho.as_view(), name='busqueda-solicitud-despacho'),
     path('cancelar-solicitud-despacho/<int:pk>/', views.CancelarSolicitudDespacho.as_view(), name='cancelar-solicitud-despacho'),
     path('anular-solicitud-despacho/<int:pk>/', views.AnularSolicitudDespacho.as_view(), name='anular-solicitud-despacho'),
+    path('anular-solicitud-despacho-sin.solicitud/<int:pk>/', views.AnularSolicitudDespachoSinSolicitud.as_view(), name='anular-solicitud-despacho-sin-solicitud'),
     path('solicitudes-activos/<int:id_solicitud_activo>/', views.ObtenerDatosPersonasSolicitud.as_view(), name='detalle-solicitud-activos'),
     path('bodegas/busqueda-avanzada/', views.BusquedaAvanzadaBodegas.as_view(), name='busqueda_avanzada_bodegas'),
     path('despachos-sin-solicitud/get/', views.DespachosSinSolicitudGet.as_view(), name='despachos-sin-solicitud'),
     path('busqueda-articulos-principal/<int:solicitud_id>/', views.BusquedaArticulosPrincipalView.as_view(), name='busqueda-articulos-princiapal'),
     path('busqueda-articulos-sub/<int:id_bien>/', views.BusquedaArticulosSubView.as_view(), name='busqueda-articulos-sub'),
     path('crear-despacho-activo/create/', views.CrearDespachoActivosView.as_view(), name='crear-despacho-activo'),
+    path('crear-despacho-activo-sin-solicitud/create/', views.CrearDespachoActivosSimSolicitudView.as_view(), name='crear-despacho-activo-sin-solicitud'),
+
+    #Reasignacion_Responsable
+    path('busqueda-articulos-responsable/<int:id_persona_responsable>/', views.InventarioPorPersonaResponsableView.as_view(), name='busqueda-articulos-persona-responsable'),
+    path('crear-reasginacion-responsable/create/', views.CrearReasginacionResponsableView.as_view(), name='crear-reasginacion-responsable-create'),
+
 
 
 

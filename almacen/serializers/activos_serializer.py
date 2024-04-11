@@ -16,7 +16,9 @@ class InventarioSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     identificador_bien = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
+    estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
 
@@ -35,6 +37,9 @@ class InventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inventario
         fields = '__all__'
+
+
+
 
 
 class RegistrarBajaCreateSerializer(serializers.ModelSerializer):

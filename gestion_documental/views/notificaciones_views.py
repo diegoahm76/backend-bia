@@ -582,6 +582,7 @@ class AnexosCreate(generics.CreateAPIView):
 
             data_anexos = {}
             data_anexos['id_notificacion_correspondecia'] = id_notificacion
+            data_anexos['usuario_notificado'] = False
             if anexo['uso_del_documento']:
                 data_anexos['uso_del_documento'] = 'IN'
             else:
@@ -1699,3 +1700,21 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaCreate(generics.Creat
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 
+class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.UpdateAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data = request.data
+        estado = EstadosNotificacionesCorrespondencia.objects.filter(id_estado_notificacion_correspondencia=data.get('id_estado_actual_registro')).first()
+        if not estado:
+            raise ValidationError(f'El estado de la notificación con id {data.get("id_estado_actual_registro")} no existe.')
+        registro_notificacion = get_object_or_404(Registros_NotificacionesCorrespondecia, id_registro_notificacion_correspondencia=pk)
+        if not registro_notificacion:
+            raise ValidationError(f'El registro de la notificación con id {pk} no existe.')
+        else:
+            registro_notificacion.id_estado_actual_registro = estado
+            registro_notificacion.save()
+            serializer = self.get_serializer(registro_notificacion)
+
+        return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)

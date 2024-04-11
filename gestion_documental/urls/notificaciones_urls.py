@@ -14,6 +14,7 @@ urlpatterns = [
     path('create-notificacion-manual/', views.CrearNotiicacionManual.as_view(),name='create-notificacion-manual'),
     path('get-notificacion/<int:id_notificacion_correspondencia>/', views.GetNotificacionesCorrespondeciaAnexos.as_view(),name='get-notificaion'),
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
+    path('update-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-tarea'),
 
     # Tipos de Notificaciones
     path('create-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-notificaciones'),

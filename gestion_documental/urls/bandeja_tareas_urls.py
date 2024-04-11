@@ -92,5 +92,9 @@ urlpatterns = [
     
     #RespuestaPQRSDFByTra
     path('opa/respuesta/detalle/get/<str:tra>/', views_opas.RespuestaPQRSDFByTra.as_view(), name='get-respuesta-pqrsdf'),
+
+    #Archivar Otros
+
+    path('archivar/otros/create/', views.ArchiarSolicitudOtros.as_view(), name='crear-archivar-otros'),
     
 ]

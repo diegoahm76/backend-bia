@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from recurso_hidrico.models.zonas_hidricas_models import MacroCuencas, SubZonaHidrica, TipoAguaZonaHidrica, TipoZonaHidrica, ZonaHidrica
+from recurso_hidrico.models.zonas_hidricas_models import MacroCuencas, SubZonaHidrica, TipoAguaZonaHidrica, TipoZonaHidrica, ZonaHidrica, CuencasSubZonas
 
 
 class MacroCuencasSerializer(serializers.ModelSerializer):
@@ -32,6 +32,15 @@ class SubZonaHidricaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubZonaHidrica
         fields = '__all__'
+
+class CuencasSerializer(serializers.ModelSerializer):
+    nombre_macrocuenca = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
+    nombre_zona_hidrica = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.nombre_zona_hidrica')
+    nombre_sub_zona_hidrica = serializers.ReadOnlyField(source='id_sub_zona_hidrica.nombre_sub_zona_hidrica')
+    class Meta:
+        model = CuencasSubZonas
+        fields = '__all__'
+
 
 
 
