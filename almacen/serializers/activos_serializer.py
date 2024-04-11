@@ -303,6 +303,8 @@ class EstadosArticuloSerializer(serializers.ModelSerializer):
 
 
 class ActivosDevolucionadosSerializer(serializers.ModelSerializer):
+    cod_estado_nombre = serializers.ReadOnlyField(source='cod_estado_activo_devolucion.nombre', default=None)
+
     class Meta:
         model = ActivosDevolucionados
         fields = '__all__'
