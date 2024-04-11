@@ -16,7 +16,9 @@ class InventarioSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     identificador_bien = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
+    estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
 
@@ -35,6 +37,9 @@ class InventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inventario
         fields = '__all__'
+
+
+
 
 
 class RegistrarBajaCreateSerializer(serializers.ModelSerializer):
@@ -280,50 +285,21 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
 
     
 
-        
-
-    
-        
 
 class ActivosDespachadosDevolucionSerializer(serializers.ModelSerializer):
-    codigo_activo = serializers.SerializerMethodField()
-    nombre_activo = serializers.SerializerMethodField()
-    marca_activo = serializers.SerializerMethodField()
-    identificador_activo = serializers.SerializerMethodField()
-    nombre_bodega = serializers.SerializerMethodField()
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    id_bien = serializers.ReadOnlyField(source='id_bien_despachado.id_bien', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)
+    identificador_activo = serializers.ReadOnlyField(source='id_bien_despachado.doc_identificador_nro', default=None)
 
     class Meta:
         model = ItemsDespachoActivos
-        fields = (
-            'codigo_activo',
-            'nombre_activo',
-            'marca_activo',
-            'identificador_activo',
-            'nombre_bodega',
-            'nro_posicion_en_despacho',
-            'cantidad_solicitada',
-            'cantidad_despachada',
-            'fecha_devolucion',
-            'observacion',
-        )
+        fields = '__all__'
 
-    def get_codigo_activo(self, obj):
-        return obj.id_bien_despachado.codigo_bien if obj.id_bien_despachado else None
 
-    def get_nombre_activo(self, obj):
-        return obj.id_bien_despachado.nombre if obj.id_bien_despachado else None
-
-    def get_marca_activo(self, obj):
-        if obj.id_bien_despachado and obj.id_bien_despachado.id_marca:
-            return obj.id_bien_despachado.id_marca.nombre
-        else:
-            return None
-
-    def get_identificador_activo(self, obj):
-        return obj.id_bien_despachado.doc_identificador_nro if obj.id_bien_despachado else None
-
-    def get_nombre_bodega(self, obj):
-        return obj.id_bodega.nombre if obj.id_bodega else None
     
 class EstadosArticuloSerializer(serializers.ModelSerializer):
     class Meta:
@@ -332,6 +308,8 @@ class EstadosArticuloSerializer(serializers.ModelSerializer):
 
 
 class ActivosDevolucionadosSerializer(serializers.ModelSerializer):
+    cod_estado_nombre = serializers.ReadOnlyField(source='cod_estado_activo_devolucion.nombre', default=None)
+
     class Meta:
         model = ActivosDevolucionados
         fields = '__all__'
@@ -342,18 +320,49 @@ class AnexoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DevolucionActivosSerializer(serializers.ModelSerializer):
-    activos_devueltos = ActivosDevolucionadosSerializer(many=True)
-
+    nombre_persona_devolucion = serializers.SerializerMethodField()
+    nombre_persona_anulacion = serializers.SerializerMethodField()
     class Meta:
         model = DevolucionActivos
         fields = '__all__'
+    
+    def get_nombre_persona_devolucion(self, obj):
+        nombre_persona_devolucion = None
+        persona_devolucion = obj.id_persona_devolucion
+        if persona_devolucion:
+            nombre_list = [persona_devolucion.primer_nombre, persona_devolucion.segundo_nombre,
+                           persona_devolucion.primer_apellido, persona_devolucion.segundo_apellido]
+            nombre_persona_devolucion = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_devolucion = nombre_persona_devolucion if nombre_persona_devolucion != "" else None
+        return nombre_persona_devolucion
+    
+    def get_nombre_persona_anulacion(self, obj):
+        nombre_persona_anulacion = None
+        persona_anulacion = obj.id_persona_anulacion
+        if persona_anulacion:
+            nombre_list = [persona_anulacion.primer_nombre, persona_anulacion.segundo_nombre,
+                           persona_anulacion.primer_apellido, persona_anulacion.segundo_apellido]
+            nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
+        return nombre_persona_anulacion
 
-    def create(self, validated_data):
-        activos_devueltos_data = validated_data.pop('activos_devueltos')
-        devolucion = DevolucionActivos.objects.create(**validated_data)
-        for activo_devuelto_data in activos_devueltos_data:
-            ActivosDevolucionados.objects.create(devolucion_activo=devolucion, **activo_devuelto_data)
-        return devolucion
+class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
+    nombre_proveedor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EntradasAlmacen
+        fields = ['id_proveedor', 'nombre_proveedor']
+
+    def get_nombre_proveedor(self, obj):
+        nombre_proveedor = None
+        proveedor = obj.id_proveedor
+        if proveedor:
+            nombre_list = [proveedor.primer_nombre, proveedor.segundo_nombre,
+                           proveedor.primer_apellido, proveedor.segundo_apellido]
+            nombre_proveedor = ' '.join(item for item in nombre_list if item is not None)
+            nombre_proveedor = nombre_proveedor if nombre_proveedor != "" else None
+        return nombre_proveedor
+
     
 class ItemEntradaAlmacenSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
