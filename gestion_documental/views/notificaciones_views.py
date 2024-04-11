@@ -582,6 +582,7 @@ class AnexosCreate(generics.CreateAPIView):
 
             data_anexos = {}
             data_anexos['id_notificacion_correspondecia'] = id_notificacion
+            data_anexos['usuario_notificado'] = False
             if anexo['uso_del_documento']:
                 data_anexos['uso_del_documento'] = 'IN'
             else:

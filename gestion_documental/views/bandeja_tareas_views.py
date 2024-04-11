@@ -1,5 +1,12 @@
 #BandejaTareasPersona
 import ast
+import hashlib
+from django.db.models import Max
+from reportlab.pdfgen import canvas
+import io
+import os
+import json
+from django.conf import settings
 import copy
 from datetime import datetime, date, timedelta
 import json
@@ -14,12 +21,14 @@ from rest_framework.permissions import IsAuthenticated
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
+from gestion_documental.models.expedientes_models import DocumentosDeArchivoExpediente, ExpedientesDocumentales, Docs_IndiceElectronicoExp, IndicesElectronicosExp
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona, Otros
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.bandeja_tareas_serializers import AdicionalesDeTareasGetByTareaSerializer, Anexos_RequerimientoCreateSerializer, AnexosComplementoGetByComBandejaTareasSerializer, BandejaTareasPersonaCreateSerializer, ComplementosUsu_PQRGetByIdSerializer, DetalleRequerimientoSerializer, LiderUnidadGetSerializer, MetadatosAnexoerializerGet, PQRSDFDetalleRequerimiento, PQRSDFTitularGetBandejaTareasSerializer, PersonaUnidadSerializer, ReasignacionesTareasCreateSerializer, ReasignacionesTareasgetByIdSerializer, ReasignacionesTareasgetByIdTareaSerializer, RequerimientoSobrePQRSDFCreateSerializer, RequerimientoSobrePQRSDFGetSerializer, RespuestasPQRGetSeralizer, TareaBandejaTareasPersonaCreateSerializer, TareaBandejaTareasPersonaUpdateSerializer, TareasAnexoArchivosDigitalesSerializer, TareasAsignadasCreateSerializer, TareasAsignadasGetJustificacionSerializer, TareasAsignadasGetSerializer, TareasAsignadasUpdateSerializer, UnidadOrganizacionalBandejaTareasSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
+from gestion_documental.serializers.expedientes_serializers import ArchivoSoporteSerializer, DocsIndiceElectronicoSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.utils import Util
 from transversal.models.lideres_models import LideresUnidadesOrg
@@ -1039,5 +1048,171 @@ class RespuestaPQRSDFByPQR(generics.UpdateAPIView):
         serializer = self.serializer_class(respuesta,many=True)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
         
+
+class ArchiarSolicitudOtros(generics.UpdateAPIView):
+    serializer_class = ArchivoSoporteSerializer
+
+    def post(self,request):
+        data_in = request.data
+        #data_in = json.loads(data_total.get('data'))
+        #anexo = request.FILES.get('anexo')
+        persona_logueada = request.user.persona
+
+        solicitud_otros = Otros.objects.filter(id_otros=data_in['id_otros']).first()
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).first()
+
+
+        data_docarch = {
+           # "identificacion_doc_en_expediente": data_in['identificacion_doc_en_expediente'],
+            "nombre_asignado_documento": data_in['nombre_asignado_documento'],
+            "fecha_creacion_doc": data_in['fecha_creacion_doc'],
+            "fecha_incorporacion_doc_a_Exp": data_in['fecha_incorporacion_doc_a_Exp'],
+            "descripcion": data_in['descripcion'],
+            "asunto": data_in['asunto'],
+            "cod_categoria_archivo": data_in['cod_categoria_archivo'],
+            "es_version_original": True,
+            "tiene_replica_fisica": data_in['tiene_replica_fisica'],
+            "nro_folios_del_doc": data_in['nro_folios_del_doc'],
+            "cod_origen_archivo": data_in['cod_origen_archivo'],
+            "id_tipologia_documental": data_in['id_tipologia_documental'],
+            "codigo_tipologia_doc_prefijo": data_in['codigo_tipologia_doc_prefijo'],
+            "codigo_tipologia_doc_agno": data_in['codigo_tipologia_doc_agno'],
+            "codigo_tipologia_doc_consecutivo": data_in['codigo_tipologia_doc_consecutivo'],
+            "es_un_archivo_anexo": False,
+            "anexo_corresp_a_lista_chequeo": False,
+            "cantidad_anexos": solicitud_otros.cantidad_anexos,
+            "palabras_clave_documento": data_in['palabras_clave_documento'],
+            "sub_sistema_incorporacion": "GEST",
+            "documento_requiere_rta": False,
+            "creado_automaticamente": False,
+            "id_und_org_oficina_creadora": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+            "id_persona_que_crea": persona_logueada.id_persona,
+            "id_und_org_oficina_respon_actual": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+        }
+        data_docarch['id_expediente_documental'] = data_in['id_expediente_documental']
+
+        # orden_expediente = await DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).aaggregate(Max('orden_en_expediente', default=0))
+        # print(orden_expediente['orden_en_expediente__max'])
+        # #ultimo_orden = orden_expediente['orden_en_expediente__max'] if orden_expediente['orden_en_expediente__max'] else 0
+        # ultimo_orden = orden_expediente['orden_en_expediente__max']
+        #ultimo_orden = self.orden_expediente(data_in['id_expediente_documental'])
+        orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).order_by('orden_en_expediente').last()
+        print(orden_expediente.orden_en_expediente)
+        ultimo_orden = orden_expediente.orden_en_expediente
+        data_docarch['orden_en_expediente'] = ultimo_orden + 1
+        cantidad_digitos = len(str(ultimo_orden))
+
+        if expediente.cod_tipo_expediente == "S":
+            i = 0
+            while cantidad_digitos != 10:
+                cantidad_digitos = cantidad_digitos + 1
+                i = i + 1
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(ultimo_orden).zfill(i)}"
+        else:
+            cantidad_digitos = cantidad_digitos + len(str(expediente.codigo_exp_consec_por_agno))
+            i = 0
+            while cantidad_digitos != 10:
+                cantidad_digitos = cantidad_digitos + 1
+                i = i + 1
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(ultimo_orden).zfill(i)}"
+
+        anexo = self.crear_pdf(data_in)
+        print(anexo)
+        # ruta = os.path.join("home", "BIA", "Gestor", "GDEA", str(expediente.codigo_exp_Agno))
+
+        # # md5_hash = hashlib.md5()
+        # # for chunk in anexo.chunks():
+        # #     md5_hash.update(chunk)
+
+        # hash_md5 = hashlib.md5(anexo).hexdigest()
+        # print(hash_md5)
+
+        # data_archivo = {
+        #     #'name': f"otros-{data_docarch['identificacion_doc_en_expediente']}",
+        #     'es_Doc_elec_archivo': True,
+        #     'ruta': ruta,
+        #     'md5_hash': hash_md5
+        # }
+            
+        # archivo_class = ArchivosDgitalesCreate()
+        # respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+        # id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
+
+        data_docarch['id_archivo_sistema'] = 7
+
+        serializer = self.serializer_class(data=data_docarch)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+
+        return Response({'success': True, 'detail': 'Se archivó el soporte correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    
+    def crear_pdf(self, data):
+
+
+        #buffer = io.BytesIO()
+        ruta = str(settings.BASE_DIR) + "/static/media/home/BIA/Otros/otros.pdf"
+        c = canvas.Canvas(ruta)
+
+        c.drawString(200, 820, "INFORMACIÓN DE LA SOLICITUD OTROS")
+
+        c.rect(20, 720, 550, 80)
+        c.drawString(30, 770, "Nombre de la Persona Titular: Brayan Barragan")
+        c.drawString(30, 740, "Número de Documento: 1193515179")
+
+        c.rect(20, 595, 550, 100)
+        c.drawString(30, 670, "Nombre de la Persona que Interpone: Brayan Barragan")
+        c.drawString(30, 640, "Número de Documento: 1193515179")
+        c.drawString(30, 610, "Relación con el Titular: Apoderado")
+
+        c.rect(20, 230, 550, 340)
+        c.drawString(30, 550, "Fecha de Registro: 27/07/2000")
+        c.drawString(30, 520, "Medio de Solicitud: Pagina Web")
+        c.drawString(30, 490, "Forma de Presentación: USB")
+        c.drawString(30, 460, "Asunto: sdadasdasd")
+        c.drawString(30, 430, "Descripción: dsadasdasdas")
+        c.drawString(30, 400, "Cantidad de Anexos: 4")
+        c.drawString(30, 370, "Número de Folios en Total: 32")
+        c.drawString(30, 340, "Nombre de la Persona que Recibio: Daniela Castro")
+        c.drawString(30, 310, "Sucursal de Recepción Física: sede principal")
+        c.drawString(30, 280, "Radicado: 32")
+        c.drawString(30, 250, "Fecha de Radicado: 27/07/2000")
+
+
+        c.showPage()
+        c.save()
+
+        #buffer.seek(0)
+
+        # Ahora puedes usar 'buffer' como una variable que contiene tu PDF.
+        # Por ejemplo, puedes guardarlo en una variable así:
+        #pdf_en_variable = buffer.getvalue()
+
+        # Recuerda cerrar el buffer cuando hayas terminado
+        #buffer.close()
+        with open(ruta, 'rb') as archivo_pdf:
+            contenido_pdf = archivo_pdf.read()
+        return contenido_pdf
+    
+    def crear_indice(self, data):
+        serializer_class = DocsIndiceElectronicoSerializer
+
+        id_indice = IndicesElectronicosExp.objects.filter(id_expediente_documental=data['id_expediente_documental']).first().id_indice_electronico_exp
+
+        data_indice = {
+            "id_indice_electronico_exp": id_indice,
+            "id_doc_archivo_exp": data['id_documento_archivo'],
+            "identificación_doc_exped": data['identificacion_doc_en_expediente'],
+            "nombre_documento": data['nombre_asignado_documento'],
+            "id_tipologia_documental": data['id_tipologia_documental'],
+            "fecha_creacion_doc": data['fecha_creacion_doc'],
+            "fecha_incorporacion_exp": data['fecha_incorporacion_doc_a_Exp'],
+            "valor_huella": "123456789",
+            "funcion_resumen": "MD5",
+            "orden_doc_expediente": data['orden_en_expediente'],
+            
+        }
 
         
