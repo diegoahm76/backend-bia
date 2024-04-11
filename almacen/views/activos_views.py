@@ -2264,6 +2264,9 @@ class BusquedaArticulosSubView(generics.ListAPIView):
             # Obtener el nombre de la bodega desde el modelo Inventario
             nombre_bodega = Inventario.objects.filter(id_bien=bien.id_bien).values_list('id_bodega__nombre', flat=True).first()
 
+            # Obtener el nombre de la bodega desde el modelo Inventario
+            id_bodega = Inventario.objects.filter(id_bien=bien.id_bien).values_list('id_bodega__id_bodega', flat=True).first()
+
             # Crear un diccionario con la información recopilada
             item_data = {
                 'id_bien_despachado': bien.id_bien,
@@ -2271,6 +2274,7 @@ class BusquedaArticulosSubView(generics.ListAPIView):
                 'nombre_bien_espachado': bien.nombre,
                 'cantidad_despachada': cantidad_despachada,
                 'observaciones': observaciones,
+                'id_bodega': id_bodega,
                 'nombre_bodega': nombre_bodega
             }
 
