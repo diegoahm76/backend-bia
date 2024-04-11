@@ -3,6 +3,7 @@ import ast
 import hashlib
 from django.db.models import Max
 from reportlab.pdfgen import canvas
+from django.core.files.base import ContentFile
 import io
 import os
 import json
@@ -1118,26 +1119,26 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
 
         anexo = self.crear_pdf(data_in)
         print(anexo)
-        # ruta = os.path.join("home", "BIA", "Gestor", "GDEA", str(expediente.codigo_exp_Agno))
+        ruta = os.path.join("home", "BIA", "Gestor", "GDEA", str(expediente.codigo_exp_Agno))
 
         # # md5_hash = hashlib.md5()
         # # for chunk in anexo.chunks():
         # #     md5_hash.update(chunk)
 
-        # hash_md5 = hashlib.md5(anexo).hexdigest()
-        # print(hash_md5)
+        hash_md5 = hashlib.md5(anexo).hexdigest()
+        print(hash_md5)
 
-        # data_archivo = {
-        #     #'name': f"otros-{data_docarch['identificacion_doc_en_expediente']}",
-        #     'es_Doc_elec_archivo': True,
-        #     'ruta': ruta,
-        #     'md5_hash': hash_md5
-        # }
+        data_archivo = {
+            #'name': f"otros-{data_docarch['identificacion_doc_en_expediente']}",
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': hash_md5
+        }
             
-        # archivo_class = ArchivosDgitalesCreate()
-        # respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, anexo)
 
-        # id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
+        id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
 
         data_docarch['id_archivo_sistema'] = 7
 
@@ -1152,9 +1153,9 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
     def crear_pdf(self, data):
 
 
-        #buffer = io.BytesIO()
-        ruta = str(settings.BASE_DIR) + "/static/media/home/BIA/Otros/otros.pdf"
-        c = canvas.Canvas(ruta)
+        buffer = io.BytesIO()
+        #ruta = str(settings.BASE_DIR) + "/static/media/home/BIA/Otros/otros.pdf"
+        c = canvas.Canvas(buffer)
 
         c.drawString(200, 820, "INFORMACIÓN DE LA SOLICITUD OTROS")
 
@@ -1184,17 +1185,18 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
         c.showPage()
         c.save()
 
-        #buffer.seek(0)
+        buffer.seek(0)
 
         # Ahora puedes usar 'buffer' como una variable que contiene tu PDF.
         # Por ejemplo, puedes guardarlo en una variable así:
-        #pdf_en_variable = buffer.getvalue()
+        pdf_en_variable = buffer.getvalue()
+        pdf_content_file = ContentFile(pdf_en_variable,name="Otros")
 
         # Recuerda cerrar el buffer cuando hayas terminado
-        #buffer.close()
-        with open(ruta, 'rb') as archivo_pdf:
-            contenido_pdf = archivo_pdf.read()
-        return contenido_pdf
+        buffer.close()
+        # with open(ruta, 'rb') as archivo_pdf:
+        #     contenido_pdf = archivo_pdf.read()
+        return pdf_content_file
     
     def crear_indice(self, data):
         serializer_class = DocsIndiceElectronicoSerializer
@@ -1212,7 +1214,7 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
             "valor_huella": "123456789",
             "funcion_resumen": "MD5",
             "orden_doc_expediente": data['orden_en_expediente'],
-            
+
         }
 
         
