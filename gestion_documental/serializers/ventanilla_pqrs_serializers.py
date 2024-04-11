@@ -1036,14 +1036,31 @@ class RespuestasRequerimientosPutGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestasRequerimientos
         fields = '__all__'
+
+
+class RespuestasRequerimientosPutSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
 class RespuestasRequerimientosOpaGetSerializer(serializers.ModelSerializer):
 
     tipo = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField()
     nombre_persona_responde = serializers.SerializerMethodField()
+
+    numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
     class Meta:
         model = RespuestasRequerimientos
         fields = '__all__'
+
+    def get_numero_solicitudes_digitalizacion(self,obj):
+        
+        numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_respuesta_requerimiento=obj).count()
+        return numero_solicitudes
+    
+
 
     def get_tipo(self,obj):
         return "Respuesta Requerimiento"

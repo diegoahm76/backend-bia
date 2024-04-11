@@ -582,6 +582,7 @@ class EditarSolicitudActivosView(generics.UpdateAPIView):
         with transaction.atomic():
                 # Actualizar los campos de la solicitud
                 instance.fecha_solicitud = current_date
+                instance.estado_solicitud = 'S'
                 instance.motivo = data.get('motivo', instance.motivo)
                 instance.observacion = data.get('observacion', instance.observacion)
                 instance.solicitud_prestamo = data.get('solicitud_prestamo', instance.solicitud_prestamo)
@@ -725,6 +726,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
                 'id_bien': item.id_bien.id_bien,  
                 'nombre_bien': item.id_bien.nombre,  
+                'codigo_bien': item.id_bien.codigo_bien,  
                 'cantidad': item.cantidad,
                 'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
                 'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
@@ -741,13 +743,13 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
             item_despacho_data = {
                 'id_item_despacho_activo': item_despacho.id_item_despacho_activo,
                 'id_despacho_activo': item_despacho.id_despacho_activo.id_despacho_activo,
-                'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado.id_bien else None,
-                'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado.nombre else None,
-                'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado.id_bien else None,
-                'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado.nombre else None,
+                'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado else None,
+                'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado else None,
+                'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado else None,
+                'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado else None,
                 'id_entrada_alma': item_despacho.id_entrada_alma.id_entrada_almacen if item_despacho.id_entrada_alma else None,
                 'id_bodega': item_despacho.id_bodega.id_bodega if item_despacho.id_bodega else None,
-                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega.nombre else None,
+                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega else None,
                 'cantidad_solicitada': item_despacho.cantidad_solicitada,
                 'fecha_devolucion': item_despacho.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if item_despacho.fecha_devolucion else None,
                 'se_devolvio': item_despacho.se_devolvio,
@@ -759,6 +761,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'nro_posicion_despacho': item_despacho.nro_posicion_despacho
             }
             items_despacho_data.append(item_despacho_data)
+
         
         # Recuperar los despachos activos relacionados
         despachos = DespachoActivos.objects.filter(id_solicitud_activo=instance)
@@ -799,7 +802,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'primer_apellido_persona_anula': despacho.id_persona_anula.primer_apellido if despacho.id_persona_anula else None,
                 'tipo_documento_persona_anula': despacho.id_persona_anula.tipo_documento.cod_tipo_documento if despacho.id_persona_anula else None,
                 'numero_documento_persona_anula': despacho.id_persona_anula.numero_documento if despacho.id_persona_anula else None,
-                'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo if despacho.id_archivo_doc_recibido else None
+                'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo_digital if despacho.id_archivo_doc_recibido else None
             }
             despachos_data.append(despacho_data)
         
@@ -1159,6 +1162,11 @@ class AprobarSolicitud(generics.UpdateAPIView):
 
         # Serializar y retornar la información actualizada
         serializer = self.serializer_class(instance)
+
+
+        #generacion de alerta
+
+        
         return Response({'success': True, 'detail': 'Solicitud aceptada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
@@ -1277,93 +1285,6 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
             return Response({'success': False, 'detail': 'No se encontraron elementos'}, status=status.HTTP_404_NOT_FOUND)
         
 
-
-# class CrearSalidaEspecialView(generics.CreateAPIView):
-#     serializer_class = SalidasEspecialesSerializer
-#     serializer_anexo_class = AnexosDocsAlmaSerializer
-
-#     @transaction.atomic
-#     def create(self, request, *args, **kwargs):
-#         try:
-#             data = request.data
-#             anexos = request.FILES.getlist('anexos')
-#             fecha_salida = datetime.now()
-
-#             # Crear registros de anexos y archivos digitales
-#             for anexo in anexos:
-#                 # Validar formato de archivo
-#                 nombre_anexo = anexo.name
-#                 archivo_nombre, extension = os.path.splitext(nombre_anexo)
-#                 extension_sin_punto = extension[1:] if extension.startswith('.') else extension
-                
-#                 # Obtener el año actual para determinar la carpeta de destino
-#                 current_year = fecha_salida.year
-#                 ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
-
-#                 # Calcula el hash MD5 del archivo
-#                 md5_hash = hashlib.md5()
-#                 for chunk in anexo.chunks():
-#                     md5_hash.update(chunk)
-
-#                 # Obtiene el valor hash MD5
-#                 md5_value = md5_hash.hexdigest()
-
-#                 # Crear el archivo digital y obtener su ID
-#                 archivo_digital = ArchivosDigitales.objects.create(
-#                     nombre_de_Guardado=nombre_anexo,
-#                     formato=extension_sin_punto.lower(),
-#                     tamagno_kb=anexo.size,
-#                     ruta_archivo=ruta,
-#                     fecha_creacion_doc=fecha_salida,
-#                     es_Doc_elec_archivo=True,
-#                     md5_hash=md5_value
-#                 )
-
-#                 # Crear registro de anexo
-#                 anexo_obj = AnexosDocsAlma.objects.create(
-#                     nombre_anexo=nombre_anexo,
-#                     nro_folios=data.get('nro_folios'),
-#                     id_baja_activo =None,
-#                     descripcion_anexo=data.get('descripcion_anexo'),
-#                     fecha_creacion_anexo=fecha_salida,
-#                     id_salida_espec_arti=salida_especial.id_salida_espec_arti,  # Aún no se ha creado el registro de salida especial
-#                     id_archivo_digital=archivo_digital.id_archivo_digital
-#                 )
-
-#             # Obtener consecutivo de salida especial y otros datos necesarios
-#             # Obtener el último consecutivo
-#             ultimo_consecutivo = SalidasEspecialesArticulos.objects.aggregate(Max('consecutivo_por_salida'))
-#             ultimo_consecutivo = ultimo_consecutivo['consecutivo_por_salida__max'] if ultimo_consecutivo['consecutivo_por_salida__max'] else 0
-
-#             # Crear registro de salida especial de activos
-#             salida_especial = SalidasEspecialesArticulos.objects.create(
-#                 consecutivo_por_salida=ultimo_consecutivo + 1,
-#                 fecha_salida=fecha_salida,
-#                 referencia_salida=data.get('referenciaDeSalida'),
-#                 concepto=data.get('concepto'),
-#                 id_entrada_almacen_ref_id=data.get('id_EntradaAlmacenReferenciada')  # El campo ForeignKey espera el ID, no el objeto
-#             )
-
-#             # Actualizar registros de inventario
-#             for bien in data.get('activos'):
-#                 id_bien = bien.get('id_bien')
-
-#                 inventario = Inventario.objects.filter(id_bien=id_bien).first()
-#                 if inventario:
-#                     inventario.realizo_salida = True
-#                     inventario.ubicacion_en_bodega = False
-#                     inventario.fecha_ultimo_movimiento = fecha_salida
-#                     inventario.tipo_doc_ultimo_movimiento = 'SAL_E'
-#                     inventario.id_registro_doc_ultimo_movimiento = None
-#                     inventario.save()
-
-#             # Asignar el ID de la salida especial a los anexos creados
-#             AnexosDocsAlma.objects.filter(id_SalidaEspecial_Articulo=None).update(id_SalidaEspecial_Articulo=salida_especial.id)
-
-#             return Response({'success': True, 'detail': 'Se ha creado la salida especial correctamente'}, status=status.HTTP_201_CREATED)
-
-#         except Exception as e:
-#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
 
 class CrearSalidaEspecialView(generics.CreateAPIView):
@@ -1500,16 +1421,38 @@ class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
         # Serializar los bienes
         bienes_serializer = ItemEntradaAlmacenSerializer(bienes_entrada, many=True)
 
-        print("bienes encontrados:", bienes_serializer)
-      
+        # Obtener la primera entrada de almacén asociada a la salida especial
+        primera_entrada_almacen = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref).first()
+        
+        # Lista para almacenar los datos de los proveedores
+        proveedores_data = []
+
+        # Obtener el nombre del proveedor asociado a la primera entrada de almacén
+        if primera_entrada_almacen:
+            proveedor = primera_entrada_almacen.id_entrada_almacen.id_proveedor
+            if proveedor:
+                proveedor_nombre = f"{proveedor.primer_nombre} {proveedor.segundo_nombre} {proveedor.primer_apellido} {proveedor.segundo_apellido}"
+                proveedor_tipo_documento = proveedor.tipo_documento.cod_tipo_documento
+                proveedor_numero_documento = proveedor.numero_documento
+                proveedores_data.append({
+                    'nombre': proveedor_nombre,
+                    'tipo_documento': proveedor_tipo_documento,
+                    'numero_documento': proveedor_numero_documento
+        })
+
         
         # Devolver la información como respuesta
         return Response({
+            'success': True,
+            'detail': 'Devolución de salidas espciales encontrada exitosamente.',
             'salida_especial': salida_especial_serializer.data,
-            'anexos': anexos_serializer.data,  # Agregar los anexos serializados
+            'informacion_tercero': proveedores_data, 
+            'anexos': anexos_serializer.data, 
             'archivos_digitales': archivos_digital_data,
-            'bienes': bienes_serializer.data,  # Agregar los bienes serializados
+            'bienes': bienes_serializer.data,  
         }, status=status.HTTP_200_OK)
+
+
 
 
 class ObtenerUltimoConsecutivoView(generics.ListAPIView):
@@ -1548,57 +1491,6 @@ class InfoAlmcenistaPersonaGet(generics.ListAPIView):
     
 
 
-# class DespachosDeActivosList(generics.ListAPIView):
-#     serializer_class = DespachoActivosSerializer
-
-#     def get_queryset(self):
-#         # Obtener el ID de la persona responsable desde los parámetros de la URL
-#         id_persona = self.kwargs.get('id_persona')
-
-#         # Consultar los registros de AsignacionActivos para el responsable actual
-#         asignaciones = AsignacionActivos.objects.filter(
-#             id_funcionario_resp_asignado_id=id_persona,
-#             actual=True
-#         )
-
-#         # Lista para almacenar los despachos encontrados
-#         despachos_encontrados = []
-
-#         # Iterar sobre las asignaciones encontradas
-#         for asignacion in asignaciones:
-#             # Obtener el despacho asociado a esta asignación
-#             despacho = DespachoActivos.objects.filter(id_despacho_activo=asignacion.id_despacho_asignado).first()
-
-#             # Verificar si se encontró un despacho válido
-#             if despacho:
-#                 # Lógica para determinar el tipo de solicitud
-#                 if despacho.despacho_sin_solicitud:
-#                     tipo_solicitud = 'Despacho sin solicitud'
-#                     fecha_solicitud = 'No aplica'
-#                 else:
-#                     tipo_solicitud = 'Despacho con solicitud ordinaria' if not despacho.id_solicitud_activo.solicitud_prestamo else 'Despacho con solicitud de préstamo'
-#                     fecha_solicitud = despacho.fecha_solicitud.strftime('%Y-%m-%d') if despacho.fecha_solicitud else 'No aplica'
-
-#                 # Agregar el despacho encontrado a la lista de despachos
-#                 despachos_encontrados.append({
-#                     'id_despacho': despacho.id_despacho_activo,
-#                     'fecha_despacho': despacho.fecha_despacho,
-#                     'persona_despachó': f"{despacho.id_persona_despacha.primer_nombre} {despacho.id_persona_despacha.primer_apellido}",
-#                     'bodega': despacho.id_bodega.nombre,
-#                     'observacion': despacho.observacion,
-#                     'tipo_solicitud': tipo_solicitud,
-#                     'fecha_solicitud': fecha_solicitud
-#                 })
-
-#         # Retornar la lista de despachos encontrados
-#         return despachos_encontrados
-    
-#     def list(self, request, *args, **kwargs):
-#         queryset = self.get_queryset()
-        
-#         # Retornar la respuesta con la data procesada
-#         return Response({'success': True, 'detail': 'Despachos de activos encontrados', 'data': queryset}, status=status.HTTP_200_OK)
-
 
 class DespachosDeActivosListGet(generics.ListAPIView):
     serializer_class = DespachoActivosSerializer
@@ -1631,11 +1523,11 @@ class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         # Obtener el ID del despacho de activos desde los parámetros de la URL
-        id_despacho = self.kwargs.get('id_despacho')
+        id_despacho_activo = self.kwargs.get('id_despacho_activo')
 
         try:
             # Consultar los registros de ItemsDespachoActivos asociados al despacho
-            items_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo=id_despacho)
+            items_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo=id_despacho_activo)
         except ItemsDespachoActivos.DoesNotExist:
             return Response({'success': False, 'detail': 'El despacho de activos especificado no existe'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -1643,7 +1535,7 @@ class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
         serializer = self.serializer_class(items_despacho, many=True)
 
         # Retornar la respuesta con la data procesada
-        return Response({'success': True, 'detail': 'Activos despachados - Devolución', 'data': serializer.data})
+        return Response({'success': True, 'detail': 'Datos de los activos despachados', 'data': serializer.data})
     
 class EstadosArticuloListView(generics.ListAPIView):
     queryset = EstadosArticulo.objects.all()
@@ -1654,76 +1546,373 @@ class EstadosArticuloListView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response({'success': True, 'detail': 'Estados de artículo obtenidos correctamente', 'data': serializer.data})
     
+# class DevolucionActivosCreateView(generics.CreateAPIView):
+#     serializer_class = DevolucionActivosSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         # Serializar los datos de la devolución de activos
+#         devolucion_serializer = self.get_serializer(data=request.data)
+#         devolucion_serializer.is_valid(raise_exception=True)
+#         devolucion_data = devolucion_serializer.validated_data
+
+#         # Obtener ID de unidad organizacional del solicitante
+#         id_unidad_org_solicitante = devolucion_data.get('id_persona_devolucion').id_unidad_organizacional_actual.id_unidad_organizacional
+
+#         # Validar la justificación si el estado seleccionado lo requiere
+#         estado_seleccionado = devolucion_data.get('cod_estado_activo')
+#         justificacion = devolucion_data.get('justificacion_anulacion')
+#         if estado_seleccionado and estado_seleccionado != 'O' and not justificacion:
+#             return Response({'success': False, 'detail': 'Debe proporcionar una justificación para el estado seleccionado'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Crear el registro de devolución de activos
+#         devolucion_activos = DevolucionActivos.objects.create(**devolucion_data)
+
+#         # Actualizar los campos en la tabla T092DevolucionActivos
+#         devolucion_activos.devolucion_anulada = False
+#         devolucion_activos.justificacion_anulacion = None
+#         devolucion_activos.fecha_anulacion = None
+#         devolucion_activos.id_persona_anulacion = None
+#         devolucion_activos.consecutivo_devolucion = DevolucionActivos.objects.latest('id_devolucion_activos').id_devolucion_activos + 1  # Obtener el último consecutivo y asignar el siguiente
+#         devolucion_activos.fecha_devolucion = datetime.now()
+#         devolucion_activos.id_persona_devolucion = devolucion_data.get('id_persona_devolucion')  # Asignar el id de la persona que devolvió
+#         devolucion_activos.id_uni_org_persona_devolucion = id_unidad_org_solicitante  # Asignar el id de la unidad organizacional del solicitante
+#         devolucion_activos.save()
+
+#         # Obtener los datos de los activos devueltos
+#         activos_devueltos_data = request.data.get('activos_devueltos', [])
+
+#         # Lista para almacenar los activos devueltos creados
+#         activos_devueltos_creados = []
+
+#         # Iterar sobre los datos de los activos devueltos
+#         for activo_devuelto_data in activos_devueltos_data:
+#             # Serializar los datos del activo devuelto
+#             activo_devuelto_serializer = ActivosDevolucionadosSerializer(data=activo_devuelto_data)
+#             activo_devuelto_serializer.is_valid(raise_exception=True)
+#             activo_devuelto_data = activo_devuelto_serializer.validated_data
+
+#             # Crear el registro de activo devuelto
+#             activo_devuelto = ActivosDevolucionados.objects.create(devolucion_activo=devolucion_activos, **activo_devuelto_data)
+
+#             # Actualizar el atributo se_Devolvio en el item del despacho de activos
+#             item_despacho = activo_devuelto.item_despacho_activo
+#             item_despacho.se_devolvio = True
+#             item_despacho.save()
+
+#             # Actualizar el estado y la ubicación del activo en el inventario
+#             inventario_activo = activo_devuelto.item_despacho_activo.bien_despachado.inventario
+#             inventario_activo.cod_estado_del_activo = activo_devuelto.cod_estado_activo_devol
+#             inventario_activo.ubicacion_en_bodega = True
+#             inventario_activo.fecha_ultimo_mov = devolucion_activos.fecha_devolucion
+#             inventario_activo.tipo_doc_ultimo_mov = 'DEV'
+#             inventario_activo.save()
+
+#             # Agregar el activo devuelto creado a la lista
+#             activos_devueltos_creados.append(activo_devuelto)
+
+#         # Retornar la respuesta con los activos devueltos creados
+#         return Response({'success': True, 
+#                          'detail': 'Devolución de activos creada correctamente', 
+#                          'data': {'id_devolucion_activos': devolucion_activos.id_devolucion_activos, 
+#                                   'activos_devueltos': [activo.id for activo in activos_devueltos_creados]}}, status=status.HTTP_201_CREATED)
+
+
+# class DevolucionActivosCreateView(generics.CreateAPIView):
+#     serializer_class = DevolucionActivosSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         data = request.data
+#         current_date = datetime.now()
+
+#         # Obtener el último registro
+#         ultimo_registro = DevolucionActivos.objects.last()
+
+#         # Obtener el último consecutivo y sumarle 1
+#         ultimo_consecutivo = ultimo_registro.consecutivo_devolucion if ultimo_registro else 0
+#         nuevo_consecutivo = ultimo_consecutivo + 1
+
+#         # Obtener el objeto de AsignacionActivos utilizando el id_asignacion_activos
+#         id_despacho_asignado = data['id_despacho_asignado']
+#         asignacion_activos = get_object_or_404(AsignacionActivos, pk=id_despacho_asignado)
+
+#         # Obtener ID del responsable y del operario
+#         id_persona_que_devuelve = data.get('id_persona_que_devuelve')
+#         try:
+#             persona_que_devuelve = Personas.objects.get(id_persona=id_persona_que_devuelve)
+#             id_uni_org_persona_que_devuelve = persona_que_devuelve.id_unidad_organizacional_actual.id_unidad_organizacional
+#         except Personas.DoesNotExist:
+#             return Response({"success": False, 'detail': 'El usuario operario especificado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        
+#         # Crear registro en T092DevolucionActivos
+#         devolucion_data = {
+#             'id_asignacion_activo': asignacion_activos.id_asignacion_activos,
+#             'id_despacho_activo': id_despacho_asignado,
+#             'consecutivo_devolucion': nuevo_consecutivo,
+#             'fecha_devolucion': current_date,
+#             'id_persona_que_devuelve': id_persona_que_devuelve,
+#             'id_unidad_organizacional_devolucion': id_uni_org_persona_que_devuelve,
+#             'devolucion_anulada': False,
+#             'justificacion_anulacion': None,
+#             'fecha_anulacion': None,
+#             'id_persona_que_anula': None
+#         }
+
+#         devolucion_serializer = self.get_serializer(data=devolucion_data)
+#         devolucion_serializer.is_valid(raise_exception=True)
+#         devolucion_obj = devolucion_serializer.save()
+
+#         # Crear registro en T096ActivosDevolucionados
+#         activos_devolucionados_data = data['activos_devolucionados']
+#         for activo_devolucionado_data in activos_devolucionados_data:
+#             activo_devolucionado_data['id_devolucion_activo'] = devolucion_obj.pk
+#             activo_devolucionado_serializer = ActivosDevolucionadosSerializer(data=activo_devolucionado_data)
+#             activo_devolucionado_serializer.is_valid(raise_exception=True)
+#             activo_devolucionado_obj = activo_devolucionado_serializer.save()
+
+#             # Actualizar registro en T093Items_DespachoActivos
+#             id_item_despacho_activo = activo_devolucionado_data['id_item_despacho_activo']
+#             item_despacho_activo = ItemsDespachoActivos.objects.get(pk=id_item_despacho_activo)
+#             item_despacho_activo.se_devolvio = True
+#             item_despacho_activo.save()
+
+#             # Actualizar registro en T062Inventario
+#             id_bien_despachado = activo_devolucionado_data['id_bien_despachado']
+#             bien_despachado = CatalogoBienes.objects.get(pk=id_bien_despachado)
+#             inventario_obj = Inventario.objects.get(id_bien=bien_despachado)
+#             inventario_obj.cod_estado_activo = activo_devolucionado_obj.cod_estado_activo_devolucion
+#             inventario_obj.ubicacion_en_bodega = True
+#             inventario_obj.fecha_ultimo_movimiento = current_date
+#             inventario_obj.tipo_doc_ultimo_movimiento = 'DEV'
+#             inventario_obj.id_registro_doc_ultimo_movimiento = None
+#             inventario_obj.save()
+
+#         return Response({'success': True, 'detail': 'Devolución de activos creada exitosamente.', 'data': devolucion_serializer.data}, status=status.HTTP_201_CREATED)
+
+
 class DevolucionActivosCreateView(generics.CreateAPIView):
     serializer_class = DevolucionActivosSerializer
 
     def create(self, request, *args, **kwargs):
-        # Serializar los datos de la devolución de activos
-        devolucion_serializer = self.get_serializer(data=request.data)
-        devolucion_serializer.is_valid(raise_exception=True)
-        devolucion_data = devolucion_serializer.validated_data
+        data = request.data
+        current_date = datetime.now()
+        persona_despacha_id = self.request.user.persona.id_persona
 
-        # Obtener ID de unidad organizacional del solicitante
-        id_unidad_org_solicitante = devolucion_data.get('id_persona_devolucion').id_unidad_organizacional_actual.id_unidad_organizacional
+        # Obtener el id_devolucion_activo
+        id_despacho_activo = data.get('id_despacho_activo')
 
-        # Validar la justificación si el estado seleccionado lo requiere
-        estado_seleccionado = devolucion_data.get('cod_estado_activo')
-        justificacion = devolucion_data.get('justificacion_anulacion')
-        if estado_seleccionado and estado_seleccionado != 'O' and not justificacion:
-            return Response({'success': False, 'detail': 'Debe proporcionar una justificación para el estado seleccionado'}, status=status.HTTP_400_BAD_REQUEST)
+        # Obtener el último registro de DevolucionActivos
+        ultimo_registro = DevolucionActivos.objects.last()
 
-        # Crear el registro de devolución de activos
-        devolucion_activos = DevolucionActivos.objects.create(**devolucion_data)
+        # Obtener el último consecutivo y sumarle 1
+        ultimo_consecutivo = ultimo_registro.consecutivo_devolucion if ultimo_registro else 0
+        nuevo_consecutivo = ultimo_consecutivo + 1
 
-        # Actualizar los campos en la tabla T092DevolucionActivos
-        devolucion_activos.devolucion_anulada = False
-        devolucion_activos.justificacion_anulacion = None
-        devolucion_activos.fecha_anulacion = None
-        devolucion_activos.id_persona_anulacion = None
-        devolucion_activos.consecutivo_devolucion = DevolucionActivos.objects.latest('id').id_devolucion_activos + 1  # Obtener el último consecutivo y asignar el siguiente
-        devolucion_activos.fecha_devolucion = timezone.now()
-        devolucion_activos.id_persona_devolucion = devolucion_data.get('id_persona_devolucion')  # Asignar el id de la persona que devolvió
-        devolucion_activos.id_uni_org_persona_devolucion = id_unidad_org_solicitante  # Asignar el id de la unidad organizacional del solicitante
-        devolucion_activos.save()
-
-        # Obtener los datos de los activos devueltos
-        activos_devueltos_data = request.data.get('activos_devueltos', [])
-
-        # Lista para almacenar los activos devueltos creados
-        activos_devueltos_creados = []
-
-        # Iterar sobre los datos de los activos devueltos
-        for activo_devuelto_data in activos_devueltos_data:
-            # Serializar los datos del activo devuelto
-            activo_devuelto_serializer = ActivosDevolucionadosSerializer(data=activo_devuelto_data)
-            activo_devuelto_serializer.is_valid(raise_exception=True)
-            activo_devuelto_data = activo_devuelto_serializer.validated_data
-
-            # Crear el registro de activo devuelto
-            activo_devuelto = ActivosDevolucionados.objects.create(devolucion_activo=devolucion_activos, **activo_devuelto_data)
-
-            # Actualizar el atributo se_Devolvio en el item del despacho de activos
-            item_despacho = activo_devuelto.item_despacho_activo
-            item_despacho.se_devolvio = True
-            item_despacho.save()
-
-            # Actualizar el estado y la ubicación del activo en el inventario
-            inventario_activo = activo_devuelto.item_despacho_activo.bien_despachado.inventario
-            inventario_activo.cod_estado_del_activo = activo_devuelto.cod_estado_activo_devol
-            inventario_activo.ubicacion_en_bodega = True
-            inventario_activo.fecha_ultimo_mov = devolucion_activos.fecha_devolucion
-            inventario_activo.tipo_doc_ultimo_mov = 'DEV'
-            inventario_activo.save()
-
-            # Agregar el activo devuelto creado a la lista
-            activos_devueltos_creados.append(activo_devuelto)
-
-        # Retornar la respuesta con los activos devueltos creados
-        return Response({'success': True, 
-                         'detail': 'Devolución de activos creada correctamente', 
-                         'data': {'id_devolucion_activos': devolucion_activos.id_devolucion_activos, 
-                                  'activos_devueltos': [activo.id for activo in activos_devueltos_creados]}}, status=status.HTTP_201_CREATED)
+        # Obtener id_persona_devolucion
+        id_persona_devolucion = data.get('id_persona_devolucion')
+        try:
+            persona_que_devuelve = Personas.objects.get(id_persona=id_persona_devolucion)
+            id_uni_org_persona_que_devuelve = persona_que_devuelve.id_unidad_organizacional_actual.id_unidad_organizacional
+        except Personas.DoesNotExist:
+            return Response({"success": False, 'detail': 'El usuario PERSONA DEVOLUCION especificado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        
     
+        # Obtener el id_asignacion_activo del último registro de AsignacionActivos
+        ultimo_asignacion = AsignacionActivos.objects.last()
+        if ultimo_asignacion:
+            id_asignacion_activo = ultimo_asignacion.id_asignacion_activos
+        else:
+            return Response({"success": False, 'detail': 'No hay asignaciones de activos disponibles'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear registro en T092DevolucionActivos
+        devolucion_data = {
+            'id_asignacion_activo': id_asignacion_activo,
+            'id_despacho_activo': id_despacho_activo,
+            'consecutivo_devolucion': nuevo_consecutivo,
+            'fecha_devolucion': current_date,
+            'id_persona_devolucion': id_persona_devolucion,
+            'id_uni_org_persona_devolucion': id_uni_org_persona_que_devuelve,
+            'devolucion_anulada': False,
+            'justificacion_anulacion': None,
+            'fecha_anulacion': None,
+            'id_persona_anulacion': None
+        }
+
+        devolucion_serializer = DevolucionActivosSerializer(data=devolucion_data)
+        devolucion_serializer.is_valid(raise_exception=True)
+        devolucion_obj = devolucion_serializer.save()
+
+
+        #T096ActivosDevolucionados
+        activos_devolucionados_data = data.get('activos_devolucionados', [])
+        for activo_devolucionado_data in activos_devolucionados_data:
+            activo_devolucionado_data['id_devolucion_activo'] = devolucion_obj.id_devolucion_activos
+            activo_devolucionado_serializer = ActivosDevolucionadosSerializer(data=activo_devolucionado_data)
+            activo_devolucionado_serializer.is_valid(raise_exception=True)
+            activo_devolucionado_obj = activo_devolucionado_serializer.save()
+            
+
+            # Actualizar T093Items_DespachoActivos
+            id_item_despacho_activo = activo_devolucionado_data.get('id_item_despacho_activo')
+            print(id_item_despacho_activo)
+            if id_item_despacho_activo:
+                item_despacho_activo = ItemsDespachoActivos.objects.get(id_item_despacho_activo=id_item_despacho_activo)
+                item_despacho_activo.se_devolvio = True
+                item_despacho_activo.save()
+
+            # Actualizar T062Inventario
+            id_bien_despachado = activo_devolucionado_data.get('id_bien_despachado')
+            if id_bien_despachado:
+                bien_despachado = CatalogoBienes.objects.get(pk=id_bien_despachado)
+                inventario_obj = Inventario.objects.get(id_bien=bien_despachado)
+                inventario_obj.cod_estado_activo = activo_devolucionado_obj.cod_estado_activo_devolucion
+                inventario_obj.ubicacion_en_bodega = True
+                inventario_obj.fecha_ultimo_movimiento = current_date
+                inventario_obj.tipo_doc_ultimo_movimiento = 'DEV'
+                inventario_obj.id_registro_doc_ultimo_movimiento = None
+                inventario_obj.save()
+
+        return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
+    
+
+class ObtenerUltimoConsecutivoDevolucionView(generics.ListAPIView):
+    def get(self, request):
+            # Obtener el último consecutivo en la base de datos
+            ultimo_consecutivo = DevolucionActivos.objects.all().order_by('-consecutivo_devolucion').first()
+            if ultimo_consecutivo:
+                ultimo_consecutivo = ultimo_consecutivo.consecutivo_devolucion + 1
+            else:
+                ultimo_consecutivo = 1  # Si no hay ningún registro, empezar desde 1
+            
+            # Devolver el último consecutivo incrementado en 1
+            return Response({"success": True, "detail": "Último consecutivo obtenido correctamente.", "ultimo_consecutivo": ultimo_consecutivo}, status=status.HTTP_200_OK)
+    
+
+
+
+class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
+    def retrieve(self, request, consecutivo, *args, **kwargs):
+        # Buscar la devolución de activos por su consecutivo
+        devolucion_activos = get_object_or_404(DevolucionActivos, consecutivo_devolucion=consecutivo)
+        
+        # Serializar la devolución de activos
+        devolucion_activos_serializer = DevolucionActivosSerializer(devolucion_activos)
+
+        # Buscar los activos devueltos asociados a esta devolución
+        activos_devueltos = ActivosDevolucionados.objects.filter(id_devolucion_activo=devolucion_activos.id_devolucion_activos)
+        
+        # Serializar los activos devueltos
+        activos_devueltos_serializer = ActivosDevolucionadosSerializer(activos_devueltos, many=True)
+
+        # Obtener información del id_item_despacho_activo para cada activo devuelto
+        item_despacho_activos_data = []
+        for activo_devuelto in activos_devueltos:
+            item_despacho_activo = activo_devuelto.id_item_despacho_activo
+            if item_despacho_activo:
+                item_despacho_activo_serializer = ItemsDespachoActivosSerializer(item_despacho_activo)
+                item_despacho_activos_data.append(item_despacho_activo_serializer.data)
+
+        # Obtener la información de id_despacho_activo
+        id_despacho_activo = devolucion_activos.id_despacho_activo
+        if id_despacho_activo:
+            despacho_activos_serializer = DespachoActivosSerializer(id_despacho_activo)
+            id_despacho_activo_data = despacho_activos_serializer.data
+        else:
+            id_despacho_activo_data = None
+
+        # Devolver la información como respuesta
+        return Response({
+            'success': True,
+            'detail': 'Devolución de activos encontrada exitosamente.',
+            'devolucion_activos': devolucion_activos_serializer.data,
+            'activos_devueltos': activos_devueltos_serializer.data,
+            'item_despacho_activos': item_despacho_activos_data,
+            'despacho_activo': id_despacho_activo_data
+        }, status=status.HTTP_200_OK)
+
+# class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
+#     def retrieve(self, request, consecutivo, *args, **kwargs):
+#         # Buscar la salida especial por su consecutivo
+#         salida_especial = get_object_or_404(DevolucionActivos, consecutivo_devolucion=consecutivo)
+        
+#         # Serializar la salida especial
+#         salida_especial_serializer = SalidasEspecialesArticulosSerializer(salida_especial)
+        
+#         # Buscar los anexos relacionados con la salida especial
+#         anexos = AnexosDocsAlma.objects.filter(id_salida_espec_arti=salida_especial.id_salida_espec_arti)
+        
+#         # Serializar los anexos
+#         anexos_serializer = AnexosDocsAlmaSerializer(anexos, many=True)
+        
+#         # Lista para almacenar la data de los archivos digitales
+#         archivos_digital_data = []
+
+#         # Iterar sobre los anexos y obtener los archivos digitales relacionados
+#         for anexo in anexos:
+#             archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=anexo.id_archivo_digital_id).first()
+#             if archivo_digital:
+#                 archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
+#                 archivos_digital_data.append(archivo_digital_serializer.data)
+
+#         # Obtener los bienes asociados a la entrada de almacén de referencia
+#         bienes_entrada = ItemEntradaAlmacen.objects.filter(id_entrada_almacen=salida_especial.id_entrada_almacen_ref)
+        
+#         # Serializar los bienes
+#         bienes_serializer = ItemEntradaAlmacenSerializer(bienes_entrada, many=True)
+
+#         print("bienes encontrados:", bienes_serializer)
+      
+        
+#         # Devolver la información como respuesta
+#         return Response({
+#             'salida_especial': salida_especial_serializer.data,
+#             'anexos': anexos_serializer.data,  # Agregar los anexos serializados
+#             'archivos_digitales': archivos_digital_data,
+#             'bienes': bienes_serializer.data,  # Agregar los bienes serializados
+#         }, status=status.HTTP_200_OK)
+
+
+
+
+class DevolucionActivosUpdateView(generics.UpdateAPIView):
+    serializer_class = DevolucionActivosSerializer
+    queryset = DevolucionActivos.objects.all()
+
+    def put(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
+        current_date = datetime.now()
+        persona_que_anula_id = self.request.user.persona.id_persona
+
+        # Actualizar registro en T092DevolucionActivos
+        instance.devolucion_anulada = True
+        instance.justificacion_anulacion = data.get('justificacion_anulacion')
+        instance.fecha_anulacion = current_date
+        instance.id_persona_que_anula = persona_que_anula_id
+        instance.save()
+
+        # Obtener los registros de T096ActivosDevolucionados relacionados
+        activos_devueltos = ActivosDevolucionados.objects.filter(id_devolucion_activo=instance.id_activo_devolucionado)
+
+        for activo_devuelto in activos_devueltos:
+            # Actualizar registro en T093Items_DespachoActivos
+            item_despacho_activo = ItemsDespachoActivos.objects.get(pk=activo_devuelto.id_item_despacho_activo)
+            item_despacho_activo.se_devolvio = False
+            item_despacho_activo.save()
+
+            # Obtener el registro de T057CatalogoBienes y T062Inventario relacionados
+            bien_despachado = CatalogoBienes.objects.get(pk=activo_devuelto.id_bien_despachado_id)
+            inventario_obj = Inventario.objects.get(id_bien=bien_despachado)
+
+            # Actualizar campos en el inventario
+            inventario_obj.cod_estado_activo = bien_despachado.cod_estado_activo
+            inventario_obj.ubicacion_en_bodega = True
+            inventario_obj.fecha_ultimo_movimiento = current_date
+            inventario_obj.tipo_doc_ultimo_movimiento = 'DEV'
+            inventario_obj.id_registro_doc_ultimo_movimiento = None
+            inventario_obj.save()
+
+        return Response({'success': True, 'detail': 'Devolución anulada exitosamente.'}, status=status.HTTP_200_OK)
+
 
 
 class BusquedaAvanzadaSolicitudesDespacho(generics.ListAPIView):
@@ -1810,6 +1999,7 @@ class CancelarSolicitudDespacho(generics.UpdateAPIView):
         return Response({'detail': 'La solicitud se ha cancelado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
+
 class AnularSolicitudDespacho(generics.UpdateAPIView):
     queryset = SolicitudesActivos.objects.all()
     serializer_class = SolicitudesActivosSerializer
@@ -1845,17 +2035,59 @@ class AnularSolicitudDespacho(generics.UpdateAPIView):
             despacho.justificacion_anulacion = request.data.get('justificacion_anulacion')
             despacho.fecha_anulacion = datetime.now()
             # Obtener la instancia de la persona actual
-            usuario_actual = request.user
-            persona_actual = usuario_actual.persona
+            persona_logueada = request.user.persona
+            # Obtener la instancia de Personas correspondiente al ID proporcionado
+            persona_anula = get_object_or_404(Personas, id_persona=persona_logueada.id_persona)
             # Asignar la instancia de la persona actual a Id_PersonaAnula
-            despacho.id_persona_anula = persona_actual
+            despacho.id_persona_anula = persona_anula
             # Guardar los cambios en el despacho
             despacho.save()
         
         # Serializar y retornar la solicitud actualizada
         serializer = self.serializer_class(solicitud)
         return Response({'detail': 'La solicitud y el despacho asociado se han anulado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
     
+
+class AnularSolicitudDespachoSinSolicitud(generics.UpdateAPIView):
+    queryset = DespachoActivos.objects.all()
+    serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        # Obtener el ID de la solicitud de la URL
+        despacho_id = kwargs.get('pk')
+        
+        # Obtener la instancia de la solicitud
+        try:
+            despacho = DespachoActivos.objects.get(id_despacho_activo=despacho_id)
+        except DespachoActivos.DoesNotExist:
+            return Response({'detail': 'El despacho especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Verificar si la solicitud está en estado "En Espera"
+        if despacho.estado_despacho != 'Ep':
+            return Response({'detail': 'Solo se puede anular una despachos que esté en estado "En espera".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener la instancia de la persona actual
+        persona_logueada = request.user.persona
+        # Obtener la instancia de Personas correspondiente al ID proporcionado
+        persona_anula = get_object_or_404(Personas, id_persona=persona_logueada.id_persona)
+
+        # Actualizar los datos de la solicitud
+        despacho.estado_despacho = 'An'
+        despacho.despacho_anulado = True
+        despacho.fecha_anulacion = datetime.now()
+        despacho.id_persona_anula = persona_anula
+        despacho.justificacion_anulacion = request.data.get('justificacion_anulacion')
+
+        despacho.save()
+        
+        # Serializar y retornar la solicitud actualizada
+        serializer = self.serializer_class(despacho)
+        return Response({'detail': 'El despacho asociado se han anulado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)  
+
+
 
 class ObtenerDatosPersonasSolicitud(generics.RetrieveAPIView):
     queryset = SolicitudesActivos.objects.all()
@@ -1901,7 +2133,7 @@ class BusquedaAvanzadaBodegas(generics.ListAPIView):
     
 
 class DespachosSinSolicitudGet(generics.ListAPIView):
-    serializer_class = DespachoSinSolicitudSerializer
+    serializer_class = DespachoActivosSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -1943,120 +2175,6 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
         return Response(data, status=status.HTTP_200_OK)
     
 
-# class BusquedaArticulosView(generics.ListAPIView):
-#     def get(self, request, solicitud_id):
-#         try:
-#             # Obtener la solicitud de activos
-#             solicitud = SolicitudesActivos.objects.get(id_solicitud_activo=solicitud_id)
-            
-#             # Verificar si la solicitud existe
-#             if not solicitud:
-#                 return Response({'success': False, 'detail': 'La solicitud especificada no existe.'}, status=status.HTTP_404_NOT_FOUND)
-            
-#             # Obtener la fecha de la solicitud
-#             fecha_solicitud = solicitud.fecha_solicitud
-            
-#             # Buscar el despacho asociado a la solicitud
-#             despacho = DespachoActivos.objects.filter(id_solicitud_activo=solicitud)
-#             fecha_despacho = despacho.first().fecha_despacho if despacho.exists() else None
-
-#             # Obtener los items de despacho asociados a la solicitud
-#             items_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo__id_solicitud_activo=solicitud)
-
-#             # Inicializar una lista para almacenar los datos serializados de los items
-#             serialized_data = []
-
-#             # Iterar sobre los items de despacho y obtener la información necesaria
-#             for item_despacho in items_despacho:
-#                 # Obtener la bodega y la cantidad solicitada
-#                 bodega_seleccionada = item_despacho.id_bodega
-#                 cantidad_solicitada = item_despacho.cantidad_solicitada
-
-#                 # Verificar si el ítem solicitado es un nodo de nivel 5
-#                 if item_despacho.id_bien_despachado.nivel_jerarquico == 5:
-#                     if not validar_nodo_nivel5(item_despacho, fecha_solicitud, fecha_despacho):
-#                         return Response({'success': False, 'detail': 'No hay elementos disponibles en bodega para el ítem solicitado.'}, status=status.HTTP_400_BAD_REQUEST)
-                
-#                 # Verificar si el ítem solicitado es un nodo de nivel entre 2 y 4
-#                 elif 2 <= item_despacho.id_bien_despachado.nivel_jerarquico <= 4:
-#                     if not validar_nodos_nivel234(item_despacho, fecha_solicitud, fecha_despacho, bodega_seleccionada, cantidad_solicitada):
-#                         return Response({'success': False, 'detail': 'Debe realizar la entrada a almacén para los activos solicitados.'}, status=status.HTTP_400_BAD_REQUEST)
-
-#                 # Obtener el código del bien solicitado
-#                 codigo_bien = item_despacho.id_bien_despachado.codigo_bien
-
-#                 # Obtener el nombre del bien solicitado
-#                 nombre_bien = item_despacho.id_bien_despachado.nombre
-
-#                 # Obtener la unidad de medida del bien solicitado
-#                 unidad_medida_solicitada = item_despacho.id_uni_medida_solicitada.nombre
-
-#                 # Obtener la fecha de devolución si corresponde
-#                 fecha_devolucion = item_despacho.fecha_devolucion
-
-#                 # Obtener las observaciones
-#                 observaciones = item_despacho.observacion
-
-#                 # Serializar los datos del item de despacho
-#                 serialized_item = {
-#                     'codigo_bien': codigo_bien,
-#                     'nombre_bien': nombre_bien,
-#                     'unidad_medida_solicitada': unidad_medida_solicitada,
-#                     'fecha_devolucion': fecha_devolucion,
-#                     'observaciones': observaciones
-#                 }
-
-#                 # Agregar el item serializado a la lista
-#                 serialized_data.append(serialized_item)
-
-#             # Preparar la respuesta JSON con los datos serializados y el mensaje de éxito
-#             response_data = {
-#                 'success': True,
-#                 'detail': 'Items solicitados obtenidos correctamente.',
-#                 'data': serialized_data
-#             }
-
-#             # Devolver la respuesta JSON
-#             return Response(response_data)
-#         except SolicitudesActivos.DoesNotExist:
-#             return Response({'success': False, 'detail': 'La solicitud especificada no existe.'}, status=status.HTTP_404_NOT_FOUND)
-
-
-# def validar_nodo_nivel5(item_despacho, fecha_solicitud, fecha_despacho):
-#     # Verificar si el nodo de nivel 5 es de tipo "Activo Fijo"
-#     if item_despacho.id_bien_despachado.cod_tipo_bien != 'A':
-#         print("El tipo de bien no es 'Activo Fijo'")
-#         return False
-
-#     # Confirmar si los elementos del nodo están en alguna bodega
-#     elementos_nodo = CatalogoBienes.objects.filter(id_bien_padre=item_despacho.id_bien_despachado.id_bien, nivel_jerarquico=5)
-#     if not elementos_nodo.exists():
-#         print("No hay elementos en el nodo de nivel 5")
-#         return False
-
-#     # Verificar si los elementos del nodo están en bodega
-#     for elemento in elementos_nodo:
-#         elementos_bodega = Inventario.objects.filter(id_bien=elemento.id_bien, ubicacion_en_bodega=True)
-#         if not elementos_bodega.exists():
-#             print("No hay elementos en bodega para el nodo de nivel 5")
-#             return False
-
-#     print("Todos los elementos del nodo de nivel 5 están en bodega")
-#     return True
-
-
-# def validar_nodos_nivel234(item_despacho, fecha_solicitud, fecha_despacho, bodega_seleccionada, cantidad_solicitada):
-#     # Buscar si hay hijos del ítem solicitado de nivel 5 de Activos Fijos
-#     hijos_nivel5 = CatalogoBienes.objects.filter(id_bien_padre=item_despacho.id_bien, cod_tipo_bien='A', nivel_jerarquico=5)
-#     if hijos_nivel5.exists():
-#         for hijo in hijos_nivel5:
-#             # Realizar las mismas validaciones que para el nodo de nivel 5
-#             if not validar_nodo_nivel5(hijo, fecha_solicitud, fecha_despacho):
-#                 return False
-#     else:
-#         # Mostrar mensaje informando que debe realizar la entrada a almacén para esos activos
-#         return False
-#     return True
     
 class BusquedaArticulosPrincipalView(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
@@ -2146,6 +2264,9 @@ class BusquedaArticulosSubView(generics.ListAPIView):
             # Obtener el nombre de la bodega desde el modelo Inventario
             nombre_bodega = Inventario.objects.filter(id_bien=bien.id_bien).values_list('id_bodega__nombre', flat=True).first()
 
+            # Obtener el nombre de la bodega desde el modelo Inventario
+            id_bodega = Inventario.objects.filter(id_bien=bien.id_bien).values_list('id_bodega__id_bodega', flat=True).first()
+
             # Crear un diccionario con la información recopilada
             item_data = {
                 'id_bien_despachado': bien.id_bien,
@@ -2153,6 +2274,7 @@ class BusquedaArticulosSubView(generics.ListAPIView):
                 'nombre_bien_espachado': bien.nombre,
                 'cantidad_despachada': cantidad_despachada,
                 'observaciones': observaciones,
+                'id_bodega': id_bodega,
                 'nombre_bodega': nombre_bodega
             }
 
@@ -2170,173 +2292,6 @@ class BusquedaArticulosSubView(generics.ListAPIView):
             # Si no se encontraron elementos, devolver respuesta de no encontrado
             return Response({'success': False, 'detail': 'No se encontraron items para este ID de bien.'}, status=status.HTTP_404_NOT_FOUND)
         
-        
-# class BusquedaArticulosSubView(generics.ListAPIView):
-#     def get(self, request, id_bien, *args, **kwargs):
-#         try:
-#             # Buscar coincidencias de registros en CatalogoBienes que tengan id_bien_padre igual a id_bien ingresado por el usuario
-#             catalogo_bienes = CatalogoBienes.objects.filter(id_bien_padre=id_bien)
-            
-#             # Inicializar una lista para almacenar los datos de inventario
-#             inventario_data = []
-            
-#             # Recorrer los registros encontrados en CatalogoBienes
-#             for bien in catalogo_bienes:
-#                 # Obtener el nombre de la bodega del modelo Inventario relacionada al id_bien actual
-#                 inventario = Inventario.objects.filter(id_bien=bien.id_bien)
-#                 if inventario.exists():
-#                     # Obtener la primera instancia de Inventario encontrada
-#                     inventario = inventario.first()
-#                     # Crear un diccionario con la información requerida
-#                     data = {
-#                         'Codigo_Bien_Solicitado': bien.codigo_bien,
-#                         'Nombre_Bien_Solicitado': bien.nombre,
-#                         'Cantidad_de_articulos_despachado': 1,
-#                         'Observaciones': bien.observaciones,
-#                         'Nombre_Bodega': inventario.id_bodega.nombre  # Acceder al atributo nombre del modelo Bodegas
-#                     }
-#                     # Agregar el diccionario a la lista de datos de inventario
-#                     inventario_data.append(data)
-            
-#             # Retornar los datos de inventario en forma de respuesta JSON con éxito y detalle
-#             return Response({'success': True, 'detail': 'Datos de inventario recuperados correctamente', 'data': inventario_data}, status=status.HTTP_200_OK)
-        
-#         except Exception as e:
-#             # En caso de error, retornar un mensaje de error con el estado HTTP 500
-#             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-# class CrearDespachoActivosView(generics.CreateAPIView):
-#     serializer_class = DespachoActivosSerializer
-
-#     def create(self, request, *args, **kwargs):
-#         # Obtener datos de la solicitud
-#         data = request.data
-#         fecha_solicitud = datetime.now()
-#         anexos = request.FILES.getlist('anexo_opcional')
-#         anexos_data = data.get('anexos')
-#         current_date = datetime.now()
-#         persona_despacha_id = request.user.id  # Suponiendo que el usuario se encuentra autenticado
-
-#         # Crear registro en T089DespachoActivos
-#         despacho_data = {
-#             'fecha_solicitud': fecha_solicitud,
-#             'fecha_despacho': fecha_solicitud,
-#             'id_persona_despacha': persona_despacha_id,
-#             'observacion': data.get('observacion'),
-#             'id_bodega_gral': data.get('id_bodega_gral'),
-#             'id_archivo_doc_recibido': data.get('id_archivo_doc_recibido')
-#         }
-#         despacho_serializer = DespachoActivosSerializer(data=despacho_data)
-#         despacho_serializer.is_valid(raise_exception=True)
-#         despacho_obj = despacho_serializer.save()
-
-#         if anexos_data and anexos:
-#             anexos_data = json.loads(data.get('anexos'))
-
-#             for index, (data_anexo, anexo) in enumerate(zip(anexos_data, anexos)):
-#                 cont = index + 1
-#                 # Validar formato de archivo
-#                 archivo_nombre = anexo.name 
-#                 nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
-#                 extension_sin_punto = extension[1:] if extension.startswith('.') else extension
-                
-#                 formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
-                
-#                 if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
-#                     raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
-                
-#                 # Crear archivo en T238
-#                 current_year = current_date.year
-#                 ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
-
-#                 md5_hash = hashlib.md5()
-#                 for chunk in anexo.chunks():
-#                     md5_hash.update(chunk)
-
-#                 md5_value = md5_hash.hexdigest()
-
-#                 data_archivo = {
-#                     'es_Doc_elec_archivo': True,
-#                     'ruta': ruta,
-#                     'md5_hash': md5_value
-#                 }
-                
-#                 archivo_class = ArchivosDgitalesCreate()
-#                 respuesta = archivo_class.crear_archivo(data_archivo, anexo)
-#                 # Crear registros en T087AnexosDocsAlma
-#                 if isinstance(data_anexo, dict):
-#                     data_anexo['id_archivo_doc_recibido'] = respuesta.data.get('data').get('id_archivo_doc_recibido')  # Cambiar nombre del campo
-                    
-#                     serializer_anexo = self.serializer_class(data=data_anexo)
-#                     serializer_anexo.is_valid(raise_exception=True)
-#                     serializer_anexo.save()
-        
-
-#         # Crear registro en T095AsignacionActivos
-#         asignacion_data = {
-#             'id_despacho_asignado': despacho_obj.id,
-#             'id_funcionario_res_asignado': data.get('id_funcionario_res_asignado'),
-#             'id_unidad_funcionario_res_asig': data.get('id_unidad_funcionario_res_asig'),
-#             'id_persona_operario_asig': data.get('id_persona_operario_asig'),
-#             'id_unidad_operario_asig': data.get('id_unidad_operario_asig'),
-#             'actual': True,
-#             'fecha_asignacion': fecha_solicitud
-#         }
-#         asignacion_serializer = AsignacionActivosSerializer(data=asignacion_data)
-#         asignacion_serializer.is_valid(raise_exception=True)
-#         asignacion_serializer.save()
-
-#         # Crear registros en T093Items_DespachoActivos
-#         items_despacho_data = []
-#         for item in data.get('items', []):
-#             item_despacho_data = {
-#                 'id_despacho_activo': despacho_obj.id,
-#                 'id_bien_despachado': item.get('id_bien_despachado'),
-#                 'id_bien_solicitado': item.get('id_bien_solicitado'),
-#                 'id_entrada_almacen_del_bien': item.get('id_entrada_almacen_del_bien'),
-#                 'id_bodega': item.get('id_bodega'),
-#                 'cantidad_solicitada': item.get('cantidad_solicitada'),
-#                 'id_unidad_medida_solicitada': item.get('id_unidad_medida_solicitada'),
-#                 'cantidad_despachada': item.get('cantidad_despachada'),
-#                 'fecha_devolucion': item.get('fecha_devolucion'),
-#                 'se_devolvio': False,
-#                 'observacion': item.get('observacion'),
-#                 'nro_posicion_en_despacho': item.get('nro_posicion_en_despacho')
-#             }
-#             items_despacho_data.append(item_despacho_data)
-
-#         items_despacho_serializer = ItemsDespachoActivosSerializer(data=items_despacho_data, many=True)
-#         items_despacho_serializer.is_valid(raise_exception=True)
-#         items_despacho_serializer.save()
-
-#         # Actualizar registros en T090SolicitudesActivos
-#         solicitud_id = data.get('id_solicitud_activo')
-#         if solicitud_id:
-#             with transaction.atomic():
-#                 solicitud = SolicitudesActivos.objects.select_for_update().get(id=solicitud_id)
-#                 solicitud.estado_solicitud = 'R'
-#                 solicitud.gestionada_alma = True
-#                 solicitud.save()
-
-#         # Actualizar registros en T062Articulos
-#                 articulos = Inventario.objects.filter(id_bien=solicitud.id_bien)
-#                 for articulo in articulos:
-#                     articulo.ubicacion_en_bodega = False
-#                     articulo.ubicacion_asignado = not solicitud.solicitud_prestamo
-#                     articulo.ubicacion_prestado = solicitud.solicitud_prestamo
-#                     articulo.id_persona_responsable = data.get('id_funcionario_res_asignado')
-#                     articulo.fecha_ultimo_movimiento = fecha_solicitud
-#                     articulo.tipo_doc_ultimo_movimiento = 'PRES' if solicitud.solicitud_prestamo else 'ASIG'
-#                 Inventario.objects.bulk_update(articulos, ['ubicacion_en_bodega', 
-#                                                            'ubicacion_asignado', 
-#                                                            'ubicacion_prestado', 
-#                                                            'id_persona_responsable', 
-#                                                            'fecha_ultimo_movimiento', 
-#                                                            'tipo_doc_ultimo_movimiento'])
-
-#         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
 
 
@@ -2381,7 +2336,8 @@ class CrearDespachoActivosView(generics.CreateAPIView):
             nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
             
-            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list('nombre', flat=True)
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+
             
             if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
                 raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
@@ -2405,9 +2361,8 @@ class CrearDespachoActivosView(generics.CreateAPIView):
             archivo_class = ArchivosDgitalesCreate()
             respuesta = archivo_class.crear_archivo(data_archivo, anexo)
 
+
             id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
-
-
 
 
         # Crear registro en T089DespachoActivos
@@ -2529,11 +2484,6 @@ class CrearDespachoActivosView(generics.CreateAPIView):
                 'observacion': bien_despachado.get('observacion'),
                 'nro_posicion_despacho': bien_despachado.get('nro_posicion_despacho')
             }
-            
-            print (item_despacho_data['id_bien_despachado'])
-            print (item_despacho_data['cantidad_despachada'])
-            print (item_despacho_data['id_bodega'])
-            print (item_despacho_data['observacion'])
             item_despacho_serializer = ItemsDespachoActivosSerializer(data=item_despacho_data)
             item_despacho_serializer.is_valid(raise_exception=True)
             item_despacho_serializer.save()
@@ -2546,32 +2496,365 @@ class CrearDespachoActivosView(generics.CreateAPIView):
             solicitud.gestionada_alma = True  # Actualizar gestionadaAlmacen a True
             solicitud.save()
 
-        # Obtener el ID de la bodega del despacho
-        id_bodega_despacho = despacho_data['id_bodega']
+        # # Obtener el ID de la bodega del despacho
+        # id_bodega_despacho = despacho_data['id_bodega']
 
-        # Realizar las actualizaciones en el modelo Inventario si existe id_bodega_despacho
-        if id_bodega_despacho:
-            inventarios = Inventario.objects.filter(id_bodega=id_bodega_despacho)
-            for inventario in inventarios:
-                # Actualizar los atributos según lo indicado
-                inventario.ubicacion_en_bodega = False
-                inventario.fecha_ultimo_movimiento = current_date
+        # # Realizar las actualizaciones en el modelo Inventario si existe id_bodega_despacho
+        # if id_bodega_despacho:
+        #     inventarios = Inventario.objects.filter(id_bodega=id_bodega_despacho)
+        #     for inventario in inventarios:
+        #         # Actualizar los atributos según lo indicado
+        #         inventario.ubicacion_en_bodega = False
+        #         inventario.fecha_ultimo_movimiento = current_date
 
-                # Verificar si la solicitud es de préstamo
-                if not solicitud_id or (solicitud_id and not solicitud.solicitud_prestamo):
-                    inventario.ubicacion_asignado = True
-                    tipo_doc_ultimo_movimiento = 'ASIG'
-                else:
-                    inventario.ubicacion_asignado = False
-                    tipo_doc_ultimo_movimiento = 'PRES'
+        #         # Verificar si la solicitud es de préstamo
+        #         if not solicitud_id or (solicitud_id and not solicitud.solicitud_prestamo):
+        #             inventario.ubicacion_asignado = True
+        #             tipo_doc_ultimo_movimiento = 'ASIG'
+        #         else:
+        #             inventario.ubicacion_asignado = False
+        #             tipo_doc_ultimo_movimiento = 'PRES'
 
-                # Guardar el ID de la persona responsable y el tipo de documento último movimiento
-                inventario.id_persona_responsable = funcionario_resp_asignado
-                inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
+        #         # Guardar el ID de la persona responsable y el tipo de documento último movimiento
+        #         inventario.id_persona_responsable = funcionario_resp_asignado
+        #         inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
 
-                # Guardar los cambios en el inventario
-                inventario.save()
+        #         # Guardar los cambios en el inventario
+        #         inventario.save()
             
+
+        return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
+    
+
+class CrearDespachoActivosSimSolicitudView(generics.CreateAPIView):
+    serializer_class = DespachoActivosSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        fecha_solicitud = datetime.now()
+        anexo = request.FILES.get('anexo_opcional')
+        current_date = datetime.now()
+        persona_despacha_id = self.request.user.persona.id_persona
+
+        
+       
+        id_archivo_doc_recibido = None
+
+        if anexo:
+
+            # Validar formato de archivo
+            archivo_nombre = anexo.name 
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+            
+            # Crear archivo en T238
+            current_year = current_date.year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            md5_hash = hashlib.md5()
+            for chunk in anexo.chunks():
+                md5_hash.update(chunk)
+
+            md5_value = md5_hash.hexdigest()
+
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value
+            }
+            
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+
+            id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
+
+
+        # Crear registro en T089DespachoActivos
+        despacho_data = {
+            'fecha_despacho': current_date,
+            'id_persona_despacha': persona_despacha_id,
+            'observacion': data.get('observacion'),
+            'estado_despacho': 'Ep',
+            'id_bodega': data.get('id_bodega'),
+            'id_archivo_doc_recibido': id_archivo_doc_recibido,  # Será actualizado después
+            'despacho_sin_solicitud': True,  
+            'id_persona_solicita': None 
+        }
+
+
+            
+        despacho_serializer = DespachoActivosCreateSerializer(data=despacho_data)
+        despacho_serializer.is_valid(raise_exception=True)
+        despacho_obj = despacho_serializer.save()
+    
+        # Obtener ID del responsable y del operario
+        id_funcionario_resp_asignado = data.get('id_funcionario_resp_asignado')
+        try:
+            funcionario_resp_asignado = Personas.objects.get(id_persona=id_funcionario_resp_asignado)
+            id_uni_org_funcionario_resp_asignado = funcionario_resp_asignado.id_unidad_organizacional_actual.id_unidad_organizacional
+        except Personas.DoesNotExist:
+            return Response({"success": False, 'detail': 'El usuario operario especificado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        id_persona_operario_asignado = data.get('id_persona_operario_asignado')
+        try:
+            persona_operario_asignado = Personas.objects.get(id_persona=id_persona_operario_asignado)
+            id_uni_org_operario_asignado = persona_operario_asignado.id_unidad_organizacional_actual.id_unidad_organizacional
+        except Personas.DoesNotExist:
+            return Response({"success": False, 'detail': 'El usuario operario especificado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        # Crear registro en T095AsignacionActivos
+        asignacion_data = {
+            'id_despacho_asignado': despacho_obj.id_despacho_activo,
+            'id_funcionario_resp_asignado': id_funcionario_resp_asignado,  # Suponiendo que responsable_id contiene el ID del responsable
+            'id_uni_org_funcionario_resp_asignado': id_uni_org_funcionario_resp_asignado,
+            'id_persona_operario_asignado': id_persona_operario_asignado,  # Suponiendo que operario_id contiene el ID del operario
+            'id_uni_org_operario_asignado': id_uni_org_operario_asignado,
+            'actual': True,
+            'fecha_asignacion': current_date,
+        }
+
+        asignacion_serializer = AsignacionActivosSerializer(data=asignacion_data)
+        asignacion_serializer.is_valid(raise_exception=True)
+        asignacion_obj = asignacion_serializer.save()
+
+        
+
+        # Obtener la lista de bienes despachados
+        bienes_despachados = data.get('bienes_despachados', [])
+
+        if not bienes_despachados:
+            raise ValidationError ("Debe enviar minimo 1 bien despachado.")
+        
+        bienes_despachados = json.loads(data.get('bienes_despachados'))
+
+        
+        bienes_no_despachados = [bien for bien in bienes_despachados if not bien['id_bien_despachado'] ]
+        if len(bienes_no_despachados) == len(bienes_despachados):
+            raise ValidationError("Debe realizar minimo tener un bien de despacho.")
+
+        # Iterar sobre cada bien despachado
+        for bien_despachado in bienes_despachados:
+            # Obtener el ID del bien despachado
+            id_bien_despachado = bien_despachado.get('id_bien_despachado')
+            
+            print(bien_despachado)
+            # Obtener el ID de la entrada del almacén del bien
+            entrada_almacen_del_bien_id = None
+            if id_bien_despachado:
+                try:
+                    # Suponiendo que existe un modelo T064Items_EntradaAlmacen para buscar la entrada del almacén del bien
+                    entrada_almacen = ItemEntradaAlmacen.objects.get(id_bien=id_bien_despachado)
+                    entrada_almacen_del_bien_id = entrada_almacen.id_entrada_almacen.id_entrada_almacen
+                    id_uni_medida_solicitada = entrada_almacen.id_bien.id_unidad_medida.id_unidad_medida
+                    
+                except ItemEntradaAlmacen.DoesNotExist:
+                    raise ValidationError ("No posee una entrada de almancen")
+
+            # Obtener la cantidad solicitada del modelo ItemsSolicitudActivos
+            cantidad_solicitada = None
+            fecha_devolucion = None        
+
+            # Crear el registro en T093Items_DespachoActivos
+            item_despacho_data = {
+                'id_despacho_activo': despacho_obj.id_despacho_activo,
+                'id_bien_solicitado': None,
+                'id_bien_despachado': id_bien_despachado,
+                'id_entrada_alma': entrada_almacen_del_bien_id,
+                'id_bodega': bien_despachado.get('id_bodega'),
+                'cantidad_solicitada': cantidad_solicitada,
+                'id_uni_medida_solicitada': id_uni_medida_solicitada,
+                'cantidad_despachada': 1 if id_bien_despachado else 0,
+                'fecha_devolucion': fecha_devolucion,
+                'se_devolvio': False,
+                'observacion': bien_despachado.get('observacion'),
+                'nro_posicion_despacho': bien_despachado.get('nro_posicion_despacho')
+            }
+            item_despacho_serializer = ItemsDespachoActivosSerializer(data=item_despacho_data)
+            item_despacho_serializer.is_valid(raise_exception=True)
+            item_despacho_serializer.save()
+            
+
+        return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
+
+#REASIGNACION_RESPONSABLE
+class InventarioPorPersonaResponsableView(generics.RetrieveAPIView):
+    serializer_class = InventarioSerializer
+
+    def get(self, request, *args, **kwargs):
+        # Obtener el id_persona de los parámetros de la URL
+        id_persona_responsable = self.kwargs.get('id_persona_responsable')
+
+        # Filtrar los registros de Inventario por el id_persona responsable
+        inventarios = Inventario.objects.filter(id_persona_responsable=id_persona_responsable)
+
+        # Verificar si se encontraron inventarios para la persona
+        if not inventarios:
+            return Response({'success': False, 'detail': 'No se encontraron inventarios para la persona especificada'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serializar los registros encontrados
+        serializer = self.serializer_class(inventarios, many=True)
+
+        # Retornar la respuesta con los datos procesados y el detalle de éxito
+        return Response({'success': True, 'detail': 'Inventarios encontrados', 'data': serializer.data})
+    
+
+
+class CrearReasginacionResponsableView(generics.CreateAPIView):
+    serializer_class = DespachoActivosSerializer
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        anexo = request.FILES.get('anexo_opcional')
+        current_date = datetime.now()
+        persona_despacha_id = self.request.user.persona.id_persona
+
+
+        id_archivo_doc_recibido = None
+
+        if anexo:
+
+            # Validar formato de archivo
+            archivo_nombre = anexo.name 
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+            
+            # Crear archivo en T238
+            current_year = current_date.year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            md5_hash = hashlib.md5()
+            for chunk in anexo.chunks():
+                md5_hash.update(chunk)
+
+            md5_value = md5_hash.hexdigest()
+
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value
+            }
+            
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+            id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
+
+
+        # Crear registro en T089DespachoActivos
+        despacho_data = {
+            'fecha_despacho': current_date,
+            'id_persona_despacha': persona_despacha_id,
+            'observacion': data.get('observacion'),
+            'estado_despacho': 'Ep',
+            'id_archivo_doc_recibido': id_archivo_doc_recibido,  # Será actualizado después
+            'despacho_sin_solicitud': True,  
+        }
+
+        despacho_serializer = DespachoActivosCreateSerializer(data=despacho_data)
+        despacho_serializer.is_valid(raise_exception=True)
+        despacho_obj = despacho_serializer.save()
+    
+        # Obtener ID del responsable y del operario
+        id_funcionario_resp_asignado = data.get('id_funcionario_resp_asignado')
+        try:
+            funcionario_resp_asignado = Personas.objects.get(id_persona=id_funcionario_resp_asignado)
+            id_uni_org_funcionario_resp_asignado = funcionario_resp_asignado.id_unidad_organizacional_actual.id_unidad_organizacional
+        except Personas.DoesNotExist:
+            return Response({"success": False, 'detail': 'El usuario operario especificado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        id_persona_operario_asignado = data.get('id_persona_operario_asignado')
+        try:
+            persona_operario_asignado = Personas.objects.get(id_persona=id_persona_operario_asignado)
+            id_uni_org_operario_asignado = persona_operario_asignado.id_unidad_organizacional_actual.id_unidad_organizacional
+        except Personas.DoesNotExist:
+            return Response({"success": False, 'detail': 'El usuario operario especificado no existe'}, status=status.HTTP_400_BAD_REQUEST)
+
+        
+        # Crear registro en T095AsignacionActivos
+        asignacion_data = {
+            'id_despacho_asignado': despacho_obj.id_despacho_activo,
+            'id_funcionario_resp_asignado': id_funcionario_resp_asignado,  # Suponiendo que responsable_id contiene el ID del responsable
+            'id_uni_org_funcionario_resp_asignado': id_uni_org_funcionario_resp_asignado,
+            'id_persona_operario_asignado': id_persona_operario_asignado,  # Suponiendo que operario_id contiene el ID del operario
+            'id_uni_org_operario_asignado': id_uni_org_operario_asignado,
+            'actual': True,
+            'fecha_asignacion': current_date,
+        }
+
+        asignacion_serializer = AsignacionActivosSerializer(data=asignacion_data)
+        asignacion_serializer.is_valid(raise_exception=True)
+        asignacion_obj = asignacion_serializer.save()
+
+        
+
+        # Obtener la lista de bienes despachados
+        bienes_despachados = data.get('bienes_despachados', [])
+
+        if not bienes_despachados:
+            raise ValidationError ("Debe enviar minimo 1 bien despachado.")
+        
+        bienes_despachados = json.loads(data.get('bienes_despachados'))
+
+        
+        bienes_no_despachados = [bien for bien in bienes_despachados if not bien['id_bien_despachado'] ]
+        if len(bienes_no_despachados) == len(bienes_despachados):
+            raise ValidationError("Debe realizar minimo tener un bien de despacho.")
+
+        # Iterar sobre cada bien despachado
+        for bien_despachado in bienes_despachados:
+            # Obtener el ID del bien despachado
+            id_bien_despachado = bien_despachado.get('id_bien_despachado')
+            
+            print(bien_despachado)
+            # Obtener el ID de la entrada del almacén del bien
+            entrada_almacen_del_bien_id = None
+            if id_bien_despachado:
+                try:
+                    # Suponiendo que existe un modelo T064Items_EntradaAlmacen para buscar la entrada del almacén del bien
+                    entrada_almacen = ItemEntradaAlmacen.objects.get(id_bien=id_bien_despachado)
+                    entrada_almacen_del_bien_id = entrada_almacen.id_entrada_almacen.id_entrada_almacen
+                    id_bodega_despachado = entrada_almacen.id_bodega.id_bodega
+                    id_uni_medida_solicitada = entrada_almacen.id_bien.id_unidad_medida.id_unidad_medida
+                except ItemEntradaAlmacen.DoesNotExist:
+                    raise ValidationError ("No posee una entrada de almancen")
+
+            # Obtener la cantidad solicitada del modelo ItemsSolicitudActivos
+            cantidad_solicitada = None
+            fecha_devolucion = None
+            observacion_item = None
+        
+            # Crear el registro en T093Items_DespachoActivos
+            item_despacho_data = {
+                'id_despacho_activo': despacho_obj.id_despacho_activo,
+                'id_bien_despachado': id_bien_despachado,
+                'id_entrada_alma': entrada_almacen_del_bien_id,
+                'id_bodega': id_bodega_despachado,
+                'cantidad_solicitada': cantidad_solicitada,
+                'id_uni_medida_solicitada': id_uni_medida_solicitada,
+                'cantidad_despachada': 1 if id_bien_despachado else 0,
+                'fecha_devolucion': fecha_devolucion,
+                'se_devolvio': False,
+                'observacion': observacion_item,
+                'nro_posicion_despacho': bien_despachado.get('nro_posicion_despacho')
+            }
+            item_despacho_serializer = ItemsDespachoActivosSerializer(data=item_despacho_data)
+            item_despacho_serializer.is_valid(raise_exception=True)
+            item_despacho_serializer.save()
 
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
