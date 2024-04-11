@@ -14,7 +14,7 @@ from almacen.serializers.hoja_de_vida_serializers import (
     SerializersPutHojaDeVidaOtrosActivos
     )   
 from almacen.models.hoja_de_vida_models import (
-    HojaDeVidaVehiculos, HojaDeVidaComputadores, HojaDeVidaOtrosActivos
+    DocumentosVehiculo, HojaDeVidaVehiculos, HojaDeVidaComputadores, HojaDeVidaOtrosActivos
     )   
 from almacen.models.bienes_models import (
     CatalogoBienes
@@ -34,6 +34,9 @@ from rest_framework.exceptions import ValidationError, PermissionDenied, NotFoun
 from rest_framework.permissions import IsAuthenticated
 from seguridad.utils import Util
 import copy
+
+from transversal.models.alertas_models import ConfiguracionClaseAlerta
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 
 class CreateHojaDeVidaComputadores(generics.CreateAPIView):
@@ -86,6 +89,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         serializer = self.serializer_class(data=data)
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
+
         if not articulo_existentes:
             raise ValidationError('El bien ingresado no existe')
         if articulo_existentes.cod_tipo_bien == 'C':
@@ -113,9 +117,39 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
-        
+
+
+    
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        instance =serializer.save()
+        #print(articulo_existentes)
+
+        #GENERACION DE ALERTA
+        documentos = DocumentosVehiculo.objects.filter(id_articulo=articulo_existentes)
+
+        conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta='Alm_VeDocV').first()
+        if conf :
+            crear_alerta=AlertasProgramadasCreate()
+            for documento in documentos:
+                data_alerta = {
+                'cod_clase_alerta':'Alm_VeDocV',
+                'dia_cumplimiento':documento.fecha_expiracion.day,
+                'mes_cumplimiento':documento.fecha_expiracion.month,
+                'age_cumplimiento':documento.fecha_expiracion.year,
+                #'complemento_mensaje':mensaje,
+                'id_elemento_implicado':instance.id_hoja_de_vida,
+                #'id_persona_implicada':persona.id_persona,
+                "tiene_implicado":False
+                }
+                #print( data_alerta )
+                response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+                if response_alerta.status_code!=status.HTTP_201_CREATED:
+                    return response_alerta
+                #print(response_alerta.data)
+        print(documentos)
+        #raise ValidationError("stop")
+
+
         return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class CreateHojaDeVidaOtros(generics.CreateAPIView):
