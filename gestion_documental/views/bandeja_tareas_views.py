@@ -1093,13 +1093,18 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
 
         
         orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).order_by('orden_en_expediente').last()
-        ultimo_orden = orden_expediente.orden_en_expediente
-        data_docarch['orden_en_expediente'] = ultimo_orden + 1
+        if orden_expediente != None:
+            ultimo_orden = orden_expediente.orden_en_expediente
+            data_docarch['orden_en_expediente'] = ultimo_orden + 1
+        else:
+            data_docarch['orden_en_expediente'] = 1
 
         if expediente.cod_tipo_expediente == "S":
             data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
         else:
-            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(10)}"
+            cantidad_digitos = 10 - len(str(expediente.codigo_exp_consec_por_agno))
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(cantidad_digitos)}"
+            print(len(data_docarch['identificacion_doc_en_expediente']))
 
         anexo = self.crear_pdf(solicitud_otros)
         ruta = os.path.join("home", "BIA", "Gestor", "GDEA", str(expediente.codigo_exp_Agno))
@@ -1283,13 +1288,17 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
 
         
             orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).order_by('orden_en_expediente').last()
-            ultimo_orden = orden_expediente.orden_en_expediente
-            data_docarch['orden_en_expediente'] = ultimo_orden + 1
+            if orden_expediente != None:
+                ultimo_orden = orden_expediente.orden_en_expediente
+                data_docarch['orden_en_expediente'] = ultimo_orden + 1
+            else:
+                data_docarch['orden_en_expediente'] = 1
 
             if expediente.cod_tipo_expediente == "S":
                 data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
             else:
-                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(10)}"
+                cantidad_digitos = 10 - len(str(expediente.codigo_exp_consec_por_agno))
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(cantidad_digitos)}"
 
         
             serializer = self.serializer_class(data=data_docarch)
