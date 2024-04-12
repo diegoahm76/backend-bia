@@ -385,6 +385,7 @@ class AsignacionTramites(models.Model):
     asignacion_de_ventanilla = models.BooleanField(db_column='T279asignacionDeVentanilla')
     id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_tramites')
     id_und_org_oficina_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgOficina_Asignada')
+    id_catalogo_serie_subserie = models.IntegerField(db_column='T279id_CatSeries_UndOrg_CCD', null=True, blank=True)
     class Meta:
         db_table = 'T279Asignacion_Tramites'
         unique_together = (('id_solicitud_tramite', 'consecutivo_asign_x_tramite'),)
