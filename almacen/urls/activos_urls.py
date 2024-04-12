@@ -70,6 +70,10 @@ urlpatterns = [
     #Reasignacion_Responsable
     path('busqueda-articulos-responsable/<int:id_persona_responsable>/', views.InventarioPorPersonaResponsableView.as_view(), name='busqueda-articulos-persona-responsable'),
     path('crear-reasginacion-responsable/create/', views.CrearReasginacionResponsableView.as_view(), name='crear-reasginacion-responsable-create'),
+    
+    #Autorizar_Despachos
+    path('despachos-autorizar/get/', views.DespachosAutorizarGet.as_view(), name='despachos-autorizar'),
+
 
 
 

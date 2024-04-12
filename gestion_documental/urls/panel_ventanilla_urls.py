@@ -102,6 +102,11 @@ urlpatterns = [
     path('asignar-tramites/historico-asignacion/get/<str:tra>/',views.AsignacionTramitesGet.as_view(),name='get-asignacion-tramites'),
 
 
+    #PARA LA CREACION DEL EXPEDIENTE
+    #SerieSubserioUnidadGet
+    path('serie-subserie-unidad/get/<str:uni>/', views.SerieSubserioUnidadGet.as_view(), name='listar-serie-subserio-unidad'),
+    
+
 
 
 
