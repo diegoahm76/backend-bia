@@ -251,6 +251,8 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_persona_despacha = serializers.SerializerMethodField()
     tipo_solicitud = serializers.SerializerMethodField()
+    numero_activos = serializers.SerializerMethodField()
+    id_funcionario_resp_asignado = serializers.SerializerMethodField()
 
     class Meta:
         model = DespachoActivos
@@ -281,6 +283,16 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         if not obj.id_solicitud_activo:
             # Si no hay una solicitud asociada, retornar 'Despacho sin solicitud'
             return 'Despacho sin solicitud'
+        
+    def get_numero_activos(self, instance):
+        # Obtener el número de activos relacionados con esta solicitud
+        return ItemsDespachoActivos.objects.filter(id_despacho_activo=instance).count()
+    
+    def get_id_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.id_persona
+        return None
         
 
     
