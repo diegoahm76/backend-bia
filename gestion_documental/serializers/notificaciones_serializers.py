@@ -451,10 +451,66 @@ class AnexosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer)
 class TiposAnexosSoporteSerializer(serializers.ModelSerializer):
     class Meta:
         model = TiposAnexosSoporte
-        fields = ('id_tipo_anexo', 'nombre_tipo_anexo')
+        fields = ('id_tipo_anexo_soporte', 'nombre')
 
 
 class CausasOAnomaliasSerializer(serializers.ModelSerializer):
     class Meta:
         model = CausasOAnomalias
-        fields = ('id_causa_o_anomalia', 'nombre_causa_o_anomalia')
+        fields = ('id_causa_o_anomalia', 'nombre')
+
+
+# class Algo(serializers.ModelSerializer):
+#     class Meta:
+#         model = TiposDocumentos
+#         fields = ('id_tipo_documento', 'nombre')
+        
+#     def algo(self, obj):
+#         print(obj)
+#         data = {
+#             "tipo_documento": 1,
+#             "id_expediente_documental": None,
+#             "id_solicitud_tramite": 1,
+#             "id_acto_administrativo": None,
+#             "procede_recurso_reposicion": True,
+#             "es_anonima": False,
+#             "asunto": "sadasdasdasdas",
+#             "descripcion": "sadasdasdsa",
+#             "id_persona_solicita": 1,
+#             "id_und_org_oficina_solicita": 815,
+#             "allega_copia_fisica": True,
+#             "cantidad_anexos": 4,
+#             "nro_folios_totales": 20,
+#             "requiere_digitalizacion": True,
+#             "datos_manual": True,
+#             "permite_notificacion_email": True,
+#             "cod_tipo_documentoID": "CC",
+#             "persona_a_quien_se_dirige": "brayan barragan",
+#             "nro_documentoID": 12345,
+#             "dir_notificacion_nal": "asdasdasdasdasda",
+#             "cod_municipio_notificacion_nal": "05001",
+#             "tel_fijo": 231333,
+#             "tel_celular": 4324324,
+#             "email_notificacion": "sdasdasdsadasd",
+#             "id_persona_notificada": 1,
+#             "anexos":[
+#                 {"nombre_anexo": "Nombre anexo",
+#                  "orden_anexo_doc": 0,
+#                  "cod_medio_almacenamiento": "Pa",
+#                  "medio_almacenamiento_otros_Cual": None,
+#                  "numero_folios": 0,
+#                  "ya_digitalizado": True,
+#                  "uso_del_documento": True,
+#                  "cod_tipo_documento": 1
+#                  },
+#                 {"nombre_anexo": "Nombre anexo 1",
+#                  "orden_anexo_doc": 0,
+#                  "cod_medio_almacenamiento": "Pa",
+#                  "medio_almacenamiento_otros_Cual": None,
+#                  "numero_folios": 0,
+#                  "ya_digitalizado": True,
+#                  "uso_del_documento": True,
+#                  "cod_tipo_documento": 1
+#                   }
+#             ]
+#         }
