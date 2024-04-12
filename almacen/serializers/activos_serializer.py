@@ -430,6 +430,14 @@ class AsignacionActivosSerializer(serializers.ModelSerializer):
     
 
 class ItemsDespachoActivosSerializer(serializers.ModelSerializer):
+    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    nombre_bodega_despachado = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    id_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.id_marca', default=None)
+    nombre_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)
+    nombre_uni_medida_solicitada = serializers.ReadOnlyField(source='id_uni_medida_solicitada.nombre', default=None)
+    abreviatura_uni_medida_solicitada = serializers.ReadOnlyField(source='id_uni_medida_solicitada.abreviatura', default=None)
+
     class Meta:
         model = ItemsDespachoActivos
         fields = '__all__'
@@ -439,7 +447,7 @@ class BusquedaArticuloSubSerializer(serializers.ModelSerializer):
     id_bien = serializers.ReadOnlyField(source='id_bien.id_bien', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
-    id_bien = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     class Meta:
         model = Inventario
