@@ -1054,6 +1054,8 @@ class RespuestaPQRSDFByPQR(generics.UpdateAPIView):
 
 class ArchiarSolicitudOtros(generics.UpdateAPIView):
     serializer_class = ArchivoSoporteSerializer
+    permission_classes = [IsAuthenticated]
+
     @transaction.atomic
     def post(self,request):
         data_in = request.data
@@ -1076,9 +1078,6 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
             "nro_folios_del_doc": data_in['nro_folios_del_doc'],
             "cod_origen_archivo": data_in['cod_origen_archivo'],
             "id_tipologia_documental": data_in['id_tipologia_documental'],
-            "codigo_tipologia_doc_prefijo": data_in['codigo_tipologia_doc_prefijo'],
-            "codigo_tipologia_doc_agno": data_in['codigo_tipologia_doc_agno'],
-            "codigo_tipologia_doc_consecutivo": data_in['codigo_tipologia_doc_consecutivo'],
             "es_un_archivo_anexo": False,
             "anexo_corresp_a_lista_chequeo": False,
             "cantidad_anexos": solicitud_otros.cantidad_anexos,
