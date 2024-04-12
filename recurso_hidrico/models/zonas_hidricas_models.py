@@ -57,4 +57,15 @@ class SubZonaHidrica(models.Model):
         verbose_name = 'Sub Zona Hidrica'
         verbose_name_plural = 'Sub Zona Hidricas'
         unique_together = ['nombre_sub_zona_hidrica', 'id_zona_hidrica','codigo_rio']
-        
+
+class CuencasSubZonas(models.Model):
+    id_cuenca = models.AutoField(primary_key=True, db_column="T625IdCuenca")
+    codigo_cuenca = models.CharField(max_length=10, db_column="T625codigoCuenca")
+    nombre_cuenca = models.CharField(max_length=100, db_column="T625nombreCuenca")
+    id_sub_zona_hidrica = models.ForeignKey(SubZonaHidrica, on_delete=models.CASCADE, db_column="T625Id_SubZonaHidrica")
+    
+    class Meta:
+        db_table = 'T625Cuencas'
+        verbose_name = 'Cuenca'
+        verbose_name_plural = 'Cuencas'
+        unique_together = ['codigo_cuenca', 'nombre_cuenca','id_sub_zona_hidrica']

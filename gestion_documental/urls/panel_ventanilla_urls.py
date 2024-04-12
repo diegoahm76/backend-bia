@@ -68,8 +68,11 @@ urlpatterns = [
     path('opas/anexo/documento/get/<str:pk>/',views.OPASAnexoDocumentoDigitalGet.as_view(),name='get-opas-anexo'),
     path('opas/anexo-documento/meta-data/get/<str:pk>/',views.OPAAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
     path('opas/requerimiento/get/<str:tra>/', views.RespuestaRequerimientoOpaGet.as_view(), name='get-requerimiento-opa'),#RESPUESTA DE LOS REQUERIMIENTOS
+
+    #SolicitudDeDigitalizacionRequerimientoOpaCreate
+    path('opas/requerimiento/respuesta/solicitud/digitalizacion/create/', views.SolicitudDeDigitalizacionRequerimientoOpaCreate.as_view(), name='crear-solicitud-digitalizacion-create-respuesta-requerimiento'),
     #RequerimientoOpaPut
-    path('opas/respuesta-requerimiento/continuar-asignacion/',views.RequerimientoOpaPut.as_view(),name='continuar-asignacion-opa'),
+    path('opas/respuesta-requerimiento/continuar-asignacion/<str:pk>/',views.RequerimientoOpaPut.as_view(),name='continuar-asignacion-opa'),
     # OTROS
     path('otros/get/', views.OtrosGet.as_view(),name='listar-otros'),
     path('otros/estados_solicitudes/get/', views.OtrosEstadosSolicitudesGet.as_view(),name='listar-estados-solicitud-otros'),
@@ -100,6 +103,11 @@ urlpatterns = [
     path('asignar-tramites/asignacion/create/',views.AsignacionTramiteSubseccionOGrupo.as_view(),name='crear-asignacion-tramites'),
     path('asignar-tramites/historico-asignacion/get/<str:tra>/',views.AsignacionTramitesGet.as_view(),name='get-asignacion-tramites'),
 
+
+    #PARA LA CREACION DEL EXPEDIENTE
+    #SerieSubserioUnidadGet
+    path('serie-subserie-unidad/get/<str:uni>/', views.SerieSubserioUnidadGet.as_view(), name='listar-serie-subserio-unidad'),
+    
 
 
 

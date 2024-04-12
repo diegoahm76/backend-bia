@@ -11,6 +11,7 @@ urlpatterns = [
     path('catalogo-bienes/get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificador.as_view(),name='get-by-nombre-nroidentificador'),
     path('catalogo-bienes/validar-codigo/<str:nivel>/<str:codigo_bien>/',views.ValidacionCodigoBien.as_view(),name='validar-codigo'),
     path('catalogo-bienes/busqueda-articulo-activo/',views.BusquedaAvanzadaCatalogoBienes.as_view(),name='get-by-articulo'),
+    path('catalogo-bienes/busqueda-articulo-activo-despacho/',views.BusquedaAvanzadaCatalogoBienesDespacho.as_view(),name='get-by-articulo-despacho'),
 
     #Catalogo Bienes Y
     path('catalogo-bienes-generador-codigo/', views.GeneradorCodigoCatalogo.as_view(), name='catalogo-bienes-generador-codigo'),

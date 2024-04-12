@@ -488,15 +488,128 @@ class Anexos_TramitresAnexosGetSerializer(serializers.ModelSerializer):
         return "Archivo"
 
 
+
+#COMPLEMENTOS DE UNA TAREA OPA
+class AdicionalesDeTareasopaGetByTareaSerializer(serializers.ModelSerializer):
+    tipo = serializers.SerializerMethodField()
+    titular = serializers.SerializerMethodField()
+    descripcion = serializers.ReadOnlyField(source='id_respuesta_requerimiento.descripcion',default=None)
+    cantidad_anexos = serializers.ReadOnlyField(source='id_complemento_usu_pqr.cantidad_anexos',default=None)
+    radicado = serializers.SerializerMethodField(default=None)
+    fecha_radicado = serializers.SerializerMethodField(default=None)
+    class Meta:
+        model = AdicionalesDeTareas
+      
+        fields =['id_adicional_de_tarea','id_respuesta_requerimiento','tipo','titular','descripcion','cantidad_anexos','radicado','fecha_radicado','fecha_de_adicion']
+
+    def get_tipo(self,obj):
+
+
+        return 'Respuesta a Solicitud'
+
+    
+    def get_titular(self, obj):
+        respuesta = obj.id_respuesta_requerimiento
+        if not respuesta:
+            return None
+        tramite = respuesta.id_solicitud_tramite
+     
+        nombre_completo_responsable = None
+        nombre_list = [tramite.id_persona_titular.primer_nombre, tramite.id_persona_titular.segundo_nombre,
+                        tramite.id_persona_titular.primer_apellido, tramite.id_persona_titular.segundo_apellido]
+        nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
+    def get_radicado(self, obj):
+        respuesta = obj.id_respuesta_requerimiento
+        tramite = respuesta.id_solicitud_tramite
+        cadena = ""
+        if tramite.id_radicado:
+            #radicado = obj.id_solicitud_tramite.id_radicado
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=tramite.id_radicado.agno_radicado,cod_tipo_radicado=tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+
+    def get_fecha_radicado(self, obj):
+        respuesta = obj.id_respuesta_requerimiento
+        tramite = respuesta.id_solicitud_tramite
+        
+        if tramite.id_radicado:
+            return tramite.id_radicado.fecha_radicado
+        return None
+
+class AnexoArchivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = ['nombre_de_Guardado','ruta_archivo']
+class AnexosRespuestaRequerimientosGetSerializer(serializers.ModelSerializer):
+
+    medio_almacenamiento = serializers.CharField(source='get_cod_medio_almacenamiento_display', default=None)
+    archivo = serializers.SerializerMethodField()
+  
+    class Meta:
+        model = Anexos
+        fields = '__all__'  
+
+    def get_archivo(self,obj):
+        id_anexo = obj.id_anexo
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=id_anexo).first()
+        if meta_data:
+            data_archivo  = AnexoArchivoSerializer(meta_data.id_archivo_sistema)
+            data ={'nombre_archivo':meta_data.nombre_original_archivo,'ruta':data_archivo.data['ruta_archivo']}
+            return data
+        return None
+
+
+
 #RESPUESTA OPA
+
+class RespuestaOpaTramiteCreateserializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaOPA
+        fields = '__all__'
+
+class RespuestaOPAGetSerializer(serializers.ModelSerializer):
+    radicado = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaOPA
+        fields = '__all__'
+
+    def get_radicado(self, obj):
+        cadena = "SIN RADICAR"
+        if obj.id_radicado_salida:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_radicado_salida.agno_radicado,cod_tipo_radicado=obj.id_radicado_salida.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_radicado_salida.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_radicado_salida.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        return cadena
+#RESPUESTA REQUERIMIENTO OPA
+
 class RequerimientosOpaTramiteCreateserializer(serializers.ModelSerializer):
     class Meta:
         model = Requerimientos
         fields = '__all__'
-
-
-#RESPUESTA REQUERIMIENTO OPA
 class RespuestaRequerimientoOPACreateserializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestasRequerimientos
         fields = '__all__'
+
+
+class RespuestasOPAGetSeralizer(serializers.ModelSerializer):
+    persona_responde = serializers.SerializerMethodField()
+    class Meta:
+        model = RespuestaOPA
+        fields = ['id_respuesta_opa','fecha_respuesta','persona_responde']
+
+    def get_persona_responde(self, obj):
+        persona = obj.id_persona_responde
+        nombre_completo = None
+        if persona:
+
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+            return nombre_completo.upper()
+        

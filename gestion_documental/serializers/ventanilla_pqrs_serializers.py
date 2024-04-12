@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas
+from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
@@ -638,6 +639,20 @@ class Anexos_PQRCreateSerializer(serializers.ModelSerializer):
         model = Anexos_PQR
         fields = '__all__'
 
+class CatalogosSeriesUnidadGetSerializer(serializers.ModelSerializer):
+
+
+    id_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.id_serie_doc',default=None)
+    cod_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.codigo',default=None)
+    nombre_serie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_serie_doc.nombre',default=None)
+    id_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.id_subserie_doc',default=None)
+    cod_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.codigo',default=None)
+    nombre_subserie_doc=serializers.ReadOnlyField(source='id_catalogo_serie.id_subserie_doc.nombre',default=None)
+    class Meta:
+        model = CatalogosSeriesUnidad
+        fields = ['id_cat_serie_und','id_serie_doc','cod_serie_doc','nombre_serie_doc','id_subserie_doc','cod_subserie_doc','nombre_subserie_doc']
+
+
 class SolicitudAlUsuarioSobrePQRSDFGetSerializer(serializers.ModelSerializer):
     tipo_tramite = serializers.SerializerMethodField()
     numero_radicado = serializers.SerializerMethodField()
@@ -1023,14 +1038,31 @@ class RespuestasRequerimientosPutGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = RespuestasRequerimientos
         fields = '__all__'
+
+
+class RespuestasRequerimientosPutSerializer(serializers.ModelSerializer):
+
+
+    class Meta:
+        model = RespuestasRequerimientos
+        fields = '__all__'
 class RespuestasRequerimientosOpaGetSerializer(serializers.ModelSerializer):
 
     tipo = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField()
     nombre_persona_responde = serializers.SerializerMethodField()
+
+    numero_solicitudes_digitalizacion = serializers.SerializerMethodField()
     class Meta:
         model = RespuestasRequerimientos
         fields = '__all__'
+
+    def get_numero_solicitudes_digitalizacion(self,obj):
+        
+        numero_solicitudes = SolicitudDeDigitalizacion.objects.filter(id_respuesta_requerimiento=obj).count()
+        return numero_solicitudes
+    
+
 
     def get_tipo(self,obj):
         return "Respuesta Requerimiento"

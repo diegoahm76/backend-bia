@@ -14,7 +14,6 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.models.radicados_models import Anexos, T262Radicados
 from tramites.models import ActosAdministrativos, SolicitudesTramites
 
- 
 
 class NotificacionesCorrespondencia(models.Model):
     id_notificacion_correspondencia = models.SmallAutoField(primary_key=True, db_column='T350IdNotificacionCorrespondencia')
@@ -51,6 +50,7 @@ class NotificacionesCorrespondencia(models.Model):
     id_persona_asignada = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_PersonaAsignada',related_name='T350IdPersonaAsignada')
     cod_estado_asignacion = models.CharField(choices=ESTADO_ASIGNACION_CHOICES, max_length=2, null=True, db_column='T350codEstadoAsignacion')
     fecha_eleccion_estado = models.DateTimeField(null=True, db_column='T350fechaEleccionEstado')
+    justificacion_rechazo_asignacion = models.CharField(max_length=250, null=True, db_column='T350justificacionRechazoAsignacion')
     requiere_digitalizacion = models.BooleanField(null=True, db_column='T350requiereDigitalizacion')
     fecha_envio_definitivo_a_digitalizacion = models.DateTimeField(null=True, db_column='T350fechaEnvioDefinitivoADigitalizacion')
     fecha_digitalizacion_completada = models.DateTimeField(null=True, db_column='T350fechaDigitalizacionCompletada')
@@ -90,6 +90,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
     id_persona_asignada = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_PersonaAsignada',related_name='T352IdPersonaAsignada')
     cod_estado_asignacion = models.CharField(choices=ESTADO_ASIGNACION_CHOICES, max_length=2, null=True, db_column='T352codEstadoAsignacion')
     fecha_eleccion_estado = models.DateTimeField(null=True, db_column='T352fechaEleccionEstado')
+    justificacion_rechazo_asignacion = models.CharField(max_length=250, null=True, db_column='T352justificacionRechazoAsignacion')
     cantidad_anexos = models.SmallIntegerField(null=True, db_column='T352cantidadAnexos')
     nro_folios_totales = models.SmallIntegerField(null=True, db_column='T352nroFoliosTotales')
     requiere_digitalizacion = models.BooleanField(null=True, db_column='T352requiereDigitalizacion')
@@ -100,6 +101,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
     fecha_radicado_salida = models.DateTimeField(null=True, db_column='T352fechaRadicadoSalida')
     fecha_inicial_registro = models.DateTimeField(db_column='T352fechaInicialRegistro')
     fecha_final_registro = models.DateTimeField(null=True, db_column='T352fechaFinalRegistro')
+    cod_estado = models.CharField(choices=cod_estado_noti_CHOICES, max_length=2, db_column='T352codEstado')
     id_persona_finaliza_registro = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_PersonaFinalizaRegistro',related_name='T352IdPersonaFinalizaRegistro')
     id_estado_actual_registro = models.ForeignKey('EstadosNotificacionesCorrespondencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_EstadoActualRegistro',related_name='T352IdEstadoActualRegistro')
     id_doc_de_arch_exp = models.ForeignKey(DocumentosDeArchivoExpediente, on_delete=models.SET_NULL, null=True, blank=True, db_column='T352Id_DocDeArch_Exp',related_name='T352IdDocDeArchExp')
@@ -110,7 +112,7 @@ class Registros_NotificacionesCorrespondecia(models.Model):
 
 class AsignacionNotificacionCorrespondencia(models.Model):
     idAsignacion_noti_corr = models.SmallAutoField(primary_key=True, db_column='T351IdAsignacion_Noti_Corr')
-    id_notificacion_correspondencia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.CASCADE, db_column='T350Id_NotificacionCorrespondencia',related_name='T351Id_NotificacionCorrespondencia')
+    id_notificacion_correspondencia = models.ForeignKey('NotificacionesCorrespondencia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T350Id_NotificacionCorrespondencia',related_name='T351Id_NotificacionCorrespondencia')
     id_orden_notificacion = models.ForeignKey('Registros_NotificacionesCorrespondecia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T351Id_OrdenNotificacion',related_name='T351Id_OrdenNotificacion')
     fecha_asignacion = models.DateTimeField(db_column='T351fechaAsignacion')
     id_persona_asigna = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T351Id_PersonaAsigna',related_name='T351IdPersonaAsigna')
@@ -164,6 +166,9 @@ class Anexos_NotificacionesCorrespondencia(models.Model):
     id_persona_anexa_documento = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T353Id_PersonaAnexaDocumento',related_name='T353Id_PersonaAnexaDocumento')
     fecha_anexo = models.DateTimeField(db_column='T353fechaAnexo')
     id_causa_o_anomalia = models.ForeignKey('CausasOAnomalias', on_delete=models.SET_NULL, null=True, blank=True, db_column='T353Id_CausaOAnomalia',related_name='T353Id_CausaOAnomalia')
+    link_publicacion = models.CharField(max_length=255, null=True, blank=True, db_column='T353linkPublicacion')
+    observaciones = models.CharField(max_length=255, null=True, blank=True, db_column='T353observaciones')
+    usuario_notificado = models.BooleanField(db_column='T353usuarioNotificado')
     id_anexo = models.ForeignKey('gestion_documental.Anexos', on_delete=models.CASCADE, db_column='T353Id_Anexo',related_name='T353Id_Anexo')
 
     class Meta:
@@ -212,6 +217,9 @@ class TiposDocumentos(models.Model):
     nombre = models.CharField(max_length=255, db_column='T359nombre')
     aplica_para_notificaciones = models.BooleanField(db_column='T359aplicaParaNotificaciones')
     aplica_para_correspondencia = models.BooleanField(db_column='T359aplicaParaCorrespondencia')
+    aplica_para_publicaciones = models.BooleanField(db_column='T359aplicaParaPublicaciones')
+    aplica_para_comunicaciones = models.BooleanField(db_column='T359aplicaParaComunicaciones')
+    aplica_para_notificaciones_publicaciones = models.BooleanField(db_column='T359aplicaParaNotificacionesPublicaciones')
     registro_precargado = models.BooleanField(db_column='T359registroPrecargado')
     activo = models.BooleanField(db_column='T359activo')
     item_ya_usado = models.BooleanField(db_column='T359itemYaUsado')

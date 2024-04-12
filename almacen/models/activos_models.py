@@ -141,8 +141,8 @@ class DespachoActivos(models.Model):
     observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T089observacion")
     id_persona_solicita = models.ForeignKey(Personas, related_name='id_persona_despacho_solicita', blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_PersonaSolicita')
     id_uni_org_solicitante = models.ForeignKey(UnidadesOrganizacionales, related_name='id_uni_org_despacho_solicitante',blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_UnidadOrgSolicitante')
-    id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T089Id_BodegaGral')
-    despacho_anulado = models.BooleanField(db_column="T089despachoAnulado")
+    id_bodega = models.ForeignKey(Bodegas, blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_BodegaGral')
+    despacho_anulado = models.BooleanField(default=False, db_column="T089despachoAnulado")
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column="T089justificacionAnulacion")
     fecha_anulacion = models.DateTimeField(blank=True, null=True,db_column='T089fechaAnulacion')
     id_persona_anula = models.ForeignKey(Personas, related_name='id_persona_despacho_anula', blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_PersonaAnula')
@@ -184,7 +184,7 @@ class ItemsDespachoActivos(models.Model):
     id_bien_solicitado = models.ForeignKey(CatalogoBienes, related_name='id_bien_despacho', blank=True, null=True, on_delete=models.SET_NULL, db_column='T093Id_BienSolicitado')
     id_entrada_alma = models.ForeignKey(EntradasAlmacen, blank=True, null=True, on_delete=models.SET_NULL, db_column='T093Id_EntradaAlmacenDelBien')
     id_bodega = models.ForeignKey(Bodegas, related_name='id_bodega_despacho', blank=True, null=True, on_delete=models.SET_NULL, db_column='T093Id_Bodega')
-    cantidad_solicitada = models.SmallIntegerField(db_column="T093cantidadSolicitada")
+    cantidad_solicitada = models.SmallIntegerField( blank=True, null=True, db_column="T093cantidadSolicitada")
     fecha_devolucion = models.DateTimeField(blank=True, null=True, db_column='T093fechaDevolucion')
     se_devolvio = models.BooleanField(db_column="T093seDevolvio")
     id_uni_medida_solicitada = models.ForeignKey(UnidadesMedida, blank=True, null=True, on_delete=models.SET_NULL, db_column='T093Id_UnidadMedidaSolicitada')
@@ -233,7 +233,7 @@ class DevolucionActivos(models.Model):
     devolucion_anulada = models.BooleanField(db_column="T092devolucionAnulada")
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column="T092justificacionAnulacion")
     fecha_anulacion = models.DateTimeField(blank=True, null=True, db_column='T092fechaAnulacion')
-    id_persona_anulacion = models.ForeignKey(Personas, related_name='id_persona_que_anula', on_delete=models.CASCADE, db_column='T092Id_PersonaQueAnula')
+    id_persona_anulacion = models.ForeignKey(Personas,blank=True, null=True, related_name='id_persona_que_anula', on_delete=models.SET_NULL, db_column='T092Id_PersonaQueAnula')
 
     def __str__(self):
         return str(self.id_devolucion_activos)
@@ -248,7 +248,7 @@ class DevolucionActivos(models.Model):
 class ActivosDevolucionados(models.Model):
     id_activo_devolucionado = models.AutoField(primary_key=True, db_column="T096IdActivoDevolucionado")
     id_devolucion_activo = models.ForeignKey(DevolucionActivos, on_delete=models.CASCADE, db_column='T096Id_DevolucionActivo')
-    id_item_despacho_activo = models.ForeignKey(DespachoActivos, on_delete=models.CASCADE, db_column='T096Id_ItemDespachoActivo')
+    id_item_despacho_activo = models.ForeignKey(ItemsDespachoActivos, on_delete=models.CASCADE, db_column='T096Id_ItemDespachoActivo')
     cod_estado_activo_devolucion = models.ForeignKey(EstadosArticulo, on_delete=models.CASCADE, db_column='T096Cod_EstadoActivoDevol')
     justificacion_activo_devolucion = models.CharField(max_length=255, blank=True, null=True, db_column="T096justificacionActivoDevol")
 
