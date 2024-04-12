@@ -1093,17 +1093,15 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
 
         
         orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).order_by('orden_en_expediente').last()
-        print(orden_expediente.orden_en_expediente)
         ultimo_orden = orden_expediente.orden_en_expediente
         data_docarch['orden_en_expediente'] = ultimo_orden + 1
 
         if expediente.cod_tipo_expediente == "S":
-            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(ultimo_orden).zfill(10)}"
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
         else:
-            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(ultimo_orden).zfill(10)}"
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(10)}"
 
         anexo = self.crear_pdf(solicitud_otros)
-        print(anexo)
         ruta = os.path.join("home", "BIA", "Gestor", "GDEA", str(expediente.codigo_exp_Agno))
 
         md5_hash = hashlib.md5()
@@ -1120,7 +1118,6 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
             
         archivo_class = ArchivosDgitalesCreate()
         respuesta = archivo_class.crear_archivo(data_archivo, anexo)
-        print(respuesta.data.get('data'))
 
         data_docarch['id_archivo_sistema'] = respuesta.data.get('data').get('id_archivo_digital')
 
@@ -1148,8 +1145,6 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
 
         doc_indice = self.crear_indice(data_indice)
         serializer.data['indice'] = doc_indice
-        #id_doc_archivo = serializer.data['id_documento_de_archivo_exped']
-        print(instance)
         solicitud_otros.id_documento_archivo_expediente = instance
         solicitud_otros.id_expediente_documental = expediente
         solicitud_otros.save()
@@ -1257,7 +1252,6 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
             info_metadatos = MetadatosAnexosTmp.objects.filter(id_anexo=anexo.id_anexo.id_anexo).first()
 
             archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=info_metadatos.id_archivo_sistema.id_archivo_digital).first()
-            print(info_metadatos.fecha_creacion_doc)
             data_docarch = {
             "nombre_asignado_documento": info_metadatos.nombre_original_archivo,
             "fecha_creacion_doc": info_metadatos.fecha_creacion_doc,
@@ -1293,10 +1287,11 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
             data_docarch['orden_en_expediente'] = ultimo_orden + 1
 
             if expediente.cod_tipo_expediente == "S":
-                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(ultimo_orden).zfill(10)}"
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
             else:
-                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(ultimo_orden).zfill(10)}"
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(10)}"
 
+        
             serializer = self.serializer_class(data=data_docarch)
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
@@ -1320,8 +1315,7 @@ class ArchiarSolicitudOtros(generics.UpdateAPIView):
             }
 
             doc_indice = self.crear_indice(data_indice)
-
-            info_anexo.id_docu_arch_exp = serializer.data['id_documento_de_archivo_exped']
+            info_anexo.id_docu_arch_exp = instance
             info_anexo.save()
 
             info_metadatos.delete()
