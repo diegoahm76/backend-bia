@@ -232,7 +232,7 @@ class MetadatosAnexosTmp(models.Model):
     id_metadatos_anexo_tmp = models.AutoField(primary_key=True, db_column='T260IdMetadatos_Anexo_Tmp')
     id_anexo = models.ForeignKey(Anexos, on_delete=models.CASCADE, db_column='T260Id_Anexo')
     nombre_original_archivo = models.CharField(max_length=50, db_column='T260nombreOriginalDelArchivo', null=True)
-    fecha_creacion_doc = models.DateField(db_column='T260fechaCreacionDoc', null=True)
+    fecha_creacion_doc = models.DateTimeField(db_column='T260fechaCreacionDoc', null=True)
     descripcion = models.CharField(max_length=500, db_column='T260descripcion', null=True)
     asunto = models.CharField(max_length=150, db_column='T260asunto', null=True)
     cod_categoria_archivo = models.CharField(max_length=2, choices=tipo_archivo_CHOICES, db_column='T260codCategoriaArchivo', null=True)
