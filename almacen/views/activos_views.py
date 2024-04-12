@@ -2146,7 +2146,6 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
         # Obtener los parámetros de la consulta
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
-        persona_responsable = self.request.query_params.get('persona_responsable')
         estado_despacho = self.request.query_params.get('estado_despacho')
 
         # Construir el queryset inicial filtrando los despachos por persona y despacho sin solicitud
@@ -2157,8 +2156,6 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
             queryset = queryset.filter(fecha_despacho__gte=fecha_desde)
         if fecha_hasta:
             queryset = queryset.filter(fecha_despacho__lte=fecha_hasta)
-        if persona_responsable:
-            queryset = queryset.filter(id_persona_despacha=persona_responsable)
         if estado_despacho:
             queryset = queryset.filter(estado_despacho=estado_despacho)
 
@@ -2167,12 +2164,69 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
+        serializer_data = serializer.data
+
+        id_funcionario_resp_asignado = request.query_params.get('id_funcionario_resp_asignado')
+        if id_funcionario_resp_asignado:
+            serializer_data = [despacho for despacho in serializer_data if str(despacho.get("id_funcionario_resp_asignado")) == str(id_funcionario_resp_asignado)]
+
         data = {
             'success': True,
             'detail': 'Despachos sin solicitud obtenidos correctamente.',
-            'data': serializer.data
+            'data': serializer_data
         }
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)  
+    
+
+
+class DespachosAutorizarGet(generics.ListAPIView):
+    serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Obtener el usuario logueado actualmente
+        usuario_actual = self.request.user
+
+        # Obtener el ID de la persona asociada al usuario
+        persona_logueada = usuario_actual.persona.id_persona
+
+        asignaciones_activos = AsignacionActivos.objects.filter(id_funcionario_resp_asignado=persona_logueada)
+
+        # Obtener los parámetros de la consulta
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        estado_despacho = self.request.query_params.get('estado_despacho')
+        id_persona_solicita = self.request.query_params.get('id_persona_solicita')
+
+        # Construir el queryset inicial filtrando los despachos por las asignaciones de activos del usuario logueado
+        queryset = DespachoActivos.objects.filter(id_despacho_activo__in=asignaciones_activos)
+
+        # Aplicar filtros adicionales si se proporcionan
+        if fecha_desde:
+            queryset = queryset.filter(fecha_despacho__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_despacho__lte=fecha_hasta)
+        if estado_despacho:
+            queryset = queryset.filter(estado_despacho=estado_despacho)
+        if id_persona_solicita:
+            queryset = queryset.filter(id_persona_solicita=id_persona_solicita)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        serializer_data = serializer.data
+
+
+        data = {
+            'success': True,
+            'detail': 'Despachos sin solicitud obtenidos correctamente.',
+            'data': serializer_data
+        }
+        return Response(data, status=status.HTTP_200_OK)  
+      
+    
     
 
     
