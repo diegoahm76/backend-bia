@@ -167,6 +167,8 @@ class PermisosAmbientales(models.Model):
     cod_tipo_permiso_ambiental = models.CharField(max_length=1, choices=cod_tipo_permiso_ambiental_CHOICES, db_column='T281codTipoPermisoAmbiental')
     nombre = models.CharField(max_length=250, db_column='T281nombre')
     tiene_pago = models.BooleanField(default=True, db_column='T281tienePago')
+    item_ya_usado = models.BooleanField(default=False, db_column='T281itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T281registroPrecargado')
 
     def __str__(self):
         return str(self.id_permiso_ambiental)

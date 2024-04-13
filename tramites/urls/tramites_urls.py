@@ -22,4 +22,10 @@ urlpatterns = [
 
     #Consulta_Estado_Solicitud_OPAS_130
     path('opa/tramites/consulta-estado-opas/', views.ConsultaEstadoOPAS.as_view(), name='listar-OPAS-solicitud'),
+
+    #Tipos Tramites CRUD
+    path('tipos/filter/get/', views.GetTiposTramitesByFilterView.as_view(), name='tipos-tramites-get-by-filter'),
+    path('tipos/create/', views.CreateTiposTramitesView.as_view(), name='tipos-tramites-create'),
+    path('tipos/update/<str:pk>/', views.UpdateTiposTramitesView.as_view(), name='tipos-tramites-update'),
+    path('tipos/delete/<str:pk>/', views.DeleteTiposTramitesView.as_view(), name='tipos-ramites-delete'),
 ]
