@@ -1,7 +1,7 @@
 import psycopg2
-import pyodbc
 import os
 from dotenv import load_dotenv
+import pymssql
 
 # Cargar variables de entorno desde el archivo .env
 load_dotenv()
@@ -10,7 +10,7 @@ load_dotenv()
 def consultar_tabla_mssql():
     try: 
         # Intentar establecer la conexión MS SQL Server
-        conn_mssql = pyodbc.connect(
+        conn_mssql = pymssql.connect(
             'DRIVER={SQL Server};'
             'SERVER=200.10.29.112;'
             'DATABASE=PIMISYS;'
@@ -325,7 +325,50 @@ def consultar_tabla_mssql():
         """
         cursor.execute(select_query_916)
         column_data_916 = cursor.fetchall()
-        
+
+
+   # Consultar los datos 
+        select_query_954 = """
+        SELECT 
+        T954CodCia,
+        T954IdCobro,
+        T954CodTipoRenta,
+        T954CodTipoCobro,
+        T954Nit,
+        T954Liquidado,
+        T954NumLiquidacion,
+        T954SeCobra,
+        T954CodOrigenCobro,
+        T954NumOrigenCobro,
+        T954IdPaso,
+        T954ConsecPaso,
+        T954NumNotificacion,
+        T954Anulado,
+        T954TUATM,
+        T954TUAFR,
+        T954TUAVALORTUA,
+        T954TRTMDBO,
+        T954TRTMSST,
+        T954TRFRDBO,
+        T954TRFRSST,
+        T954TRVALORTRDBO,
+        T954TRVALORTRSST,
+        T954TRCANTPERANIDBO,
+        T954TRCANTPERANISST,
+        T954TRTIENEPSMV,
+        T954TUAPORCDCTO,
+        T954TUANORMADCTO,
+        T954TUAUSARVMANUAL,
+        T954REPLEGALIMPORTAD,
+        T954TSETVB,
+        T954TRAPLICADCTO465
+
+    FROM
+        T954COBRO    
+        """
+        cursor.execute(select_query_954)
+        column_data_954 = cursor.fetchall()
+
 
 
         # #Mostrar los datos obtenidos
@@ -387,7 +430,7 @@ def consultar_tabla_mssql():
         conn_mssql.close()
 
         # Retornar los datos obtenidos
-        return column_data_970, column_data_987, select_query_986 ,column_data_985,column_data_982,column_data_981,column_data_980,column_data_956,column_data_904,column_data_914,column_data_913,column_data_915,column_data_916
+        return column_data_970, column_data_987, select_query_986 ,column_data_985,column_data_982,column_data_981,column_data_980,column_data_956,column_data_904,column_data_914,column_data_913,column_data_915,column_data_916,column_data_954
 
     except Exception as e:
         # Manejar errores de conexión
@@ -397,7 +440,7 @@ def consultar_tabla_mssql():
 
 
 
-def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 ,data_981 ,data_980,data_956,data_904,data_914,data_913,data_915,data_916):
+def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 ,data_981 ,data_980,data_956,data_904,data_914,data_913,data_915,data_916,data_954):
     try:
         # Intentar establecer la conexión PostgreSQL
         conn_postgresql = psycopg2.connect(
@@ -427,6 +470,7 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         cursor.execute("DELETE FROM rt913recaudo")
         cursor.execute("DELETE FROM rt915distribucionliq")
         cursor.execute("DELETE FROM rt916distribucioncuot")
+        cursor.execute("DELETE FROM rt954cobro")
 
 
 
@@ -765,6 +809,54 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
           cursor.execute(insert_query_916, dato_916)
 
 
+
+        insert_query_954 = """
+       INSERT INTO rt954cobro  (
+        t954codcia,
+        t954idcobro,
+        t954codtiporenta,
+        t954codtipocobro,
+        t954nit,
+        t954liquidado,
+        t954numliquidacion,
+        t954secobra,
+        t954codorigencobro,
+        t954numorigencobro,
+        t954idpaso,
+        t954consecpaso,
+        t954numnotificacion,
+        t954anulado,
+        t954tuatm,
+        t954tuafr,
+        t954tuavalortua,
+        t954trtmdbo,
+        t954trtmsst,
+        t954trfrdbo,
+        t954trfrsst,
+        t954trvalortrdbo,
+        t954trvalortrsst,
+        t954trcantperanidbo,
+        t954trcantperanisst,
+        t954trtienepsmv,
+        t954tuaporcdcto,
+        t954tuanormadcto,
+        t954tuausarvmanual,
+        t954replegalimportad,
+        t954tsetvb,
+        t954traplicadcto465
+        
+       
+    ) 
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+"""
+
+          #Insertar cada dato en la tabla t981tuaactividad
+        for dato_954 in data_954:
+          dato_954 = tuple(None if val is None else val for val in dato_954)
+          cursor.execute(insert_query_954, dato_954)
+
+
+
         # Confirmar la transacción
         conn_postgresql.commit()
         print("Datos insertados correctamente en PostgreSQL")
@@ -783,8 +875,8 @@ def extraccion_pimisis_job():
     load_dotenv()
 
     # Obtener los datos de las columnas T970TRAMITE, T987TRVERTIMIENTO y T986TRACTIVIDAD
-    datos_970, datos_987, datos_986 , datos_985 , datos_982 , datos_981 , datos_980 , datos_956 , datos_904 ,datos_914 ,datos_913 ,datos_915,datos_916 = consultar_tabla_mssql()
+    datos_970, datos_987, datos_986 , datos_985 , datos_982 , datos_981 , datos_980 , datos_956 , datos_904 ,datos_914 ,datos_913 ,datos_915,datos_916,datos_954 = consultar_tabla_mssql()
     
     # Insertar los datos en PostgreSQL
-    if datos_970 and datos_987 and datos_986 and datos_985 and datos_982 and datos_981 and datos_980 and datos_956 and datos_904 and datos_914 and datos_913 and datos_915 and datos_916:
-        insertar_datos_postgresql(datos_970, datos_987,datos_986,datos_985 ,datos_982 ,datos_981,datos_980 ,datos_956,datos_904 ,datos_914,datos_913,datos_915,datos_916)
+    if datos_970 and datos_987 and datos_986 and datos_985 and datos_982 and datos_981 and datos_980 and datos_956 and datos_904 and datos_914 and datos_913 and datos_915 and datos_916 and datos_954:
+        insertar_datos_postgresql(datos_970, datos_987,datos_986,datos_985 ,datos_982 ,datos_981,datos_980 ,datos_956,datos_904 ,datos_914,datos_913,datos_915,datos_916,datos_954)
