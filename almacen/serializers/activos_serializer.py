@@ -16,7 +16,9 @@ class InventarioSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     identificador_bien = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
+    estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
 
@@ -35,6 +37,9 @@ class InventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inventario
         fields = '__all__'
+
+
+
 
 
 class RegistrarBajaCreateSerializer(serializers.ModelSerializer):
@@ -242,86 +247,71 @@ class AlmacenistaLogueadoSerializer(serializers.ModelSerializer):
         
 
 class DespachoActivosSerializer(serializers.ModelSerializer):
-    persona_despacha = serializers.SerializerMethodField()
-    bodega = serializers.SerializerMethodField()
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    nombre_persona_despacha = serializers.SerializerMethodField()
     tipo_solicitud = serializers.SerializerMethodField()
-    fecha_solicitud = serializers.SerializerMethodField()
+    numero_activos = serializers.SerializerMethodField()
+    id_funcionario_resp_asignado = serializers.SerializerMethodField()
 
     class Meta:
         model = DespachoActivos
-        fields = ['id_despacho_activo', 'fecha_despacho', 'persona_despacha', 'bodega', 'observacion', 'tipo_solicitud', 'fecha_solicitud']
+        fields = '__all__'
 
-    def get_persona_despacha(self, obj):
-        persona_despacha = obj.id_persona_despacha
-        if persona_despacha:
-            return f"{persona_despacha.primer_nombre} {persona_despacha.segundo_nombre} {persona_despacha.primer_apellido} {persona_despacha.segundo_apellido}"
-        return "Desconocido"
+    def get_nombre_persona_despacha(self, obj):
+        nombre_persona_despacha = None
+        if obj.id_persona_despacha:
+            nombre_list = [obj.id_persona_despacha.primer_nombre, obj.id_persona_despacha.segundo_nombre,
+                            obj.id_persona_despacha.primer_apellido, obj.id_persona_despacha.segundo_apellido]
+            nombre_persona_despacha = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_despacha = nombre_persona_despacha if nombre_persona_despacha != "" else None
+        return nombre_persona_despacha
+    
+    def get_tipo_solicitud(self,obj):
+        # Verificar si el despacho no tiene solicitud (despacho_sin_solicitud es True)
+        if obj.despacho_sin_solicitud :
+            return 'Despacho sin solicitud'
 
-    def get_bodega(self, obj):
-        bodega = obj.id_bodega
-        if bodega:
-            return bodega.nombre
-        return "Desconocido"
+        if obj.id_solicitud_activo and not obj.despacho_sin_solicitud:
 
-    def get_tipo_solicitud(self, obj):
-        if obj.despacho_sin_solicitud:
-            return "Despacho sin solicitud"
-        else:
-            if obj.id_solicitud_activo:
-                if obj.id_solicitud_activo.solicitud_prestamo:
-                    return "Despacho con solicitud de préstamo"
-                else:
-                    return "Despacho con solicitud ordinaria"
-        return "Desconocido"
-
-    def get_fecha_solicitud(self, obj):
-        if obj.despacho_sin_solicitud:
-            return "No aplica"
-        else:
-            if obj.id_solicitud_activo:
-                return obj.id_solicitud_activo.fecha_solicitud
+            solicitud_prestamo = obj.id_solicitud_activo.solicitud_prestamo
+            if not solicitud_prestamo:
+                return 'Despacho con solicitud ordinaria'
+            else:
+                return 'Despacho con solicitud de prestamo'
+            
+        if not obj.id_solicitud_activo:
+            # Si no hay una solicitud asociada, retornar 'Despacho sin solicitud'
+            return 'Despacho sin solicitud'
+        
+    def get_numero_activos(self, instance):
+        # Obtener el número de activos relacionados con esta solicitud
+        return ItemsDespachoActivos.objects.filter(id_despacho_activo=instance).count()
+    
+    def get_id_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.id_persona
         return None
         
 
+    
+
+
 class ActivosDespachadosDevolucionSerializer(serializers.ModelSerializer):
-    codigo_activo = serializers.SerializerMethodField()
-    nombre_activo = serializers.SerializerMethodField()
-    marca_activo = serializers.SerializerMethodField()
-    identificador_activo = serializers.SerializerMethodField()
-    nombre_bodega = serializers.SerializerMethodField()
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    id_bien = serializers.ReadOnlyField(source='id_bien_despachado.id_bien', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)
+    identificador_activo = serializers.ReadOnlyField(source='id_bien_despachado.doc_identificador_nro', default=None)
 
     class Meta:
         model = ItemsDespachoActivos
-        fields = (
-            'codigo_activo',
-            'nombre_activo',
-            'marca_activo',
-            'identificador_activo',
-            'nombre_bodega',
-            'nro_posicion_en_despacho',
-            'cantidad_solicitada',
-            'cantidad_despachada',
-            'fecha_devolucion',
-            'observacion',
-        )
+        fields = '__all__'
 
-    def get_codigo_activo(self, obj):
-        return obj.id_bien_despachado.codigo_bien if obj.id_bien_despachado else None
 
-    def get_nombre_activo(self, obj):
-        return obj.id_bien_despachado.nombre if obj.id_bien_despachado else None
-
-    def get_marca_activo(self, obj):
-        if obj.id_bien_despachado and obj.id_bien_despachado.id_marca:
-            return obj.id_bien_despachado.id_marca.nombre
-        else:
-            return None
-
-    def get_identificador_activo(self, obj):
-        return obj.id_bien_despachado.doc_identificador_nro if obj.id_bien_despachado else None
-
-    def get_nombre_bodega(self, obj):
-        return obj.id_bodega.nombre if obj.id_bodega else None
     
 class EstadosArticuloSerializer(serializers.ModelSerializer):
     class Meta:
@@ -330,6 +320,8 @@ class EstadosArticuloSerializer(serializers.ModelSerializer):
 
 
 class ActivosDevolucionadosSerializer(serializers.ModelSerializer):
+    cod_estado_nombre = serializers.ReadOnlyField(source='cod_estado_activo_devolucion.nombre', default=None)
+
     class Meta:
         model = ActivosDevolucionados
         fields = '__all__'
@@ -340,18 +332,49 @@ class AnexoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DevolucionActivosSerializer(serializers.ModelSerializer):
-    activos_devueltos = ActivosDevolucionadosSerializer(many=True)
-
+    nombre_persona_devolucion = serializers.SerializerMethodField()
+    nombre_persona_anulacion = serializers.SerializerMethodField()
     class Meta:
         model = DevolucionActivos
         fields = '__all__'
+    
+    def get_nombre_persona_devolucion(self, obj):
+        nombre_persona_devolucion = None
+        persona_devolucion = obj.id_persona_devolucion
+        if persona_devolucion:
+            nombre_list = [persona_devolucion.primer_nombre, persona_devolucion.segundo_nombre,
+                           persona_devolucion.primer_apellido, persona_devolucion.segundo_apellido]
+            nombre_persona_devolucion = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_devolucion = nombre_persona_devolucion if nombre_persona_devolucion != "" else None
+        return nombre_persona_devolucion
+    
+    def get_nombre_persona_anulacion(self, obj):
+        nombre_persona_anulacion = None
+        persona_anulacion = obj.id_persona_anulacion
+        if persona_anulacion:
+            nombre_list = [persona_anulacion.primer_nombre, persona_anulacion.segundo_nombre,
+                           persona_anulacion.primer_apellido, persona_anulacion.segundo_apellido]
+            nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
+        return nombre_persona_anulacion
 
-    def create(self, validated_data):
-        activos_devueltos_data = validated_data.pop('activos_devueltos')
-        devolucion = DevolucionActivos.objects.create(**validated_data)
-        for activo_devuelto_data in activos_devueltos_data:
-            ActivosDevolucionados.objects.create(devolucion_activo=devolucion, **activo_devuelto_data)
-        return devolucion
+class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
+    nombre_proveedor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EntradasAlmacen
+        fields = ['id_proveedor', 'nombre_proveedor']
+
+    def get_nombre_proveedor(self, obj):
+        nombre_proveedor = None
+        proveedor = obj.id_proveedor
+        if proveedor:
+            nombre_list = [proveedor.primer_nombre, proveedor.segundo_nombre,
+                           proveedor.primer_apellido, proveedor.segundo_apellido]
+            nombre_proveedor = ' '.join(item for item in nombre_list if item is not None)
+            nombre_proveedor = nombre_proveedor if nombre_proveedor != "" else None
+        return nombre_proveedor
+
     
 class ItemEntradaAlmacenSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
@@ -407,6 +430,14 @@ class AsignacionActivosSerializer(serializers.ModelSerializer):
     
 
 class ItemsDespachoActivosSerializer(serializers.ModelSerializer):
+    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    nombre_bodega_despachado = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    id_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.id_marca', default=None)
+    nombre_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)
+    nombre_uni_medida_solicitada = serializers.ReadOnlyField(source='id_uni_medida_solicitada.nombre', default=None)
+    abreviatura_uni_medida_solicitada = serializers.ReadOnlyField(source='id_uni_medida_solicitada.abreviatura', default=None)
+
     class Meta:
         model = ItemsDespachoActivos
         fields = '__all__'
@@ -416,7 +447,7 @@ class BusquedaArticuloSubSerializer(serializers.ModelSerializer):
     id_bien = serializers.ReadOnlyField(source='id_bien.id_bien', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
-    id_bien = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     class Meta:
         model = Inventario

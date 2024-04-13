@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 from recaudo.models.liquidaciones_models import LiquidacionesBase
 from recaudo.models.pagos_models import Pagos
-from recaudo.serializers.pagos_serializers import InicioPagoSerializer
+from recaudo.serializers.pagos_serializers import ConsultarPagosSerializer, InicioPagoSerializer
 from transversal.models.personas_models import Personas
 load_dotenv()
 
@@ -130,7 +130,9 @@ class IniciarPagoView(generics.CreateAPIView):
             redirect_url = f"https://www.zonapagos.com/{os.environ.get('ZPAGOS_CODIGO_RUTA')}/pago.asp?estado_pago=iniciar_pago&identificador={id_transaccion}"
 
             # AÑADIR SONDA
+            print("SCHEDULER: ", scheduler)
             if scheduler:
+                print("ENTRÓ A SONDA")
                 execution_time = datetime.now() + timedelta(minutes=10)
                 scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
@@ -143,7 +145,7 @@ class VerificarPagoView(generics.CreateAPIView):
     
     def create(self, request):
         id_pago = request.query_params.get('id_pago')
-        id_comercio = request.query_params.get('id_comercio', os.environ.get('ZPAGOS_ID_TIENDA'))
+        id_comercio = request.query_params.get('idcomercio', os.environ.get('ZPAGOS_ID_TIENDA'))
         if not id_pago:
             raise ValidationError('El ID de la transacción es requerido')
 
@@ -225,8 +227,6 @@ class VerificarPagoView(generics.CreateAPIView):
 class NotificarPagoView(generics.CreateAPIView):
 
     def create(self, request):
-        print("ENTRO AL SERVICIO DE NOTIFICAR PAGO")
-        print("LOS PARAMS ENVIADOS SON: ", request.query_params)
         id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
 
@@ -254,12 +254,38 @@ class NotificarPagoView(generics.CreateAPIView):
                     pago.notificacion = True
                     pago.save()
                 else:
-                    url_get_pimysis = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
+                    url_get_pimisys = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
                     params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
                     # ENVIAR NOTIFICACION A PIMYSIS
-                    notificacion_pimysis = requests.get(url_get_pimysis, params=params)
+                    notificacion_pimisys = requests.get(url_get_pimisys, params=params)
+                    print("NOTIFICACION PIMISYS: ", notificacion_pimisys)
         else:
             raise ValidationError("Ocurrió un error en la verificación del pago")
 
         return Response({'success':True, 'detail':'Estado del pago actualizado correctamente'}, status=status.HTTP_201_CREATED)
+    
+class ConsultarPagosView(generics.ListAPIView):
+    queryset = Pagos.objects.all()
+    serializer_class = ConsultarPagosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        params = request.query_params
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key in ['id_persona_pago', 'id_liquidacion', 'estado_pago']:
+                if value != '':
+                    filter[key] = value
+            if key == 'fecha_inicio':
+                if value != '':
+                    filter['fecha_pago__date__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_pago__date__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+
+        pagos = self.queryset.filter(**filter)
+        serializer_pagos = self.serializer_class(pagos, many=True)
+
+        return Response({'success':True, 'detail':'Se encontraron los siguientes pagos', 'data':serializer_pagos.data}, status=status.HTTP_200_OK)

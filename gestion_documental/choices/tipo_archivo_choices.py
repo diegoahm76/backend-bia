@@ -1,11 +1,12 @@
 tipo_archivo_CHOICES = (
-    ('Tx', 'Texto'), 
-    ('Im', 'Imagen'), 
-    ('Au', 'Audio'), 
-    ('Vd', 'Video'), 
-    ('Mp', 'Modelado de Procesos'), 
-    ('Ge', 'Geoespacial'), 
-    ('Bd', 'Base de Datos'), 
-    ('Pw', 'Páginas Web'), 
-    ('Ce', 'Correo Electrónico')
+    ('TX', 'Texto'),
+    ('IM', 'Imagen'),
+    ('AU', 'Audio'),
+    ('VD', 'Video'),
+    ('MP', 'Modelado de Procesos'),
+    ('GE', 'Geoespacial'),
+    ('CP', 'Compresión'),
+    ('BD', 'Base de Datos'),
+    ('PW', 'Páginas Web'),
+    ('CE', 'Correo Electrónico'),
 )

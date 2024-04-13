@@ -55,12 +55,12 @@ def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
 	verificar_pago = VerificarPagoView()
 	request.query_params._mutable = True
 
-	# id_comercio = request.query_params.get('id_comercio')
-	# id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA'))
-
+	request.query_params['id_pago'] = id_pago
 	response_pago = verificar_pago.create(request)
+	print("LLEGÓ A LA SONDA")
  
 	if response_pago.status_code == 201:
+		print("VERIFICACION DE PAGO CORRECTO EN SONDA")
 		response_pago_data = response_pago.data.get('data').get('res_pago')[0]
 		estado_pago = response_pago_data.get('int_estado_pago').strip()
 		medio_pago = response_pago_data.get('int_id_forma_pago').strip()

@@ -167,6 +167,8 @@ class PermisosAmbientales(models.Model):
     cod_tipo_permiso_ambiental = models.CharField(max_length=1, choices=cod_tipo_permiso_ambiental_CHOICES, db_column='T281codTipoPermisoAmbiental')
     nombre = models.CharField(max_length=250, db_column='T281nombre')
     tiene_pago = models.BooleanField(default=True, db_column='T281tienePago')
+    item_ya_usado = models.BooleanField(default=False, db_column='T281itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T281registroPrecargado')
 
     def __str__(self):
         return str(self.id_permiso_ambiental)
@@ -313,7 +315,7 @@ class RespuestasRequerimientos(models.Model):
     id_radicado = models.ForeignKey(T262Radicados, on_delete=models.SET_NULL, blank=True, null=True, db_column='T291Id_Radicado')
     fecha_radicado = models.DateTimeField(blank=True, null=True, db_column='T291fechaRadicado')
     complemento_asignado_unidad = models.BooleanField(db_column='T291RequerimientoAsignadoAUndOrg',default=False)
-
+    requiere_digitalizacion = models.BooleanField(db_column='T291requiereDigitalizacion',null=True)
     def __str__(self):
         return str(self.id_respuesta_requerimiento)
 

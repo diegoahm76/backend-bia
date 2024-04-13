@@ -24,7 +24,7 @@ from django.db.models import Q
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionTramites, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
 from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites, Tramites
-from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, OPASSerializer, PersonaTitularInfoGetSerializer, TramiteListGetSerializer
+from tramites.serializers.tramites_serializers import AnexosGetSerializer, AnexosUpdateSerializer, GeneralTramitesGetSerializer, GetTiposTramitesSerializer, InicioTramiteCreateSerializer, ListTramitesGetSerializer, OPASSerializer, PersonaTitularInfoGetSerializer, PostTiposTramitesSerializer, TramiteListGetSerializer
 from transversal.models.base_models import Municipio
 from transversal.models.personas_models import Personas
 from jobs.updater import scheduler
@@ -914,3 +914,80 @@ class AnexosMetadatosUpdateView(generics.UpdateAPIView):
         serializer_get = self.serializer_get_class(anexos_instances, many=True, context={'request': request})
         
         return Response({'success':True, 'detail':'Anexos procesados correctamente', 'data':serializer_get.data}, status=status.HTTP_201_CREATED)
+
+# CRUD TIPOS TRAMITES
+class GetTiposTramitesByFilterView(generics.ListAPIView):
+    serializer_class = GetTiposTramitesSerializer
+    queryset = PermisosAmbientales.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter={}
+        
+        for key,value in request.query_params.items():
+            if key == 'nombre':
+                filter[key+'__icontains'] = value
+            elif key == 'tiene_pago':
+                filter[key] = True if value.lower() == 'true' else False
+            else:
+                if value != '':
+                    filter[key]=value
+        
+        tipos_tramites = self.queryset.filter(**filter)
+        serializador = self.serializer_class(tipos_tramites, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)
+
+class CreateTiposTramitesView(generics.CreateAPIView):
+    serializer_class =  PostTiposTramitesSerializer
+    queryset = PermisosAmbientales.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+
+        serializador = self.serializer_class(data=data)
+        serializador.is_valid(raise_exception=True)
+        serializador.save()
+        return Response({'success':True, 'detail':'Se ha creado el tipo de tramite', 'data':serializador.data}, status=status.HTTP_201_CREATED)
+
+class UpdateTiposTramitesView(generics.RetrieveUpdateAPIView):
+    serializer_class = PostTiposTramitesSerializer
+    queryset = PermisosAmbientales.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data=request.data
+        tipo_tramite = self.queryset.filter(id_permiso_ambiental=pk).first()
+        if tipo_tramite:
+            if tipo_tramite.registro_precargado:
+                raise PermissionDenied('No se puede actualizar el tipo de tramite de un registro precargado.')
+            if tipo_tramite.item_ya_usado:
+                raise PermissionDenied('No se puede actualizar el tipo de tramite porque se encuentra en uso.')
+            
+            serializer = self.serializer_class(tipo_tramite, data=data, many=False, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success':True, 'detail':'Tipo tramite actualizado exitosamente','data':serializer.data}, status=status.HTTP_201_CREATED)
+
+        else:
+            raise NotFound('No existe el tipo de tramite')
+
+class DeleteTiposTramitesView(generics.DestroyAPIView):
+    serializer_class = GetTiposTramitesSerializer
+    queryset = PermisosAmbientales.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        tipo_tramite = self.queryset.filter(id_permiso_ambiental=pk).first()
+        if tipo_tramite:
+            if not tipo_tramite.registro_precargado:
+                if tipo_tramite.item_ya_usado:
+                    raise PermissionDenied('Este tipo de tramite ya está siendo usado, no se pudo eliminar')
+
+                tipo_tramite.delete()
+                return Response({'success':True, 'detail':'Este tipo de tramite ha sido eliminado exitosamente'}, status=status.HTTP_200_OK)
+            else:
+                raise PermissionDenied('No puedes eliminar un tipo de tramite precargado')
+        else:
+            raise NotFound('No existe el tipo de tramite')

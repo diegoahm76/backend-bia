@@ -85,10 +85,16 @@ urlpatterns = [
     path('opa/requerimiento/tramite/get/<str:tra>/', views_opas.RequerimientosTramiteGetByTramiteOPA.as_view(), name='get-requerimiento-opa-tramite'),
     path('opa/requerimiento/anexo/get/<str:re>/', views_opas.AnexosRequerimientoGetByRequerimiento.as_view(), name='get-anexos-requerimiento'),
 
-    #RESPUESTA A LA OPA
+
     path('opa/respuesta/create/', views_opas.RespuestaOpaTramiteCreate.as_view(), name='crear-respuesta-opa-tramite'),
     path('opa/respuesta/get/<str:tra>/', views_opas.RespuestaOpaGet.as_view(), name='get-respuesta-opa-tramite'),
     path('opa/respuesta/anexo/get/<str:pk>/', views_opas.RespestaOpasInfoAnexosGet.as_view(), name='get-anexos-respuesta'),
     
+    #RespuestaPQRSDFByTra
+    path('opa/respuesta/detalle/get/<str:tra>/', views_opas.RespuestaPQRSDFByTra.as_view(), name='get-respuesta-pqrsdf'),
+
+    #Archivar Otros
+
+    path('archivar/otros/create/', views.ArchiarSolicitudOtros.as_view(), name='crear-archivar-otros'),
     
 ]
