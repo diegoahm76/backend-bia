@@ -21,6 +21,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from gestion_documental.views.bandeja_tareas_views import MetadatosAnexosTmpCreate
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from gestion_documental.views.pqr_views import AnexosCreate, AnexosDelete, AnexosUpdate, RadicadoCreate, Util_PQR
+from gestion_documental.views.bandeja_tareas_views import AnexosCreate  as AnexosBandejaCreate
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
@@ -713,7 +714,7 @@ class RespuestaRequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
     serializer_class_anexo_pqr = Anexos_RequerimientoCreateSerializer
     queryset = SolicitudAlUsuarioSobrePQRSDF.objects.all()
     vista_estados = Estados_PQRCreate()
-    vista_anexos = AnexosCreate()
+    vista_anexos =  AnexosBandejaCreate()
     vista_archivos = ArchivosDgitalesCreate()
     vista_meta_dato = MetadatosAnexosTmpCreate()
     permission_classes = [IsAuthenticated]
@@ -760,10 +761,10 @@ class RespuestaRequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
                 data_archivos.append(respuesta_archivo.data['data'])
                 contador = contador+1
         for i in range(archivos_blancos):
-            print("SI TIENE")
             anexo_temporal = json_anexos[contador]
 
             json_anexos[contador]['ya_digitalizado'] = False
+            
             meta_dato = anexo_temporal['meta_data']
             info_archivo = {}
             info_archivo['Nombre del Anexo'] = anexo_temporal['nombre_anexo']

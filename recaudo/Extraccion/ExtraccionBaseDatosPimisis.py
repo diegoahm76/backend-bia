@@ -1,5 +1,5 @@
 # import psycopg2
-# #import pyodbc
+import pyodbc
 # import os
 # from dotenv import load_dotenv
 
