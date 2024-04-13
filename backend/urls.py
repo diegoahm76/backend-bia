@@ -112,9 +112,8 @@ urlpatterns = [
     path('api/gestor/notificaciones/',include('gestion_documental.urls.notificaciones_urls')),
     #reporte_indices_pqrsdf_urls
     path('api/gestor/reporte_indices_pqrsdf/', include('gestion_documental.urls.reporte_indices_pqrsdf_urls')),
-    
-    # PAGOS
-    path('api/gestor/pagos/',include('gestion_documental.urls.pagos_urls')),
+       
+    path('api/gestor/solicitudes/', include('gestion_documental.urls.solicitudes_OPAS_urls')),
     
     #ALMACEN
     path('api/almacen/hoja-de-vida/', include('almacen.urls.hoja_de_vida_urls')),
@@ -157,6 +156,10 @@ urlpatterns = [
     path("api/estaciones/parametros/",include('estaciones.urls.parametros_urls')),
     path("api/estaciones/historial/",include('estaciones.urls.historial_alertas_urls')),
     path("api/estaciones/migracion/",include('estaciones.urls.migracion_estaciones_urls')),
+    
+    # PAGOS
+    path('api/recaudo/choices/',include('recaudo.urls.choices_urls')),
+    path('api/recaudo/pagos/',include('recaudo.urls.pagos_urls')),
 
     #FACILIDADES PAGOS
     path('api/recaudo/planes-pagos/', include('recaudo.urls.planes_pagos_urls')),
@@ -188,6 +191,7 @@ urlpatterns = [
     path('api/tramites/',include('tramites.urls.tramites_urls')),
     path('api/tramites/choices/',include('tramites.urls.choices_urls')),
     path('api/tramites/listas/',include('tramites.urls.listas_urls')),
+    path('api/tramites/respuesta_requerimiento_opa/',include('tramites.urls.respuesta_requerimiento_opa_urls'))
 
 
     

@@ -1,8 +1,12 @@
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario, TiposEntradas
-from almacen.models.generics_models import Marcas, UnidadesMedida
-from almacen.models.activos_models import AnexosDocsAlma, BajaActivos, ItemsBajaActivos, ArchivosDigitales, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
+from almacen.models.generics_models import Bodegas, Marcas, UnidadesMedida
+from almacen.models.activos_models import ActivosDevolucionados, AnexosDocsAlma, AsignacionActivos, BajaActivos, DespachoActivos, DevolucionActivos, ItemsBajaActivos, ArchivosDigitales, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
 from transversal.models.base_models import ClasesTerceroPersona
+from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas, EstadosArticulo
+from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVidaOtrosActivos, HojaDeVidaVehiculos, DocumentosVehiculo
+from gestion_documental.models.radicados_models import PQRSDF, Anexos
+from seguridad.models import Personas
 from rest_framework import serializers
 
 
@@ -217,3 +221,211 @@ class SalidasEspecialesArticulosSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return SalidasEspecialesArticulos.objects.create(**validated_data)
+    
+
+class AlmacenistaLogueadoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Personas
+        fields = ['id_persona', 
+                  'tipo_documento', 
+                  'numero_documento', 
+                  'primer_nombre',
+                  'segundo_nombre',
+                  'primer_apellido',
+                  'segundo_apellido', 
+                  'tipo_persona',
+                  'telefono_celular',  
+                  'telefono_empresa',  
+                  'email',  
+                  'email_empresarial']
+        
+
+class DespachoActivosSerializer(serializers.ModelSerializer):
+    persona_despacha = serializers.SerializerMethodField()
+    bodega = serializers.SerializerMethodField()
+    tipo_solicitud = serializers.SerializerMethodField()
+    fecha_solicitud = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DespachoActivos
+        fields = ['id_despacho_activo', 'fecha_despacho', 'persona_despacha', 'bodega', 'observacion', 'tipo_solicitud', 'fecha_solicitud']
+
+    def get_persona_despacha(self, obj):
+        persona_despacha = obj.id_persona_despacha
+        if persona_despacha:
+            return f"{persona_despacha.primer_nombre} {persona_despacha.segundo_nombre} {persona_despacha.primer_apellido} {persona_despacha.segundo_apellido}"
+        return "Desconocido"
+
+    def get_bodega(self, obj):
+        bodega = obj.id_bodega
+        if bodega:
+            return bodega.nombre
+        return "Desconocido"
+
+    def get_tipo_solicitud(self, obj):
+        if obj.despacho_sin_solicitud:
+            return "Despacho sin solicitud"
+        else:
+            if obj.id_solicitud_activo:
+                if obj.id_solicitud_activo.solicitud_prestamo:
+                    return "Despacho con solicitud de préstamo"
+                else:
+                    return "Despacho con solicitud ordinaria"
+        return "Desconocido"
+
+    def get_fecha_solicitud(self, obj):
+        if obj.despacho_sin_solicitud:
+            return "No aplica"
+        else:
+            if obj.id_solicitud_activo:
+                return obj.id_solicitud_activo.fecha_solicitud
+        return None
+        
+
+class ActivosDespachadosDevolucionSerializer(serializers.ModelSerializer):
+    codigo_activo = serializers.SerializerMethodField()
+    nombre_activo = serializers.SerializerMethodField()
+    marca_activo = serializers.SerializerMethodField()
+    identificador_activo = serializers.SerializerMethodField()
+    nombre_bodega = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ItemsDespachoActivos
+        fields = (
+            'codigo_activo',
+            'nombre_activo',
+            'marca_activo',
+            'identificador_activo',
+            'nombre_bodega',
+            'nro_posicion_en_despacho',
+            'cantidad_solicitada',
+            'cantidad_despachada',
+            'fecha_devolucion',
+            'observacion',
+        )
+
+    def get_codigo_activo(self, obj):
+        return obj.id_bien_despachado.codigo_bien if obj.id_bien_despachado else None
+
+    def get_nombre_activo(self, obj):
+        return obj.id_bien_despachado.nombre if obj.id_bien_despachado else None
+
+    def get_marca_activo(self, obj):
+        if obj.id_bien_despachado and obj.id_bien_despachado.id_marca:
+            return obj.id_bien_despachado.id_marca.nombre
+        else:
+            return None
+
+    def get_identificador_activo(self, obj):
+        return obj.id_bien_despachado.doc_identificador_nro if obj.id_bien_despachado else None
+
+    def get_nombre_bodega(self, obj):
+        return obj.id_bodega.nombre if obj.id_bodega else None
+    
+class EstadosArticuloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EstadosArticulo
+        fields = '__all__'
+
+
+class ActivosDevolucionadosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActivosDevolucionados
+        fields = '__all__'
+
+class AnexoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos
+        fields = '__all__'
+
+class DevolucionActivosSerializer(serializers.ModelSerializer):
+    activos_devueltos = ActivosDevolucionadosSerializer(many=True)
+
+    class Meta:
+        model = DevolucionActivos
+        fields = '__all__'
+
+    def create(self, validated_data):
+        activos_devueltos_data = validated_data.pop('activos_devueltos')
+        devolucion = DevolucionActivos.objects.create(**validated_data)
+        for activo_devuelto_data in activos_devueltos_data:
+            ActivosDevolucionados.objects.create(devolucion_activo=devolucion, **activo_devuelto_data)
+        return devolucion
+    
+class ItemEntradaAlmacenSerializer(serializers.ModelSerializer):
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    serie_placa = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
+
+    class Meta:
+        model = ItemEntradaAlmacen
+        fields = '__all__'
+
+class BodegasSerializer(serializers.ModelSerializer):
+
+    nombre_municipio = serializers.ReadOnlyField(source='cod_municipio.nombre', default=None)
+    class Meta:
+        model = Bodegas
+        fields = '__all__'
+
+class DespachoSinSolicitudSerializer(serializers.ModelSerializer):
+    numero_activos = serializers.SerializerMethodField()
+    fecha_despacho = serializers.ReadOnlyField(source='id_despacho_asignado.fecha_despacho', default=None)
+    estado_despacho = serializers.ReadOnlyField(source='id_despacho_asignado.estado_despacho', default=None)
+    observacion = serializers.ReadOnlyField(source='id_despacho_asignado.observacion', default=None)
+    primer_nombre_persona_responsable = serializers.ReadOnlyField(source='id_funcionario_resp_asignado.primer_nombre', default=None)
+    primer_apellido_persona_responsable = serializers.ReadOnlyField(source='id_funcionario_resp_asignado.primer_apellido', default=None)
+    primer_nombre_persona_operario = serializers.ReadOnlyField(source='id_persona_operario_asignado.primer_nombre', default=None)
+    primer_apellido_persona_operario = serializers.ReadOnlyField(source='id_persona_operario_asignado.primer_apellido', default=None)
+    id_persona_despacha = serializers.ReadOnlyField(source='id_despacho_asignado.id_persona_despacha', default=None)
+    primer_nombre_persona_despacha = serializers.ReadOnlyField(source='id_despacho_asignado.id_persona_despacha.primer_nombre', default=None)
+    primer_apellido_persona_despacha = serializers.ReadOnlyField(source='id_despacho_asignado.id_persona_despacha.primer_apellido', default=None)
+
+
+    class Meta:
+        model = AsignacionActivos
+        fields = '__all__'
+
+    def get_numero_activos(self, instance):
+            # Obtener el número de activos relacionados con esta solicitud
+            return ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance).count()
+    
+
+class CatalogoBienesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CatalogoBienes
+        fields = '__all__'
+
+
+class AsignacionActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignacionActivos
+        fields = '__all__'
+    
+
+class ItemsDespachoActivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ItemsDespachoActivos
+        fields = '__all__'
+
+
+class BusquedaArticuloSubSerializer(serializers.ModelSerializer):
+    id_bien = serializers.ReadOnlyField(source='id_bien.id_bien', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    id_bien = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    class Meta:
+        model = Inventario
+        fields = '__all__'
+
+
+class DespachoActivosCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DespachoActivos
+        fields = '__all__'
+
+

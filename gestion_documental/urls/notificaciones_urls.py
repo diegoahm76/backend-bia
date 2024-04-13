@@ -4,10 +4,16 @@ from gestion_documental.views import notificaciones_views as views
 urlpatterns = [
     # Notificaciones
     path('get-notificaciones/', views.ListaNotificacionesCorrespondencia.as_view(),name='get-notificaiones'),
+    path('get-notificaciones-tareas/', views.NotificacionesCorrespondenciaYTareasGet.as_view(),name='get-notificaiones-tareas'),
     path('get-asignaciones/', views.GetAsignacionesCorrespondencia.as_view(),name='get-asignaciones'),
     path('create-asignacion/', views.CrearAsignacionNotificacion.as_view(),name='create-asignacion'),
+    path('create-asignacion-tarea/', views.CrearAsignacionTarea.as_view(),name='create-asignacion-tarea'),
+    path('update-asignacion/<int:pk>/', views.UpdateAsignacionNotificacion.as_view(),name='update-asignacion'),
+    path('update-asignacion-tarea/<int:pk>/', views.UpdateAsignacionTarea.as_view(),name='update-asignacion-tarea'),
+    path('rechazo-notificacion/<int:pk>/', views.RechazoNotificacionCorrespondencia.as_view(),name='rechazo-notificacion'),
     path('create-notificacion-manual/', views.CrearNotiicacionManual.as_view(),name='create-notificacion-manual'),
     path('get-notificacion/<int:id_notificacion_correspondencia>/', views.GetNotificacionesCorrespondeciaAnexos.as_view(),name='get-notificaion'),
+    path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
 
     # Tipos de Notificaciones
     path('create-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-notificaciones'),
@@ -39,9 +45,17 @@ urlpatterns = [
     path('update-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaUpdate.as_view(),name='update-tipos-documentos-notificaciones'),
     path('delete-tipos-documentos-notificaciones/<int:pk>/', views.TiposDocumentosNotificacionesCorrespondenciaDelete.as_view(),name='delete-tipos-documentos-notificaciones'),
 
-
     # Tramites y Actos Administrativos
     path('get-tramites/', views.GetTramite.as_view(),name='get-tramites'),
     path('get-tipos-actos/', views.TipoActosAdministrativos.as_view(),name='get-tipos-actos'),
     path('get-actos/', views.ActosAdministrativosGet.as_view(),name='get-actos'),
+
+    # Correspondencia
+
+    path('get-notificacion-pagina/<int:id_notificacion>/', views.NotificacionGet.as_view(),name='get-notificacion'),
+    path('get-notificacion-anexos/<int:id_notificacion>/', views.AnexosNotificacionGet.as_view(),name='get-notificacion-anexos'),
+
+    
+
+    
 ]
