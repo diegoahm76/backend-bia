@@ -501,3 +501,43 @@ class Rt916DistribucionCuot(models.Model):
 
     class Meta:
         db_table = 'rt916distribucioncuot'
+
+
+
+class Rt954Cobro(models.Model):
+    t954codcia = models.CharField(max_length=5)
+    t954idcobro = models.IntegerField()
+    t954codtiporenta = models.CharField(max_length=5)
+    t954codtipocobro = models.CharField(max_length=5)
+    t954nit = models.CharField(max_length=15)
+    t954liquidado = models.CharField(max_length=1)
+    t954numliquidacion = models.IntegerField()
+    t954secobra = models.CharField(max_length=1)
+    t954codorigencobro = models.CharField(max_length=5)
+    t954numorigencobro = models.IntegerField()
+    t954idpaso = models.SmallIntegerField()
+    t954consecpaso = models.SmallIntegerField()
+    t954numnotificacion = models.IntegerField()
+    t954anulado = models.CharField(max_length=1)
+    t954tuatm = models.CharField(max_length=10)
+    t954tuafr = models.DecimalField(max_digits=19, decimal_places=4)
+    t954tuavalortua = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trtmdbo = models.CharField(max_length=10)
+    t954trtmsst = models.CharField(max_length=10)
+    t954trfrdbo = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trfrsst = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trvalortrdbo = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trvalortrsst = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trcantperanidbo = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trcantperanisst = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trtienepsmv = models.CharField(max_length=1)
+    t954tuaporcdcto = models.DecimalField(max_digits=19, decimal_places=4)
+    t954tuanormadcto = models.CharField(max_length=10)
+    t954tuausarvmanual = models.CharField(max_length=1)
+    t954replegalimportad = models.CharField(max_length=255)
+    t954tsetvb = models.CharField(max_length=15)
+    t954traplicadcto465 = models.CharField(max_length=1)
+
+    class Meta:
+        db_table = 'rt954cobro'
+        
