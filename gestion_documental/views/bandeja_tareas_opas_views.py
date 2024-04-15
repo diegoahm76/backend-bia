@@ -894,7 +894,7 @@ class RequerimienntoSobreOpaTramiteCreate(generics.CreateAPIView):
 
 
         # #Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos. tabla T271
-        tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(nombre_configuracion='Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.').first()
+        tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(id_configuracion_tiempo_respuesta=6).first()#'Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.
 
         if not tiempo_respuesta:
             raise ValidationError("No se encontro el tiempo de respuesta comuniquese con un administrador")
