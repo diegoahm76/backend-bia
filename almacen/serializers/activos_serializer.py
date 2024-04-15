@@ -253,7 +253,8 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
     tipo_solicitud = serializers.SerializerMethodField()
     numero_activos = serializers.SerializerMethodField()
     id_funcionario_resp_asignado = serializers.SerializerMethodField()
-
+    tipo_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
+    numero_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
     class Meta:
         model = DespachoActivos
         fields = '__all__'
@@ -292,6 +293,18 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
         if asignacion:
             return asignacion.id_funcionario_resp_asignado.id_persona
+        return None
+    
+    def get_tipo_documento_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.tipo_documento.cod_tipo_documento
+        return None
+    
+    def get_numero_documento_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.numero_documento
         return None
         
 
@@ -432,6 +445,7 @@ class AsignacionActivosSerializer(serializers.ModelSerializer):
 class ItemsDespachoActivosSerializer(serializers.ModelSerializer):
     codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
     nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    identificador_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.doc_identificador_nro', default=None)
     nombre_bodega_despachado = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     id_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.id_marca', default=None)
     nombre_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)

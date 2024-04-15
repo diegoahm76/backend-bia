@@ -58,7 +58,7 @@ urlpatterns = [
     path('busqueda-solicitudes-despacho/get/', views.BusquedaAvanzadaSolicitudesDespacho.as_view(), name='busqueda-solicitud-despacho'),
     path('cancelar-solicitud-despacho/<int:pk>/', views.CancelarSolicitudDespacho.as_view(), name='cancelar-solicitud-despacho'),
     path('anular-solicitud-despacho/<int:pk>/', views.AnularSolicitudDespacho.as_view(), name='anular-solicitud-despacho'),
-    path('anular-solicitud-despacho-sin.solicitud/<int:pk>/', views.AnularSolicitudDespachoSinSolicitud.as_view(), name='anular-solicitud-despacho-sin-solicitud'),
+    path('anular-solicitud-despacho-sin-solicitud/<int:pk>/', views.AnularDespachoSinSolicitud.as_view(), name='anular-solicitud-despacho-sin-solicitud'),
     path('solicitudes-activos/<int:id_solicitud_activo>/', views.ObtenerDatosPersonasSolicitud.as_view(), name='detalle-solicitud-activos'),
     path('bodegas/busqueda-avanzada/', views.BusquedaAvanzadaBodegas.as_view(), name='busqueda_avanzada_bodegas'),
     path('despachos-sin-solicitud/get/', views.DespachosSinSolicitudGet.as_view(), name='despachos-sin-solicitud'),
@@ -71,8 +71,18 @@ urlpatterns = [
     path('busqueda-articulos-responsable/<int:id_persona_responsable>/', views.InventarioPorPersonaResponsableView.as_view(), name='busqueda-articulos-persona-responsable'),
     path('crear-reasginacion-responsable/create/', views.CrearReasginacionResponsableView.as_view(), name='crear-reasginacion-responsable-create'),
     
+
+
     #Autorizar_Despachos
+    path('rechazar-despacho/<int:pk>/', views.RechazarDespachoPut.as_view(), name='rechazar-despachos-autorizar'),
+
+
+    #Despachos_Autorizados
     path('despachos-autorizar/get/', views.DespachosAutorizarGet.as_view(), name='despachos-autorizar'),
+    path('anular-despacho-autorizado/<int:pk>/', views.AnularDespachoAutorizadoPut.as_view(), name='anular-despachos-autorizar'),
+    path('resumen-despacho-activos/<int:id_despacho_activo>/', views.ResumenDespachosGeneralActivosView.as_view(), name='resumen-despachp-activos'),
+    path('actualizar-anexo-despacho-activos/<int:pk>/', views.ActualizarAnexoDespachoActivosView.as_view(), name='actualizar-anexo-despacho-activos'),
+
 
 
 
