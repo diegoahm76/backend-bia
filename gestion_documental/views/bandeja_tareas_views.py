@@ -636,7 +636,7 @@ class MetadatosAnexosTmpCreate(generics.CreateAPIView):
 
     def crear_meta_data(self,data):
         data_in = data
-        data_in['fecha_creacion_doc'] = date.today()
+        data_in['fecha_creacion_doc'] = datetime.now()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         serializer.save()
