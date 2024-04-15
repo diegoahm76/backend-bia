@@ -1283,6 +1283,32 @@ class SolicitudDeDigitalizacionRequerimientoOpaCreate(generics.CreateAPIView):
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'complemento':complemento_serializer.data}, status=status.HTTP_200_OK)
 
 
+class RespuestasOpaAnexoInfoGet(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    queryset =PermisosAmbSolicitudesTramite.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,res):
+        data=[]
+        instance =RespuestasRequerimientos.objects.filter(id_respuesta_requerimiento=res).first()
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        
+        tabla_intermedia_anexos_tramites = AnexosTramite.objects.filter(id_respuesta_requerimiento=instance)
+
+
+        print(tabla_intermedia_anexos_tramites)
+        #raise ValidationError("AQUI VAMOS")
+        #anexos_pqrs = Anexos_PQR.objects.filter(id_PQRSDF=instance)
+        for x in tabla_intermedia_anexos_tramites:
+            info_anexo =x.id_anexo
+            data_anexo = self.serializer_class(info_anexo)
+            data.append(data_anexo.data)
+        
+               
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':data}, status=status.HTTP_200_OK) 
 class SolicitudDeDigitalizacionOPACreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_tramite = TramitePutSerializer

@@ -66,6 +66,7 @@ urlpatterns = [
     path('opas/anexo/documento/get/<str:pk>/',views.OPASAnexoDocumentoDigitalGet.as_view(),name='get-opas-anexo'),
     path('opas/anexo-documento/meta-data/get/<str:pk>/',views.OPAAnexoMetaDataGet.as_view(),name='get-pqrsdf-id'),
     path('opas/requerimiento/get/<str:tra>/', views.RespuestaRequerimientoOpaGet.as_view(), name='get-requerimiento-opa'),#RESPUESTA DE LOS REQUERIMIENTOS
+    path('opas/respuesta/anexo/get/<str:res>/', views.RespuestasOpaAnexoInfoGet.as_view(), name='get-respuesta-opa-anexo'),
 
     #SolicitudDeDigitalizacionRequerimientoOpaCreate
     path('opas/requerimiento/respuesta/solicitud/digitalizacion/create/', views.SolicitudDeDigitalizacionRequerimientoOpaCreate.as_view(), name='crear-solicitud-digitalizacion-create-respuesta-requerimiento'),
