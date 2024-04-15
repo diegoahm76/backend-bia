@@ -2895,3 +2895,52 @@ class AsignacionComplementoTramitesCreate(generics.CreateAPIView):
             tarea_tramite.save()
         
         return Response({'success': True, 'detail':'Se realizó la asignación a grupo'}, status=status.HTTP_201_CREATED)
+
+
+
+
+#DOCUMENTOS Y META-DATA
+class AnexoMetaDataGet(generics.ListAPIView):
+    serializer_class = MetadatosAnexosTmpSerializerGet
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+   
+        serializer= self.serializer_class(meta_data)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
+
+
+
+
+class AnexoDocumentoDigitalGet(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset =Anexos.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance =Anexos.objects.filter(id_anexo=pk).first()
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        meta_data = MetadatosAnexosTmp.objects.filter(id_anexo=instance.id_anexo).first()
+        if not meta_data:
+            raise NotFound("No existen registros")
+        archivo = meta_data.id_archivo_sistema
+        serializer= self.serializer_class(archivo)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'id_anexo':instance.id_anexo,**serializer.data},}, status=status.HTTP_200_OK)
