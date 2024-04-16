@@ -314,7 +314,7 @@ class SolicitudDeDigitalizacion(models.Model):
     id_solicitud_de_digitalizacion = models.AutoField(primary_key=True, db_column='T263IdSolicitudDeDigitalizacion')
     id_pqrsdf = models.ForeignKey('Pqrsdf', models.SET_NULL, db_column='T263Id_PQRSDF', blank=True, null=True)
     id_complemento_usu_pqr = models.ForeignKey(ComplementosUsu_PQR, models.SET_NULL, db_column='T263Id_ComplementoUsu_PQR', blank=True, null=True)
-    id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otro', blank=True, null=True)
+    id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otros', blank=True, null=True)#T263Id_Otro
     id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T263Id_SolicitudTramite', blank=True, null=True)
     fecha_solicitud = models.DateTimeField(db_column='T263fechaSolicitud')
     id_respuesta_requerimiento = models.ForeignKey('tramites.RespuestasRequerimientos', models.SET_NULL, db_column='T263IdRespuestasRequerimientos', blank=True, null=True)
