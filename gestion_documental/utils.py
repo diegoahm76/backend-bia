@@ -1,4 +1,6 @@
 # from xhtml2pdf import pisa
+import os
+import hashlib
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
@@ -15,6 +17,7 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from rest_framework import status
 from django.db.models import F
 from django.template.loader import render_to_string
+from datetime import datetime
 
 class UtilsGestor:
 
@@ -451,3 +454,28 @@ class UtilsGestor:
             return True
         
         return False
+    
+    def create_archivo_digital(self, archivo, ruta_final):
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = datetime.now().year
+        ruta = os.path.join("home", "BIA", "Otros", ruta_final, str(current_year)) # VALIDAR RUTA
+
+        # Calcula el hash MD5 del archivo
+        md5_hash = hashlib.md5()
+        for chunk in archivo.chunks():
+            md5_hash.update(chunk)
+
+        # Obtiene el valor hash MD5
+        md5_value = md5_hash.hexdigest()
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+        }
+        
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+
+        return respuesta.data.get('data')
