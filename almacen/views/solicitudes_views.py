@@ -573,7 +573,8 @@ class GetNroDocumentoSolicitudesBienesConsumo(generics.ListAPIView):
     
     def get(self, request):
         nro_solicitud = SolicitudesConsumibles.objects.filter(es_solicitud_de_conservacion=False).order_by('nro_solicitud_por_tipo').last()
-        return Response({'success':True,'Número de solicitud':nro_solicitud.nro_solicitud_por_tipo + 1, },status=status.HTTP_200_OK)
+        nro_solicitud_value = nro_solicitud.nro_solicitud_por_tipo + 1 if nro_solicitud else 1
+        return Response({'success':True,'Número de solicitud':nro_solicitud_value, },status=status.HTTP_200_OK)
     
 class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
