@@ -17,7 +17,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente
+from gestion_documental.serializers.expedientes_serializers import  AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
+from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
+from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente, ConcesionesAccesoAExpsYDocs, ExpedientesDocumentales,IndicesElectronicosExp,Docs_IndiceElectronicoExp, InventarioDocumental
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
@@ -3842,4 +3846,114 @@ class ListarSucursalesEmpresas(generics.ListAPIView):
         return Response(data, status=status.HTTP_200_OK)
 
 
+
+class CrearExpedientePQRSDF(generics.CreateAPIView):
+    serializer_class = AperturaExpedienteSimpleSerializer
+    serializer_class_complejo = AperturaExpedienteComplejoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        data = request.data
+
+        data_expediente = {}
+        
+        # Crear codigo expediente
+        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_org_ccd_trd_prop']).first()
+        
+        if not tripleta_trd:
+            raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+        
+        configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg).first()
+
+        if not configuracion_expediente:
+            raise ValidationError('No se encontró la configuración de expediente para la tripleta de TRD seleccionada')
+        
+        cod_unidad = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.codigo
+        cod_serie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
+        cod_subserie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        
+        codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
+        
+        
+        current_date = datetime.now()
+        
+        
+        data_expediente['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+        data_expediente['codigo_exp_Agno'] = current_date.year
+        
+        # OBTENER CONSECUTIVO ACTUAL
+        codigo_exp_consec_por_agno = None
+        
+        if configuracion_expediente.cod_tipo_expediente == 'C':
+            # LLAMAR CLASE PARA GENERAR CONSECUTIVO
+            fecha_actual = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            clase_consec = ConfiguracionTipoExpedienteAgnoGetConsect()
+            codigo_exp_consec_por_agno = clase_consec.generar_radicado(
+                tripleta_trd.id_catserie_unidadorg,
+                request.user.persona.id_persona,
+                fecha_actual
+            )
+            codigo_exp_consec_por_agno = codigo_exp_consec_por_agno.data.get('data').get('consecutivo_actual')
+        else:
+            expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=tripleta_trd.id_catserie_unidadorg, codigo_exp_Agno=current_date.year).first()
+        
+            if expediente:
+                raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada')
+            
+        data_expediente['titulo_expediente'] = f"Expediente PQRSDF {codigo_exp_und_serie_subserie} {current_date.year}"
+        data_expediente['descripcion_expediente'] = f"Expediente PQRSDF para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
+        data_expediente['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
+        data_expediente['estado'] = 'A'
+        data_expediente['fecha_apertura_expediente'] = current_date
+        data_expediente['cod_etapa_de_archivo_actual_exped'] = 'G'
+        data_expediente['tiene_carpeta_fisica'] = False
+        data_expediente['ubicacion_fisica_esta_actualizada'] = False
+        data_expediente['creado_automaticamente'] = True
+        data_expediente['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        data_expediente['id_unidad_org_oficina_respon_original'] = data['id_unidad_org_oficina_respon_original']
+        data_expediente['id_und_org_oficina_respon_actual'] = tripleta_trd.id_catserie_unidadorg
+
+        request['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        request['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+
+        
+        if configuracion_expediente.cod_tipo_expediente == 'S':
+            serializer = self.serializer_class(data=data, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        elif configuracion_expediente.cod_tipo_expediente == 'C':
+            serializer = self.serializer_class_complejo(data=data, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        
+
+        
+        # CREAR INDICE - PENDIENTE VALIDAR SI ES CORRECTO REALIZARLO ASÍ
+        IndicesElectronicosExp.objects.create(
+            id_expediente_doc = expediente_creado,
+            fecha_indice_electronico = current_date,
+            abierto = True
+        )
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(data['codigo_exp_Agno'])
+        }
+        if codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_usuario" : usuario,
+            "id_modulo" : 160,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+            
+        return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)   
 
