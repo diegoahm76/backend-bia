@@ -403,3 +403,15 @@ class OPASSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermisosAmbSolicitudesTramite
         fields = '__all__'
+
+class GetTiposTramitesSerializer(serializers.ModelSerializer):
+    tipo_permiso_ambiental = serializers.CharField(source='get_cod_tipo_permiso_ambiental_display')
+
+    class Meta:
+        model = PermisosAmbientales
+        fields = '__all__'
+
+class PostTiposTramitesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PermisosAmbientales
+        exclude = ['item_ya_usado', 'registro_precargado']

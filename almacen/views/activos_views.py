@@ -766,6 +766,7 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
         # Recuperar los despachos activos relacionados
         despachos = DespachoActivos.objects.filter(id_solicitud_activo=instance)
         despachos_data = []
+        archivo_digital_data = []
         for despacho in despachos:
             despacho_data = {
                 'id_despacho_activo': despacho.id_despacho_activo,
@@ -805,11 +806,19 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'id_archivo_doc_recibido': despacho.id_archivo_doc_recibido.id_archivo_digital if despacho.id_archivo_doc_recibido else None
             }
             despachos_data.append(despacho_data)
+
+            # Obtener data del archivo digital si existe
+            if despacho.id_archivo_doc_recibido:
+                archivo_digital = despacho.id_archivo_doc_recibido
+                archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
+                archivo_digital_data.append(archivo_digital_serializer.data)
         
         # Agregar los datos de los items de solicitud y despacho activos al resultado final
         solicitud_data['items_solicitud'] = items_data
         solicitud_data['despachos'] = despachos_data
         solicitud_data['items_despacho'] = items_despacho_data
+        solicitud_data['archivos_digitales'] = archivo_digital_data
+
 
         return Response({'success': True, 'detail': 'Solicitud de activos recuperada correctamente', 'data': solicitud_data}, status=status.HTTP_200_OK)
     
@@ -2049,7 +2058,7 @@ class AnularSolicitudDespacho(generics.UpdateAPIView):
 
     
 
-class AnularSolicitudDespachoSinSolicitud(generics.UpdateAPIView):
+class AnularDespachoSinSolicitud(generics.UpdateAPIView):
     queryset = DespachoActivos.objects.all()
     serializer_class = DespachoActivosSerializer
     permission_classes = [IsAuthenticated]
@@ -2146,7 +2155,6 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
         # Obtener los parámetros de la consulta
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
-        persona_responsable = self.request.query_params.get('persona_responsable')
         estado_despacho = self.request.query_params.get('estado_despacho')
 
         # Construir el queryset inicial filtrando los despachos por persona y despacho sin solicitud
@@ -2157,8 +2165,6 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
             queryset = queryset.filter(fecha_despacho__gte=fecha_desde)
         if fecha_hasta:
             queryset = queryset.filter(fecha_despacho__lte=fecha_hasta)
-        if persona_responsable:
-            queryset = queryset.filter(id_persona_despacha=persona_responsable)
         if estado_despacho:
             queryset = queryset.filter(estado_despacho=estado_despacho)
 
@@ -2167,12 +2173,69 @@ class DespachosSinSolicitudGet(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
+        serializer_data = serializer.data
+
+        id_funcionario_resp_asignado = request.query_params.get('id_funcionario_resp_asignado')
+        if id_funcionario_resp_asignado:
+            serializer_data = [despacho for despacho in serializer_data if str(despacho.get("id_funcionario_resp_asignado")) == str(id_funcionario_resp_asignado)]
+
         data = {
             'success': True,
             'detail': 'Despachos sin solicitud obtenidos correctamente.',
-            'data': serializer.data
+            'data': serializer_data
         }
-        return Response(data, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)  
+    
+
+
+class DespachosAutorizarGet(generics.ListAPIView):
+    serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Obtener el usuario logueado actualmente
+        usuario_actual = self.request.user
+
+        # Obtener el ID de la persona asociada al usuario
+        persona_logueada = usuario_actual.persona.id_persona
+
+        asignaciones_activos = AsignacionActivos.objects.filter(id_funcionario_resp_asignado=persona_logueada)
+
+        # Obtener los parámetros de la consulta
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        estado_despacho = self.request.query_params.get('estado_despacho')
+        id_persona_solicita = self.request.query_params.get('id_persona_solicita')
+
+        # Construir el queryset inicial filtrando los despachos por las asignaciones de activos del usuario logueado
+        queryset = DespachoActivos.objects.filter(id_despacho_activo__in=asignaciones_activos)
+
+        # Aplicar filtros adicionales si se proporcionan
+        if fecha_desde:
+            queryset = queryset.filter(fecha_despacho__gte=fecha_desde)
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_despacho__lte=fecha_hasta)
+        if estado_despacho:
+            queryset = queryset.filter(estado_despacho=estado_despacho)
+        if id_persona_solicita:
+            queryset = queryset.filter(id_persona_solicita=id_persona_solicita)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        serializer_data = serializer.data
+
+
+        data = {
+            'success': True,
+            'detail': 'Despachos sin solicitud obtenidos correctamente.',
+            'data': serializer_data
+        }
+        return Response(data, status=status.HTTP_200_OK)  
+      
+    
     
 
     
@@ -2440,7 +2503,6 @@ class CrearDespachoActivosView(generics.CreateAPIView):
             # Obtener el ID del bien despachado
             id_bien_despachado = bien_despachado.get('id_bien_despachado')
             
-            print(bien_despachado)
             # Obtener el ID de la entrada del almacén del bien
             entrada_almacen_del_bien_id = None
             if id_bien_despachado:
@@ -2859,6 +2921,353 @@ class CrearReasginacionResponsableView(generics.CreateAPIView):
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
     
+class AnularDespachoAutorizadoPut(generics.UpdateAPIView):
+    queryset = DespachoActivos.objects.all()
+    serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        # Obtener el ID de la solicitud de la URL
+        despacho_id = kwargs.get('pk')
+        
+        # Obtener la instancia del despacho
+        try:
+            despacho = DespachoActivos.objects.get(id_despacho_activo=despacho_id)
+        except DespachoActivos.DoesNotExist:
+            return Response({'detail': 'El despacho especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Verificar si la solicitud está en estado "En Espera"
+        if despacho.estado_despacho != 'Ep':
+            return Response({'detail': 'Solo se puede anular un despacho que esté en estado "En espera".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener la instancia de la persona actual
+        persona_logueada = request.user.persona
+        # Obtener la instancia de Personas correspondiente al ID proporcionado
+        persona_anula = get_object_or_404(Personas, id_persona=persona_logueada.id_persona)
+
+        # Obtener la solicitud asociada al despacho
+        solicitud = despacho.id_solicitud_activo
+        
+        with transaction.atomic():
+            # Actualizar los datos del despacho
+            despacho.estado_despacho = 'An'
+            despacho.despacho_anulado = True
+            despacho.fecha_anulacion = datetime.now()
+            despacho.id_persona_anula = persona_anula
+            despacho.justificacion_anulacion = request.data.get('justificacion_anulacion')
+
+            # Actualizar el estado de la solicitud si existe
+            if solicitud:
+                solicitud.estado_solicitud = 'F'
+                solicitud.save()
+
+            despacho.save()
+        
+        # Serializar y retornar el despacho actualizado
+        serializer = self.serializer_class(despacho)
+        return Response({'detail': 'El despacho asociado se ha anulado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
+    queryset = DespachoActivos.objects.all()
+    serializer_class = None
+    lookup_field = 'id_despacho_activo'  # Especifica el campo utilizado como PK en la URL
+    permission_classes = [IsAuthenticated] 
+
+    def get(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        despacho_data = {
+            'id_despacho_activo': instance.id_despacho_activo,
+            'id_solicitud_activo': instance.id_solicitud_activo.id_solicitud_activo if instance.id_solicitud_activo else None,
+            'despacho_sin_solicitud': instance.despacho_sin_solicitud,
+            'estado_despacho': instance.estado_despacho,
+            'fecha_autorizacion_resp': instance.fecha_autorizacion_resp.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_autorizacion_resp else None,
+            'justificacion_rechazo_resp': instance.justificacion_rechazo_resp,
+            'fecha_solicitud': instance.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_solicitud else None,
+            'fecha_despacho': instance.fecha_despacho.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_despacho else None,
+
+            #persona_despacha
+            'id_persona_despacha': instance.id_persona_despacha.id_persona if instance.id_persona_despacha else None,
+            'primer_nombre_persona_persona_despacha': instance.id_persona_despacha.primer_nombre if instance.id_persona_despacha else None,
+            'primer_apellido_persona_persona_despacha': instance.id_persona_despacha.primer_apellido if instance.id_persona_despacha else None,
+            'tipo_documento_persona_persona_despacha': instance.id_persona_despacha.tipo_documento.cod_tipo_documento if instance.id_persona_despacha else None,
+            'numero_documento_persona_persona_despacha': instance.id_persona_despacha.numero_documento if instance.id_persona_despacha else None,
+            'observacion': instance.observacion,
+
+            #Persona_solicita
+            'id_persona_solicita': instance.id_persona_solicita.id_persona if instance.id_persona_solicita else None,
+            'primer_nombre_persona_solicita': instance.id_persona_solicita.primer_nombre if instance.id_persona_solicita else None,
+            'primer_apellido_persona_solicita': instance.id_persona_solicita.primer_apellido if instance.id_persona_solicita else None,
+            'tipo_documento_persona_solicita': instance.id_persona_solicita.tipo_documento.cod_tipo_documento if instance.id_persona_solicita else None,
+            'numero_documento_persona_solicita': instance.id_persona_solicita.numero_documento if instance.id_persona_solicita else None,
+            'id_uni_org_solicitante': instance.id_uni_org_solicitante.id_unidad_organizacional if instance.id_uni_org_solicitante else None,
+        
+            #Resumen_Despacho
+            'id_bodega': instance.id_bodega.id_bodega if instance.id_bodega else None,
+            'nombre_bodega': instance.id_bodega.nombre if instance.id_bodega else None ,
+            'despacho_anulado': instance.despacho_anulado,
+            'justificacion_anulacion': instance.justificacion_anulacion,
+            'fecha_anulacion': instance.fecha_anulacion.strftime('%Y-%m-%d %H:%M:%S') if instance.fecha_anulacion else None,
+            'id_archivo_doc_recibido': instance.id_archivo_doc_recibido.id_archivo_digital if instance.id_archivo_doc_recibido else None,
+            
+            #persona_anula
+            'id_persona_anula': instance.id_persona_anula.id_persona if instance.id_persona_anula else None,
+            'primer_nombre_persona_anula': instance.id_persona_anula.primer_nombre if instance.id_persona_anula else None,
+            'primer_apellido_persona_anula': instance.id_persona_anula.primer_apellido if instance.id_persona_anula else None,
+            'tipo_documento_persona_anula': instance.id_persona_anula.tipo_documento.cod_tipo_documento if instance.id_persona_anula else None,
+            'numero_documento_persona_anula': instance.id_persona_anula.numero_documento if instance.id_persona_anula else None,
+        
+        }
+
+        # Obtener data del archivo digital si existe
+        archivo_digital_data = []
+        if instance.id_archivo_doc_recibido:
+            archivo_digital = instance.id_archivo_doc_recibido
+            archivo_digital_serializer = ArchivosDigitalesSerializer(archivo_digital)
+            archivo_digital_data.append(archivo_digital_serializer.data)
+
+        # Recuperar los items de despacho activos relacionados
+        items_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo=instance)
+        items_despacho_data = []
+        for item_despacho in items_despacho:
+            item_despacho_data = {
+                'id_item_despacho_activo': item_despacho.id_item_despacho_activo,
+                'id_despacho_activo': item_despacho.id_despacho_activo.id_despacho_activo,
+                'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado else None,
+                'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado else None,
+                'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado else None,
+                'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado else None,
+                'id_entrada_alma': item_despacho.id_entrada_alma.id_entrada_almacen if item_despacho.id_entrada_alma else None,
+                'id_bodega': item_despacho.id_bodega.id_bodega if item_despacho.id_bodega else None,
+                'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega else None,
+                'cantidad_solicitada': item_despacho.cantidad_solicitada,
+                'fecha_devolucion': item_despacho.fecha_devolucion.strftime('%Y-%m-%d %H:%M:%S') if item_despacho.fecha_devolucion else None,
+                'se_devolvio': item_despacho.se_devolvio,
+                'id_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.id_unidad_medida if item_despacho.id_uni_medida_solicitada else None,
+                'nombre_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.nombre if item_despacho.id_uni_medida_solicitada else None,
+                'abreviatura_uni_medida_solicitada': item_despacho.id_uni_medida_solicitada.abreviatura if item_despacho.id_uni_medida_solicitada else None,
+                'cantidad_despachada': item_despacho.cantidad_despachada,
+                'observacion': item_despacho.observacion,
+                'nro_posicion_despacho': item_despacho.nro_posicion_despacho
+            }
+            items_despacho_data.append(item_despacho_data)
 
 
+        # Verificar si hay una solicitud activa asociada
+        if instance.id_solicitud_activo is not None:
+            # Recuperar los items de solicitud activos relacionados
+            items_solicitud = ItemsSolicitudActivos.objects.filter(id_solicitud_activo=instance.id_solicitud_activo.id_solicitud_activo )
+            items_data = []
+            for item in items_solicitud:
+                item_data = {
+                    'id_item_solicitud_activo': item.id_item_solicitud_activo,
+                    'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
+                    'id_bien': item.id_bien.id_bien,  
+                    'nombre_bien': item.id_bien.nombre,  
+                    'codigo_bien': item.id_bien.codigo_bien,  
+                    'cantidad': item.cantidad,
+                    'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
+                    'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
+                    'nombre_unidad_medida': item.id_unidad_medida.nombre,
+                    'observacion': item.observacion,
+                    'nro_posicion': item.nro_posicion
+                }
+                items_data.append(item_data)
+            
+            
 
+            # Recuperar los solicitudes activos relacionados
+            solicitudes = SolicitudesActivos.objects.filter(id_solicitud_activo=instance.id_solicitud_activo.id_solicitud_activo)
+            solicitudes_data = []
+            for solicitud in solicitudes:
+                solicitud_data = {
+                'id_solicitud_activo': solicitud.id_solicitud_activo,
+                'fecha_solicitud': solicitud.fecha_solicitud.strftime('%Y-%m-%d %H:%M:%S'),
+                'motivo': solicitud.motivo,
+                'observacion': solicitud.observacion,
+                # Persona_Solicitante
+                'id_persona_solicita': solicitud.id_persona_solicita.id_persona if solicitud.id_persona_solicita else None,
+                'primer_nombre_persona_solicitante': solicitud.id_persona_solicita.primer_nombre if solicitud.id_persona_solicita else None,
+                'primer_apellido_persona_solicitante': solicitud.id_persona_solicita.primer_apellido if solicitud.id_persona_solicita else None,
+                'tipo_documento_persona_solicitante': solicitud.id_persona_solicita.tipo_documento.cod_tipo_documento if solicitud.id_persona_solicita else None,
+                'numero_documento_persona_solicitante': solicitud.id_persona_solicita.numero_documento if solicitud.id_persona_solicita else None,
+                'id_uni_org_solicitante': solicitud.id_uni_org_solicitante.id_unidad_organizacional,
+                #Persona_Funcionario_Responsable_Unidad
+                'id_funcionario_resp_unidad': solicitud.id_funcionario_resp_unidad.id_persona if solicitud.id_funcionario_resp_unidad else None,
+                'primer_nombre_funcionario_resp_unidad': solicitud.id_funcionario_resp_unidad.primer_nombre if solicitud.id_funcionario_resp_unidad else None,
+                'primer_apellido_funcionario_resp_unidad': solicitud.id_funcionario_resp_unidad.primer_apellido if solicitud.id_funcionario_resp_unidad else None,
+                'tipo_documento_funcionario_resp_unidad': solicitud.id_funcionario_resp_unidad.tipo_documento.cod_tipo_documento if solicitud.id_funcionario_resp_unidad else None,
+                'numero_documento_funcionario_resp_unidad': solicitud.id_funcionario_resp_unidad.numero_documento if solicitud.id_funcionario_resp_unidad else None,
+                'id_uni_org_responsable': solicitud.id_uni_org_responsable.id_unidad_organizacional,
+                #Persona_Operario
+                'id_persona_operario': solicitud.id_persona_operario.id_persona if solicitud.id_persona_operario else None,
+                'primer_nombre_persona_operario': solicitud.id_persona_operario.primer_nombre if solicitud.id_persona_operario else None,
+                'primer_apellido_persona_operario': solicitud.id_persona_operario.primer_apellido if solicitud.id_persona_operario else None,
+                'tipo_documento_persona_operario': solicitud.id_persona_operario.tipo_documento.cod_tipo_documento if solicitud.id_persona_operario else None,
+                'numero_documento_persona_operario': solicitud.id_persona_operario.numero_documento if solicitud.id_persona_operario else None,
+                'id_uni_org_operario': solicitud.id_uni_org_operario.id_unidad_organizacional,
+                #Resumen_Solcitiud
+                'estado_solicitud': solicitud.estado_solicitud,
+                'solicitud_prestamo': solicitud.solicitud_prestamo,
+                'fecha_cierra_solicitud': solicitud.fecha_cierra_solicitud.strftime('%Y-%m-%d %H:%M:%S') if solicitud.fecha_cierra_solicitud else None,
+                'revisada_responsable': solicitud.revisada_responsable,
+                'estado_aprobacion_resp': solicitud.estado_aprobacion_resp,
+                'justificacion_rechazo_resp': solicitud.justificacion_rechazo_resp,
+                'fecha_aprobacion_resp': solicitud.fecha_aprobacion_resp.strftime('%Y-%m-%d %H:%M:%S') if solicitud.fecha_aprobacion_resp else None,
+                'gestionada_alma': solicitud.gestionada_alma,
+                'obser_cierre_no_dispo_alma': solicitud.obser_cierre_no_dispo_alma,
+                'fecha_cierre_no_dispo_alma': solicitud.fecha_cierre_no_dispo_alma.strftime('%Y-%m-%d %H:%M:%S') if solicitud.fecha_cierre_no_dispo_alma else None,
+                #Persona_cierra_no_dispo_alma
+                'id_persona_cierra_no_dispo_alma': solicitud.id_persona_cierra_no_dispo_alma.id_persona if solicitud.id_persona_cierra_no_dispo_alma else None,
+                'primer_nombre_persona_cierra_no_dispo_alma': solicitud.id_persona_cierra_no_dispo_alma.primer_nombre if solicitud.id_persona_cierra_no_dispo_alma else None,
+                'primer_apellido_persona_cierra_no_dispo_alma': solicitud.id_persona_cierra_no_dispo_alma.primer_apellido if solicitud.id_persona_cierra_no_dispo_alma else None,
+                'tipo_documento_persona_cierra_no_dispo_alma': solicitud.id_persona_cierra_no_dispo_alma.tipo_documento.cod_tipo_documento if solicitud.id_persona_cierra_no_dispo_alma else None,
+                'numero_documento_persona_cierra_no_dispo_alma': solicitud.id_persona_cierra_no_dispo_alma.numero_documento if solicitud.id_persona_cierra_no_dispo_alma else None,
+                #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                'rechazada_almacen': solicitud.rechazada_almacen,
+                'fecha_rechazo_almacen': solicitud.fecha_rechazo_almacen.strftime('%Y-%m-%d %H:%M:%S') if solicitud.fecha_rechazo_almacen else None,
+                'justificacion_rechazo_almacen': solicitud.justificacion_rechazo_almacen,
+                #persona_alma_rechaza
+                'id_persona_alma_rechaza': solicitud.id_persona_alma_rechaza.id_persona if solicitud.id_persona_alma_rechaza else None,
+                'primer_nombre_persona_alma_rechaza': solicitud.id_persona_alma_rechaza.primer_nombre if solicitud.id_persona_alma_rechaza else None,
+                'primer_apellido_persona_alma_rechaza': solicitud.id_persona_alma_rechaza.primer_apellido if solicitud.id_persona_alma_rechaza else None,
+                'tipo_documento_persona_alma_rechaza': solicitud.id_persona_alma_rechaza.tipo_documento.cod_tipo_documento if solicitud.id_persona_alma_rechaza else None,
+                'numero_documento_persona_alma_rechaza': solicitud.id_persona_alma_rechaza.numero_documento if solicitud.id_persona_alma_rechaza else None,
+                'solicitud_anulada_solicitante': solicitud.solicitud_anulada_solicitante,
+                'fecha_anulacion_solicitante': solicitud.fecha_anulacion_solicitante.strftime('%Y-%m-%d %H:%M:%S') if solicitud.fecha_anulacion_solicitante else None,
+                }
+                solicitudes_data.append(solicitud_data)
+            # Agregar los datos de los items de solicitud y despacho activos al resultado final
+            despacho_data['items_despacho'] = items_despacho_data
+            despacho_data['solicitudes'] = solicitudes_data
+            despacho_data['items_solicitud'] = items_data
+            despacho_data['archivos_digitales'] = archivo_digital_data
+        else:
+            despacho_data['items_despacho'] = items_despacho_data
+            despacho_data['solicitudes'] = []
+            despacho_data['items_solicitud'] = []
+            despacho_data['archivos_digitales'] = archivo_digital_data
+
+        
+       
+
+        return Response({'success': True, 'detail': 'Solicitud de activos recuperada correctamente', 'data': despacho_data}, status=status.HTTP_200_OK)
+    
+
+class ActualizarAnexoDespachoActivosView(generics.UpdateAPIView):
+    serializer_class = DespachoActivosSerializer
+
+    def update(self, request, *args, **kwargs):
+        despacho = self.get_object()
+
+        # Validar que el despacho esté en estado "Ac" (Aceptada)
+        if despacho.estado_despacho != 'Ac':
+            raise ValidationError("Esta vista solo puede utilizarse con despachos en estado 'Ac' (Aceptada).")
+
+        anexo = request.FILES.get('anexo_opcional')
+        current_date = datetime.now()
+
+        if anexo:
+            # Validar formato de archivo
+            archivo_nombre = anexo.name 
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+            
+            # Verificar si el despacho activo ya tiene un archivo adjunto
+            if despacho.id_archivo_doc_recibido:
+                # Eliminar el archivo adjunto existente
+                try:
+                    archivo_existente = ArchivosDigitales.objects.get(id_archivo_digital=despacho.id_archivo_doc_recibido)
+                    archivo_existente.delete()
+                except ObjectDoesNotExist:
+                    # Si el archivo no existe, simplemente continúa con la creación del nuevo archivo
+                    pass
+
+            # Crear archivo en T238
+            current_year = current_date.year
+            ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year))
+
+            md5_hash = hashlib.md5()
+            for chunk in anexo.chunks():
+                md5_hash.update(chunk)
+
+            md5_value = md5_hash.hexdigest()
+
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value
+            }
+            
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+            id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
+
+            # Actualizar el ID del archivo en el despacho activo
+            despacho.id_archivo_doc_recibido = id_archivo_doc_recibido
+            despacho.save()
+
+            # Actualizar campos en SolicitudesActivos si existe una solicitud asociada al despacho
+            if despacho.id_solicitud_activo:
+                solicitud = despacho.id_solicitud_activo
+                solicitud.estado_solicitud = 'F'  
+                solicitud.fecha_cierre_solicitud = current_date
+                solicitud.save()
+
+        return Response({'success': True, 'detail': 'Archivo adjunto actualizado correctamente.'}, status=status.HTTP_200_OK)
+    
+
+#Autorizar_Despacho
+class RechazarDespachoPut(generics.UpdateAPIView):
+    queryset = DespachoActivos.objects.all()
+    serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        # Obtener el ID de la solicitud de la URL
+        despacho_id = kwargs.get('pk')
+        
+        # Obtener la instancia del despacho
+        try:
+            despacho = DespachoActivos.objects.get(id_despacho_activo=despacho_id)
+        except DespachoActivos.DoesNotExist:
+            return Response({'detail': 'El despacho especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Verificar si la solicitud está en estado "En Espera"
+        if despacho.estado_despacho != 'Ep':
+            return Response({'detail': 'Solo se puede Rechazar un despacho que esté en estado "En espera".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Obtener la instancia de la persona actual
+        persona_logueada = request.user.persona
+        # Obtener la instancia de Personas correspondiente al ID proporcionado
+        persona_anula = get_object_or_404(Personas, id_persona=persona_logueada.id_persona)
+
+        # Obtener la solicitud asociada al despacho
+        solicitud = despacho.id_solicitud_activo
+        
+        with transaction.atomic():
+            # Actualizar los datos del despacho
+            despacho.estado_despacho = 'Re'
+            despacho.justificacion_rechazo_resp = request.data.get('justificacion_rechazo_resp')
+
+            # Actualizar el estado de la solicitud si existe
+            if solicitud:
+                solicitud.estado_solicitud = 'DR'
+                solicitud.fecha_cierra_solicitud = datetime.now()
+                solicitud.save()
+
+            despacho.save()
+        
+        # Serializar y retornar el despacho actualizado
+        serializer = self.serializer_class(despacho)
+        return Response({'detail': 'El despacho asociado se ha rechazado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    

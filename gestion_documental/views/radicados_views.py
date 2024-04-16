@@ -944,13 +944,13 @@ class MetadatosPQRCreate(generics.CreateAPIView):
 
         if data_metadatos['isCreateForWeb']:
             metadato['id_anexo'] = anexo['id_anexo']
-            metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro'].date()
+            metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro']
             metadato['cod_origen_archivo'] = "E"
             metadato['es_version_original'] = True
             metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']
         else:
             data_metadato['id_anexo'] = anexo['id_anexo']
-            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro'].date()
+            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro']
             data_metadato['nro_folios_documento'] = anexo['numero_folios']
             data_metadato['es_version_original'] = True
             data_metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']

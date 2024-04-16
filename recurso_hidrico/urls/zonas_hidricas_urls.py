@@ -5,7 +5,8 @@ urlpatterns = [
         path('macro-cuencas/get/', views.MacroCuencasListView.as_view(), name='macro-cuencas'),
         path('zona_hidrica/get/<str:pk>/', views.ZonaHidricaListView.as_view(), name='zonas-hidricas'),
         path('tipozonahidrica/get/', views.TipoZonaHidricaListView.as_view(), name='macro-cuencas'),
-        path('subZonahidrica/get/<str:pk>/', views.SubZonaHidricaListView.as_view(), name='macro-cuencas'),   
+        path('subZonahidrica/get/<str:pk>/', views.SubZonaHidricaListView.as_view(), name='macro-cuencas'),  
+        path('cuencas/get/<int:pk>/', views.CuencasListView.as_view(), name='cuencas'), 
         path('tipoaguazonahidrica/get/', views.TipoAguaZonaHidricaListView.as_view(), name='tipo-agua-cuencas'),   
       
         path('zona_hidrica/list-create/', views.CrearZonaHidricaVista.as_view(), name='zonas-hidricas-crear'),

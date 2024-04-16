@@ -251,7 +251,10 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_persona_despacha = serializers.SerializerMethodField()
     tipo_solicitud = serializers.SerializerMethodField()
-
+    numero_activos = serializers.SerializerMethodField()
+    id_funcionario_resp_asignado = serializers.SerializerMethodField()
+    tipo_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
+    numero_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
     class Meta:
         model = DespachoActivos
         fields = '__all__'
@@ -281,6 +284,28 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         if not obj.id_solicitud_activo:
             # Si no hay una solicitud asociada, retornar 'Despacho sin solicitud'
             return 'Despacho sin solicitud'
+        
+    def get_numero_activos(self, instance):
+        # Obtener el número de activos relacionados con esta solicitud
+        return ItemsDespachoActivos.objects.filter(id_despacho_activo=instance).count()
+    
+    def get_id_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.id_persona
+        return None
+    
+    def get_tipo_documento_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.tipo_documento.cod_tipo_documento
+        return None
+    
+    def get_numero_documento_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.numero_documento
+        return None
         
 
     
@@ -418,6 +443,15 @@ class AsignacionActivosSerializer(serializers.ModelSerializer):
     
 
 class ItemsDespachoActivosSerializer(serializers.ModelSerializer):
+    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    identificador_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.doc_identificador_nro', default=None)
+    nombre_bodega_despachado = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    id_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.id_marca', default=None)
+    nombre_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)
+    nombre_uni_medida_solicitada = serializers.ReadOnlyField(source='id_uni_medida_solicitada.nombre', default=None)
+    abreviatura_uni_medida_solicitada = serializers.ReadOnlyField(source='id_uni_medida_solicitada.abreviatura', default=None)
+
     class Meta:
         model = ItemsDespachoActivos
         fields = '__all__'
@@ -427,7 +461,7 @@ class BusquedaArticuloSubSerializer(serializers.ModelSerializer):
     id_bien = serializers.ReadOnlyField(source='id_bien.id_bien', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
-    id_bien = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
+    id_bodega = serializers.ReadOnlyField(source='id_bodega.id_bodega', default=None)
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     class Meta:
         model = Inventario

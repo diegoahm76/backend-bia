@@ -232,7 +232,7 @@ class MetadatosAnexosTmp(models.Model):
     id_metadatos_anexo_tmp = models.AutoField(primary_key=True, db_column='T260IdMetadatos_Anexo_Tmp')
     id_anexo = models.ForeignKey(Anexos, on_delete=models.CASCADE, db_column='T260Id_Anexo')
     nombre_original_archivo = models.CharField(max_length=50, db_column='T260nombreOriginalDelArchivo', null=True)
-    fecha_creacion_doc = models.DateField(db_column='T260fechaCreacionDoc', null=True)
+    fecha_creacion_doc = models.DateTimeField(db_column='T260fechaCreacionDoc', null=True)
     descripcion = models.CharField(max_length=500, db_column='T260descripcion', null=True)
     asunto = models.CharField(max_length=150, db_column='T260asunto', null=True)
     cod_categoria_archivo = models.CharField(max_length=2, choices=tipo_archivo_CHOICES, db_column='T260codCategoriaArchivo', null=True)
@@ -314,7 +314,7 @@ class SolicitudDeDigitalizacion(models.Model):
     id_solicitud_de_digitalizacion = models.AutoField(primary_key=True, db_column='T263IdSolicitudDeDigitalizacion')
     id_pqrsdf = models.ForeignKey('Pqrsdf', models.SET_NULL, db_column='T263Id_PQRSDF', blank=True, null=True)
     id_complemento_usu_pqr = models.ForeignKey(ComplementosUsu_PQR, models.SET_NULL, db_column='T263Id_ComplementoUsu_PQR', blank=True, null=True)
-    id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otro', blank=True, null=True)
+    id_otro = models.ForeignKey(Otros, models.SET_NULL, db_column='T263Id_Otros', blank=True, null=True)#T263Id_Otro
     id_tramite = models.ForeignKey('tramites.SolicitudesTramites', models.SET_NULL, db_column='T263Id_SolicitudTramite', blank=True, null=True)
     fecha_solicitud = models.DateTimeField(db_column='T263fechaSolicitud')
     id_respuesta_requerimiento = models.ForeignKey('tramites.RespuestasRequerimientos', models.SET_NULL, db_column='T263IdRespuestasRequerimientos', blank=True, null=True)
@@ -385,6 +385,7 @@ class AsignacionTramites(models.Model):
     asignacion_de_ventanilla = models.BooleanField(db_column='T279asignacionDeVentanilla')
     id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_tramites')
     id_und_org_oficina_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.SET_NULL,null=True,blank=True,db_column='T279Id_UndOrgOficina_Asignada')
+    id_catalogo_serie_subserie = models.IntegerField(db_column='T279id_CatSeries_UndOrg_CCD', null=True, blank=True)
     class Meta:
         db_table = 'T279Asignacion_Tramites'
         unique_together = (('id_solicitud_tramite', 'consecutivo_asign_x_tramite'),)
