@@ -23,7 +23,7 @@ class Siembras(models.Model):
     distancia_entre_semillas = models.SmallIntegerField(db_column='T157distanciaEntreSemillas')
     id_persona_siembra = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T157Id_PersonaSiembra')
     siembra_abierta = models.BooleanField(default=True, db_column='T157siembraAbierta')
-    ruta_archivo_soporte = models.FileField(null=True, blank=True, max_length=255, upload_to='conservacion/siembras/', db_column='T157rutaArchivoSoporte')
+    ruta_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T157rutaArchivoSoporte')
     
     def __str__(self):
         return str(self.id_siembra)
@@ -100,7 +100,7 @@ class CambiosDeEtapa(models.Model):
     justificacion_anulacion = models.CharField(max_length=255, null=True, blank=True, db_column='T161justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(null=True, blank=True, db_column='T161fechaAnulacion')
     id_persona_anula = models.ForeignKey(Personas, on_delete=models.SET_NULL, null=True, blank=True, db_column='T161Id_PersonaAnula', related_name='id_persona_anula')
-    ruta_archivo_soporte = models.FileField(null=True, blank=True, max_length=255, upload_to='conservacion/cambios_etapa/', db_column='T161rutaArchivoSoporte')
+    ruta_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T161rutaArchivoSoporte')
     
     def __str__(self):
         return str(self.id_cambio_de_etapa)
