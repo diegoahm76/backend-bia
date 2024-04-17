@@ -141,7 +141,7 @@ class LiquidacionesBasePostMasivovista(generics.CreateAPIView):
                 try:
                     expediente = Expedientes.objects.get(pk=id_expediente)
                     print("Expediente encontrado:", expediente)
-                    expediente.estado = 'guardadossss'
+                    expediente.estado = 'guardado'
                     expediente.save()
                     print("Estado del expediente actualizado:", expediente.estado)
                 except Expedientes.DoesNotExist:
