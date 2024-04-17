@@ -3856,9 +3856,10 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
         data = request.data
 
         data_expediente = {}
+        request_serializer = {}
         
         # Crear codigo expediente
-        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=data['id_cat_serie_und_org_ccd_trd_prop']).first()
+        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_org_ccd_trd_prop']).first()
         
         if not tripleta_trd:
             raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
@@ -3902,27 +3903,35 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
             
         data_expediente['titulo_expediente'] = f"Expediente PQRSDF {codigo_exp_und_serie_subserie} {current_date.year}"
         data_expediente['descripcion_expediente'] = f"Expediente PQRSDF para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
+        data_expediente['palabras_clave_expediente'] = f"Expediente|PQRSDF|{codigo_exp_und_serie_subserie}|{current_date.year}"
+        data_expediente['id_cat_serie_und_org_ccd_trd_prop'] = tripleta_trd.id_catserie_unidadorg
+        data_expediente['id_trd_origen'] = tripleta_trd.id_trd.id_trd
+        data_expediente['id_und_seccion_propietaria_serie'] = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional
+        data_expediente['id_serie_origen'] = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc
+        data_expediente['id_subserie_origen'] = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
         data_expediente['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
         data_expediente['estado'] = 'A'
         data_expediente['fecha_apertura_expediente'] = current_date
+        data_expediente['fecha_folio_inicial'] = current_date
         data_expediente['cod_etapa_de_archivo_actual_exped'] = 'G'
         data_expediente['tiene_carpeta_fisica'] = False
         data_expediente['ubicacion_fisica_esta_actualizada'] = False
         data_expediente['creado_automaticamente'] = True
         data_expediente['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
         data_expediente['id_unidad_org_oficina_respon_original'] = data['id_unidad_org_oficina_respon_original']
-        data_expediente['id_und_org_oficina_respon_actual'] = tripleta_trd.id_catserie_unidadorg
+        data_expediente['id_und_org_oficina_respon_actual'] = data['id_unidad_org_oficina_respon_original']
 
-        request['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
-        request['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+
+        request.data['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        request.data['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
 
         
         if configuracion_expediente.cod_tipo_expediente == 'S':
-            serializer = self.serializer_class(data=data, context = {'request':request})
+            serializer = self.serializer_class(data=data_expediente, context = {'request':request})
             serializer.is_valid(raise_exception=True)
             expediente_creado = serializer.save()
         elif configuracion_expediente.cod_tipo_expediente == 'C':
-            serializer = self.serializer_class_complejo(data=data, context = {'request':request})
+            serializer = self.serializer_class_complejo(data=data_expediente, context = {'request':request})
             serializer.is_valid(raise_exception=True)
             expediente_creado = serializer.save()
         
@@ -3939,15 +3948,14 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
         usuario = request.user.id_usuario
         descripcion = {
             "CodigoExpUndSerieSubserie": str(codigo_exp_und_serie_subserie),
-            "CodigoExpAgno": str(data['codigo_exp_Agno'])
+            "CodigoExpAgno": str(serializer.data.get('codigo_exp_Agno')),
         }
         if codigo_exp_consec_por_agno:
             descripcion['CodigoExpConsecPorAgno'] = str(codigo_exp_consec_por_agno)
         
         direccion = Util.get_client_ip(request)
         auditoria_data = {
-            "id_usuario" : usuario,
-            "id_modulo" : 160,
+            "id_modulo" : 188,
             "cod_permiso": "CR",
             "subsistema": 'GEST',
             "dirip": direccion,
