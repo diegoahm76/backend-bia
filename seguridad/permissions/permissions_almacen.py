@@ -692,6 +692,300 @@ class PermisoConsultarCatalogoBienes(BasePermission):
 
         return False
 
+# ENTRADA DE BIENES
+class PermisoCrearEntradaAlmacen(BasePermission):
+    message = 'No tiene permiso para crear entradas en almacén de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=105))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarEntradaAlmacen(BasePermission):
+    message = 'No tiene permiso para consultar entradas en almacén de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=106))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarEntradaAlmacen(BasePermission):
+    message = 'No tiene permiso para actualizar entradas en almacén de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=107))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoAnularEntradaAlmacen(BasePermission):
+    message = 'No tiene permiso para anular entradas en almacén de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=108))
+            if permisos_modulo_rol:
+                return True
+
+        return False    
+
+# SOLICITUDES DE CONSUMO
+class PermisoCrearSolicitudConsumo(BasePermission):
+    message = 'No tiene permiso para crear solicitudes de bienes de consumo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=109))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarSolicitudConsumo(BasePermission):
+    message = 'No tiene permiso para consultar solicitudes de bienes de consumo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=110))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarSolicitudConsumo(BasePermission):
+    message = 'No tiene permiso para actualizar solicitudes de bienes de consumo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=111))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoAnularSolicitudConsumo(BasePermission):
+    message = 'No tiene permiso para anular solicitudes de bienes de consumo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=112))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoCrearSolicitudConsumoViveros(BasePermission):
+    message = 'No tiene permiso para crear solicitudes de bienes de consumo para viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=113))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# SOLICITUDES DE CONSUMO PARA VIVEROS
+class PermisoConsultarSolicitudConsumoViveros(BasePermission):
+    message = 'No tiene permiso para consultar solicitudes de bienes de consumo para viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=114))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarSolicitudConsumoViveros(BasePermission):
+    message = 'No tiene permiso para actualizar solicitudes de bienes de consumo para viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=115))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoAnularSolicitudConsumoViveros(BasePermission):
+    message = 'No tiene permiso para anular solicitudes de bienes de consumo para viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=116))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# APROBACIONES DE SOLICITUDES DE BIENES
+class PermisoCrearAprobacionSolicitudesBienes(BasePermission):
+    message = 'No tiene permiso para crear aprobaciones de solicitudes de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=117))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarAprobacionSolicitudesBienes(BasePermission):
+    message = 'No tiene permiso para consultar aprobaciones de solicitudes de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=118))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarAprobacionSolicitudesBienes(BasePermission):
+    message = 'No tiene permiso para actualizar aprobaciones de solicitudes de bienes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=119))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# APROBACIONES DE SOLICITUDES DE CONSUMO PARA VIVEROS
+class PermisoCrearAprobacionSolicitudesConsumoVivero(BasePermission):
+    message = 'No tiene permiso para crear aprobaciones de solicitudes de consumo para vivero'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=120))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarAprobacionSolicitudesConsumoVivero(BasePermission):
+    message = 'No tiene permiso para consultar aprobaciones de solicitudes de consumo para vivero'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=121))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarAprobacionSolicitudesConsumoVivero(BasePermission):
+    message = 'No tiene permiso para actualizar aprobaciones de solicitudes de consumo para vivero'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=122))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# RECHAZOS DE SOLICITUDES DE BIENES
+class PermisoCrearRechazoSolicitudesBienesAlmacen(BasePermission):
+    message = 'No tiene permiso para crear rechazos de solicitudes de bienes desde almacén'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=123))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarRechazoSolicitudesBienesAlmacen(BasePermission):
+    message = 'No tiene permiso para consultar rechazos de solicitudes de bienes desde almacén'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=124))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoActualizarRechazoSolicitudesBienesAlmacen(BasePermission):
+    message = 'No tiene permiso para actualizar rechazos de solicitudes de bienes desde almacén'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=125))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# SOLICITUDES DE BIENES PENDIENTES POR DESPACHAR
+class PermisoConsultarSolicitudesPendientesDespachar(BasePermission):
+    message = 'No tiene permiso para consultar el listado de solicitudes de bienes pendientes por despachar'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=126))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# DESPACHO DE BIENES DE CONSUMO
 class PermisoCrearDespachoBienesConsumo(BasePermission):
     message = 'Almacén no puede crear los bienes de consumo de la entidad para su despacho'
     def has_permission(self, request, view):
@@ -824,4 +1118,324 @@ class PermisoActualizarCierreSolicitudesBienesNoDisponibilidad(BasePermission):
                 return True
         return False
 
+# VEHICULOS ARRENDADOS
+class PermisoCrearVehiculosArrendados(BasePermission):
+    message = 'No tiene permiso para crear vehículos arrendados'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
 
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=300))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarVehiculosArrendados(BasePermission):
+    message = 'No tiene permiso para actualizar vehículos arrendados'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=301))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoConsultarVehiculosArrendados(BasePermission):
+    message = 'No tiene permiso para consultar vehículos arrendados'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=302))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoBorrarVehiculosArrendados(BasePermission):
+    message = 'No tiene permiso para borrar vehículos arrendados'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=303))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# CONTROL DE INVENTARIO DE ALMACEN
+class PermisoConsultarControlInventarioAlmacen(BasePermission):
+    message = 'No tiene permiso para consultar el control de inventario de almacén'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=424))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# TABLERO DE CONTROL DE ALMACEN
+class PermisoConsultarTableroControlAlmacen(BasePermission):
+    message = 'No tiene permiso para consultar el tablero de control de almacén'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=425))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# CENTRAL DE REPORTES
+class PermisoConsultarCentralReportes(BasePermission):
+    message = 'No tiene permiso para consultar la central de reportes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=426))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# SOLICITUDES DE VIAJES
+class PermisoCrearSolicitudesViajes(BasePermission):
+    message = 'No tiene permiso para crear solicitudes de viajes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=684))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarSolicitudesViajes(BasePermission):
+    message = 'No tiene permiso para actualizar solicitudes de viajes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=685))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoConsultarSolicitudesViajes(BasePermission):
+    message = 'No tiene permiso para consultar solicitudes de viajes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=686))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoBorrarSolicitudesViajes(BasePermission):
+    message = 'No tiene permiso para borrar solicitudes de viajes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=687))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# ASIGNACIONES DE VEHICULOS
+class PermisoCrearAsignacionVehiculo(BasePermission):
+    message = 'No tiene permiso para crear asignaciones de vehículo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=688))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarAsignacionVehiculo(BasePermission):
+    message = 'No tiene permiso para consultar asignaciones de vehículo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=689))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# INSPECCIONES DE VEHICULOS
+class PermisoCrearInspeccionVehiculos(BasePermission):
+    message = 'No tiene permiso para crear inspecciones de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=690))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarInspeccionVehiculos(BasePermission):
+    message = 'No tiene permiso para actualizar inspecciones de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=691))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarInspeccionVehiculos(BasePermission):
+    message = 'No tiene permiso para consultar inspecciones de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=692))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# AGENDAMIENTOS DE VEHICULOS
+class PermisoCrearAgendamientoVehiculos(BasePermission):
+    message = 'No tiene permiso para crear agendamientos de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=693))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarAgendamientoVehiculos(BasePermission):
+    message = 'No tiene permiso para actualizar agendamientos de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=694))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+    
+class PermisoConsultarAgendamientoVehiculos(BasePermission):
+    message = 'No tiene permiso para consultar agendamientos de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=695))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoBorrarAgendamientoVehiculos(BasePermission):
+    message = 'No tiene permiso para borrar agendamientos de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=696))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# BITACORAS DE VIAJES
+class PermisoCrearBitacoraViajes(BasePermission):
+    message = 'No tiene permiso para crear bitácoras de viajes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=697))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarBitacoraViajes(BasePermission):
+    message = 'No tiene permiso para consultar bitácoras de viajes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=698))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# REVISIONES DE INSPECCIONES DE VEHICULOS
+class PermisoCrearRevisionInspeccionVehiculos(BasePermission):
+    message = 'No tiene permiso para crear revisiones de inspecciones de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=714))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarRevisionInspeccionVehiculos(BasePermission):
+    message = 'No tiene permiso para consultar revisiones de inspecciones de vehículos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=715))
+            if permisos_modulo_rol:
+                return True
+
+        return False
