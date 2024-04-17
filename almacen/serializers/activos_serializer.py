@@ -75,8 +75,7 @@ class AnexosOpcionalesDocsAlmaSerializer(serializers.ModelSerializer):
 class ArchivosDigitalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArchivosDigitales
-        fields = '__all__'  # Agrega aquí los campos que necesites para los archivos digitales
-
+        fields = '__all__'  
 class BajaActivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = BajaActivos
@@ -86,7 +85,7 @@ class BajaActivosSerializer(serializers.ModelSerializer):
 
 class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
     id_baja_activo = BajaActivosSerializer()
-    id_archivo_digital = ArchivosDigitalesSerializer()  # Agrega el serializador para los archivos digitales
+    id_archivo_digital = ArchivosDigitalesSerializer()  
 
     class Meta:
         model = AnexosDocsAlma
@@ -370,6 +369,8 @@ class DevolucionActivosSerializer(serializers.ModelSerializer):
             nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
             nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
         return nombre_persona_anulacion
+    
+    
 
 class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()

@@ -134,10 +134,13 @@ class IniciarPagoView(generics.CreateAPIView):
             if scheduler:
                 print("ENTRÓ A SONDA")
                 execution_time = datetime.now() + timedelta(minutes=10)
+                print("EXECUTION TIME: ", execution_time)
                 scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
-            return redirect(redirect_url)
-            # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
+            data_response = serializer_pago.data
+            data_response['redirect_url'] = redirect_url
+
+            return Response({"success": True, "message": "Inicio de pago exitoso", "data": data_response}, status=status.HTTP_201_CREATED)
         else:
             return ValidationError('Ocurrió un error obteniendo el ID de la transacción')
 
