@@ -5,6 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.pagination import PageNumberPagination
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -705,16 +706,41 @@ class EstadoVFDelete(generics.DestroyAPIView):
 
 # Listar todos los registros de códigos UNSP
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'results': data
+        })
+
 class CodigosUNSPList(generics.ListAPIView):
     serializer_class = CodigosUNSPSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPageNumberPagination
 
     def get(self, request):
-        codigos = CodigosUNSP.objects.all().values('id_codigo', 'codigo_unsp', 'nombre_producto_unsp', 'activo')
-        #serializer = CodigosUNSPSerializer(codigos, many=True)
-        if not codigos:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': codigos}, status=status.HTTP_200_OK)
+        codigos = CodigosUNSP.objects.all()
+        nombre = request.query_params.get('nombre')
+        codigo = request.query_params.get('codigo')
+        if codigo:
+            codigos = CodigosUNSP.objects.filter(codigo_unsp__icontains = codigo)
+        if nombre:
+            codigos = CodigosUNSP.objects.filter(nombre_producto_unsp__icontains = nombre)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(codigos, request)
+        if page is not None:
+            serializer = CodigosUNSPSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = CodigosUNSPSerializer(codigos, many=True)
+        return Response(serializer.data)
     
 # Crear un registro de código UNSP
 
