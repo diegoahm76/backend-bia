@@ -134,6 +134,7 @@ class IniciarPagoView(generics.CreateAPIView):
             if scheduler:
                 print("ENTRÓ A SONDA")
                 execution_time = datetime.now() + timedelta(minutes=10)
+                print("EXECUTION TIME: ", execution_time)
                 scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
             data_response = serializer_pago.data
