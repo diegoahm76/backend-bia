@@ -1828,6 +1828,12 @@ class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
         else:
             id_despacho_activo_data = None
 
+        
+        # Datos del usuario logueado (almacenista)
+        id_persona_logueada = request.user.persona.id_persona
+        persona_logueada = Personas.objects.filter(id_persona=id_persona_logueada).first()
+        almacenista_serializer = AlmacenistaLogueadoSerializer(persona_logueada)
+
         # Devolver la información como respuesta
         return Response({
             'success': True,
@@ -1835,7 +1841,9 @@ class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
             'devolucion_activos': devolucion_activos_serializer.data,
             'activos_devueltos': activos_devueltos_serializer.data,
             'item_despacho_activos': item_despacho_activos_data,
-            'despacho_activo': id_despacho_activo_data
+            'despacho_activo': id_despacho_activo_data,
+            'almacenista_logueado': almacenista_serializer.data  
+
         }, status=status.HTTP_200_OK)
 
 # class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):

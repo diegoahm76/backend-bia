@@ -369,6 +369,8 @@ class DevolucionActivosSerializer(serializers.ModelSerializer):
             nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
             nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
         return nombre_persona_anulacion
+    
+    
 
 class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()
