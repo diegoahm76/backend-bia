@@ -12,7 +12,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
-from seguimiento_planes.models.planes_models import Metas
+from seguimiento_planes.models.planes_models import Metas, Rubro
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -996,6 +996,11 @@ class BancoProyectoCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        rubro = Rubro.objects.get(id_rubro=request.data['id_rubro'])
+
+        if request.data['banco_valor'] > rubro.valcuenta:
+            raise ValidationError('El valor del banco de proyecto no puede ser mayor al valor de la cuenta del rubro.')
+
         serializer = BancoProyectoSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
