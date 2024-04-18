@@ -230,6 +230,7 @@ class VerificarPagoView(generics.CreateAPIView):
 class NotificarPagoView(generics.CreateAPIView):
 
     def create(self, request):
+        print("Entró a servicio de Notificar Pago")
         id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
 
@@ -256,8 +257,10 @@ class NotificarPagoView(generics.CreateAPIView):
                     pago.fecha_pago = datetime.now()
                     pago.notificacion = True
                     pago.save()
+
+                    # ACTUALIZAR T273 BOOL PAGO Y FOREIGN KEY PAGO CUANDO ESTADO == 1 (PRIMERA VEZ). ACTUALIZAR ESTADO LIQUIDACION EN T403 - CREAR COMPROBANTE DE PAGO Y GUARDAR EN T468
                 else:
-                    url_get_pimisys = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
+                    url_get_pimisys = "http://cormacarenatest.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
                     params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
                     # ENVIAR NOTIFICACION A PIMYSIS
