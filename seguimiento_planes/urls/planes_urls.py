@@ -45,7 +45,7 @@ urlpatterns=[
     path('actualizar-programas/<str:pk>/',views.ProgramaUpdate.as_view(),name='actualizarprogramas'),
     path('eliminar-programas/<str:pk>/',views.ProgramaDelete.as_view(),name='eliminarprogramas'),
     path('consultar-programas-id/<str:pk>/',views.ProgramaDetail.as_view(),name='consultarprogramasid'),
-    path('consultar-programas-id-planes/<str:pk>/',views.ProgramaListIdPlanes.as_view(),name='consultarprogramasidplanes'),
+    path('consultar-programas-id-eje-estrategico/<str:pk>/',views.ProgramaListIdEjeEstrategico.as_view(),name='consultarprogramasIdEjeEstrategico'),
     # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
     path('consultar-programas-periodo/',views.ProgramaListPeriodoTiempo.as_view(),name='consultarprogramasperiodo'),
     # Busqueda Avanzada Programas por nombre programa y nombre plan
