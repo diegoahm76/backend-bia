@@ -99,7 +99,16 @@ def complemento_mensaje_Alm_VeDocV(id_elemento):
     mensaje += f"<li><b>Marca: </b>{vehiculo.id_marca.nombre}</li>"
     mensaje += f"<li><b>Placa: </b>{vehiculo.codigo_bien}</li>"
     mensaje += f"<li><b>Tipo de documento: </b>{documento.get_cod_tipo_documento_display()}</li>"
+    mensaje += f"<li><b>Numero del documento: </b>{documento.nro_documento}</li>"
+    mensaje += f"<li><b>Fecha inicio de vigencia del documento: </b>{documento.fecha_inicio_vigencia}</li>"
+    mensaje += f"<li><b>Fecha fin de vigencia del documento: </b>{documento.fecha_expiracion}</li>"
+    mensaje += f"<li><b>Empresa proveedora: </b>{documento.id_empresa_proveedora.nombre_comercial}</li>"
+
+    #DIAS RESTANTES
     hoy = date.today()
+    hoy = date.today()
+    dias = documento.fecha_expiracion - hoy
+    mensaje += f"<li><b>Dias restantes: </b>{dias.days}</li>"
 
     return mensaje + "</ul>"
 
