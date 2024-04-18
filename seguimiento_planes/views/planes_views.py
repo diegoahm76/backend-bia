@@ -558,11 +558,11 @@ class ProgramaListIdEjeEstrategico(generics.ListAPIView):
 # Busqueda Avanzada Programas por nombre programa y nombre plan
 
 class BusquedaAvanzadaProgramas(generics.ListAPIView):
-    queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        queryset = Programa.objects.all()
         nombre_programa = request.query_params.get('nombre_programa', '')
         nombre_eje = request.query_params.get('nombre_eje', '')
 
@@ -571,6 +571,7 @@ class BusquedaAvanzadaProgramas(generics.ListAPIView):
             queryset = Programa.objects.filter(nombre_programa__icontains=nombre_programa)
         if nombre_eje != '':
             queryset = Programa.objects.filter(id_eje_estrategico__nombre__icontains=nombre_eje)
+        
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')

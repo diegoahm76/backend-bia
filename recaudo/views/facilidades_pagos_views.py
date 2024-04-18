@@ -34,7 +34,7 @@ from recaudo.models.facilidades_pagos_models import (
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.garantias_models import RolesGarantias
-from recaudo.models.liquidaciones_models import Deudores
+from recaudo.models.liquidaciones_models import Deudores, Expedientes
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import ClasesTerceroPersona
 from recaudo.models.cobros_models import Cartera
@@ -66,7 +66,8 @@ class CarteraDeudorListViews(generics.ListAPIView):
     
     def obligaciones_deudor(self, numero_identificacion):
         deudor = Deudores.objects.filter(identificacion=numero_identificacion).first()
-        
+        estado = Expedientes.objects.filter(id_deudor=deudor.id).first()
+        print(estado)
         if deudor:     
             nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
             cartera = Cartera.objects.filter(id_deudor=deudor)
