@@ -564,10 +564,13 @@ class BusquedaAvanzadaProgramas(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         nombre_programa = request.query_params.get('nombre_programa', '')
-        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_eje = request.query_params.get('nombre_eje', '')
 
         # Realiza la búsqueda utilizando el campo 'nombre_programa' en el modelo
-        queryset = Programa.objects.filter(nombre_programa__icontains=nombre_programa, id_plan__nombre_plan__icontains=nombre_plan)
+        if nombre_programa != '':
+            queryset = Programa.objects.filter(nombre_programa__icontains=nombre_programa)
+        if nombre_eje != '':
+            queryset = Programa.objects.filter(id_eje_estrategico__nombre__icontains=nombre_eje)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
