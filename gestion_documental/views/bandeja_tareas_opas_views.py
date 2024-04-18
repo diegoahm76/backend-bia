@@ -133,7 +133,7 @@ class CrearExpedienteOPA(generics.CreateAPIView):
         
         if not tripleta_trd:
             raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
-        
+        #PENDIENTE EL AÑO
         configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg).first()
 
         if not configuracion_expediente:
@@ -315,32 +315,22 @@ class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
             request.data['id_cat_serie_und_org_ccd_trd_prop'] = asignacion.id_catalogo_serie_subserie
             request.data['id_unidad_org_oficina_respon_original'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
             respuesta = vista_creadora_expediente.create(request)
-            #print(respuesta.data)
+            respuesta = respuesta.data['data']
 
-
-            # {
-            # "titulo_expediente": "Prueba Expediente",
-            # "descripcion_expediente": "Prueba Oscar",
-            # "id_unidad_org_oficina_respon_original": 5382,
-            # "id_und_org_oficina_respon_actual": 5382,
-            # "id_persona_responsable_actual": null,
-            # "fecha_apertura_expediente": "2023-10-15",
-            # "palabras_clave_expediente": "test|prueba|expediente|macarenia|oscar",
-            # "cod_tipo_expediente": "S",
-            # "carpetas_caja": [15,16],
-            # "id_cat_serie_und_org_ccd_trd_prop": 219,
-            # "id_trd_origen": 62,
-            # "id_und_seccion_propietaria_serie": 5381,
-            # "id_serie_origen": 295,
-            # "id_subserie_origen": null,
-            # "id_persona_titular_exp_complejo": null
-            # }
-
-            
+            id_expediente = respuesta['id_expediente_documental']
+            expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
+            if not expediente:
+                raise NotFound("No se encontro el expediente")
            
+            tramite = asignacion.id_solicitud_tramite
+            tramite.id_expediente = expediente
+            tramite.fecha_expediente = respuesta['fecha_apertura_expediente']
+            tramite.save()
            
 
-        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+
+
+        return Response({'success':True,'detail':"Se acepto la tarea correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 
