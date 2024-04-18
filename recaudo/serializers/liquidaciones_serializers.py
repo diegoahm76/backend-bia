@@ -18,7 +18,7 @@ class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
 class OpcionesLiquidacionBasePutSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpcionesLiquidacionBase
-        fields = ('nombre', 'estado', 'version', 'funcion', 'variables', 'bloques')
+        fields = ('nombre', 'estado', 'version', 'funcion', 'variables', 'bloques','tipo_cobro','tipo_renta')
 
 
 class DeudoresSerializer(serializers.ModelSerializer):
@@ -56,6 +56,21 @@ class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
         model = LiquidacionesBase
         fields = '__all__'
 
+class LiquidacionesBasePostMasivoSerializer(serializers.ModelSerializer):
+    id_expediente = serializers.ListField(child=serializers.IntegerField())
+
+    class Meta:
+        model = LiquidacionesBase
+        fields = ('id', 'id_deudor', 'id_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'estado', 'ciclo_liquidacion')
+
+    def create(self, validated_data):
+        id_expedientes = validated_data.pop('id_expediente', [])
+        instance = super().create(validated_data)
+        for id_expediente in id_expedientes:
+            expediente = Expedientes.objects.get(pk=id_expediente)
+            expediente.estado = 'guardado'
+            expediente.save()
+        return instance
 
 class DetallesLiquidacionBasePostSerializer(serializers.ModelSerializer):
     class Meta:
