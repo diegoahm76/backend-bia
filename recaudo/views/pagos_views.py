@@ -134,10 +134,13 @@ class IniciarPagoView(generics.CreateAPIView):
             if scheduler:
                 print("ENTRÓ A SONDA")
                 execution_time = datetime.now() + timedelta(minutes=10)
+                print("EXECUTION TIME: ", execution_time)
                 scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
-            return redirect(redirect_url)
-            # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
+            data_response = serializer_pago.data
+            data_response['redirect_url'] = redirect_url
+
+            return Response({"success": True, "message": "Inicio de pago exitoso", "data": data_response}, status=status.HTTP_201_CREATED)
         else:
             return ValidationError('Ocurrió un error obteniendo el ID de la transacción')
 
@@ -227,6 +230,7 @@ class VerificarPagoView(generics.CreateAPIView):
 class NotificarPagoView(generics.CreateAPIView):
 
     def create(self, request):
+        print("Entró a servicio de Notificar Pago")
         id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
 
@@ -253,8 +257,10 @@ class NotificarPagoView(generics.CreateAPIView):
                     pago.fecha_pago = datetime.now()
                     pago.notificacion = True
                     pago.save()
+
+                    # ACTUALIZAR T273 BOOL PAGO Y FOREIGN KEY PAGO CUANDO ESTADO == 1 (PRIMERA VEZ). ACTUALIZAR ESTADO LIQUIDACION EN T403 - CREAR COMPROBANTE DE PAGO Y GUARDAR EN T468
                 else:
-                    url_get_pimisys = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
+                    url_get_pimisys = "http://cormacarenatest.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
                     params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
                     # ENVIAR NOTIFICACION A PIMYSIS

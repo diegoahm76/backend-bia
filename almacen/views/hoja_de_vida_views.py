@@ -136,19 +136,13 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
                 'dia_cumplimiento':documento.fecha_expiracion.day,
                 'mes_cumplimiento':documento.fecha_expiracion.month,
                 'age_cumplimiento':documento.fecha_expiracion.year,
-                #'complemento_mensaje':mensaje,
-                'id_elemento_implicado':instance.id_hoja_de_vida,
-                #'id_persona_implicada':persona.id_persona,
+                'id_elemento_implicado':documento.id_documentos_vehiculos,
                 "tiene_implicado":False
                 }
-                #print( data_alerta )
+
                 response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
                 if response_alerta.status_code!=status.HTTP_201_CREATED:
                     return response_alerta
-                #print(response_alerta.data)
-        print(documentos)
-        #raise ValidationError("stop")
-
 
         return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
@@ -406,6 +400,8 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
                 'valores_actualizados': valores_actualizados
             }
             Util.save_auditoria(auditoria_data)
+
+            
             
             return Response({'success':True, 'detail':'Se ha actualizado la hoja de vida', 'data':data_serializada}, status=status.HTTP_201_CREATED)
         else:

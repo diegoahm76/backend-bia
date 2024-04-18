@@ -199,14 +199,13 @@ FRECUENCIA_CHOICES = [
     ('anual', 'Anual'),
 ]
 
-# Choices para el formulario
-FORMULARIO_CHOICES = [
-    ('1', 'RECAUDO TUA'),
-    ('2', 'RECAUDO TR'),
-    ('3', 'COSTO RECAUDO TUA'),
-    ('4', 'COSTO RECAUDO TR'),
-]
 
+class Formulario(models.Model):
+    id = models.AutoField(primary_key=True)
+    nombre = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = 'T469formularionombre'
 
 class IndicadoresSemestral(models.Model):
     id_indicador = models.AutoField(primary_key=True, db_column='T465IdIndicador')  # Campo autoincremental
@@ -224,7 +223,11 @@ class IndicadoresSemestral(models.Model):
     fecha_creacion = models.DateField(auto_now_add=True, db_column='T465Fecha_creacion')
     responsable_creacion = models.CharField(max_length=255, db_column='T465Responsable_creacion')
     tipo_indicador = models.CharField(max_length=255, db_column='T465Tipo_indicador')
-    formulario = models.CharField(max_length=1, choices=FORMULARIO_CHOICES, db_column='T465Formulario')
+    # formulario = models.CharField(max_length=1, choices=FORMULARIO_CHOICES, db_column='T465Formulario')
+    formulario = models.ForeignKey(Formulario, on_delete=models.CASCADE, db_column='T465Formulario')
+    interpretacion=models.CharField(max_length=500,db_column='T465Interpretacion',null=True,default=True)  # Cambiado a campo booleano
+    formula=models.CharField(max_length=255,db_column='T465Formula',null=True,default=True)  # Cambiado a campo booleano
+
 
     class Meta:
         db_table = 'T465IndicadoresSemestral'
@@ -501,3 +504,43 @@ class Rt916DistribucionCuot(models.Model):
 
     class Meta:
         db_table = 'rt916distribucioncuot'
+
+
+
+class Rt954Cobro(models.Model):
+    t954codcia = models.CharField(max_length=5)
+    t954idcobro = models.IntegerField()
+    t954codtiporenta = models.CharField(max_length=5)
+    t954codtipocobro = models.CharField(max_length=5)
+    t954nit = models.CharField(max_length=15)
+    t954liquidado = models.CharField(max_length=1)
+    t954numliquidacion = models.IntegerField()
+    t954secobra = models.CharField(max_length=1)
+    t954codorigencobro = models.CharField(max_length=5)
+    t954numorigencobro = models.IntegerField()
+    t954idpaso = models.SmallIntegerField()
+    t954consecpaso = models.SmallIntegerField()
+    t954numnotificacion = models.IntegerField()
+    t954anulado = models.CharField(max_length=1)
+    t954tuatm = models.CharField(max_length=10)
+    t954tuafr = models.DecimalField(max_digits=19, decimal_places=4)
+    t954tuavalortua = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trtmdbo = models.CharField(max_length=10)
+    t954trtmsst = models.CharField(max_length=10)
+    t954trfrdbo = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trfrsst = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trvalortrdbo = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trvalortrsst = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trcantperanidbo = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trcantperanisst = models.DecimalField(max_digits=19, decimal_places=4)
+    t954trtienepsmv = models.CharField(max_length=1)
+    t954tuaporcdcto = models.DecimalField(max_digits=19, decimal_places=4)
+    t954tuanormadcto = models.CharField(max_length=10)
+    t954tuausarvmanual = models.CharField(max_length=1)
+    t954replegalimportad = models.CharField(max_length=255)
+    t954tsetvb = models.CharField(max_length=15)
+    t954traplicadcto465 = models.CharField(max_length=1)
+
+    class Meta:
+        db_table = 'rt954cobro'
+        

@@ -2,8 +2,8 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
-from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES,FORMULARIO_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
+from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta,Formulario, Variables,ValoresVariables
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -28,11 +28,6 @@ class Crear_RegistrosConfiguracion(generics.CreateAPIView):
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
-           
-            
-            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
-            # serializer.validated_data['campo_adicional'] = valor
-
             serializer.save()
 
             return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
@@ -684,7 +679,12 @@ class Actualizar_IndicadoresSemestral(generics.UpdateAPIView):
         except Exception as e:
             # Manejar la excepción de manera adecuada
             return Response({'error': f'Error al actualizar el registro: {str(e)}'},
-                            status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST) 
+        
+
+
+
+
 class FrecuenciaMedicionListView(generics.ListAPIView):
     def get(self, request):
         
@@ -698,8 +698,46 @@ class MONTH_CHOICESListVieas(generics.ListAPIView):
         return Response({'meses_enumerados': formatted_choices}, status=status.HTTP_200_OK)
     
 
-class FORMULARIO_CHOICESListView(generics.ListAPIView):
+class Vista_Formulario (generics.ListAPIView):
+    queryset = Formulario.objects.all()
+    serializer_class = Formularioerializer
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+class Crear_Formularioerializer(generics.CreateAPIView):
+    queryset = Formulario.objects.all()
+    serializer_class = Formularioerializer
+
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
         
-        formatted_choices = [{'value': choice[0], 'label': choice[1]} for choice in FORMULARIO_CHOICES]
-        return Response({'tipos_Indicador': formatted_choices}, status=status.HTTP_200_OK)
+
+
+class Borrar_Formulario(generics.DestroyAPIView):
+    queryset = Formulario.objects.all()
+    serializer_class = Formularioerializer
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+                            status=status.HTTP_200_OK)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({e.detail})
+        

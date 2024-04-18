@@ -1828,6 +1828,12 @@ class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
         else:
             id_despacho_activo_data = None
 
+        
+        # Datos del usuario logueado (almacenista)
+        id_persona_logueada = request.user.persona.id_persona
+        persona_logueada = Personas.objects.filter(id_persona=id_persona_logueada).first()
+        almacenista_serializer = AlmacenistaLogueadoSerializer(persona_logueada)
+
         # Devolver la información como respuesta
         return Response({
             'success': True,
@@ -1835,7 +1841,9 @@ class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
             'devolucion_activos': devolucion_activos_serializer.data,
             'activos_devueltos': activos_devueltos_serializer.data,
             'item_despacho_activos': item_despacho_activos_data,
-            'despacho_activo': id_despacho_activo_data
+            'despacho_activo': id_despacho_activo_data,
+            'almacenista_logueado': almacenista_serializer.data  
+
         }, status=status.HTTP_200_OK)
 
 # class ObtenerDatosDevolucionActivos(generics.RetrieveAPIView):
@@ -3271,3 +3279,49 @@ class RechazarDespachoPut(generics.UpdateAPIView):
         serializer = self.serializer_class(despacho)
         return Response({'detail': 'El despacho asociado se ha rechazado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
+
+class AceptarDespachoPut(generics.UpdateAPIView):
+    queryset = DespachoActivos.objects.all()
+    serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def update(self, request, *args, **kwargs):
+        despacho_id = kwargs.get('pk')
+        
+        try:
+            despacho = DespachoActivos.objects.get(id_despacho_activo=despacho_id)
+        except DespachoActivos.DoesNotExist:
+            return Response({'detail': 'El despacho especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if despacho.estado_despacho != 'Ep':
+            return Response({'detail': 'Solo se puede Rechazar un despacho que esté en estado "En espera".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        persona_logueada = request.user.persona
+        persona_anula = get_object_or_404(Personas, id_persona=persona_logueada.id_persona)
+
+        solicitud = despacho.id_solicitud_activo
+        
+        with transaction.atomic():
+            despacho.estado_despacho = 'Ac'
+            despacho.fecha_autorizacion_resp = datetime.now()
+
+            if solicitud:
+                solicitud.estado_solicitud = 'DA'
+                solicitud.save()
+
+            # Actualizar el inventario asociado al despacho
+            inventario = Inventario.objects.filter(id_bodega=despacho.id_bodega.id_bodega).first()
+            if inventario:
+                inventario.ubicacion_en_bodega = False
+                inventario.ubicacion_asignado = despacho.despacho_sin_solicitud or (solicitud and solicitud.solicitud_prestamo == False)
+                inventario.ubicacion_prestado = solicitud and solicitud.solicitud_prestamo
+                inventario.id_persona_responsable = solicitud.id_funcionario_resp_unidad
+                inventario.fecha_ultimo_movimiento = datetime.now()
+                inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
+                inventario.save()
+
+            despacho.save()
+        
+        serializer = self.serializer_class(despacho)
+        return Response({'detail': 'El despacho asociado se ha rechazado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)

@@ -172,15 +172,20 @@ class ConsultarPlanesId(generics.ListAPIView):
 # Busqueda Avanzada Planes Nacionales de Desarrollo
 
 class BusquedaAvanzadaPlanes(generics.ListAPIView):
-    queryset = Planes.objects.all()
     serializer_class = PlanesSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        queryset = Planes.objects.all()
         nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_sigla_plan = request.query_params.get('nombre_sigla_plan', '')
 
         # Realiza la búsqueda utilizando el campo 'nombre_plan' en el modelo
-        queryset = Planes.objects.filter(nombre_plan__icontains=nombre_plan)
+        if nombre_plan != '':
+            queryset = Planes.objects.filter(nombre_plan__icontains=nombre_plan)
+
+        if nombre_sigla_plan != '':
+            queryset = Planes.objects.filter(sigla_plan__icontains=nombre_sigla_plan)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
@@ -207,16 +212,24 @@ class EjeEstractegicoList(generics.ListCreateAPIView):
 # Busqueda Avanzada eje por nombre plan, y nombre
 
 class BusquedaAvanzadaEjes(generics.ListAPIView):
-    queryset = EjeEstractegico.objects.all()
     serializer_class = EjeEstractegicoSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        queryset = EjeEstractegico.objects.all()
         nombre_plan = request.query_params.get('nombre_plan', '')
-        nombre_eje = request.query_params.get('nombre', '')
+        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
+        nombre_eje = request.query_params.get('nombre_eje', '')
 
         # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
-        queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje, id_plan__nombre_plan__icontains=nombre_plan)
+        if nombre_plan != '':
+            queryset = EjeEstractegico.objects.filter(id_plan__nombre_plan__icontains=nombre_plan)
+        
+        if nombre_objetivo != '':
+            queryset = EjeEstractegico.objects.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
+
+        if nombre_eje != '':
+            queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
@@ -298,6 +311,19 @@ class EjeEstractegicoListIdPlanes(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Eje Estratégico encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
+class EjeEstractegicoListIdObjetivo(generics.ListAPIView):
+    serializer_class = EjeEstractegicoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        queryset = EjeEstractegico.objects.all()
+        queryset = queryset.filter(id_objetivo=pk)
+        if not queryset:
+            raise NotFound('No se encontraron resultados.')
+        serializer = EjeEstractegicoSerializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Eje Estratégico encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
 # ---------------------------------------- Objetivos ----------------------------------------
 
 # Listar todos los Objetivos
@@ -317,16 +343,20 @@ class ObjetivoList(generics.ListCreateAPIView):
 # Busqueda Avanzada objetivo por nombre plan y nombre_objetivo
 
 class BusquedaAvanzadaObjetivos(generics.ListAPIView):
-    queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        queryset = Objetivo.objects.all()
         nombre_plan = request.query_params.get('nombre_plan', '')
         nombre_objetivo = request.query_params.get('nombre_objetivo', '')
 
         # Realiza la búsqueda utilizando el campo 'nombre_objetivo' en el modelo
-        queryset = Objetivo.objects.filter(nombre_objetivo__icontains=nombre_objetivo, id_plan__nombre_plan__icontains=nombre_plan)
+        if nombre_plan != '':
+            queryset = Objetivo.objects.filter(id_plan__nombre_plan__icontains=nombre_plan)
+
+        if nombre_objetivo != '':
+            queryset = Objetivo.objects.filter(nombre_objetivo__icontains=nombre_objetivo)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
@@ -513,13 +543,13 @@ class ProgramaDetail(generics.RetrieveAPIView):
 
 # Listar Programa por id planes
 
-class ProgramaListIdPlanes(generics.ListAPIView):
+class ProgramaListIdEjeEstrategico(generics.ListAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request, pk):
-        programa = self.queryset.all().filter(id_plan=pk)
+        programa = self.queryset.all().filter(id_eje_estrategico=pk)
         if not programa:
             raise NotFound('No se encontraron resultados.')
         serializer = ProgramaSerializer(programa, many=True)
@@ -534,10 +564,13 @@ class BusquedaAvanzadaProgramas(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         nombre_programa = request.query_params.get('nombre_programa', '')
-        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_eje = request.query_params.get('nombre_eje', '')
 
         # Realiza la búsqueda utilizando el campo 'nombre_programa' en el modelo
-        queryset = Programa.objects.filter(nombre_programa__icontains=nombre_programa, id_plan__nombre_plan__icontains=nombre_plan)
+        if nombre_programa != '':
+            queryset = Programa.objects.filter(nombre_programa__icontains=nombre_programa)
+        if nombre_eje != '':
+            queryset = Programa.objects.filter(id_eje_estrategico__nombre__icontains=nombre_eje)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')

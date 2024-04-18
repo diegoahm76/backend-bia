@@ -75,6 +75,7 @@ urlpatterns = [
 
     #Autorizar_Despachos
     path('rechazar-despacho/<int:pk>/', views.RechazarDespachoPut.as_view(), name='rechazar-despachos-autorizar'),
+    path('aceptar-despacho/<int:pk>/', views.AceptarDespachoPut.as_view(), name='aceptar-despachos-autorizar'),
 
 
     #Despachos_Autorizados

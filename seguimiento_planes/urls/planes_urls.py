@@ -26,6 +26,8 @@ urlpatterns=[
     path('eliminar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoDelete.as_view(),name='eliminarejesestrategicos'),
     path('consultar-ejes-estrategicos-id/<str:pk>/',views.EjeEstractegicoDetail.as_view(),name='consultarejesestrategicosid'),
     path('consultar-ejes-estrategicos-id-planes/<str:pk>/',views.EjeEstractegicoListIdPlanes.as_view(),name='consultarejesestrategicosidplanes'),
+    path('consultar-ejes-estrategicos-id-objetivo/<str:pk>/',views.EjeEstractegicoListIdObjetivo.as_view(),name='consultarejesestrategicosidobjetivo'),
+
     # Busqueda Avanzada eje por nombre plan, y nombre
     path('busqueda-avanzada-ejes/', views.BusquedaAvanzadaEjes.as_view(), name='busquedaavanzadaejes'),    
     # Objetivos
@@ -43,7 +45,7 @@ urlpatterns=[
     path('actualizar-programas/<str:pk>/',views.ProgramaUpdate.as_view(),name='actualizarprogramas'),
     path('eliminar-programas/<str:pk>/',views.ProgramaDelete.as_view(),name='eliminarprogramas'),
     path('consultar-programas-id/<str:pk>/',views.ProgramaDetail.as_view(),name='consultarprogramasid'),
-    path('consultar-programas-id-planes/<str:pk>/',views.ProgramaListIdPlanes.as_view(),name='consultarprogramasidplanes'),
+    path('consultar-programas-id-eje-estrategico/<str:pk>/',views.ProgramaListIdEjeEstrategico.as_view(),name='consultarprogramasIdEjeEstrategico'),
     # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
     path('consultar-programas-periodo/',views.ProgramaListPeriodoTiempo.as_view(),name='consultarprogramasperiodo'),
     # Busqueda Avanzada Programas por nombre programa y nombre plan

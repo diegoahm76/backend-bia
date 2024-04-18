@@ -77,6 +77,11 @@ class InspeccionesVehiculosDia(models.Model):
     kit_herramientas = models.BooleanField(default=True, db_column="T073kitHerramientasAlDia")
     botiquin_completo = models.BooleanField(default=True, db_column="T073botiquinCompleto")
     pito = models.BooleanField(default=True, db_column="T073pitoBueno")
+    fecha_vencimiento_soat = models.DateField(db_column="T073fechaVencimientoSoat")
+    fecha_revision_tecno_mecanica = models.DateField(db_column="T073fechaRevisionTecnoMecanica") 
+    fecha_vencimiento_extintor = models.DateField(db_column="T073fechaVecimientoExtintor")
+    fecha_vecimiento_licencia = models.DateField(db_column="T073fechaVecimientoLicenciaConduccion")
+    capacidad_extintor = models.SmallIntegerField(null=True, blank=True, db_column="T073capacidadExtintor")
     observaciones = models.CharField(max_length=255, null=True, blank=True, db_column="T073observaciones")
     observaciones_verifi_sup = models.CharField(max_length=255, null=True, blank=True, db_column="T073observacionVerifiSuperior")
     requiere_verificacion = models.BooleanField(default=True, db_column="T073requiereVerificacionSuperior")
@@ -247,3 +252,23 @@ class PeriodoArriendoVehiculo(models.Model):
         db_table = 'T085PeriodosVehiculoArrendado'
         verbose_name = 'PeriodosVehiculoArrendado'
         verbose_name_plural = 'PeriodosVehiculosArrendados'
+
+
+class PersonasSolicitudViaje(models.Model):
+    id_persona_solcitud_viaje = models.AutoField(primary_key=True, editable=False, db_column="T080IdPersonaSolicitudViaje")
+    id_persona_viaja = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T080IdPersonaViaja")
+    id_solicitud_viaje = models.ForeignKey(SolicitudesViajes, on_delete=models.CASCADE, db_column="T080IdSolicitudViaje")
+    id_inspeccion_vehiculo = models.ForeignKey(InspeccionesVehiculosDia, on_delete=models.CASCADE, db_column="T080IdInspeccionVehiculo")
+    persona_confirma_viaje = models.BooleanField(null=True, blank=True, db_column="T080personaConfirmaViaje")
+    persona_agregada_inspeccion = models.BooleanField(null=True, blank=True, db_column="T080personaAgregadaInspeccion")
+    observacion = models.CharField(max_length=255, null=True, blank=True, db_column="T080observacion")
+    fecha_registro = models.DateTimeField(db_column="T080fechaRegistro")
+    fecha_confirmacion = models.DateTimeField( null=True, blank=True, db_column="T080fechaConfirmacion") 
+    
+    def __str__(self):
+        return str(self.id_persona_solcitud_viaje)
+    
+    class Meta:
+        db_table = 'T080PersonaSolicitudViaje'
+        verbose_name = 'Persona solicitud viaje'
+        verbose_name_plural = 'Personas solicitudes viajes'

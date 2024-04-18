@@ -201,10 +201,10 @@ class RespuestaSolicitudSerializer(serializers.ModelSerializer):
 class CarteraSerializer(serializers.ModelSerializer):
     nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
     nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
-
+    estado = serializers.ReadOnlyField(source='id_expediente.estado',default=None)
     class Meta:
         model = Cartera
-        fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora')
+        fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora','estado')
 
 
 class ConsultaCarteraSerializer(serializers.ModelSerializer):
