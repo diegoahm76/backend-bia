@@ -208,20 +208,6 @@ class Productos(models.Model):
         verbose_name = 'Producto'
         verbose_name_plural = 'Productos'
 
-class LineasBasePGAR(models.Model):
-    id_linea_base = models.AutoField(primary_key=True, editable=False, db_column='T533IdLineaBase')
-    nombre_linea_base = models.CharField(max_length=255, db_column='T533nombreLineaBase')
-    id_meta_eje = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T533IdMetaEje')
-    id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.CASCADE, db_column='T533IdEjeEstrategico')
-    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.CASCADE, db_column='T533IdObjetivo')
-    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T533IdPlan')
-    cumplio = models.BooleanField(default=False, db_column='T533cumplio')
-    fecha_creacion = models.DateField(null=True, blank=True, db_column='T533fechaCreacion')
-
-    class Meta:
-        db_table = 'T533LineaBasePGAR'
-        verbose_name = 'Linea Base'
-        verbose_name_plural = 'Lineas Base'
 
 class MetasEjePGAR(models.Model):
     id_meta_eje = models.AutoField(primary_key=True, editable=False, db_column='T534IdMetaEje')
@@ -237,6 +223,22 @@ class MetasEjePGAR(models.Model):
         db_table = 'T534MetasEjePGAR'
         verbose_name = 'Meta Eje'
         verbose_name_plural = 'Metas Ejes'
+
+class LineasBasePGAR(models.Model):
+    id_linea_base = models.AutoField(primary_key=True, editable=False, db_column='T533IdLineaBase')
+    nombre_linea_base = models.CharField(max_length=255, db_column='T533nombreLineaBase')
+    id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.CASCADE, db_column='T533IdMetaEje')
+    id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.CASCADE, db_column='T533IdEjeEstrategico')
+    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.CASCADE, db_column='T533IdObjetivo')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T533IdPlan')
+    cumplio = models.BooleanField(default=False, db_column='T533cumplio')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T533fechaCreacion')
+
+    class Meta:
+        db_table = 'T533LineaBasePGAR'
+        verbose_name = 'Linea Base'
+        verbose_name_plural = 'Lineas Base'
+
 
 class Actividad(models.Model):
     id_actividad = models.AutoField(
