@@ -153,4 +153,19 @@ urlpatterns=[
     path('consultar-subprogramas-id-programa/<str:pk>/',views.SubprogramaListIdPrograma.as_view(),name='consultarsubprogramasidprograma'),
     # Busqueda Avanzada subprogramas por nombre programa y nombre subprograma
     path('busqueda-avanzada-subprogramas/', views.BusquedaAvanzadaSubprogramas.as_view(), name='busquedaavanzadasubprogramas'),
+
+    #PGAR
+    # Metas PGAR
+    path('consultar-metasPGAR-idEjeEstrategico/<str:pk>/',views.MetasPGARListByIdEjeEstrategico.as_view(),name='consultarMetasPGARIdEjeEstrategico'),
+    path('busqueda-avanzada-metasPGAR/', views.MetasPGARList.as_view(), name='busquedaavanzadametasPGAR'),
+    path('crear-metasPGAR/',views.MetasPGARCreate.as_view(),name='crearmetasPGAR'),
+    path('actualizar-metasPGAR/<str:pk>/',views.MetasPGARUpdate.as_view(),name='actualizarmetasPGAR'),
+
+    #Linea Base
+    path('consultar-linea-base-id-meta/<str:pk>/',views.LineaBaseListByIdMeta.as_view(),name='consultarLineasBaseIdMeta'),
+   #path('busqueda-avanzada-metasPGAR/', views.MetasPGARList.as_view(), name='busquedaavanzadametasPGAR'),
+    path('crear-linea-base/',views.LineaBaseCreate.as_view(),name='crearlineabase'),
+    path('actualizar-linea-base/<str:pk>/',views.LineaBaseUpdate.as_view(),name='actualizarlineabase'),
+    
+
 ]
