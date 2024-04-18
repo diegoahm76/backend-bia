@@ -26,6 +26,8 @@ urlpatterns=[
     path('eliminar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoDelete.as_view(),name='eliminarejesestrategicos'),
     path('consultar-ejes-estrategicos-id/<str:pk>/',views.EjeEstractegicoDetail.as_view(),name='consultarejesestrategicosid'),
     path('consultar-ejes-estrategicos-id-planes/<str:pk>/',views.EjeEstractegicoListIdPlanes.as_view(),name='consultarejesestrategicosidplanes'),
+    path('consultar-ejes-estrategicos-id-objetivo/<str:pk>/',views.EjeEstractegicoListIdObjetivo.as_view(),name='consultarejesestrategicosidobjetivo'),
+
     # Busqueda Avanzada eje por nombre plan, y nombre
     path('busqueda-avanzada-ejes/', views.BusquedaAvanzadaEjes.as_view(), name='busquedaavanzadaejes'),    
     # Objetivos
