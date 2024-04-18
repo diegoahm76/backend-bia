@@ -151,6 +151,8 @@ class LiquidacionesBasePostMasivovista(generics.CreateAPIView):
         print("Errores de validación del serializador:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    
+    
 class ObtenerLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = LiquidacionesBaseSerializer
     #permission_classes = [IsAuthenticated]
