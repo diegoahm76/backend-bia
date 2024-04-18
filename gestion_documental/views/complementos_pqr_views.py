@@ -813,22 +813,21 @@ class RespuestaRequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
                 total_folios = total_folios + data_anexo['numero_folios']
  
         # raise ValidationError("SIU")
-        data_in['fecha_solicitud'] =fecha_actual
-        data_in['cod_tipo_oficio'] ='R'
+       #data_in['fecha_solicitud'] =fecha_actual
+        #data_in['cod_tipo_oficio'] ='R'
         data_in['id_persona_solicita'] = request.user.persona.id_persona
         data_in['id_und_org_oficina_solicita'] = id_unidad
         data_in['id_estado_actual_solicitud'] = 1 # 254 Estado guardado
-        data_in['fecha_ini_estado_actual'] = fecha_actual
+        data_in['fecha_complemento'] = fecha_actual
         data_in['cantidad_anexos'] =len(data_anexos)
+        data_in['id_persona_interpone'] = persona.id_persona
+
+        if len(data_anexos) == 0:
+            data_in['requiere_digitalizacion'] = False
+        else:
+            data_in['requiere_digitalizacion'] = True
         data_in['nro_folios_totales'] = total_folios
 
-        #Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos. tabla T271
-        tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(nombre_configuracion='Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.').first()
-
-        if not tiempo_respuesta:
-            raise ValidationError("No se encontro el tiempo de respuesta comuniquese con un administrador"
-                                  )
-        data_in['dias_para_respuesta'] =tiempo_respuesta.tiempo_respuesta_en_dias
 
 
         
