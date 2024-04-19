@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
-from seguimiento_planes.models.planes_models import ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguimiento_planes.serializers.planes_serializer import IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.models.planes_models import LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -1889,3 +1889,209 @@ class PlanesGetId(generics.ListAPIView):
         if not planes:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de planes.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#PGAR
+#Metas PGAR
+class MetasPGARListByIdEjeEstrategico(generics.ListAPIView):
+    serializer_class = MetasPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        metas = MetasEjePGAR.objects.filter(id_eje_estrategico=pk)
+        serializer = self.serializer_class(metas, many=True)
+        if not metas:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Metas PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class MetasPGARList(generics.ListAPIView):
+    serializer_class = MetasPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        metas = MetasEjePGAR.objects.all()
+        nombre_meta = request.query_params.get('nombre_meta', '')
+        nombre_eje_estrategico = request.query_params.get('nombre_eje_estrategico', '')
+        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
+        if nombre_meta != '':
+            metas = metas.filter(nombre_meta__icontains=nombre_meta)
+        if nombre_eje_estrategico != '':
+            metas = metas.filter(id_eje_estrategico__nombre__icontains=nombre_eje_estrategico)
+        if nombre_objetivo != '':
+            metas = metas.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
+
+        if not metas:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(metas, many=True)
+        return Response({'success': True, 'detail': 'Listado de Metas PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class MetasPGARCreate(generics.CreateAPIView):
+    serializer_class = MetasPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Meta PGAR creada correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+class MetasPGARUpdate(generics.UpdateAPIView):
+    serializer_class = MetasPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        meta = MetasEjePGAR.objects.filter(id_meta_eje=pk).first()
+        if not meta:
+            return Response({'success': False, 'detail': 'La Meta PGAR ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = MetasPGARSerializer(meta, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Meta PGAR actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#Linea Base
+class LineaBaseListByIdMeta(generics.ListAPIView):
+    serializer_class = LineasBasePGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        lineas_base = LineasBasePGAR.objects.filter(id_meta_eje=pk)
+        if not lineas_base:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(lineas_base, many=True)
+        return Response({'success': True, 'detail': 'Listado de Lineas Base.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class LineaBaseCreate(generics.CreateAPIView):
+    serializer_class = LineasBasePGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Linea Base creada correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+class LineaBaseUpdate(generics.UpdateAPIView):
+    serializer_class = LineasBasePGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        linea_base = LineasBasePGAR.objects.filter(id_linea_base=pk).first()
+        if not linea_base:
+            return Response({'success': False, 'detail': 'La Linea Base ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = LineasBasePGARSerializer(linea_base, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Linea Base actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class BusquedaAvnzadaLineaBase(generics.ListAPIView):
+    queryset = LineasBasePGAR.objects.all()
+    serializer_class = LineasBasePGARSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        nombre_meta = request.query_params.get('nombre_meta', '')
+        nombre_linea_base = request.query_params.get('nombre_linea_base', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_linea_base' en el modelo
+        if nombre_meta != '':
+            queryset = LineasBasePGAR.objects.filter(id_meta_eje__nombre_meta_eje__icontains=nombre_meta)
+
+        if nombre_linea_base != '':
+            queryset = LineasBasePGAR.objects.filter(nombre_linea_base__icontains=nombre_linea_base)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ActividadesListByIdLineaBase(generics.ListAPIView):
+    serializer_class = ActividadesPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):        
+        actividades = Actividad.objects.filter(id_linea_base=pk)
+
+        if not actividades:
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.serializer_class(actividades, many=True)
+        return Response({'success': True, 'detail': 'Listado de Actividades PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class ActividadesCreate(generics.CreateAPIView):
+    serializer_class = ActividadesPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Actividad creada correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+class ActividadesUpdate(generics.UpdateAPIView):
+    serializer_class = ActividadesPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        actividad = Actividad.objects.filter(id_actividad=pk).first()
+        if not actividad:
+            return Response({'success': False, 'detail': 'La Actividad ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ActividadesPGARSerializer(actividad, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Actividad actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class BusquedaAvanzadaActividades(generics.ListAPIView):
+    serializer_class = ActividadesPGARSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        queryset = Actividad.objects.all()
+        nombre_meta = request.query_params.get('nombre_meta', '')
+        nombre_linea_base = request.query_params.get('nombre_linea_base', '')
+        nombre_actividad = request.query_params.get('nombre_actividad', '')
+        nombre_eje_estrategico = request.query_params.get('nombre_eje_estrategico', '')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_actividad' en el modelo
+        if nombre_eje_estrategico != '':
+            queryset = Actividad.objects.filter(id_eje_estrategico__nombre__icontains=nombre_eje_estrategico)
+
+        if nombre_meta != '':
+            queryset = Actividad.objects.filter(id_meta_eje__nombre_meta_eje__icontains=nombre_meta)
+
+        if nombre_linea_base != '':
+            queryset = Actividad.objects.filter(id_linea_base__nombre_linea_base__icontains=nombre_linea_base)
+
+        if nombre_actividad != '':
+            queryset = Actividad.objects.filter(nombre_actividad__icontains=nombre_actividad)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#Indicadores
+class IndicadoresByIdActividad(generics.ListAPIView):
+    serializer_class = IndicadoresPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, pk):
+        indicadores = Indicador.objects.filter(id_actividad=pk)
+        if not indicadores:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(indicadores, many=True)
+        return Response({'success': True, 'detail': 'Listado de Indicadores.', 'data': serializer.data}, status=status.HTTP_200_OK)
