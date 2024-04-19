@@ -693,6 +693,6 @@ class BusquedaSolicitudViajeIdSerializer(serializers.ModelSerializer):
     nombre_estado_solicitud = serializers.CharField(source='get_estado_solicitud_display',read_only=True,default=None)
     class Meta:
         model = SolicitudesViajes
-        fields = ['id_solicitud_viaje','estado_solicitud']
+        fields = ['id_solicitud_viaje','estado_solicitud', 'nombre_estado_solicitud']
 
     

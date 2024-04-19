@@ -1782,3 +1782,34 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Updat
             serializer = self.get_serializer(registro_notificacion)
 
         return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
+    
+
+class CancelarAsignacionNotificacion(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        queryset = AsignacionNotificacionCorrespondencia.objects.filter(id_notificacion_correspondencia=pk, cod_estado_asignacion='Pe').first()
+        if not queryset:
+            raise ValidationError(f'La asignación de la notificación con id {pk} no existe.')
+        else:
+            notificacion = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=pk)
+            notificacion.id_persona_asignada = None
+            notificacion.id_persona_asigna = None
+            notificacion.fecha_eleccion_estado = None
+            notificacion.cod_estado_asignacion = None
+            notificacion.save()
+            queryset.delete()
+            return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
+        
+class CancelarAsignacionTarea(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        queryset = AsignacionNotificacionCorrespondencia.objects.filter(id_orden_notificacion=pk, cod_estado_asignacion='Pe').first()
+        if not queryset:
+            raise ValidationError(f'La asignación de la tarea con id {pk} no existe.')
+        else:
+            tarea = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=pk).first()
+            tarea.delete()
+            queryset.delete()
+            return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)

@@ -145,3 +145,16 @@ class SolicitudPQRSerializer(serializers.ModelSerializer):
             'nombre_und_org_oficina_solicita',
             'anexos'
         ]
+
+
+
+
+class ComplementosUsu_PQRPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComplementosUsu_PQR
+        fields = '__all__'
+
+class Anexos_RequerimientoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Anexos_PQR
+        fields = '__all__'

@@ -4,10 +4,13 @@ import copy
 from datetime import datetime, timedelta, timezone
 import json
 import os
+import io
 import subprocess
 from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
 from django.utils import timezone
+from django.core.files.base import ContentFile
+from reportlab.pdfgen import canvas
 from django.db.models import F, ExpressionWrapper, fields, Count, Func,DateTimeField
 from django.forms import model_to_dict
 from django.db.models import Value as V
@@ -17,7 +20,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente
+from gestion_documental.serializers.expedientes_serializers import  AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
+from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
+from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente, ConcesionesAccesoAExpsYDocs, ExpedientesDocumentales,IndicesElectronicosExp,Docs_IndiceElectronicoExp, InventarioDocumental
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
@@ -26,6 +33,7 @@ from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSeri
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.configuracion_tipos_radicados_views import ConfigTiposRadicadoAgnoGenerarN
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate, Estados_PQRDelete
+from gestion_documental.serializers.expedientes_serializers import ArchivoSoporteSerializer, DocsIndiceElectronicoSerializer
 from django.core.exceptions import ObjectDoesNotExist
 from seguridad.utils import Util
 ########################################################################
@@ -3761,3 +3769,401 @@ class ListarSucursalesEmpresas(generics.ListAPIView):
 
 
 
+class CrearExpedientePQRSDF(generics.CreateAPIView):
+    serializer_class = AperturaExpedienteSimpleSerializer
+    serializer_class_complejo = AperturaExpedienteComplejoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        data = request.data
+
+        data_expediente = {}
+        request_serializer = {}
+        
+        # Crear codigo expediente
+        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_org_ccd_trd_prop']).first()
+        
+        if not tripleta_trd:
+            raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+        
+        configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg).first()
+
+        if not configuracion_expediente:
+            raise ValidationError('No se encontró la configuración de expediente para la tripleta de TRD seleccionada')
+        
+        cod_unidad = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.codigo
+        cod_serie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
+        cod_subserie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        
+        codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
+        
+        
+        current_date = datetime.now()
+        
+        
+        data_expediente['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+        data_expediente['codigo_exp_Agno'] = current_date.year
+        
+        # OBTENER CONSECUTIVO ACTUAL
+        codigo_exp_consec_por_agno = None
+        
+        if configuracion_expediente.cod_tipo_expediente == 'C':
+            # LLAMAR CLASE PARA GENERAR CONSECUTIVO
+            fecha_actual = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            clase_consec = ConfiguracionTipoExpedienteAgnoGetConsect()
+            codigo_exp_consec_por_agno = clase_consec.generar_radicado(
+                tripleta_trd.id_catserie_unidadorg,
+                request.user.persona.id_persona,
+                fecha_actual
+            )
+            codigo_exp_consec_por_agno = codigo_exp_consec_por_agno.data.get('data').get('consecutivo_actual')
+        else:
+            expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=tripleta_trd.id_catserie_unidadorg, codigo_exp_Agno=current_date.year).first()
+        
+            if expediente:
+                raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada')
+            
+        data_expediente['titulo_expediente'] = f"Expediente PQRSDF {codigo_exp_und_serie_subserie} {current_date.year}"
+        data_expediente['descripcion_expediente'] = f"Expediente PQRSDF para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
+        data_expediente['palabras_clave_expediente'] = f"Expediente|PQRSDF|{codigo_exp_und_serie_subserie}|{current_date.year}"
+        data_expediente['id_cat_serie_und_org_ccd_trd_prop'] = tripleta_trd.id_catserie_unidadorg
+        data_expediente['id_trd_origen'] = tripleta_trd.id_trd.id_trd
+        data_expediente['id_und_seccion_propietaria_serie'] = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional
+        data_expediente['id_serie_origen'] = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc
+        data_expediente['id_subserie_origen'] = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        data_expediente['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
+        data_expediente['estado'] = 'A'
+        data_expediente['fecha_apertura_expediente'] = current_date
+        data_expediente['fecha_folio_inicial'] = current_date
+        data_expediente['cod_etapa_de_archivo_actual_exped'] = 'G'
+        data_expediente['tiene_carpeta_fisica'] = False
+        data_expediente['ubicacion_fisica_esta_actualizada'] = False
+        data_expediente['creado_automaticamente'] = True
+        data_expediente['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        data_expediente['id_unidad_org_oficina_respon_original'] = data['id_unidad_org_oficina_respon_original']
+        data_expediente['id_und_org_oficina_respon_actual'] = data['id_unidad_org_oficina_respon_original']
+
+
+        request.data['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        request.data['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+
+        
+        if configuracion_expediente.cod_tipo_expediente == 'S':
+            serializer = self.serializer_class(data=data_expediente, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        elif configuracion_expediente.cod_tipo_expediente == 'C':
+            serializer = self.serializer_class_complejo(data=data_expediente, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        
+
+        
+        # CREAR INDICE - PENDIENTE VALIDAR SI ES CORRECTO REALIZARLO ASÍ
+        IndicesElectronicosExp.objects.create(
+            id_expediente_doc = expediente_creado,
+            fecha_indice_electronico = current_date,
+            abierto = True
+        )
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(serializer.data.get('codigo_exp_Agno')),
+        }
+        if codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_modulo" : 188,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+            
+        return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)   
+
+
+
+class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
+    serializer_class = ArchivoSoporteSerializer
+    permission_classes = [IsAuthenticated]
+
+    @transaction.atomic
+    def post(self,request):
+        data_in = request.data
+
+        persona_logueada = request.user.persona
+        current_date = datetime.now()
+
+        solicitud_pqrsdf = PQRSDF.objects.filter(id_PQRSDF=data_in['id_PQRSDF']).first()
+        expediente = ExpedientesDocumentales.objects.filter(id_serie_origen__nombre__icontains = 'PQR', codigo_exp_Agno = current_date.year).first()
+
+        if not expediente:
+            raise ValidationError('No se encontró un expediente para PQRSDF para el año actual y no se puede radicar la solicitud hasta que se cree uno')
+
+        data_docarch = {
+            "nombre_asignado_documento": f"Documento de soporte para la solicitud PQRSDF {solicitud_pqrsdf.id_PQRSDF}",
+            "fecha_creacion_doc": current_date,
+            "fecha_incorporacion_doc_a_Exp": current_date,
+            "descripcion": solicitud_pqrsdf.descripcion,
+            "asunto": solicitud_pqrsdf.asunto,
+            "cod_categoria_archivo": "TX",
+            "es_version_original": True,
+            "tiene_replica_fisica": False,
+            "nro_folios_del_doc": solicitud_pqrsdf.nro_folios_del_doc,
+            "cod_origen_archivo": "E",
+            "es_un_archivo_anexo": False,
+            "anexo_corresp_a_lista_chequeo": False,
+            "cantidad_anexos": solicitud_pqrsdf.cantidad_anexos,
+            "palabras_clave_documento": f"Documento|Soporte|PQRSDF|{solicitud_pqrsdf.id_PQRSDF}",
+            "sub_sistema_incorporacion": "GEST",
+            "documento_requiere_rta": False,
+            "creado_automaticamente": True,
+            "id_und_org_oficina_creadora": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+            "id_persona_que_crea": persona_logueada.id_persona,
+            "id_und_org_oficina_respon_actual": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+        }
+        data_docarch['id_expediente_documental'] = expediente.id_expediente_documental
+
+        
+        orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente.id_expediente_documental).order_by('orden_en_expediente').last()
+        if orden_expediente != None:
+            ultimo_orden = orden_expediente.orden_en_expediente
+            data_docarch['orden_en_expediente'] = ultimo_orden + 1
+        else:
+            data_docarch['orden_en_expediente'] = 1
+
+        if expediente.cod_tipo_expediente == "S":
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
+        else:
+            cantidad_digitos = 10 - len(str(expediente.codigo_exp_consec_por_agno))
+            data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(cantidad_digitos)}"
+            print(len(data_docarch['identificacion_doc_en_expediente']))
+
+        anexo = self.crear_pdf(solicitud_pqrsdf)
+        ruta = os.path.join("home", "BIA", "Gestor", "GDEA", str(expediente.codigo_exp_Agno))
+
+        md5_hash = hashlib.md5()
+        for chunk in anexo.chunks():
+            md5_hash.update(chunk)
+        
+        md5_value = md5_hash.hexdigest()
+
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value
+        }
+            
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+        data_docarch['id_archivo_sistema'] = respuesta.data.get('data').get('id_archivo_digital')
+
+        serializer = self.serializer_class(data=data_docarch)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        data_indice = {
+            "id_doc_archivo_exp": serializer.data['id_documento_de_archivo_exped'],
+            "identificación_doc_exped": serializer.data['identificacion_doc_en_expediente'],
+            "nombre_documento": serializer.data['nombre_asignado_documento'],
+            "id_tipologia_documental": serializer.data['id_tipologia_documental'],
+            "fecha_creacion_doc": serializer.data['fecha_creacion_doc'],
+            "fecha_incorporacion_exp": serializer.data['fecha_incorporacion_doc_a_Exp'],
+            "valor_huella": respuesta.data.get('data').get('nombre_de_Guardado'),
+            "funcion_resumen": "MD5",
+            "orden_doc_expediente": serializer.data['orden_en_expediente'],
+            "formato": respuesta.data.get('data').get('formato'),
+            "tamagno_kb": respuesta.data.get('data').get('tamagno_kb'),
+            "cod_origen_archivo": serializer.data['cod_origen_archivo'],
+            "es_un_archivo_anexo": serializer.data['es_un_archivo_anexo'],
+            "id_expediente_documental": data_in['id_expediente_documental'],
+            "nro_folios_del_doc": data_in['nro_folios_del_doc'],
+        }
+
+        doc_indice = self.crear_indice(data_indice)
+        serializer.data['indice'] = doc_indice
+        solicitud_pqrsdf.id_documento_archivo_expediente = instance
+        solicitud_pqrsdf.id_expediente_documental = expediente
+        solicitud_pqrsdf.save()
+
+
+        #Archivar Anexos
+        anexos_archivado = self.archivar_anexos(solicitud_pqrsdf, data_in, instance, persona_logueada)
+        
+
+        return Response({'success': True, 'detail': 'Se archivó el soporte correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    
+    def crear_pdf(self, data):
+        otro = data
+
+        nombre_titular = ""
+        nombre_interpone = ""
+        nombre_persona_recibe = f"{otro.id_persona_recibe.primer_nombre} {otro.id_persona_recibe.segundo_nombre} {otro.id_persona_recibe.primer_apellido} {otro.id_persona_recibe.segundo_apellido}" if otro.id_persona_recibe else ""
+        radicado = f"{otro.id_radicados.prefijo_radicado}-{otro.id_radicados.agno_radicado}-{otro.id_radicados.nro_radicado}" if otro.id_radicados else ""
+
+        if otro.id_persona_titular.tipo_persona == 'N':
+            nombre_titular = f"{otro.id_persona_titular.primer_nombre} {otro.id_persona_titular.segundo_nombre} {otro.id_persona_titular.primer_apellido} {otro.id_persona_titular.segundo_apellido}"
+        else:
+            nombre_titular = f"{otro.id_persona_titular.razon_social}"
+
+        if otro.id_persona_interpone.tipo_persona == 'N':
+            nombre_interpone = f"{otro.id_persona_interpone.primer_nombre} {otro.id_persona_interpone.segundo_nombre} {otro.id_persona_interpone.primer_apellido} {otro.id_persona_interpone.segundo_apellido}" if otro.id_persona_interpone else ""
+        else:
+            nombre_interpone = f"{otro.id_persona_interpone.razon_social}" if otro.id_persona_interpone else ""
+        buffer = io.BytesIO()
+        c = canvas.Canvas(buffer)
+
+
+        c.drawString(200, 820, "INFORMACIÓN DE LA SOLICITUD OTROS")
+
+        c.rect(20, 720, 550, 80)
+        c.drawString(30, 770, nombre_titular)
+        c.drawString(30, 740, otro.id_persona_titular.numero_documento)
+
+        c.rect(20, 595, 550, 100)
+        c.drawString(30, 670, nombre_interpone)
+        c.drawString(30, 640, otro.id_persona_interpone.numero_documento)
+        c.drawString(30, 610, otro.cod_relacion_titular)
+
+        c.rect(20, 230, 550, 340)
+        c.drawString(30, 550, f"{otro.fecha_registro}")
+        c.drawString(30, 520, otro.id_medio_solicitud.nombre)
+        c.drawString(30, 490, otro.cod_forma_presentacion)
+        c.drawString(30, 460, otro.asunto)
+        c.drawString(30, 430, otro.descripcion)
+        c.drawString(30, 400, f"{otro.cantidad_anexos}")
+        c.drawString(30, 370, f"{otro.nro_folios_totales}")
+        c.drawString(30, 340, nombre_persona_recibe)
+        c.drawString(30, 310, otro.id_sucursal_recepciona_fisica.id_persona_empresa.razon_social)
+        c.drawString(30, 280, radicado)
+        c.drawString(30, 250, f"{otro.fecha_radicado}")
+
+
+        c.showPage()
+        c.save()
+
+        buffer.seek(0)
+
+        # Ahora puedes usar 'buffer' como una variable que contiene tu PDF.
+        # Por ejemplo, puedes guardarlo en una variable así:
+        pdf_en_variable = buffer.getvalue()
+        pdf_content_file = ContentFile(pdf_en_variable,name="Otros.pdf")
+
+        # Recuerda cerrar el buffer cuando hayas terminado
+        buffer.close()
+
+        return pdf_content_file
+    
+    def crear_indice(self, data_indice):
+        serializer_class = DocsIndiceElectronicoSerializer
+
+        indice = IndicesElectronicosExp.objects.filter(id_expediente_doc=data_indice['id_expediente_documental']).first()
+        if indice.abierto:
+            docs_indice = Docs_IndiceElectronicoExp.objects.filter(id_indice_electronico_exp=indice.id_indice_electronico_exp).order_by('orden_doc_expediente').last()
+            print(docs_indice)
+            pagina_inicio = docs_indice.pagina_fin + 1 if docs_indice != None else 1
+            pagina_fin = pagina_inicio + data_indice['nro_folios_del_doc']
+
+            data_indice["id_indice_electronico_exp"]= indice.id_indice_electronico_exp
+            data_indice["pagina_inicio"] = pagina_inicio
+            data_indice["pagina_fin"] = pagina_fin
+
+            serializer = serializer_class(data=data_indice)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+
+            return serializer.data
+        else:
+            raise ValidationError("El índice del expediente está cerrado")
+
+    def archivar_anexos(self, otros, data_in, id_doc_de_arch_del_cual_es_anexo, persona_logueada):
+        if otros.cantidad_anexos == 0:
+            ValidationError("No hay anexos para archivar")
+
+        anexos_otros = Anexos_PQR.objects.filter(id_otros=otros.id_otros)
+        expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).first()
+
+        for anexo in anexos_otros:
+            info_anexo = Anexos.objects.filter(id_anexo=anexo.id_anexo.id_anexo).first()
+            info_metadatos = MetadatosAnexosTmp.objects.filter(id_anexo=anexo.id_anexo.id_anexo).first()
+
+            archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=info_metadatos.id_archivo_sistema.id_archivo_digital).first()
+            data_docarch = {
+            "nombre_asignado_documento": info_metadatos.nombre_original_archivo,
+            "fecha_creacion_doc": info_metadatos.fecha_creacion_doc,
+            "fecha_incorporacion_doc_a_Exp": data_in['fecha_incorporacion_doc_a_Exp'],
+            "descripcion": info_metadatos.descripcion,
+            "asunto": info_metadatos.asunto,
+            "cod_categoria_archivo": info_metadatos.cod_categoria_archivo,
+            "es_version_original": info_metadatos.es_version_original,
+            "tiene_replica_fisica": info_metadatos.tiene_replica_fisica,
+            "nro_folios_del_doc": info_metadatos.nro_folios_documento,
+            "cod_origen_archivo": info_metadatos.cod_origen_archivo,
+            "id_tipologia_documental": info_metadatos.id_tipologia_doc.id_tipologia_documental,
+            "codigo_tipologia_doc_prefijo": info_metadatos.cod_tipologia_doc_Prefijo,
+            "codigo_tipologia_doc_agno": info_metadatos.cod_tipologia_doc_agno,
+            "codigo_tipologia_doc_consecutivo": info_metadatos.cod_tipologia_doc_Consecutivo,
+            "es_un_archivo_anexo": True,
+            "anexo_corresp_a_lista_chequeo": False,
+            "id_doc_de_arch_del_cual_es_anexo": id_doc_de_arch_del_cual_es_anexo.id_documento_de_archivo_exped,
+            "id_archivo_sistema": archivo_digital.id_archivo_digital,
+            "palabras_clave_documento": info_metadatos.palabras_clave_doc,
+            "sub_sistema_incorporacion": "GEST",
+            "documento_requiere_rta": False,
+            "creado_automaticamente": True,
+            "id_und_org_oficina_creadora": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+            "id_persona_que_crea": persona_logueada.id_persona,
+            "id_und_org_oficina_respon_actual": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+            }
+            data_docarch['id_expediente_documental'] = data_in['id_expediente_documental']
+
+        
+            orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).order_by('orden_en_expediente').last()
+            if orden_expediente != None:
+                ultimo_orden = orden_expediente.orden_en_expediente
+                data_docarch['orden_en_expediente'] = ultimo_orden + 1
+            else:
+                data_docarch['orden_en_expediente'] = 1
+
+            if expediente.cod_tipo_expediente == "S":
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
+            else:
+                cantidad_digitos = 10 - len(str(expediente.codigo_exp_consec_por_agno))
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(cantidad_digitos)}"
+
+        
+            serializer = self.serializer_class(data=data_docarch)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            
+            data_indice = {
+                "id_doc_archivo_exp": serializer.data['id_documento_de_archivo_exped'],
+                "identificación_doc_exped": serializer.data['identificacion_doc_en_expediente'],
+                "nombre_documento": serializer.data['nombre_asignado_documento'],
+                "id_tipologia_documental": serializer.data['id_tipologia_documental'],
+                "fecha_creacion_doc": serializer.data['fecha_creacion_doc'],
+                "fecha_incorporacion_exp": serializer.data['fecha_incorporacion_doc_a_Exp'],
+                "valor_huella": archivo_digital.nombre_de_Guardado,
+                "funcion_resumen": "MD5",
+                "orden_doc_expediente": serializer.data['orden_en_expediente'],
+                "formato": archivo_digital.formato,
+                "tamagno_kb": archivo_digital.tamagno_kb,
+                "cod_origen_archivo": serializer.data['cod_origen_archivo'],
+                "es_un_archivo_anexo": serializer.data['es_un_archivo_anexo'],
+                "id_expediente_documental": data_in['id_expediente_documental'],
+                "nro_folios_del_doc": info_metadatos.nro_folios_documento,
+            }
+
+            doc_indice = self.crear_indice(data_indice)
+            info_anexo.id_docu_arch_exp = instance
+            info_anexo.save()
+
+            info_metadatos.delete()

@@ -15,6 +15,7 @@ from recaudo.serializers.liquidaciones_serializers import (
     DeudoresSerializer,
     LiquidacionesBaseSerializer,
     LiquidacionesBasePostSerializer,
+    LiquidacionesBasePostMasivoSerializer,
     DetallesLiquidacionBaseSerializer,
     DetallesLiquidacionBasePostSerializer,
     ExpedientesSerializer,
@@ -128,6 +129,30 @@ class LiquidacionBaseView(generics.ListAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LiquidacionesBasePostMasivovista(generics.CreateAPIView):
+    serializer_class = LiquidacionesBasePostMasivoSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            id_expedientes = serializer.validated_data.get('id_expediente', [])
+            print("IDs de expedientes recibidos:", id_expedientes)
+            for id_expediente in id_expedientes:
+                try:
+                    expediente = Expedientes.objects.get(pk=id_expediente)
+                    print("Expediente encontrado:", expediente)
+                    expediente.estado = 'guardado'
+                    expediente.save()
+                    print("Estado del expediente actualizado:", expediente.estado)
+                except Expedientes.DoesNotExist:
+                    print(f"Expediente con ID {id_expediente} no encontrado")
+                    return Response({"error": f"Expediente con ID {id_expediente} no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Errores de validación del serializador:", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
 class ObtenerLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = LiquidacionesBaseSerializer
     #permission_classes = [IsAuthenticated]
@@ -286,6 +311,9 @@ def liquidacionPdf(request, pk):
             liquidaciondos += valorPagar
     totalliquidacion = liquidacionuno + liquidaciondos
 
+    nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres is not None else ''
+    apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos is not None else ''
+
     context = {
         'rp': liquidacion.id, #referencia pago
         'limite_pago': liquidacion.vencimiento,
@@ -294,7 +322,7 @@ def liquidacionPdf(request, pk):
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'anio': anio,
         'cedula': liquidacion.id_deudor.identificacion,
-        'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
+        'titular': nombres + ' ' + apellidos,
         'representante_legal': '',
         'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
         'telefono': liquidacion.id_deudor.telefono,

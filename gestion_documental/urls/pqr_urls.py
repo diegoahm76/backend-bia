@@ -56,6 +56,10 @@ urlpatterns = [
      path('eliminar-correo/<str:email_id>/',views.EliminarCorreoView.as_view(), name='eliminar-correo'),
 
 
+    #Crear expediente de PQRSDF para la unidad organizacional seleccionada
+    path('crear-expediente-pqrsdf/', views.CrearExpedientePQRSDF.as_view(), name='crear-expediente-pqrsdf'),
+
+
 
 
 ]
