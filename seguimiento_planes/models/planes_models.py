@@ -217,7 +217,7 @@ class MetasEjePGAR(models.Model):
     id_objetivo = models.ForeignKey(Objetivo, on_delete=models.CASCADE, db_column='T534IdObjetivo')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T534IdPlan')
     cumplio = models.BooleanField(default=False, db_column='T534cumplio')
-    fecha_creacion = models.DateField(null=True, blank=True, db_column='T534fechaCreacion')
+    fecha_creacion = models.DateField(db_column='T534fechaCreacion')
 
     class Meta:
         db_table = 'T534MetasEjePGAR'

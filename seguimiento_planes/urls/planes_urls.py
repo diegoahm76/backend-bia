@@ -166,6 +166,10 @@ urlpatterns=[
    #path('busqueda-avanzada-metasPGAR/', views.MetasPGARList.as_view(), name='busquedaavanzadametasPGAR'),
     path('crear-linea-base/',views.LineaBaseCreate.as_view(),name='crearlineabase'),
     path('actualizar-linea-base/<str:pk>/',views.LineaBaseUpdate.as_view(),name='actualizarlineabase'),
+
+    #Actividades PGAR
+    path('consultar-actividades-id-linea-base/<str:pk>/',views.ActividadesListByIdLineaBase.as_view(),name='consultarActividadesPGARIdLineaBase'),
+    
     
 
 ]

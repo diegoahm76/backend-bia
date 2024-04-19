@@ -255,3 +255,21 @@ class LineasBasePGARSerializer(serializers.ModelSerializer):
     class Meta:
         model = LineasBasePGAR
         fields = '__all__'
+
+
+class ActividadesPGARSerializer(serializers.ModelSerializer):
+    nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
+    nombre_linea_base = serializers.ReadOnlyField(source='id_linea_base.nombre_linea_base', default=None)
+
+    class Meta:
+        model = Actividad
+        fields = '__all__'
+
+class IndicadoresPGARSerializer(serializers.ModelSerializer):
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    nombre_tipo_indicador = serializers.CharField(source='', default=None)
+
+    class Meta:
+        model = Indicador
+        fields = '__all__'
