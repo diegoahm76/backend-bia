@@ -248,19 +248,19 @@ class Actividad(models.Model):
     nombre_actividad = models.CharField(
         max_length=255, db_column='T507nombreActividad')
     id_producto = models.ForeignKey(
-        Productos, on_delete=models.CASCADE, db_column='T507IdProducto')
+        Productos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdProducto')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T507IdPlan')
+        Planes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdPlan')
     id_proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.CASCADE, db_column='T507IdProyecto')
+        Proyecto, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdProyecto')
     id_programa = models.ForeignKey(
-        Programa, on_delete=models.CASCADE, db_column='T507IdPrograma')
+        Programa, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdPrograma')
     fecha_creacion = models.DateField(null=True, blank=True, db_column='T507fechaCreacion')
     cumplio = models.BooleanField(default=False, db_column='T507cumplio')
-    id_linea_base = models.ForeignKey(LineasBasePGAR, on_delete=models.CASCADE, db_column='T507IdLineaBase')
-    id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.CASCADE, db_column='T507IdMetaEje')
-    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.CASCADE, db_column='T507IdObjetivo')
-    id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.CASCADE, db_column='T507IdEjeEstrategico')
+    id_linea_base = models.ForeignKey(LineasBasePGAR, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdLineaBase')
+    id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdMetaEje')
+    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdObjetivo')
+    id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.SET_NULL, null=True, blank=True, db_column='T507IdEjeEstrategico')
 
     def __str__(self):
         return str(self.id_actividad)
@@ -348,17 +348,22 @@ class Indicador(models.Model):
     id_tipo = models.ForeignKey(
         Tipo, on_delete=models.CASCADE, db_column='T512IdTipo')
     id_producto = models.ForeignKey(
-        Productos, on_delete=models.CASCADE, db_column='T512IdProducto')
+        Productos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdProducto')
     id_actividad = models.ForeignKey(
-        Actividad, on_delete=models.CASCADE, db_column='T512IdActividad')
+        Actividad, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdActividad')
     id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T512IdPlan')
+        Planes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdPlan')
     id_proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.CASCADE, db_column='T512IdProyecto')
+        Proyecto, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdProyecto')
     id_programa = models.ForeignKey(
-        Programa, on_delete=models.CASCADE, db_column='T512IdPrograma')
+        Programa, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdPrograma')
     fecha_creacion = models.DateField(null=True, blank=True, db_column='T512fechaCreacion')
     cumplio = models.BooleanField(default=False, db_column='T512cumplio')
+    id_linea_base = models.ForeignKey(LineasBasePGAR, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdLineaBase')
+    id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdMetaEje')
+    id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdEjeEstrategico')
+    id_unidad_organizacional = models.ForeignKey(Entidad, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdUnidadOrganizacional')
+    entidad_responsable = models.CharField(max_length=255, null=True, blank=True, db_column='T512entidadResponsable')
 
     def __str__(self):
         return str(self.id_indicador)
