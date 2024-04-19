@@ -2095,3 +2095,28 @@ class IndicadoresByIdActividad(generics.ListAPIView):
         
         serializer = self.serializer_class(indicadores, many=True)
         return Response({'success': True, 'detail': 'Listado de Indicadores.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class IndicaresCreate(generics.CreateAPIView):
+    serializer_class = IndicadoresPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Indicador creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+class IndicadoresUpdate(generics.UpdateAPIView):
+    serializer_class = IndicadoresPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        indicador = Indicador.objects.filter(id_indicador=pk).first()
+        if not indicador:
+            return Response({'success': False, 'detail': 'El Indicador ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = IndicadoresPGARSerializer(indicador, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Indicador actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
