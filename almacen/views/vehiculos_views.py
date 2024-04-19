@@ -25,6 +25,7 @@ from almacen.models.vehiculos_models import (
     BitacoraViaje,
     InspeccionesVehiculosDia,
     PeriodoArriendoVehiculo,
+    PersonasSolicitudViaje,
     SolicitudesViajes,
     VehiculosAgendables_Conductor,
     VehiculosAgendadosDiaDisponible,
@@ -597,6 +598,32 @@ class CrearSolicitudViaje(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         solicitud = serializer.save()
 
+        # Obtener la lista de IDs de personas que van a viajar
+        personas_viajan_ids = data.get('personas_viajan', [])
+
+        # Validar que se haya proporcionado al menos una persona que viaja
+        if not personas_viajan_ids:
+            raise ValidationError({'personas_viajan': 'Se debe proporcionar al menos una persona que va a viajar'})
+
+        # Obtener la solicitud creada
+        solicitud = serializer.instance
+
+        # Crear una lista de instancias de PersonasSolicitudViaje para bulk_create
+        personas_solicitud_viaje_instances = []
+
+        # Iterar sobre los IDs de personas que van a viajar y crear instancias correspondientes
+        for persona_id in personas_viajan_ids:
+            persona_viaja = Personas.objects.get(id_persona=persona_id)
+            persona_solicitud_viaje_instance = PersonasSolicitudViaje(
+                id_persona_viaja=persona_viaja,
+                id_solicitud_viaje=solicitud,
+                fecha_registro=timezone.now()
+            )
+            personas_solicitud_viaje_instances.append(persona_solicitud_viaje_instance)
+
+        # Guardar todas las instancias creadas en bulk_create
+        PersonasSolicitudViaje.objects.bulk_create(personas_solicitud_viaje_instances)
+        
         return Response({'success': True, 'detail': 'Solicitud creada exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
     
 
