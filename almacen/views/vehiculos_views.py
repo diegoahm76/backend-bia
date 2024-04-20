@@ -734,11 +734,8 @@ class BusquedaVehiculos(generics.ListAPIView):
         marca = self.request.query_params.get('marca')
         placa = self.request.query_params.get('placa')
 
-        # Obtener los IDs de los vehículos que están activos en VehiculosAgendables_Conductor
-        vehiculos_activos_ids = VehiculosAgendables_Conductor.objects.filter(activo=False).values_list('id_hoja_vida_vehiculo', flat=True)
-
         # Filtrar las hojas de vida de vehículos que son agendables y están activos en VehiculosAgendables_Conductor
-        queryset = HojaDeVidaVehiculos.objects.filter(es_agendable=True, id_hoja_de_vida__in=vehiculos_activos_ids)
+        queryset = HojaDeVidaVehiculos.objects.filter(es_agendable=True)
 
         # Aplicar filtros adicionales si se proporcionan
         if tipo_vehiculo:
@@ -756,28 +753,11 @@ class BusquedaVehiculos(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
 
-        # Agregar el nombre de la marca y el tipo de vehículo a cada objeto serializado
-        for data in serializer.data:
-            vehiculo = HojaDeVidaVehiculos.objects.get(pk=data['id_hoja_de_vida'])
-            if vehiculo.id_vehiculo_arrendado:
-                vehiculo_marca_nombre = vehiculo.id_vehiculo_arrendado.id_marca.nombre
-                vehiculo_placa = vehiculo.id_vehiculo_arrendado.placa
-            else:
-                vehiculo_marca_nombre = "Desconocido"
-                vehiculo_placa = "Desconocido"
+        vehiculos_asignables = [vehiculo for vehiculo in serializer.data if vehiculo['asignable']]
 
-            if data['cod_tipo_vehiculo'] == "C":
-                tipo_vehiculo = "CARRO"
-            elif data['cod_tipo_vehiculo'] == "M":
-                tipo_vehiculo = "MOTO"
-            else:
-                tipo_vehiculo = data['cod_tipo_vehiculo']
-            data['marca_nombre'] = vehiculo_marca_nombre
-            data['vehiculo_placa'] = vehiculo_placa
-            data['tipo_vehiculo'] = tipo_vehiculo
 
         # Retornar la respuesta con la data procesada
-        return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': vehiculos_asignables}, status=status.HTTP_200_OK)
 
 
 
@@ -840,9 +820,7 @@ class BusquedaConductores(generics.ListAPIView):
         conductor_nombre = self.request.query_params.get('conductor_nombre')
 
         # Filtrar los conductores que tengan la clase "Conductor" o "Conductor Externo" en T007ClasesTerceros
-        queryset = ClasesTerceroPersona.objects.filter(
-            Q(id_clase_tercero__nombre="Conductor") | Q(id_clase_tercero__nombre="Conductor Externo")
-        )
+        queryset = ClasesTerceroPersona.objects.filter(id_clase_tercero__in=[6,7])
 
         # Filtrar por tipo de conductor
         if tipo_conductor:
@@ -861,28 +839,16 @@ class BusquedaConductores(generics.ListAPIView):
             # Filtrar las ClasesTerceroPersona con esos IDs
             queryset = queryset.filter(id_persona__in=personas_ids)
 
-        # Filtrar conductores que tengan asignaciones de vehículos con activo igual a False
-        conductores_con_asignacion = []
-        for conductor in queryset:
-            if VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=conductor.id_persona.id_persona, activo=False).exists():
-                conductores_con_asignacion.append(conductor)
-
-        return conductores_con_asignacion
+        return queryset
 
     def list(self, request, *args, **kwargs):
-        conductores_con_asignacion = self.get_queryset()
-        serializer = self.serializer_class(conductores_con_asignacion, many=True)
-        
-        # Agregar el nombre de la clase tercera y los datos de la persona a cada objeto serializado
-        for data in serializer.data:
-            clase_tercera = ClasesTerceroPersona.objects.get(pk=data['id_clase_tercero_persona'])
-            persona = Personas.objects.get(pk=data['id_persona'])
-            data['nombre_clase_tercero'] = clase_tercera.id_clase_tercero.nombre
-            data['nombre_persona'] = f"{persona.primer_nombre} {persona.primer_apellido}"
-            data['nro_documento'] = persona.numero_documento
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        conductores_asignables = [conductor for conductor in serializer.data if conductor['asignable']]
 
         # Retornar la respuesta con la data procesada
-        return Response({'success': True, 'detail': 'Conductores obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Conductores obtenidos exitosamente', 'data': conductores_asignables}, status=status.HTTP_200_OK)
 
 
 
@@ -1214,27 +1180,122 @@ class VehiculosAsociadosPersona(generics.ListAPIView):
 
 
 #INSPECCIONES_VEHICULOS
+# class CrearInspeccionVehiculo(generics.CreateAPIView):
+#     queryset = InspeccionesVehiculosDia.objects.all()
+#     serializer_class = InspeccionesVehiculosDiaCreateSerializer
+
+#     def create(self, request, *args, **kwargs):
+#         serializer = self.get_serializer(data=request.data)
+#         if serializer.is_valid():
+
+#             serializer.validated_data['dia_inspeccion'] = datetime.now().date()
+#             serializer.validated_data['fecha_registro'] = datetime.now()
+#             serializer.validated_data['id_persona_inspecciona'] = request.user.persona
+
+#             if not serializer.validated_data.get('requiere_verificacion'):
+#                 serializer.validated_data['verificacion_superior_realizada'] = False
+
+#             id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+#             if id_hoja_vida_vehiculo and not id_hoja_vida_vehiculo.id_vehiculo_arrendado:
+#                 hoja_vida_vehiculo = id_hoja_vida_vehiculo
+#                 hoja_vida_vehiculo.ultimo_kilometraje = serializer.validated_data.get('kilometraje')
+#                 hoja_vida_vehiculo.fecha_ultimo_kilometraje = datetime.now().date()
+#                 hoja_vida_vehiculo.save()
+            
+#             #Actualizar el valor de T066esAgendable si está presente en los datos de la solicitud
+#             es_agendable = request.data['es_agendable']
+#             if es_agendable is not None:
+#                 id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+#                 if id_hoja_vida_vehiculo:
+#                     hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
+#                     hoja_vida_vehiculo.es_agendable = es_agendable
+#                     hoja_vida_vehiculo.save()
+
+#             with transaction.atomic():
+#                 instancia_inspeccion = serializer.save()
+
+#             data = serializer.data
+#             data['es_agendable'] = es_agendable
+
+
+#             #GENERACION DE ALERTA
+            
+#             if data['requiere_verificacion']:
+                
+#                 id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+#                 if not id_hoja_vida_vehiculo:
+#                     raise ValidationError('El campo id_hoja_vida_vehiculo es obligatorio.')
+
+#                 hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
+#                 id_elemento=hoja_vida_vehiculo.id_hoja_de_vida
+
+#                 data_alerta = {}
+#                 vista_alertas_programadas = AlertaEventoInmediadoCreate()
+#                 data_alerta = {}
+#                 data_alerta['cod_clase_alerta'] = 'Alm_NvInsp'
+#                 #data_alerta['id_persona'] = id_persona_asiganada
+#                 data_alerta['id_elemento_implicado'] = id_elemento
+
+#                 inspeccion = instancia_inspeccion
+#                 #raise ValidationError(inspeccion.id_persona_inspecciona)
+#                 cadena = ""
+#                 if inspeccion.id_persona_inspecciona:
+
+#                     nombre_completo_solicitante = None
+#                     nombre_list = [inspeccion.id_persona_inspecciona.primer_nombre, inspeccion.id_persona_inspecciona.segundo_nombre,
+#                                     inspeccion.id_persona_inspecciona.primer_apellido, inspeccion.id_persona_inspecciona.segundo_apellido]
+#                     nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+#                     nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+#                     persona = nombre_completo_solicitante
+                
+#                     fecha_inspeccion = inspeccion.dia_inspeccion
+#                     hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
+#                     tipo_vehiculo = hoja_vida_vehiculo.get_cod_tipo_vehiculo_display()
+#                     if hoja_vida_vehiculo.es_arrendado:
+#                         placa = hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+#                         nombre = hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+#                         marca = hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+#                     else:
+#                         placa = hoja_vida_vehiculo.id_articulo.doc_identificador_nro
+#                         nombre = hoja_vida_vehiculo.id_articulo.nombre
+#                         marca = hoja_vida_vehiculo.id_articulo.id_marca.nombre
+                    
+#                     if not hoja_vida_vehiculo:
+#                         cadena =  ""
+#                     cadena = (
+#                         "<p>Persona que inspecciona: " + persona + "</p>"
+#                         "<p>Fecha de inspección: " + str(fecha_inspeccion) + "</p>"
+#                         "<p>Placa del vehículo: " + placa + "</p>"
+#                         "<p>Nombre del vehículo: " + nombre + "</p>"
+#                         "<p>Marca del vehículo: " + marca + "</p>"
+#                         )
+                    
+#                 data_alerta['informacion_complemento_mensaje'] = cadena
+#                 respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+#                 if respuesta_alerta.status_code != status.HTTP_200_OK:
+#                     return respuesta_alerta
+
+
+#             # Retornamos el registro creado con la variable es_agendable
+#             return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
+#         else:
+#             # Si los datos no son válidos, retornamos los errores de validación
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 class CrearInspeccionVehiculo(generics.CreateAPIView):
     queryset = InspeccionesVehiculosDia.objects.all()
     serializer_class = InspeccionesVehiculosDiaCreateSerializer
 
     def create(self, request, *args, **kwargs):
-        # Validamos los datos recibidos en la solicitud
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            # Asignar automáticamente la fecha de inspección y fecha de registro
             serializer.validated_data['dia_inspeccion'] = datetime.now().date()
             serializer.validated_data['fecha_registro'] = datetime.now()
-            
-            # Establecer la persona que realiza la inspección como la persona logueada
             serializer.validated_data['id_persona_inspecciona'] = request.user.persona
 
-            # Verificar si se necesita verificación superior
             if not serializer.validated_data.get('requiere_verificacion'):
-                # Si no se requiere verificación superior, establecer en False
                 serializer.validated_data['verificacion_superior_realizada'] = False
 
-            # Actualizar el kilometraje y fecha de última actualización si corresponde
             id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
             if id_hoja_vida_vehiculo and not id_hoja_vida_vehiculo.id_vehiculo_arrendado:
                 hoja_vida_vehiculo = id_hoja_vida_vehiculo
@@ -1242,8 +1303,8 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                 hoja_vida_vehiculo.fecha_ultimo_kilometraje = datetime.now().date()
                 hoja_vida_vehiculo.save()
             
-            #Actualizar el valor de T066esAgendable si está presente en los datos de la solicitud
-            es_agendable = request.data['es_agendable']
+            # Actualizar el valor de T066esAgendable si está presente en los datos de la solicitud
+            es_agendable = request.data.get('es_agendable')
             if es_agendable is not None:
                 id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
                 if id_hoja_vida_vehiculo:
@@ -1254,75 +1315,69 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
             with transaction.atomic():
                 instancia_inspeccion = serializer.save()
 
+                # Actualizar personas existentes en PersonasSolicitudViaje
+                personas_existentes = request.data.get('personas_existentes', [])
+                for persona_data in personas_existentes:
+                    persona_viaja_id = persona_data.get('id_persona_viaja')
+                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')
+                    persona_confirma_viaje = persona_data.get('persona_confirma_viaje')
+                    observacion = persona_data.get('observacion', '')
+                    inspeccion_vehiculo = instancia_inspeccion  
+                    persona_agregada_inspeccion = False
+                    fecha_registro = datetime.now()
+                    fecha_confirmacion = datetime.now()
+
+                    if persona_confirma_viaje is False and not observacion:
+                        return Response({'success': False, 'detail': 'Debe proporcionar una observación si la persona no confirma el viaje.'}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Actualizar o crear el registro en PersonasSolicitudViaje
+                    PersonasSolicitudViaje.objects.update_or_create(
+                        id_persona_viaja=persona_viaja_id,
+                        id_solicitud_viaje=solicitud_viaje_id,
+                        defaults={
+                            'persona_confirma_viaje': persona_confirma_viaje,
+                            'observacion': observacion,
+                            'id_inspeccion_vehiculo': inspeccion_vehiculo,  
+                            'persona_agregada_inspeccion': persona_agregada_inspeccion,
+                            'fecha_registro': fecha_registro,
+                            'fecha_confirmacion': fecha_confirmacion
+                        }
+                    )
+                
+                # Crear registros para personas nuevas
+                personas_nuevas = request.data.get('personas_nuevas', [])
+                for persona_data in personas_nuevas:
+                    id_persona_viaja = persona_data.get('id_persona_viaja') 
+                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')
+                    persona_confirma_viaje = True
+                    observacion = None  
+                    inspeccion_vehiculo = instancia_inspeccion  
+                    persona_agregada_inspeccion = True 
+                    fecha_registro = datetime.now()
+                    fecha_confirmacion = datetime.now()
+
+                    # Crear el registro en para la persona nueva
+                    persona_viaja_id =Personas.objects.filter(id_persona=id_persona_viaja).first()
+                    solicitud_viaje_id =SolicitudesViajes.objects.filter(id_solicitud_viaje=solicitud_viaje_id).first()
+                    PersonasSolicitudViaje.objects.create(
+                        id_persona_viaja=persona_viaja_id,  
+                        id_solicitud_viaje=solicitud_viaje_id,
+                        persona_confirma_viaje=persona_confirma_viaje,
+                        observacion=observacion,
+                        id_inspeccion_vehiculo=inspeccion_vehiculo,  
+                        persona_agregada_inspeccion=persona_agregada_inspeccion,
+                        fecha_registro=fecha_registro,
+                        fecha_confirmacion=fecha_confirmacion
+                    )
+
+                    
             data = serializer.data
-            data['es_agendable'] = es_agendable
-
-
-            #GENERACION DE ALERTA
-            
-            if data['requiere_verificacion']:
-                
-                id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
-                if not id_hoja_vida_vehiculo:
-                    raise ValidationError('El campo id_hoja_vida_vehiculo es obligatorio.')
-
-                hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
-                id_elemento=hoja_vida_vehiculo.id_hoja_de_vida
-
-                data_alerta = {}
-                vista_alertas_programadas = AlertaEventoInmediadoCreate()
-                data_alerta = {}
-                data_alerta['cod_clase_alerta'] = 'Alm_NvInsp'
-                #data_alerta['id_persona'] = id_persona_asiganada
-                data_alerta['id_elemento_implicado'] = id_elemento
-
-                inspeccion = instancia_inspeccion
-                #raise ValidationError(inspeccion.id_persona_inspecciona)
-                cadena = ""
-                if inspeccion.id_persona_inspecciona:
-
-                    nombre_completo_solicitante = None
-                    nombre_list = [inspeccion.id_persona_inspecciona.primer_nombre, inspeccion.id_persona_inspecciona.segundo_nombre,
-                                    inspeccion.id_persona_inspecciona.primer_apellido, inspeccion.id_persona_inspecciona.segundo_apellido]
-                    nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
-                    nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
-                    persona = nombre_completo_solicitante
-                
-                    fecha_inspeccion = inspeccion.dia_inspeccion
-                    hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
-                    tipo_vehiculo = hoja_vida_vehiculo.get_cod_tipo_vehiculo_display()
-                    if hoja_vida_vehiculo.es_arrendado:
-                        placa = hoja_vida_vehiculo.id_vehiculo_arrendado.placa
-                        nombre = hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
-                        marca = hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
-                    else:
-                        placa = hoja_vida_vehiculo.id_articulo.doc_identificador_nro
-                        nombre = hoja_vida_vehiculo.id_articulo.nombre
-                        marca = hoja_vida_vehiculo.id_articulo.id_marca.nombre
-                    
-                    if not hoja_vida_vehiculo:
-                        cadena =  ""
-                    cadena = (
-                        "<p>Persona que inspecciona: " + persona + "</p>"
-                        "<p>Fecha de inspección: " + str(fecha_inspeccion) + "</p>"
-                        "<p>Placa del vehículo: " + placa + "</p>"
-                        "<p>Nombre del vehículo: " + nombre + "</p>"
-                        "<p>Marca del vehículo: " + marca + "</p>"
-                        )
-                    
-                data_alerta['informacion_complemento_mensaje'] = cadena
-                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
-                if respuesta_alerta.status_code != status.HTTP_200_OK:
-                    return respuesta_alerta
-
 
             # Retornamos el registro creado con la variable es_agendable
-            return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'La inspección fue creada correctamente.', 'data': data}, status=status.HTTP_201_CREATED)
         else:
             # Si los datos no son válidos, retornamos los errores de validación
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-
         
 class NovedadesVehiculosList(generics.ListAPIView):
     serializer_class = InspeccionVehiculoSerializer
