@@ -16,6 +16,7 @@ from django.db import transaction
 from rest_framework.response import Response
 from django.http import Http404, JsonResponse
 from transversal.models.organigrama_models import UnidadesOrganizacionales, NivelesOrganigrama
+from transversal.models.lideres_models import LideresUnidadesOrg
 from django.shortcuts import get_object_or_404
 from almacen.choices.estado_solicitud_choices import estado_solicitud_CHOICES
 
@@ -50,6 +51,7 @@ from almacen.serializers.vehiculos_serializers import (
     InspeccionVehiculoSerializer,
     InspeccionesVehiculosDiaCreateSerializer,
     PeriodoVehiculoArrendadoSerializer,
+    PersonasSolicitudViajeSerializer,
     PutSolicitudViajeSerializer,
     RegistrarVehiculoArrendadoSerializer,
     SolicitudViajeSerializer,
@@ -732,8 +734,13 @@ class BusquedaVehiculos(generics.ListAPIView):
         marca = self.request.query_params.get('marca')
         placa = self.request.query_params.get('placa')
 
-        queryset = HojaDeVidaVehiculos.objects.filter(es_agendable=True)
+        # Obtener los IDs de los vehículos que están activos en VehiculosAgendables_Conductor
+        vehiculos_activos_ids = VehiculosAgendables_Conductor.objects.filter(activo=False).values_list('id_hoja_vida_vehiculo', flat=True)
 
+        # Filtrar las hojas de vida de vehículos que son agendables y están activos en VehiculosAgendables_Conductor
+        queryset = HojaDeVidaVehiculos.objects.filter(es_agendable=True, id_hoja_de_vida__in=vehiculos_activos_ids)
+
+        # Aplicar filtros adicionales si se proporcionan
         if tipo_vehiculo:
             queryset = queryset.filter(cod_tipo_vehiculo=tipo_vehiculo)
 
@@ -771,6 +778,57 @@ class BusquedaVehiculos(generics.ListAPIView):
 
         # Retornar la respuesta con la data procesada
         return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
+
+# class BusquedaVehiculos(generics.ListAPIView):
+#     serializer_class = HojaDeVidaVehiculosSerializer
+
+#     def get_queryset(self):
+#         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
+#         marca = self.request.query_params.get('marca')
+#         placa = self.request.query_params.get('placa')
+
+#         queryset = HojaDeVidaVehiculos.objects.filter(es_agendable=True)
+
+#         if tipo_vehiculo:
+#             queryset = queryset.filter(cod_tipo_vehiculo=tipo_vehiculo)
+
+#         if marca:
+#             queryset = queryset.filter(id_vehiculo_arrendado__id_marca__nombre__icontains=marca)
+
+#         if placa:
+#             queryset = queryset.filter(id_vehiculo_arrendado__placa__icontains=placa)
+
+#         return queryset
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.serializer_class(queryset, many=True)
+
+#         # Agregar el nombre de la marca y el tipo de vehículo a cada objeto serializado
+#         for data in serializer.data:
+#             vehiculo = HojaDeVidaVehiculos.objects.get(pk=data['id_hoja_de_vida'])
+#             if vehiculo.id_vehiculo_arrendado:
+#                 vehiculo_marca_nombre = vehiculo.id_vehiculo_arrendado.id_marca.nombre
+#                 vehiculo_placa = vehiculo.id_vehiculo_arrendado.placa
+#             else:
+#                 vehiculo_marca_nombre = "Desconocido"
+#                 vehiculo_placa = "Desconocido"
+
+#             if data['cod_tipo_vehiculo'] == "C":
+#                 tipo_vehiculo = "CARRO"
+#             elif data['cod_tipo_vehiculo'] == "M":
+#                 tipo_vehiculo = "MOTO"
+#             else:
+#                 tipo_vehiculo = data['cod_tipo_vehiculo']
+#             data['marca_nombre'] = vehiculo_marca_nombre
+#             data['vehiculo_placa'] = vehiculo_placa
+#             data['tipo_vehiculo'] = tipo_vehiculo
+
+#         # Retornar la respuesta con la data procesada
+#         return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
 #Busqueda-Conductores
@@ -786,7 +844,7 @@ class BusquedaConductores(generics.ListAPIView):
             Q(id_clase_tercero__nombre="Conductor") | Q(id_clase_tercero__nombre="Conductor Externo")
         )
 
-       # Filtrar por tipo de conductor
+        # Filtrar por tipo de conductor
         if tipo_conductor:
             if tipo_conductor == "IN":
                 queryset = queryset.filter(id_clase_tercero__nombre="Conductor")
@@ -803,33 +861,86 @@ class BusquedaConductores(generics.ListAPIView):
             # Filtrar las ClasesTerceroPersona con esos IDs
             queryset = queryset.filter(id_persona__in=personas_ids)
 
-        # Filtrar conductores que no tienen asignaciones de vehículos
-        conductores_sin_asignacion = []
+        # Filtrar conductores que tengan asignaciones de vehículos con activo igual a False
+        conductores_con_asignacion = []
         for conductor in queryset:
-            if not VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=conductor.id_persona.id_persona).exists():
-                conductores_sin_asignacion.append(conductor)
+            if VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=conductor.id_persona.id_persona, activo=False).exists():
+                conductores_con_asignacion.append(conductor)
 
-        return conductores_sin_asignacion
+        return conductores_con_asignacion
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
+        conductores_con_asignacion = self.get_queryset()
+        serializer = self.serializer_class(conductores_con_asignacion, many=True)
         
         # Agregar el nombre de la clase tercera y los datos de la persona a cada objeto serializado
         for data in serializer.data:
             clase_tercera = ClasesTerceroPersona.objects.get(pk=data['id_clase_tercero_persona'])
             persona = Personas.objects.get(pk=data['id_persona'])
             data['nombre_clase_tercero'] = clase_tercera.id_clase_tercero.nombre
-            # data['nombre_persona'] = persona.primer_nombre
-            # data['apellidos_persona'] = persona.primer_apellido
             data['nombre_persona'] = f"{persona.primer_nombre} {persona.primer_apellido}"
             data['nro_documento'] = persona.numero_documento
 
-           
-
+        # Retornar la respuesta con la data procesada
         return Response({'success': True, 'detail': 'Conductores obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+
+# class BusquedaConductores(generics.ListAPIView):
+#     serializer_class = ClaseTerceroPersonaSerializer
+
+#     def get_queryset(self):
+#         tipo_conductor = self.request.query_params.get('tipo_conductor')
+#         conductor_nombre = self.request.query_params.get('conductor_nombre')
+
+#         # Filtrar los conductores que tengan la clase "Conductor" o "Conductor Externo" en T007ClasesTerceros
+#         queryset = ClasesTerceroPersona.objects.filter(
+#             Q(id_clase_tercero__nombre="Conductor") | Q(id_clase_tercero__nombre="Conductor Externo")
+#         )
+
+#        # Filtrar por tipo de conductor
+#         if tipo_conductor:
+#             if tipo_conductor == "IN":
+#                 queryset = queryset.filter(id_clase_tercero__nombre="Conductor")
+#             elif tipo_conductor == "EX":
+#                 queryset = queryset.filter(id_clase_tercero__nombre="Conductor Externo")
+                
+#         # Filtrar por nombre del conductor
+#         if conductor_nombre:
+#             # Obtener los IDs de las personas con el nombre buscado
+#             personas_ids = Personas.objects.filter(
+#                 Q(primer_nombre__icontains=conductor_nombre) |
+#                 Q(primer_apellido__icontains=conductor_nombre)
+#             ).values_list('id_persona', flat=True)
+#             # Filtrar las ClasesTerceroPersona con esos IDs
+#             queryset = queryset.filter(id_persona__in=personas_ids)
+
+#         # Filtrar conductores que no tienen asignaciones de vehículos
+#         conductores_sin_asignacion = []
+#         for conductor in queryset:
+#             if not VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=conductor.id_persona.id_persona).exists():
+#                 conductores_sin_asignacion.append(conductor)
+
+#         return conductores_sin_asignacion
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.serializer_class(queryset, many=True)
+        
+#         # Agregar el nombre de la clase tercera y los datos de la persona a cada objeto serializado
+#         for data in serializer.data:
+#             clase_tercera = ClasesTerceroPersona.objects.get(pk=data['id_clase_tercero_persona'])
+#             persona = Personas.objects.get(pk=data['id_persona'])
+#             data['nombre_clase_tercero'] = clase_tercera.id_clase_tercero.nombre
+#             # data['nombre_persona'] = persona.primer_nombre
+#             # data['apellidos_persona'] = persona.primer_apellido
+#             data['nombre_persona'] = f"{persona.primer_nombre} {persona.primer_apellido}"
+#             data['nro_documento'] = persona.numero_documento
+
+#         return Response({'success': True, 'detail': 'Conductores obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 #Asignar_Vehiculo
+
 class AsignarVehiculo(generics.CreateAPIView):
     serializer_class = VehiculosAgendablesConductorSerializer
 
@@ -852,20 +963,6 @@ class AsignarVehiculo(generics.CreateAPIView):
                 id_hoja_vida_vehiculo = serializer.validated_data['id_hoja_vida_vehiculo']
                 id_persona_conductor = serializer.validated_data['id_persona_conductor']
                 
-                # Verificar si esta asignación ya ha sido realizada
-                if (id_hoja_vida_vehiculo, id_persona_conductor) in asignaciones_realizadas:
-                    errors.append({'detalle': ['Esta asignación ya ha sido realizada.']})
-                    continue
-                
-                # Verificar si el conductor ya está asignado a otro vehículo
-                if VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=id_persona_conductor).exists():
-                    errors.append({'id_persona_conductor': ['Este conductor ya está asignado a otro vehículo.']})
-                    continue
-                
-                # Verificar si el vehículo ya está asignado a otro conductor
-                if VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=id_hoja_vida_vehiculo).exists():
-                    errors.append({'id_hoja_vida_vehiculo': ['Este vehículo ya está asignado a otro conductor.']})
-                    continue
                 
                 # Guardar la asignación como realizada
                 asignaciones_realizadas.add((id_hoja_vida_vehiculo, id_persona_conductor))
@@ -877,7 +974,8 @@ class AsignarVehiculo(generics.CreateAPIView):
                     fecha_inicio_asignacion=serializer.validated_data['fecha_inicio_asignacion'],
                     fecha_final_asignacion=serializer.validated_data['fecha_final_asignacion'],
                     id_persona_que_asigna=request.user.persona,
-                    fecha_registro=datetime.now()  # Utilizar now() para obtener la fecha actual
+                    fecha_registro=datetime.now(),
+                    activo=True
                 )
                 
                 # Serializar la asignación creada y añadirla a la lista de asignaciones exitosas
@@ -892,6 +990,69 @@ class AsignarVehiculo(generics.CreateAPIView):
             return Response({'success': False, 'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'success': True, 'detail': 'Se asignaron correctamente los vehículos.', 'data': asignaciones_exitosas}, status=status.HTTP_200_OK)
+# class AsignarVehiculo(generics.CreateAPIView):
+#     serializer_class = VehiculosAgendablesConductorSerializer
+
+#     def post(self, request, *args, **kwargs):
+#         asignaciones = request.data  # Obtener la lista de asignaciones desde el cuerpo de la solicitud
+        
+#         # Lista para almacenar los errores de validación
+#         errors = []
+#         # Lista para almacenar las asignaciones exitosas
+#         asignaciones_exitosas = []
+        
+#         # Conjunto para almacenar las asignaciones ya realizadas
+#         asignaciones_realizadas = set()
+        
+#         # Iterar sobre cada asignación proporcionada en la lista
+#         for asignacion_data in asignaciones:
+#             serializer = self.serializer_class(data=asignacion_data)
+#             if serializer.is_valid():
+#                 # Obtener los datos proporcionados por el usuario
+#                 id_hoja_vida_vehiculo = serializer.validated_data['id_hoja_vida_vehiculo']
+#                 id_persona_conductor = serializer.validated_data['id_persona_conductor']
+                
+#                 # Verificar si esta asignación ya ha sido realizada
+#                 if (id_hoja_vida_vehiculo, id_persona_conductor) in asignaciones_realizadas:
+#                     errors.append({'detalle': ['Esta asignación ya ha sido realizada.']})
+#                     continue
+                
+#                 # Verificar si el conductor ya está asignado a otro vehículo
+#                 if VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=id_persona_conductor).exists():
+#                     errors.append({'id_persona_conductor': ['Este conductor ya está asignado a otro vehículo.']})
+#                     continue
+                
+#                 # Verificar si el vehículo ya está asignado a otro conductor
+#                 if VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=id_hoja_vida_vehiculo).exists():
+#                     errors.append({'id_hoja_vida_vehiculo': ['Este vehículo ya está asignado a otro conductor.']})
+#                     continue
+                
+#                 # Guardar la asignación como realizada
+#                 asignaciones_realizadas.add((id_hoja_vida_vehiculo, id_persona_conductor))
+                
+#                 # Guardar la nueva asignación en la base de datos
+#                 asignacion = VehiculosAgendables_Conductor.objects.create(
+#                     id_hoja_vida_vehiculo=id_hoja_vida_vehiculo,
+#                     id_persona_conductor=id_persona_conductor,
+#                     fecha_inicio_asignacion=serializer.validated_data['fecha_inicio_asignacion'],
+#                     fecha_final_asignacion=serializer.validated_data['fecha_final_asignacion'],
+#                     id_persona_que_asigna=request.user.persona,
+#                     fecha_registro=datetime.now(),
+#                     activo=True
+#                 )
+                
+#                 # Serializar la asignación creada y añadirla a la lista de asignaciones exitosas
+#                 asignacion_serializer = self.serializer_class(asignacion)
+#                 asignaciones_exitosas.append(asignacion_serializer.data)
+#             else:
+#                 # Si los datos proporcionados por el usuario no son válidos, añadir los errores a la lista
+#                 errors.append(serializer.errors)
+        
+#         # Devolver una respuesta exitosa con la información de las asignaciones creadas o errores de validación
+#         if errors:
+#             return Response({'success': False, 'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             return Response({'success': True, 'detail': 'Se asignaron correctamente los vehículos.', 'data': asignaciones_exitosas}, status=status.HTTP_200_OK)
 
 class ListarAsignacionesVehiculos(generics.ListAPIView):
     serializer_class = AsignacionVehiculoSerializer
@@ -932,18 +1093,20 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Asignaciones de vehículos obtenidas exitosamente', 'data': serializer_data})
     
 
-class EliminarAsignacionVehiculo(generics.DestroyAPIView):
+class EliminarAsignacionVehiculo(generics.UpdateAPIView):
     queryset = VehiculosAgendables_Conductor.objects.all()
     serializer_class = AsignacionVehiculoSerializer
 
-    def destroy(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
+            instance.activo = False 
+            instance.fecha_final_asignacion = datetime.now().date()
+            instance.save()
             serializer = self.get_serializer(instance)
-            self.perform_destroy(instance)
-            return Response({'success': True, 'detail': 'Asignación eliminada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Asignación actualizada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         except:
-            return Response({'success': False, 'detail': 'Error al eliminar la asignación'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'detail': 'Error al actualizar la asignación'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -1035,14 +1198,18 @@ class VehiculosAsociadosPersona(generics.ListAPIView):
         # Obtener el ID de la persona logueada
         id_persona_logueada = self.request.user.persona.id_persona  # Suponiendo que la relación entre usuario y persona existe
 
-        # Filtrar los vehículos asociados a la persona logueada
-        vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=id_persona_logueada)
+        # Filtrar los vehículos asociados a la persona logueada con activo=True
+        vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(
+            id_persona_conductor=id_persona_logueada,
+            activo=True  
+        )
 
         # Serializar los datos de los vehículos asociados
         serializer = self.get_serializer(vehiculos_asociados, many=True)
 
         # Retornar la respuesta con el mensaje
         return Response({'success': True, 'detail': 'Información de los vehículos asociados a la persona logueada', 'data': serializer.data}, status=status.HTTP_200_OK)
+
     
 
 
@@ -1084,8 +1251,6 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                     hoja_vida_vehiculo.es_agendable = es_agendable
                     hoja_vida_vehiculo.save()
 
-            #print(es_agendable)
-            # Creamos la inspección de vehículo
             with transaction.atomic():
                 instancia_inspeccion = serializer.save()
 
@@ -1093,9 +1258,7 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
             data['es_agendable'] = es_agendable
 
 
-
             #GENERACION DE ALERTA
-
             
             if data['requiere_verificacion']:
                 
@@ -1818,6 +1981,7 @@ class ObtenerInformacionViajes(generics.RetrieveAPIView):
     queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
     viajes_serializer_class = ViajesAgendadosSolcitudSerializer  # Usar el serializador correspondiente para ViajesAgendados
     solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
+    personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  # Usar el serializador correspondiente para PersonasSolicitudViaje
 
     def get(self, request, id_solicitud_viaje):
         try:
@@ -1830,6 +1994,9 @@ class ObtenerInformacionViajes(generics.RetrieveAPIView):
             # Obtener el viaje agendado asociado a la solicitud de viaje
             viaje_agendado = solicitud_viaje.viajesagendados_set.first()
 
+            # Obtener los registros asociados al modelo PersonasSolicitudViaje para la solicitud de viaje especificada
+            personas_solicitud_viaje = PersonasSolicitudViaje.objects.filter(id_solicitud_viaje=id_solicitud_viaje)
+
             # Serializar los datos según el estado de la solicitud
             if solicitud_viaje.estado_solicitud == 'RC':
                 # Si el estado es 'Rechazado', retornar solo la fecha y observación de no autorización
@@ -1840,19 +2007,22 @@ class ObtenerInformacionViajes(generics.RetrieveAPIView):
                     'observacion_autorizacion': solicitud_viaje.justificacion_rechazo
                 }
             else:
-                # Si no, serializar ambos modelos
+                # Si no, serializar ambos modelos y los registros de PersonasSolicitudViaje
                 viajes_data = self.viajes_serializer_class(viaje_agendado).data
                 solicitudes_data = self.solicitudes_serializer_class(solicitud_viaje).data
+                personas_solicitud_data = self.personas_solicitud_serializer_class(personas_solicitud_viaje, many=True).data
 
                 # Combinar los datos serializados en un solo diccionario de respuesta
                 response_data = {
                     'solicitud_viaje': solicitudes_data,
-                    'viajes_agendados': viajes_data
+                    'viajes_agendados': viajes_data,
+                    'personas_solicitud_viaje': personas_solicitud_data
                 }
 
             return Response({'success': True, 'detail': 'Información de viajes obtenida exitosamente', 'data': response_data})
+        
         except SolicitudesViajes.DoesNotExist:
-            return Response({'success': False, 'detail': 'La solicitud de viaje no existe o no tiene el estado adecuado.'}, status=status.HTTP_404_NOT_FOUND)
+            raise NotFound(detail='La solicitud de viaje no existe o no tiene el estado adecuado.')
         
 
 
@@ -2182,3 +2352,142 @@ class BusquedaEstadoSolicitudViaje(generics.ListAPIView):
             raise ValidationError("No existe la solicitud de viaje que busca.")
         
         return Response({'success':True,'detail':'Se encontro la solicitud de viaje buscada.','data':serializer.data},status=status.HTTP_200_OK)
+    
+
+class SolicitudesViajePersona(generics.ListAPIView):
+    serializer_class = SolicitudViajeSerializer
+
+    def get_queryset(self):
+        # Obtener el ID de la persona logueada
+        id_persona_logueada = self.request.user.persona.id_persona
+
+        # Obtener las unidades organizacionales de las cuales la persona logueada es líder
+        unidades_lideradas = LideresUnidadesOrg.objects.filter(id_persona=id_persona_logueada).values_list('id_unidad_organizacional', flat=True)
+
+        # Filtrar las solicitudes de viaje asociadas a las unidades organizacionales lideradas por la persona logueada
+        solicitudes_viaje = SolicitudesViajes.objects.filter(id_unidad_org_solicita__in=unidades_lideradas)
+
+        # Filtrar las solicitudes de viaje que cumplen con la condición adicional
+        solicitudes_filtradas = solicitudes_viaje.filter(id_unidad_org_solicita__activo=True)
+
+        # Obtener parámetros de consulta
+        fecha_solicitud_desde = self.request.query_params.get('fecha_solicitud_desde')
+        fecha_solicitud_hasta = self.request.query_params.get('fecha_solicitud_hasta')
+        estado_solicitud = self.request.query_params.get('estado_solicitud')
+        id_persona_solicita = self.request.query_params.get('id_persona_solicita')
+
+        # Filtrar por id_persona_solicita si está presente
+        if id_persona_solicita:
+            solicitudes_filtradas = solicitudes_filtradas.filter(id_persona_solicita=id_persona_solicita)
+
+        # Filtrar por fecha_solicitud DESDE
+        if fecha_solicitud_desde:
+            solicitudes_filtradas = solicitudes_filtradas.filter(fecha_solicitud__gte=fecha_solicitud_desde)
+
+        # Filtrar por fecha_solicitud HASTA
+        if fecha_solicitud_hasta:
+            solicitudes_filtradas = solicitudes_filtradas.filter(fecha_solicitud__lte=fecha_solicitud_hasta)
+    
+        # Filtrar por estado_solicitud si es válido
+        if estado_solicitud:
+            # Verificar si el estado proporcionado es válido
+            estados_validos = ['ES', 'RE', 'RC', 'FN', 'AP']
+            if estado_solicitud in estados_validos:
+                solicitudes_filtradas = solicitudes_filtradas.filter(estado_solicitud=estado_solicitud)
+            else:
+                # Si el estado proporcionado no es válido, devolver una respuesta de error
+                return Response({'error': f'El estado {estado_solicitud} no es válido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return solicitudes_filtradas
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Solicitudes de viaje obtenidas exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    
+
+class AprobarSolicitudViaje(generics.UpdateAPIView):
+    queryset = SolicitudesViajes.objects.all()
+    serializer_class = SolicitudViajeSerializer
+
+    def update(self, request, *args, **kwargs):
+        try:
+            solicitud_viaje = self.get_object()
+            
+            # Verificar si la solicitud de viaje ya está aprobada
+            if solicitud_viaje.estado_solicitud == 'AP':
+                return Response({'success': False, 'detail': 'La solicitud de viaje ya ha sido aprobada anteriormente.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Verificar si la solicitud de viaje está en estado de espera
+            if solicitud_viaje.estado_solicitud != 'ES':
+                return Response({'success': False, 'detail': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Actualizar los atributos
+            solicitud_viaje.id_persona_responsable = request.user.persona
+            solicitud_viaje.id_unidad_org_responsable = request.user.persona.id_unidad_organizacional_actual
+            solicitud_viaje.fecha_aprobacion_responsable = datetime.now()
+            solicitud_viaje.estado_solicitud = 'AP'
+            
+            # Guardar los cambios
+            solicitud_viaje.save()
+            
+            # Serializar y devolver la respuesta
+            serializer = self.get_serializer(solicitud_viaje)
+            return Response({'success': True, 'detail': 'Solicitud de viaje aprobada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class RechazarSolicitudViaje(generics.UpdateAPIView):
+    queryset = SolicitudesViajes.objects.all()
+    serializer_class = SolicitudViajeSerializer
+
+    def update(self, request, *args, **kwargs):
+        try:
+            solicitud_viaje = self.get_object()
+
+            # Verificar si la solicitud de viaje ya está rechazada
+            if solicitud_viaje.estado_solicitud == 'RC':
+                return Response({'success': False, 'detail': 'La solicitud de viaje ya ha sido rechazada anteriormente.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Verificar si la solicitud de viaje está en estado de espera
+            if solicitud_viaje.estado_solicitud != 'ES':
+                return Response({'success': False, 'detail': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Actualizar los atributos
+            solicitud_viaje.id_persona_responsable = request.user.persona
+            solicitud_viaje.id_unidad_org_responsable = request.user.persona.id_unidad_organizacional_actual
+            solicitud_viaje.fecha_rechazo = datetime.now()
+            solicitud_viaje.estado_solicitud = 'RC'
+            solicitud_viaje.justificacion_rechazo = request.data.get('justificacion_rechazo', '')  # Justificación proporcionada por el usuario
+
+            # Guardar los cambios
+            solicitud_viaje.save()
+
+            # Serializar y devolver la respuesta
+            serializer = self.get_serializer(solicitud_viaje)
+            return Response({'success': True, 'detail': 'Solicitud de viaje rechazada exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class ViajesAsociadosVehiculo(generics.ListAPIView):
+    serializer_class = ViajesAgendadosSerializer
+
+    def get(self, request, *args, **kwargs):
+        # Obtener el ID del vehículo conductor desde los parámetros de la solicitud
+        id_vehiculo_conductor = self.kwargs.get('id_vehiculo_conductor')
+
+        if not id_vehiculo_conductor:
+            return Response({'success': False, 'detail': 'Debe proporcionar el ID del vehículo conductor.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filtrar los viajes asociados al vehículo conductor
+        viajes_asociados = ViajesAgendados.objects.filter(id_vehiculo_conductor=id_vehiculo_conductor)
+
+        # Serializar los datos de los viajes asociados
+        serializer = self.get_serializer(viajes_asociados, many=True)
+
+        # Retornar la respuesta con el mensaje
+        return Response({'success': True, 'detail': 'Información de los viajes asociados al vehículo conductor', 'data': serializer.data}, status=status.HTTP_200_OK)
+
