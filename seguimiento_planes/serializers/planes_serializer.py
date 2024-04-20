@@ -30,6 +30,7 @@ class EjeEstractegicoSerializer(serializers.ModelSerializer):
     #nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
     nombre_objetivo = serializers.ReadOnlyField(source='id_objetivo.nombre_objetivo', default=None)
     nombre_plan_objetivo = serializers.ReadOnlyField(source='id_objetivo.id_plan.nombre_plan', default=None)
+    sigla_plan_objetivo = serializers.ReadOnlyField(source='id_objetivo.id_plan.sigla_plan', default=None)
             
     class Meta:
         model = EjeEstractegico
@@ -251,6 +252,7 @@ class LineasBasePGARSerializer(serializers.ModelSerializer):
     nombre_objetivo = serializers.ReadOnlyField(source='id_objetivo.nombre_objetivo', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
+    tipo_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.id_tipo_eje.nombre_tipo_eje', default=None)
 
     class Meta:
         model = LineasBasePGAR
@@ -268,7 +270,9 @@ class ActividadesPGARSerializer(serializers.ModelSerializer):
 
 class IndicadoresPGARSerializer(serializers.ModelSerializer):
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
-    nombre_tipo_indicador = serializers.CharField(source='', default=None)
+    nombre_tipo_indicador = serializers.CharField(source='get_tipo_indicador_display', default=None)
+    nombre_medida = serializers.CharField(source='get_medida_display', default=None)
+    nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
 
     class Meta:
         model = Indicador

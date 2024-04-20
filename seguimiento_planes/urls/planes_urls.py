@@ -169,7 +169,14 @@ urlpatterns=[
 
     #Actividades PGAR
     path('consultar-actividades-id-linea-base/<str:pk>/',views.ActividadesListByIdLineaBase.as_view(),name='consultarActividadesPGARIdLineaBase'),
-    
-    
+    path('crear-actividadesPGAR/',views.ActividadesCreate.as_view(),name='crearActividadesPGAR'),
+    path('actualizar-actividadesPGAR/<str:pk>/',views.ActividadesUpdate.as_view(),name='actualizaractividadesPGAR'),
+    path('busqueda-avanzada-actividadesPGAR/', views.BusquedaAvanzadaActividades.as_view(), name='busquedaAvanzadaActividadesPGAR'),
+
+    #Indicadores PGAR
+    path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadoresByIdActividad.as_view(),name='consultarIndicadoresPGARIdActividad'),
+    path('crear-indicadoresPGAR/',views.IndicaresCreate.as_view(),name='crearIndicadoresPGAR'),
+    path('actualizar-indicadoresPGAR/<str:pk>/',views.IndicadoresUpdate.as_view(),name='actualizarindicadoresPGAR'),    
+
 
 ]

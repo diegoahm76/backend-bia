@@ -252,8 +252,15 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
     tipo_solicitud = serializers.SerializerMethodField()
     numero_activos = serializers.SerializerMethodField()
     id_funcionario_resp_asignado = serializers.SerializerMethodField()
+    primer_nombre_funcionario_resp_asignado = serializers.SerializerMethodField()
+    primer_apellido_funcionario_resp_asignado = serializers.SerializerMethodField()
     tipo_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
     numero_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
+    id_persona_operario_asignado = serializers.SerializerMethodField()
+    primer_nombre_persona_operario_asignado = serializers.SerializerMethodField()
+    primer_apellido_persona_operario_asignado = serializers.SerializerMethodField()
+    tipo_documento_persona_operario_asignado = serializers.SerializerMethodField()
+    numero_documento_persona_operario_asignado = serializers.SerializerMethodField()
     class Meta:
         model = DespachoActivos
         fields = '__all__'
@@ -288,10 +295,23 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         # Obtener el número de activos relacionados con esta solicitud
         return ItemsDespachoActivos.objects.filter(id_despacho_activo=instance).count()
     
+    #Persona_Responsable
     def get_id_funcionario_resp_asignado(self, obj):
         asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
         if asignacion:
             return asignacion.id_funcionario_resp_asignado.id_persona
+        return None
+    
+    def get_primer_nombre_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.primer_nombre
+        return None
+    
+    def get_primer_apellido_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.primer_apellido
         return None
     
     def get_tipo_documento_funcionario_resp_asignado(self, obj):
@@ -305,7 +325,37 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         if asignacion:
             return asignacion.id_funcionario_resp_asignado.numero_documento
         return None
-        
+    
+    #Persona_Operario
+    def get_id_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.id_persona
+        return None
+    
+    def get_primer_nombre_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.primer_nombre
+        return None
+    
+    def get_primer_apellido_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.primer_apellido
+        return None
+    
+    def get_tipo_documento_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.tipo_documento.cod_tipo_documento
+        return None
+    
+    def get_numero_documento_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.numero_documento
+        return None    
 
     
 

@@ -197,7 +197,7 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
         data_archivo = {
             'es_Doc_elec_archivo': True,
             'ruta': ruta,
-            'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            'md5_hash': md5_value  
         }
         
         archivo_class = ArchivosDgitalesCreate()
@@ -207,7 +207,7 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
         # Insertar anexo en T094
         data_anexo = {}
         data_anexo['id_baja_activo'] = baja_creada.id_baja_activo
-        data_anexo['nombre_anexo'] = nombre_anexo # PONER NOMBRE FIJO ANEXO
+        data_anexo['nombre_anexo'] = nombre_anexo 
         data_anexo['nro_folios'] = data.get('nro_folios')
         data_anexo['descripcion_anexo'] = data.get('descripcion_anexo')
         data_anexo['fecha_creacion_anexo'] = current_date

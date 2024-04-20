@@ -1,5 +1,7 @@
 from django.db import models
 
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+
 # Create your models here.
 
 class Sector(models.Model):
@@ -214,8 +216,8 @@ class MetasEjePGAR(models.Model):
     numero_meta_eje = models.CharField(max_length=255, db_column='T534numeroMetaEje')
     nombre_meta_eje = models.CharField(max_length=255, db_column='T534nombreMetaEje')
     id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.CASCADE, db_column='T534IdEjeEstrategico')
-    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.CASCADE, db_column='T534IdObjetivo')
-    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T534IdPlan')
+    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T534IdObjetivo')
+    id_plan = models.ForeignKey(Planes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T534IdPlan')
     cumplio = models.BooleanField(default=False, db_column='T534cumplio')
     fecha_creacion = models.DateField(db_column='T534fechaCreacion')
 
@@ -229,8 +231,8 @@ class LineasBasePGAR(models.Model):
     nombre_linea_base = models.CharField(max_length=255, db_column='T533nombreLineaBase')
     id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.CASCADE, db_column='T533IdMetaEje')
     id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.CASCADE, db_column='T533IdEjeEstrategico')
-    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.CASCADE, db_column='T533IdObjetivo')
-    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T533IdPlan')
+    id_objetivo = models.ForeignKey(Objetivo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T533IdObjetivo')
+    id_plan = models.ForeignKey(Planes, on_delete=models.SET_NULL, null=True, blank=True, db_column='T533IdPlan')
     cumplio = models.BooleanField(default=False, db_column='T533cumplio')
     fecha_creacion = models.DateField(null=True, blank=True, db_column='T533fechaCreacion')
 
@@ -336,7 +338,7 @@ class Indicador(models.Model):
         max_length=3, choices=[
             ('NUM', 'Numero'),
             ('POR', 'Porcentaje'),
-            ("TMP", "Tiempo")
+            ("TMP", "Tiempo"),
         ], db_column='T512medida')
     tipo_indicador = models.CharField(
         max_length=3, choices=[
@@ -362,7 +364,7 @@ class Indicador(models.Model):
     id_linea_base = models.ForeignKey(LineasBasePGAR, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdLineaBase')
     id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdMetaEje')
     id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdEjeEstrategico')
-    id_unidad_organizacional = models.ForeignKey(Entidad, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdUnidadOrganizacional')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdUnidadOrganizacional')
     entidad_responsable = models.CharField(max_length=255, null=True, blank=True, db_column='T512entidadResponsable')
 
     def __str__(self):
@@ -472,6 +474,49 @@ class Subprograma(models.Model):
         db_table = 'T515Subprograma'
         verbose_name = 'Subprograma'
         verbose_name_plural = 'Subprogramas'
+
+    
+class ArmonizarPAIPGAR(models.Model):
+    id_armonizar = models.AutoField(primary_key=True, editable=False, db_column='T535IdArmonizar')
+    nombre_relacion = models.CharField(max_length=255, db_column='T535nombreRelacion')
+    id_planPGAR = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T535IdPlanPGAR', related_name='T535Id_PlanPGAR')
+    id_planPAI = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T535IdPlanPAI', related_name='T535Id_PlanPAI')
+    estado = models.BooleanField(db_column='T535estado')
+    fecha_creacion = models.DateField(null=True, blank=True, db_column='T535fechaCreacion')
+
+    class Meta:
+        db_table = 'T535ArmonizarPAIPGAR'
+        verbose_name = 'Armonizar PAI PGAR'
+        verbose_name_plural = 'Armonizar PAI PGAR'
+
+
+class SeguimientoPGAR(models.Model):
+    id_PGAR = models.AutoField(primary_key=True, editable=False, db_column='T536IdPGAR')
+    ano_PGAR = models.IntegerField(db_column='T536anoPGAR')
+    id_armonizar = models.ForeignKey(ArmonizarPAIPGAR, on_delete=models.CASCADE, db_column='T536IdArmonizar')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T536IdIndicador', related_name='T536Id_Indicador')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T536IdActividad')
+    id_linea_base = models.ForeignKey(LineasBasePGAR, on_delete=models.CASCADE, db_column='T536IdLineaBase')
+    id_meta_eje = models.ForeignKey(MetasEjePGAR, on_delete=models.CASCADE, db_column='T536IdMetaEje')
+    id_eje_estrategico = models.ForeignKey(EjeEstractegico, on_delete=models.CASCADE, db_column='T536IdEjeEstrategico')
+    id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T536IdPrograma')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T536IdProyecto')
+    id_indicador_seg = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T536IdIndicadorSeg', related_name='T536Id_Indicador_seg')
+    meta_fisica_anual = models.IntegerField(db_column='T536metaFisicaAnual')
+    avance_fisico_anual = models.IntegerField(db_column='T536avanceFisicoAnual')
+    pavance_fisico = models.IntegerField(db_column='T536pavanceFisico')
+    pavance_fisico_acumulado = models.IntegerField(db_column='T536pavanceFisicoAcumulado')
+    descripcion_avance = models.CharField(max_length=255, db_column='T536descripcionAvance')
+    meta_finaciera_anual = models.BigIntegerField(db_column='T536metaFinacieraAnual')
+    avance_financiero_anual = models.BigIntegerField(db_column='T536avanceFinancieroAnual')
+    pavance_financiero = models.IntegerField(db_column='T536pavanceFinanciero')
+    avance_recurso_obligado = models.BigIntegerField(db_column='T536avanceRecursoObligado')
+    pavance_recurso_obligado = models.IntegerField(db_column='T536pavanceRecursoObligado')
+
+    class Meta:
+        db_table = 'T536SeguimientoPGAR'
+        verbose_name = 'Seguimiento PGAR'
+        verbose_name_plural = 'Seguimiento PGAR'
 
 
 

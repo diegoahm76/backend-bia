@@ -258,7 +258,7 @@ class PersonasSolicitudViaje(models.Model):
     id_persona_solcitud_viaje = models.AutoField(primary_key=True, editable=False, db_column="T080IdPersonaSolicitudViaje")
     id_persona_viaja = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T080IdPersonaViaja")
     id_solicitud_viaje = models.ForeignKey(SolicitudesViajes, on_delete=models.CASCADE, db_column="T080IdSolicitudViaje")
-    id_inspeccion_vehiculo = models.ForeignKey(InspeccionesVehiculosDia, on_delete=models.CASCADE, db_column="T080IdInspeccionVehiculo")
+    id_inspeccion_vehiculo = models.ForeignKey(InspeccionesVehiculosDia, on_delete=models.SET_NULL, null=True, blank=True, db_column="T080IdInspeccionVehiculo")
     persona_confirma_viaje = models.BooleanField(null=True, blank=True, db_column="T080personaConfirmaViaje")
     persona_agregada_inspeccion = models.BooleanField(null=True, blank=True, db_column="T080personaAgregadaInspeccion")
     observacion = models.CharField(max_length=255, null=True, blank=True, db_column="T080observacion")
