@@ -33,6 +33,8 @@ class VehiculosAgendables_Conductor(models.Model):
     fecha_final_asignacion = models.DateField(db_column="T072fechaFinalizaAsignacion")
     id_persona_que_asigna = models.ForeignKey("transversal.Personas", on_delete=models.CASCADE, db_column="T072Id_PersonaQueAsigna", related_name='T072id_persona_que_asigna')
     fecha_registro = models.DateTimeField(auto_now_add=True, db_column="T072fechaRegistro")
+    activo = models.BooleanField(db_column="T072activo")
+
     
     def __str__(self):
         return str(self.id_vehiculo_conductor)
