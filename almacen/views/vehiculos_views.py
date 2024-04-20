@@ -1179,7 +1179,7 @@ class VehiculosAsociadosPersona(generics.ListAPIView):
     
 
 
-#INSPECCIONES_VEHICULOS
+# #INSPECCIONES_VEHICULOS
 # class CrearInspeccionVehiculo(generics.CreateAPIView):
 #     queryset = InspeccionesVehiculosDia.objects.all()
 #     serializer_class = InspeccionesVehiculosDiaCreateSerializer
@@ -1276,11 +1276,11 @@ class VehiculosAsociadosPersona(generics.ListAPIView):
 #                     return respuesta_alerta
 
 
-#             # Retornamos el registro creado con la variable es_agendable
-#             return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
-#         else:
-#             # Si los datos no son válidos, retornamos los errores de validación
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# #             # Retornamos el registro creado con la variable es_agendable
+# #             return Response({'success': True, 'detail': 'Las inspeccion fue creada correctamente: ', 'data': data}, status=status.HTTP_201_CREATED)
+# #         else:
+# #             # Si los datos no son válidos, retornamos los errores de validación
+# #             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class CrearInspeccionVehiculo(generics.CreateAPIView):
     queryset = InspeccionesVehiculosDia.objects.all()
@@ -1370,8 +1370,63 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                         fecha_confirmacion=fecha_confirmacion
                     )
 
-                    
             data = serializer.data
+
+            #GENERACION DE ALERTA
+            if data['requiere_verificacion']:
+                
+                id_hoja_vida_vehiculo = serializer.validated_data.get('id_hoja_vida_vehiculo')
+                if not id_hoja_vida_vehiculo:
+                    raise ValidationError('El campo id_hoja_vida_vehiculo es obligatorio.')
+
+                hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.get(id_hoja_de_vida=id_hoja_vida_vehiculo.id_hoja_de_vida)
+                id_elemento=hoja_vida_vehiculo.id_hoja_de_vida
+
+                data_alerta = {}
+                vista_alertas_programadas = AlertaEventoInmediadoCreate()
+                data_alerta = {}
+                data_alerta['cod_clase_alerta'] = 'Alm_NvInsp'
+                #data_alerta['id_persona'] = id_persona_asiganada
+                data_alerta['id_elemento_implicado'] = id_elemento
+
+                inspeccion = instancia_inspeccion
+                #raise ValidationError(inspeccion.id_persona_inspecciona)
+                cadena = ""
+                if inspeccion.id_persona_inspecciona:
+
+                    nombre_completo_solicitante = None
+                    nombre_list = [inspeccion.id_persona_inspecciona.primer_nombre, inspeccion.id_persona_inspecciona.segundo_nombre,
+                                    inspeccion.id_persona_inspecciona.primer_apellido, inspeccion.id_persona_inspecciona.segundo_apellido]
+                    nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+                    nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+                    persona = nombre_completo_solicitante
+                
+                    fecha_inspeccion = inspeccion.dia_inspeccion
+                    hoja_vida_vehiculo = inspeccion.id_hoja_vida_vehiculo
+                    tipo_vehiculo = hoja_vida_vehiculo.get_cod_tipo_vehiculo_display()
+                    if hoja_vida_vehiculo.es_arrendado:
+                        placa = hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+                        nombre = hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+                        marca = hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+                    else:
+                        placa = hoja_vida_vehiculo.id_articulo.doc_identificador_nro
+                        nombre = hoja_vida_vehiculo.id_articulo.nombre
+                        marca = hoja_vida_vehiculo.id_articulo.id_marca.nombre
+                    
+                    if not hoja_vida_vehiculo:
+                        cadena =  ""
+                    cadena = (
+                        "<p>Persona que inspecciona: " + persona + "</p>"
+                        "<p>Fecha de inspección: " + str(fecha_inspeccion) + "</p>"
+                        "<p>Placa del vehículo: " + placa + "</p>"
+                        "<p>Nombre del vehículo: " + nombre + "</p>"
+                        "<p>Marca del vehículo: " + marca + "</p>"
+                        )
+                    
+                data_alerta['informacion_complemento_mensaje'] = cadena
+                respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+                if respuesta_alerta.status_code != status.HTTP_200_OK:
+                    return respuesta_alerta
 
             # Retornamos el registro creado con la variable es_agendable
             return Response({'success': True, 'detail': 'La inspección fue creada correctamente.', 'data': data}, status=status.HTTP_201_CREATED)
