@@ -163,7 +163,7 @@ urlpatterns=[
 
     #Linea Base
     path('consultar-linea-base-id-meta/<str:pk>/',views.LineaBaseListByIdMeta.as_view(),name='consultarLineasBaseIdMeta'),
-   #path('busqueda-avanzada-metasPGAR/', views.MetasPGARList.as_view(), name='busquedaavanzadametasPGAR'),
+    path('busqueda-avanzada-lineas-base/', views.BusquedaAvnzadaLineaBase.as_view(), name='busquedaAvanzadaLineasBase'),
     path('crear-linea-base/',views.LineaBaseCreate.as_view(),name='crearlineabase'),
     path('actualizar-linea-base/<str:pk>/',views.LineaBaseUpdate.as_view(),name='actualizarlineabase'),
 
@@ -171,7 +171,7 @@ urlpatterns=[
     path('consultar-actividades-id-linea-base/<str:pk>/',views.ActividadesListByIdLineaBase.as_view(),name='consultarActividadesPGARIdLineaBase'),
     path('crear-actividadesPGAR/',views.ActividadesCreate.as_view(),name='crearActividadesPGAR'),
     path('actualizar-actividadesPGAR/<str:pk>/',views.ActividadesUpdate.as_view(),name='actualizaractividadesPGAR'),
-    path('busqueda-avanzada-actividadesPGAR/', views.BusquedaAvanzadaActividades.as_view(), name='busquedaAvanzadaActividadesPGAR'),
+    path('busqueda-avanzada-actividadesPGAR/', views.BusquedaAvanzadaActividadesPGAR.as_view(), name='busquedaAvanzadaActividadesPGAR'),
 
     #Indicadores PGAR
     path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadoresByIdActividad.as_view(),name='consultarIndicadoresPGARIdActividad'),

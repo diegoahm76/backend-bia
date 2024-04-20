@@ -5,8 +5,8 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
-from seguimiento_planes.models.planes_models import LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguimiento_planes.serializers.planes_serializer import ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.models.planes_models import ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -1914,7 +1914,7 @@ class MetasPGARList(generics.ListAPIView):
         nombre_eje_estrategico = request.query_params.get('nombre_eje_estrategico', '')
         nombre_objetivo = request.query_params.get('nombre_objetivo', '')
         if nombre_meta != '':
-            metas = metas.filter(nombre_meta__icontains=nombre_meta)
+            metas = metas.filter(nombre_meta_eje__icontains=nombre_meta)
         if nombre_eje_estrategico != '':
             metas = metas.filter(id_eje_estrategico__nombre__icontains=nombre_eje_estrategico)
         if nombre_objetivo != '':
@@ -2052,7 +2052,7 @@ class ActividadesUpdate(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Actividad actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-class BusquedaAvanzadaActividades(generics.ListAPIView):
+class BusquedaAvanzadaActividadesPGAR(generics.ListAPIView):
     serializer_class = ActividadesPGARSerializer
     permission_classes = [IsAuthenticated]
 
@@ -2120,3 +2120,55 @@ class IndicadoresUpdate(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail': 'Indicador actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+#Armonización PGAR
+class PlanesPAIList(generics.ListAPIView):
+    serializer_class = PlanesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        planes = Planes.objects.filter(tipo_plan = 'PAI')
+        serializer = self.serializer_class(planes, many=True)
+        if not planes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Planes PAI.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class PlanesPGARList(generics.ListAPIView):
+    serializer_class = PlanesSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        planes = Planes.objects.filter(tipo_plan = 'PGAR')
+        serializer = self.serializer_class(planes, many=True)
+        if not planes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Planes PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class ArmonizacionPGARCreate(generics.CreateAPIView):
+    serializer_class = ArmonizarPAIPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Armonización PGAR creada correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+
+class ArmonizacionPGARList(generics.ListAPIView):
+    serializer_class = ArmonizarPAIPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        armonizacion = ArmonizarPAIPGAR.objects.all()
+        if not armonizacion:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(armonizacion, many=True)
+        return Response({'success': True, 'detail': 'Listado de Armonización PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+

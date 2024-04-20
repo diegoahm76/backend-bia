@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR
+from seguimiento_planes.models.planes_models import ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -242,6 +242,8 @@ class MetasPGARSerializer(serializers.ModelSerializer):
     nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
     nombre_objetivo = serializers.ReadOnlyField(source='id_objetivo.nombre_objetivo', default=None)
     nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    tipo_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.id_tipo_eje.nombre_tipo_eje', default=None)
+    nombre_plan_objetivo = serializers.ReadOnlyField(source='id_objetivo.id_plan.nombre_plan', default=None)
 
     class Meta:
         model = MetasEjePGAR
@@ -277,3 +279,18 @@ class IndicadoresPGARSerializer(serializers.ModelSerializer):
     class Meta:
         model = Indicador
         fields = '__all__'
+
+class ArmonizarPAIPGARSerializer(serializers.ModelSerializer):
+    nombre_planPGAR = serializers.ReadOnlyField(source='id_planPGAR.nombre_plan', default=None)
+    nombre_planPAI = serializers.ReadOnlyField(source='id_planPAI.nombre_plan', default=None)
+    objetivoPGAR = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ArmonizarPAIPGAR
+        fields = '__all__'
+
+    def get_objetivoPGAR(self, obj):
+        #ObjetivoSerializer
+        objetivos = Objetivo.objects.filter(id_plan=obj.id_planPGAR)
+        serializer = ObjetivoSerializer(objetivos, many=True)
+        return serializer.data
