@@ -38,6 +38,8 @@ urlpatterns = [
     path('novedades-vehiculo/get/',views.NovedadesVehiculosList.as_view(),name='novedades-vehiculos'),
     path('revisar-vehiculo/<int:pk>/',views.InspeccionVehiculoDetail.as_view(),name='revisar-vehiculos'),
     path('listar-inspecciones-id/<int:pk>/',views.InspeccionVehiculoID.as_view(),name='listar-inspecciones-vehiculos'),
+    path('listar-inspecciones-id/<int:pk>/',views.InspeccionVehiculoID.as_view(),name='listar-inspecciones-vehiculos'),
+    path('viajes-asociados-vehiculo/<int:id_vehiculo_conductor>/',views.ViajesAsociadosVehiculo.as_view(), name='viajes-asociados-vehiculo'),
 
 
     #Agendamiento_vehiculos
@@ -60,8 +62,15 @@ urlpatterns = [
     path('bitacora-llegada/update/<int:id_viaje_agendado>/', views.ActualizarBitacoraLlegada.as_view(), name='actualizar_bitacora_llegada'),
     path('bitacora-llegada/get/<int:id_viaje_agendado>/', views.ObtenerBitacoraSalida.as_view(), name='obtener-bitacora-llegada'),
 
-    #Solicitud_Viaje
-   path('listar-solicitud-viaje/get/<int:pk>/',views.BusquedaEstadoSolicitudViaje.as_view(),name='listar-solicitud-viaje'),
+    #Solicitud_Viaje_Intengracion
+    path('listar-solicitud-viaje/get/<int:pk>/',views.BusquedaEstadoSolicitudViaje.as_view(),name='listar-solicitud-viaje'),
+
+    #Autorizacion_Solcitud Viaje
+    path('listar-solicitud-viajes-autorizar/get/',views.SolicitudesViajePersona.as_view(),name='listar-solicitud-viaje-autorizar'),
+    path('aprobar-solicitud-viaje/<int:pk>/', views.AprobarSolicitudViaje.as_view(), name='aprobar_solicitud_viaje'),
+    path('rechazar-solicitud-viaje/<int:pk>/', views.AprobarSolicitudViaje.as_view(), name='rechazarr_solicitud_viaje'),
+
+
 
 
     
