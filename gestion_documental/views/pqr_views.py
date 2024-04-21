@@ -3861,6 +3861,7 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
 
         data_expediente = {}
         request_serializer = {}
+        pqrsdf = PQRSDF.objects.filter(id_PQRSDF=data['id_pqrsdf']).first()
         
         # Crear codigo expediente
         tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_org_ccd_trd_prop']).first()
@@ -3903,7 +3904,10 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
             expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=tripleta_trd.id_catserie_unidadorg, codigo_exp_Agno=current_date.year).first()
         
             if expediente:
-                raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada')
+                if pqrsdf:
+                    pqrsdf.id_expediente_doc = expediente
+                    pqrsdf.save()
+                    raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada y ya se asocio a la PQRSDF seleccionada')
             
         data_expediente['titulo_expediente'] = f"Expediente PQRSDF {codigo_exp_und_serie_subserie} {current_date.year}"
         data_expediente['descripcion_expediente'] = f"Expediente PQRSDF para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
@@ -3934,10 +3938,14 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
             serializer = self.serializer_class(data=data_expediente, context = {'request':request})
             serializer.is_valid(raise_exception=True)
             expediente_creado = serializer.save()
+            pqrsdf.id_expediente_doc = expediente_creado
+            pqrsdf.save()
         elif configuracion_expediente.cod_tipo_expediente == 'C':
             serializer = self.serializer_class_complejo(data=data_expediente, context = {'request':request})
             serializer.is_valid(raise_exception=True)
             expediente_creado = serializer.save()
+            pqrsdf.id_expediente_doc = expediente_creado
+            pqrsdf.save()
         
 
         
