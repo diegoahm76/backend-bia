@@ -3862,6 +3862,9 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
         data_expediente = {}
         request_serializer = {}
         pqrsdf = PQRSDF.objects.filter(id_PQRSDF=data['id_pqrsdf']).first()
+
+        if not pqrsdf:
+            raise ValidationError('No se encontro la PQRSDF seleccionada')
         
         # Crear codigo expediente
         tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_org_ccd_trd_prop']).first()

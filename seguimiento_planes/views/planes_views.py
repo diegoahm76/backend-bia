@@ -2199,7 +2199,7 @@ class PlanesPGARList(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        planes = Planes.objects.filter(tipo_plan = 'PGAR')
+        planes = Planes.objects.filter(tipo_plan = 'PGR')
         serializer = self.serializer_class(planes, many=True)
         if not planes:
             raise NotFound('No se encontraron resultados.')
