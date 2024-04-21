@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.serializers.planes_serializer import SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
 from seguimiento_planes.models.planes_models import ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
@@ -197,13 +197,12 @@ class BusquedaAvanzadaPlanes(generics.ListAPIView):
 
 # Listar todos los Ejes Estratégicos
 
-class EjeEstractegicoList(generics.ListCreateAPIView):
-    queryset = EjeEstractegico.objects.all()
+class EjeEstractegicoPAIList(generics.ListCreateAPIView):
     serializer_class = EjeEstractegicoSerializer
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        ejes = EjeEstractegico.objects.all()
+        ejes = EjeEstractegico.objects.filter(id_plan__tipo_plan = 'PAI')
         serializer = EjeEstractegicoSerializer(ejes, many=True)
         if not ejes:
             raise NotFound('No se encontraron resultados.')
@@ -220,6 +219,8 @@ class BusquedaAvanzadaEjes(generics.ListAPIView):
         nombre_plan = request.query_params.get('nombre_plan', '')
         nombre_objetivo = request.query_params.get('nombre_objetivo', '')
         nombre_eje = request.query_params.get('nombre_eje', '')
+
+        queryset = EjeEstractegico.objects.filter(id_plan__tipo_plan = 'PAI')
 
         # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
         if nombre_plan != '':
@@ -965,8 +966,23 @@ class BusquedaAvanzadaActividades(generics.ListAPIView):
         nombre_producto = request.query_params.get('nombre_producto', '')
         nombre_actividad = request.query_params.get('nombre_actividad', '')
 
+        queryset = Actividad.objects.filter(id_plan__tipo_plan = 'PAI')
+
         # Realiza la búsqueda utilizando el campo 'nombre_actividad' en el modelo
-        queryset = Actividad.objects.filter(nombre_actividad__icontains=nombre_actividad, id_producto__nombre_producto__icontains=nombre_producto, id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+        if nombre_actividad != '':
+            queryset = Actividad.objects.filter(nombre_actividad__icontains=nombre_actividad)
+        
+        if nombre_producto != '':
+            queryset = Actividad.objects.filter(id_producto__nombre_producto__icontains=nombre_producto)
+
+        if nombre_proyecto != '':
+            queryset = Actividad.objects.filter(id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto)
+
+        if nombre_plan != '':
+            queryset = Actividad.objects.filter(id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+        
+        if nombre_programa != '':
+            queryset = Actividad.objects.filter(id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
@@ -1893,6 +1909,47 @@ class PlanesGetId(generics.ListAPIView):
 
 #PGAR
 #Metas PGAR
+class EjeEstractegicoPGARList(generics.ListCreateAPIView):
+    serializer_class = EjeEstractegicoSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        ejes = EjeEstractegico.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
+        serializer = EjeEstractegicoSerializer(ejes, many=True)
+        if not ejes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Ejes Estratégicos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class BusquedaAvanzadaEjesPGAR(generics.ListAPIView):
+    serializer_class = EjeEstractegicoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        queryset = EjeEstractegico.objects.all()
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
+        nombre_eje = request.query_params.get('nombre_eje', '')
+
+        queryset = EjeEstractegico.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
+        if nombre_plan != '':
+            queryset = EjeEstractegico.objects.filter(id_plan__nombre_plan__icontains=nombre_plan)
+        
+        if nombre_objetivo != '':
+            queryset = EjeEstractegico.objects.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
+
+        if nombre_eje != '':
+            queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
 class MetasPGARListByIdEjeEstrategico(generics.ListAPIView):
     serializer_class = MetasPGARSerializer
     permission_classes = (IsAuthenticated,)
@@ -1991,11 +2048,11 @@ class LineaBaseUpdate(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Linea Base actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class BusquedaAvnzadaLineaBase(generics.ListAPIView):
-    queryset = LineasBasePGAR.objects.all()
     serializer_class = LineasBasePGARSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        queryset = LineasBasePGAR.objects.all()
         nombre_meta = request.query_params.get('nombre_meta', '')
         nombre_linea_base = request.query_params.get('nombre_linea_base', '')
 
@@ -2062,6 +2119,8 @@ class BusquedaAvanzadaActividadesPGAR(generics.ListAPIView):
         nombre_linea_base = request.query_params.get('nombre_linea_base', '')
         nombre_actividad = request.query_params.get('nombre_actividad', '')
         nombre_eje_estrategico = request.query_params.get('nombre_eje_estrategico', '')
+
+        queryset = Actividad.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
 
         # Realiza la búsqueda utilizando el campo 'nombre_actividad' en el modelo
         if nombre_eje_estrategico != '':
@@ -2172,3 +2231,13 @@ class ArmonizacionPGARList(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Listado de Armonización PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
+class SeguiemientoPGARCreate(generics.CreateAPIView):
+    serializer_class = SeguiemientoPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Seguimiento PGAR creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
