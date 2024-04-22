@@ -315,7 +315,7 @@ class ArmonizarPAIPGARSerializer(serializers.ModelSerializer):
         return serializer.data
     
 class SeguiemientoPGARSerializer(serializers.ModelSerializer):
-    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    #nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
     nombre_objetivo = serializers.ReadOnlyField(source='id_objetivo.nombre_objetivo', default=None)
     nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
