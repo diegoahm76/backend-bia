@@ -9,14 +9,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
 from gestion_documental.models.radicados_models import T262Radicados
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from transversal.models.organigrama_models import UnidadesOrganizacionales
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from datetime import datetime
 
 from tramites.models.tramites_models import SolicitudesTramites
 from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer
 from gestion_documental.views.pqr_views import Util_PQR
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.utils import UtilsGestor
 from tramites.models.tramites_models import SolicitudesTramites, TiposActosAdministrativos, ActosAdministrativos
 
 from transversal.models.base_models import Personas
@@ -57,7 +61,9 @@ from gestion_documental.serializers.notificaciones_serializers import (
     TiposAnexosSoporteSerializer,
     CausasOAnomaliasSerializer,
     AnexosNotificacionesCorrespondenciaSerializer,
-    DatosTitularesCorreoSerializer
+    DatosTitularesCorreoSerializer,
+    ConstanciaNotificacionSerializer,
+    GeneradorDocumentosSerializer
     )
 
 class ListaNotificacionesCorrespondencia(generics.ListAPIView):
@@ -1813,3 +1819,169 @@ class CancelarAsignacionTarea(generics.UpdateAPIView):
             tarea.delete()
             queryset.delete()
             return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
+class GenerarConstanciaNotificacion(generics.CreateAPIView):
+    serializer_class = ConstanciaNotificacionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+
+        data = request.query_params
+
+        if not data.get('fecha_inicial'):
+            raise ValidationError('fecha_inicial es un parametro requerido.')
+        
+        if not data.get('id_registro_notificacion_correspondencia'):
+            raise ValidationError('id_registro_notificacion_correspondencia es un parametro requerido.')
+        
+        if not data.get('id_tipo_notificacion_correspondencia'):
+            raise ValidationError('id_tipo_notificacion_correspondencia es un parametro requerido.')
+        
+        fecha_inicial = datetime.strptime(data.get('fecha_inicial'), '%Y-%m-%d').date()
+        fecha_final = datetime.strptime(data.get('fecha_final'), '%Y-%m-%d').date()
+
+        if not fecha_inicial:
+            raise ValidationError('fecha_inicial es un parametro requerido.')
+        
+        if not fecha_final:
+            raise ValidationError('fecha_final es un parametro requerido.')
+        
+        dias_habiles = UtilsGestor.get_dias_habiles(fecha_inicial, fecha_final)
+        fecha_habil = UtilsGestor.get_fecha_habil(fecha_inicial, dias_habiles)
+
+        data_out = {
+            'fecha_inicial': fecha_inicial,
+            'fecha_final': fecha_final,
+            'dias_habiles': dias_habiles,
+            'fecha_habil': fecha_habil
+        }
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_out}, status=status.HTTP_200_OK)
+
+    # def post(self, request):
+    #     data = request.data
+    #     fecha_inicial = datetime.strptime(data.get('fecha_inicial'), '%Y-%m-%d').date()
+    #     fecha_final = datetime.strptime(data.get('fecha_final'), '%Y-%m-%d').date()
+
+    #     if not fecha_inicial:
+    #         raise ValidationError('fecha_inicial es un parametro requerido.')
+        
+    #     if not fecha_final:
+    #         raise ValidationError('fecha_final es un parametro requerido.')
+        
+    #     dias_habiles = UtilsGestor.get_dias_habiles(fecha_inicial, fecha_final)
+    #     fecha_habil = UtilsGestor.get_fecha_habil(fecha_inicial, dias_habiles)
+
+    #     data_out = {
+    #         'fecha_inicial': fecha_inicial,
+    #         'fecha_final': fecha_final,
+    #         'dias_habiles': dias_habiles,
+    #         'fecha_habil': fecha_habil
+    #     }
+
+
+        # instancia_constancia = ConstanciaNotificacionCreate()
+        # constancia = instancia_constancia.create_constancia(data)
+        return Response({'succes': True, 'detail':'Se creo la constancia correctamente', 'data':data_out}, status=status.HTTP_201_CREATED)
+
+     
+class GeneradorDocumentos(generics.CreateAPIView):
+    serializer_class = GeneradorDocumentosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def generador_documentos(self, data):
+        try:
+            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data.get('id_tipo_documento'))
+        except TiposDocumentos.DoesNotExist:
+            raise ValidationError('El tipo de documento no existe.')
+        
+        try:
+            notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=data.get('id_notificacion_correspondencia'))
+        except NotificacionesCorrespondencia.DoesNotExist:
+            raise ValidationError('La notificación no existe.')
+        
+        # try:
+        #     persona = Personas.objects.get(id_persona=data.get('id_persona'))
+        # except Personas.DoesNotExist:
+        #     raise ValidationError('La persona no existe.')
+        
+        # try:
+        #     expediente = Expedientes.objects.get(id_expediente=data.get('id_expediente'))
+        # except Expedientes.DoesNotExist:
+        #     raise ValidationError('El expediente no existe.')
+        
+        # try:
+        #     tipo_acto = TiposActosAdministrativos.objects.get(id_tipo_acto_administrativo=data.get('id_tipo_acto_administrativo'))
+        # except TiposActosAdministrativos.DoesNotExist:
+        #     raise ValidationError('El tipo de acto administrativo no existe.')
+        
+        # try:
+        #     acto_administrativo = ActosAdministrativos.objects.get(id_acto_administrativo=data.get('id_acto_administrativo'))
+        # except ActosAdministrativos.DoesNotExist:
+        #     raise ValidationError('El acto administrativo no existe.')
+        
+        # try:
+        #     causa = CausasOAnomalias.objects.get(id_causa_o_anomalia=data.get('id_causa_o_anomalia'))
+        # except CausasOAnomalias.DoesNotExist:
+        #     raise ValidationError('La causa o anomalia no existe.')
+        
+        # try:
+        #     entidad = Entidades.objects.get(id_entidad=data.get('id_entidad'))
+        # except Entidades.DoesNotExist:
+        #     raise ValidationError('La entidad no existe.')
+        
+        # try:
+        #     persona_titular = Personas.objects.get(id_persona=data.get('id_persona_titular'))
+        # except Personas.DoesNotExist:
+        #     raise ValidationError('La persona titular no existe.')
+        
+
+    def post(self, request):
+        data = request.data
+        documento = self.generador_documentos(data)
+
+        return Response({'succes': True, 'detail':'Se creo el documento correctamente', 'data':documento}, status=status.HTTP_201_CREATED)
+
+
+class NotificacionesCorrespondenciaCreate(generics.CreateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create_notificacion(self, data):
+        
+        try:
+            expediente = ExpedientesDocumentales.objects.get(id_expediente=data.get('id_expediente'))
+        except ExpedientesDocumentales.DoesNotExist:
+            raise ValidationError('El expediente no existe.')
+        
+        try:
+            cod_tipo_documentoID = TiposDocumentos.objects.get(id_tipo_documento=data.get('cod_tipo_documentoID'))
+        except TiposDocumentos.DoesNotExist:
+            raise ValidationError('El tipo de documento no existe.')
+        
+        try:
+            id_persona_solicita = Personas.objects.get(id_persona=data.get('id_persona_solicita'))
+        except Personas.DoesNotExist:
+            raise ValidationError('La persona solicitante no existe.')
+        
+        try:
+            id_und_org_oficina_solicita = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data.get('id_und_org_oficina_solicita'))
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise ValidationError('La unidad organizacional solicitante no existe.')
+        
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return serializer.data
+    
+
+    def post(self, request):
+        data = request.data
+        notificacion = self.create_notificacion(data)
+        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':notificacion}, status=status.HTTP_201_CREATED)
+    
+
+
+
+
+
