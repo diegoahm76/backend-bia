@@ -197,7 +197,7 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
         data_archivo = {
             'es_Doc_elec_archivo': True,
             'ruta': ruta,
-            'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            'md5_hash': md5_value  
         }
         
         archivo_class = ArchivosDgitalesCreate()
@@ -207,7 +207,7 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
         # Insertar anexo en T094
         data_anexo = {}
         data_anexo['id_baja_activo'] = baja_creada.id_baja_activo
-        data_anexo['nombre_anexo'] = nombre_anexo # PONER NOMBRE FIJO ANEXO
+        data_anexo['nombre_anexo'] = nombre_anexo 
         data_anexo['nro_folios'] = data.get('nro_folios')
         data_anexo['descripcion_anexo'] = data.get('descripcion_anexo')
         data_anexo['fecha_creacion_anexo'] = current_date
@@ -3061,8 +3061,37 @@ class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
                 'nro_posicion_despacho': item_despacho.nro_posicion_despacho
             }
             items_despacho_data.append(item_despacho_data)
+        
+        # Recuperar los AsignacionActivos de despacho activos relacionados
+        asignaciones_activo = AsignacionActivos.objects.filter(id_despacho_asignado=instance)
+        asignaciones_activo_data = []
+        for asignacion_activo in asignaciones_activo:
+            asignacion_activo_data = {
+                'id_asignacion_activos': asignacion_activo.id_asignacion_activos,
+                'id_despacho_asignado': asignacion_activo.id_despacho_asignado.id_despacho_activo,
+                #Persona_Funcionario_Responsable_Unidad
+                'id_funcionario_resp_unidad': asignacion_activo.id_funcionario_resp_asignado.id_persona if asignacion_activo.id_funcionario_resp_asignado else None,
+                'primer_nombre_funcionario_resp_unidad': asignacion_activo.id_funcionario_resp_asignado.primer_nombre if asignacion_activo.id_funcionario_resp_asignado else None,
+                'primer_apellido_funcionario_resp_unidad': asignacion_activo.id_funcionario_resp_asignado.primer_apellido if asignacion_activo.id_funcionario_resp_asignado else None,
+                'tipo_documento_funcionario_resp_unidad': asignacion_activo.id_funcionario_resp_asignado.tipo_documento.cod_tipo_documento if asignacion_activo.id_funcionario_resp_asignado else None,
+                'numero_documento_funcionario_resp_unidad': asignacion_activo.id_funcionario_resp_asignado.numero_documento if asignacion_activo.id_funcionario_resp_asignado else None,
+                'id_uni_org_responsable': asignacion_activo.id_uni_org_funcionario_resp_asignado.id_unidad_organizacional,
+                #Persona_Operario
+                'id_persona_operario': asignacion_activo.id_persona_operario_asignado.id_persona if asignacion_activo.id_persona_operario_asignado else None,
+                'primer_nombre_persona_operario': asignacion_activo.id_persona_operario_asignado.primer_nombre if asignacion_activo.id_persona_operario_asignado else None,
+                'primer_apellido_persona_operario': asignacion_activo.id_persona_operario_asignado.primer_apellido if asignacion_activo.id_persona_operario_asignado else None,
+                'tipo_documento_persona_operario': asignacion_activo.id_persona_operario_asignado.tipo_documento.cod_tipo_documento if asignacion_activo.id_persona_operario_asignado else None,
+                'numero_documento_persona_operario': asignacion_activo.id_persona_operario_asignado.numero_documento if asignacion_activo.id_persona_operario_asignado else None,
+                'id_uni_org_operario': asignacion_activo.id_uni_org_operario_asignado.id_unidad_organizacional,       
+                #//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                'actual': asignacion_activo.actual if asignacion_activo.actual else None,
+                'fecha_asignacion': asignacion_activo.fecha_asignacion if asignacion_activo.fecha_asignacion else None,
+                'observacion': asignacion_activo.observacion if asignacion_activo.observacion else None,
 
+            }
+            asignaciones_activo_data.append(asignacion_activo_data)
 
+        
         # Verificar si hay una solicitud activa asociada
         if instance.id_solicitud_activo is not None:
             # Recuperar los items de solicitud activos relacionados
@@ -3149,11 +3178,13 @@ class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
                 solicitudes_data.append(solicitud_data)
             # Agregar los datos de los items de solicitud y despacho activos al resultado final
             despacho_data['items_despacho'] = items_despacho_data
+            despacho_data['asignaciones_activo'] = asignaciones_activo_data
             despacho_data['solicitudes'] = solicitudes_data
             despacho_data['items_solicitud'] = items_data
             despacho_data['archivos_digitales'] = archivo_digital_data
         else:
             despacho_data['items_despacho'] = items_despacho_data
+            despacho_data['asignaciones_activo'] = asignaciones_activo_data
             despacho_data['solicitudes'] = []
             despacho_data['items_solicitud'] = []
             despacho_data['archivos_digitales'] = archivo_digital_data
