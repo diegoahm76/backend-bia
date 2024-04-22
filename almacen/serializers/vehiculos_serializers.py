@@ -78,6 +78,10 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
     placa = serializers.SerializerMethodField()
     marca = serializers.SerializerMethodField()
     nombre = serializers.SerializerMethodField()
+    asignable = serializers.SerializerMethodField()
+    tipo_vehiculo = serializers.CharField(source='get_cod_tipo_vehiculo_display', default= None)
+
+
     class Meta:
         model = HojaDeVidaVehiculos
         fields = '__all__'
@@ -108,20 +112,45 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
             nombre = obj.id_articulo.nombre
         
         return nombre
+    
+    def get_asignable(self, obj):
+        asignable = True
+        vehiculos_asignables = obj.vehiculosagendables_conductor_set.all()
+        if vehiculos_asignables:
+            asignable = False if vehiculos_asignables.filter(activo=True).first() else True 
+        return asignable
 
 
 class ClaseTerceroPersonaSerializer(serializers.ModelSerializer):
-    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.nombre', default=None)
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
     numero_documento = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
     email = serializers.ReadOnlyField(source='id_persona.email', default=None)
     email_empresarial = serializers.ReadOnlyField(source='id_persona.email_empresarial', default=None)
     telefono_empresa = serializers.ReadOnlyField(source='id_persona.telefono_empresa', default=None)
     telefono_celular = serializers.ReadOnlyField(source='id_persona.telefono_celular', default=None)
     fecha_nacimiento = serializers.ReadOnlyField(source='id_persona.fecha_nacimiento', default=None)
-    
+    asignable = serializers.SerializerMethodField()
+    nombre_clase_tercero = serializers.ReadOnlyField(source='id_clase_tercero.nombre', default=None)
+    nombre_persona = serializers.SerializerMethodField()
     class Meta:
         model = ClasesTerceroPersona
         fields = '__all__'
+
+    def get_asignable(self, obj):
+        asignable = True
+        conductores_asignables = obj.id_persona.T072id_persona_conductor.all()
+        if conductores_asignables:
+            asignable = False if conductores_asignables.filter(activo=True).first() else True 
+        return asignable
+    
+    def get_nombre_persona(self, obj):
+        nombre_persona = None
+        if obj.id_persona:
+            nombre_list = [obj.id_persona.primer_nombre, obj.id_persona.segundo_nombre,
+                            obj.id_persona.primer_apellido, obj.id_persona.segundo_apellido]
+            nombre_persona = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona = nombre_persona if nombre_persona != "" else None
+        return nombre_persona
 
 class AsignacionVehiculoSerializer(serializers.ModelSerializer):
     tipo_vehiculo = serializers.CharField(source='id_hoja_vida_vehiculo.cod_tipo_vehiculo')
