@@ -82,7 +82,11 @@ urlpatterns = [
     path('create-soportes-anexos-correspondencia/', views.AnexosSoporteCorrespondenciaCreate.as_view(),name='create-soportes-anexos-correspondencia'),
     path('update-registro-notificacion-correspondencia/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-registro-notificacion-correspondencia'),
 
- 
+    # Generar constancias de notificaciones
+    #path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.ConstanciasNotificacionGet.as_view(),name='get-constancias-notificacion'),
+    path('get-constancias-notificacion/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
+    path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
+    path('generador-documentos/', views.GeneradorDocumentos.as_view(),name='generador-documentos'),
 
     
 

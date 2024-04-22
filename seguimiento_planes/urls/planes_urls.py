@@ -192,7 +192,8 @@ urlpatterns=[
 
     #Seguiemiento PGAR
     path('crear-SeguiemientoPGAR/',views.SeguiemientoPGARCreate.as_view(),name='crearSeguiemientoPGAR'),
-
+    path('consultar-SeguimientoPGAR/',views.SeguimientoPGARList.as_view(),name='consultarSeguiemientoPGAR'),
+    path('actualizar-SeguimientoPGAR/<str:pk>/',views.SeguimientoPGARUpdate.as_view(),name='actualizarSeguiemientoPGAR'),
 
 
 ]
