@@ -187,6 +187,8 @@ urlpatterns=[
     path('consultar-planesPGAR/',views.PlanesPGARList.as_view(),name='consultarPlanesPGAR'),
     path('crear-ArmonizacionPGAR/',views.ArmonizacionPGARCreate.as_view(),name='crearArmonizacionPGAR'),
     path('consultar-ArmonizacionPGARPAI/',views.ArmonizacionPGARList.as_view(),name='consultarArmonizacionPGARPAI'),
+    path('actualizar-ArmonizacionPGAR/<str:pk>/',views.ArmonizacionPGARUpdate.as_view(),name='actualizarARmonizacionPGAR'),
+
 
     #Seguiemiento PGAR
     path('crear-SeguiemientoPGAR/',views.SeguiemientoPGARCreate.as_view(),name='crearSeguiemientoPGAR'),

@@ -126,6 +126,12 @@ class IndicadorSerializer(serializers.ModelSerializer):
     nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
     nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    #nombre_tipo_indicador = serializers.CharField(source='get_tipo_indicador_display', default=None)
+    #nombre_medida = serializers.CharField(source='get_medida_display', default=None)
+    nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
+    nombre_linea_base = serializers.ReadOnlyField(source='id_linea_base.nombre_linea_base', default=None)
     metas = serializers.SerializerMethodField()     
     class Meta:
         model = Indicador
@@ -275,8 +281,8 @@ class ActividadesPGARSerializer(serializers.ModelSerializer):
 class IndicadoresPGARSerializer(serializers.ModelSerializer):
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     numero_actividad = serializers.ReadOnlyField(source='id_actividad.numero_actividad', default=None)
-    nombre_tipo_indicador = serializers.CharField(source='get_tipo_indicador_display', default=None)
-    nombre_medida = serializers.CharField(source='get_medida_display', default=None)
+    #nombre_tipo_indicador = serializers.CharField(source='get_tipo_indicador_display', default=None)
+    #nombre_medida = serializers.CharField(source='get_medida_display', default=None)
     nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
@@ -290,6 +296,7 @@ class ArmonizarPAIPGARSerializer(serializers.ModelSerializer):
     nombre_planPGAR = serializers.ReadOnlyField(source='id_planPGAR.nombre_plan', default=None)
     nombre_planPAI = serializers.ReadOnlyField(source='id_planPAI.nombre_plan', default=None)
     objetivoPGAR = serializers.SerializerMethodField()
+    ejesEstrategicosPAI = serializers.SerializerMethodField()
 
     class Meta:
         model = ArmonizarPAIPGAR
@@ -299,6 +306,12 @@ class ArmonizarPAIPGARSerializer(serializers.ModelSerializer):
         #ObjetivoSerializer
         objetivos = Objetivo.objects.filter(id_plan=obj.id_planPGAR)
         serializer = ObjetivoSerializer(objetivos, many=True)
+        return serializer.data
+    
+    def get_ejesEstrategicosPAI(self, obj):
+        #EjeEstractegicoSerializer
+        ejes_estractegicos = EjeEstractegico.objects.filter(id_plan=obj.id_planPAI)
+        serializer = EjeEstractegicoSerializer(ejes_estractegicos, many=True)
         return serializer.data
     
 class SeguiemientoPGARSerializer(serializers.ModelSerializer):
