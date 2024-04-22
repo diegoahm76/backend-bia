@@ -8,7 +8,7 @@ from seguridad.serializers.roles_serializers import RolesSerializer, UsuarioRole
 from seguridad.serializers.user_serializers import UsuarioRolesLookSerializers
 from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
-from seguridad.permissions.permissions_roles import PermisoActualizarRoles,PermisoBorrarRoles,PermisoConsultarRoles,PermisoCrearRoles
+from seguridad.permissions.permissions_seguridad import PermisoActualizarRoles,PermisoBorrarRoles,PermisoConsultarRoles,PermisoCrearRoles
 from rest_framework.response import Response    
 from rest_framework.generics import ListAPIView, CreateAPIView , RetrieveAPIView, DestroyAPIView, UpdateAPIView, RetrieveUpdateAPIView
 from rest_framework import generics

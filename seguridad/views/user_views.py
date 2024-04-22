@@ -11,7 +11,7 @@ from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.trd_serializers import FormatosTiposMedioGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.permissions.permissions_user import PermisoCrearUsuarios, PermisoActualizarUsuarios, PermisoActualizarInterno, PermisoActualizarExterno
-from seguridad.permissions.permissions_roles import PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario
+from seguridad.permissions.permissions_seguridad import PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario
 from rest_framework.response import Response
 from seguridad.renderers.user_renderers import UserRender
 from seguridad.models import *
