@@ -6,7 +6,7 @@ from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from seguimiento_planes.serializers.planes_serializer import SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
-from seguimiento_planes.models.planes_models import ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -2256,3 +2256,29 @@ class SeguiemientoPGARCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail': 'Seguimiento PGAR creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+class SeguimientoPGARList(generics.ListAPIView):
+    serializer_class = SeguiemientoPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        seguimiento = SeguimientoPGAR.objects.all()
+        if not seguimiento:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(seguimiento, many=True)
+        return Response({'success': True, 'detail': 'Listado de Seguimiento PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class SeguimientoPGARUpdate(generics.UpdateAPIView):
+    serializer_class = SeguiemientoPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        seguimiento = SeguimientoPGAR.objects.filter(id_PGAR=pk).first()
+        if not seguimiento:
+            return Response({'success': False, 'detail': 'El Seguimiento PGAR ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SeguiemientoPGARSerializer(seguimiento, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Seguimiento PGAR actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
