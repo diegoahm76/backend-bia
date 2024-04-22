@@ -139,8 +139,8 @@ class PQRSDF(models.Model):
     id_persona_rta_final_gestion = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T257Id_PersonaRtaFinalGestion', null=True,related_name='persona_rta_final_gestion_ralacion')
     id_estado_actual_solicitud = models.ForeignKey(EstadosSolicitudes,on_delete=models.CASCADE,db_column='T257Id_EstadoActualSolicitud')
     fecha_ini_estado_actual = models.DateTimeField(db_column='T257fechaIniEstadoActual')
-    id_doc_dearch_exp = models.ForeignKey(DocumentosDeArchivoExpediente,on_delete=models.CASCADE,db_column='T257Id_DocDeArch_Exp', null=True)
-    id_expediente_doc = models.ForeignKey(ExpedientesDocumentales,on_delete=models.CASCADE,db_column='T257Id_ExpedienteDoc', null=True)
+    id_doc_dearch_exp = models.ForeignKey(DocumentosDeArchivoExpediente,on_delete=models.SET_NULL, blank=True, null=True, db_column='T257Id_DocDeArch_Exp')
+    id_expediente_doc = models.ForeignKey(ExpedientesDocumentales,on_delete=models.SET_NULL, blank=True, null=True, db_column='T257Id_ExpedienteDoc')
 
     class Meta:
        

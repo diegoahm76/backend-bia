@@ -333,7 +333,7 @@ class Indicador(models.Model):
     numero_indicador = models.CharField(
         max_length=255, db_column='T512numeroIndicador')
     linea_base = models.CharField(
-        max_length=255, db_column='T512lineaBase')
+        max_length=255, null=True, blank=True, db_column='T512lineaBase')
     medida = models.CharField(
         max_length=3, choices=[
             ('NUM', 'Numero'),
@@ -348,7 +348,7 @@ class Indicador(models.Model):
     id_medicion = models.ForeignKey(
         Medicion, on_delete=models.CASCADE, db_column='T512IdMedicion')
     id_tipo = models.ForeignKey(
-        Tipo, on_delete=models.CASCADE, db_column='T512IdTipo')
+        Tipo, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdTipo')
     id_producto = models.ForeignKey(
         Productos, on_delete=models.SET_NULL, null=True, blank=True, db_column='T512IdProducto')
     id_actividad = models.ForeignKey(

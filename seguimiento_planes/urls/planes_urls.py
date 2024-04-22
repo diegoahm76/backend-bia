@@ -20,7 +20,7 @@ urlpatterns=[
     path('consultar-planes-total/',views.PlanesGetAll.as_view(),name='consultarplanesnacionalesdesarrollo'),
     path('consultar-planes-total-id/<str:pk>/',views.PlanesGetId.as_view(),name='consultarplanetotalid'),
     # Ejes Estratégicos
-    path('consultar-ejes-estrategicos/',views.EjeEstractegicoList.as_view(),name='consultarejesestrategicos'),
+    path('consultar-ejes-estrategicos/',views.EjeEstractegicoPAIList.as_view(),name='consultarejesestrategicos'),
     path('crear-ejes-estrategicos/',views.EjeEstractegicoCreate.as_view(),name='crearejesestrategicos'),
     path('actualizar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoUpdate.as_view(),name='actualizarejesestrategicos'),
     path('eliminar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoDelete.as_view(),name='eliminarejesestrategicos'),
@@ -155,6 +155,10 @@ urlpatterns=[
     path('busqueda-avanzada-subprogramas/', views.BusquedaAvanzadaSubprogramas.as_view(), name='busquedaavanzadasubprogramas'),
 
     #PGAR
+    path('consultar-ejes-estrategicosPGAR/',views.EjeEstractegicoPGARList.as_view(),name='consultarejesestrategicosPGAR'),
+    path('busqueda-avanzada-ejes-estrategicosPGAR/',views.BusquedaAvanzadaEjesPGAR.as_view(),name='busquedaAvanzadaEjesEstrategicosPGAR'),
+
+
     # Metas PGAR
     path('consultar-metasPGAR-idEjeEstrategico/<str:pk>/',views.MetasPGARListByIdEjeEstrategico.as_view(),name='consultarMetasPGARIdEjeEstrategico'),
     path('busqueda-avanzada-metasPGAR/', views.MetasPGARList.as_view(), name='busquedaavanzadametasPGAR'),
@@ -177,6 +181,16 @@ urlpatterns=[
     path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadoresByIdActividad.as_view(),name='consultarIndicadoresPGARIdActividad'),
     path('crear-indicadoresPGAR/',views.IndicaresCreate.as_view(),name='crearIndicadoresPGAR'),
     path('actualizar-indicadoresPGAR/<str:pk>/',views.IndicadoresUpdate.as_view(),name='actualizarindicadoresPGAR'),    
+
+    #Armonizacion PGAR
+    path('consultar-planesPAI/',views.PlanesPAIList.as_view(),name='consultarPlanesPAI'),
+    path('consultar-planesPGAR/',views.PlanesPGARList.as_view(),name='consultarPlanesPGAR'),
+    path('crear-ArmonizacionPGAR/',views.ArmonizacionPGARCreate.as_view(),name='crearArmonizacionPGAR'),
+    path('consultar-ArmonizacionPGARPAI/',views.ArmonizacionPGARList.as_view(),name='consultarArmonizacionPGARPAI'),
+
+    #Seguiemiento PGAR
+    path('crear-SeguiemientoPGAR/',views.SeguiemientoPGARCreate.as_view(),name='crearSeguiemientoPGAR'),
+
 
 
 ]

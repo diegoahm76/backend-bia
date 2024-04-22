@@ -639,14 +639,26 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             instance = serializer.save()
             #GENERACION DE ALERTA
-           
+            #VALIDACION DE TIPO DE ACTIVO
+            cod_alerta = ''
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'Veh':
+                cod_alerta = 'Alm_MtoVeh'
+                print("CAROOO")
+      
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'OAc':
+                cod_alerta = 'Alm_MtoAct'
+                print("OTROOO")
+      
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'Com':
+                cod_alerta = 'Alm_MtoCom'
+         
 
-            conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta='Alm_MtoVeh').first()
+            conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=cod_alerta).first()
             if conf :
                 crear_alerta=AlertasProgramadasCreate()
 
                 data_alerta = {
-                'cod_clase_alerta':'Alm_MtoVeh',
+                'cod_clase_alerta':cod_alerta,
                 'dia_cumplimiento':instance.fecha_programada.day,
                 'mes_cumplimiento':instance.fecha_programada.month,
                 'age_cumplimiento':instance.fecha_programada.year,
