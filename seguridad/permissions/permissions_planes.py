@@ -1506,3 +1506,243 @@ class PermisoConsultarRubros(BasePermission):
                 return True
 
         return False
+    
+# METAS PGAR
+class PermisoCrearMetasPGAR(BasePermission):
+    message = 'No tiene permiso para crear en Metas PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=797))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarMetasPGAR(BasePermission):
+    message = 'No tiene permiso para actualizar en Metas PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=798))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarMetasPGAR(BasePermission):
+    message = 'No tiene permiso para consultar en Metas PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=799))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# LINEAS BASE PGAR
+class PermisoCrearLineasBasePGAR(BasePermission):
+    message = 'No tiene permiso para crear en Lineas Base PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=800))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarLineasBasePGAR(BasePermission):
+    message = 'No tiene permiso para actualizar en Lineas Base PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=801))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarLineasBasePGAR(BasePermission):
+    message = 'No tiene permiso para consultar en Lineas Base PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=802))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# ACTIVIDADES PGAR
+class PermisoCrearActividadesPGAR(BasePermission):
+    message = 'No tiene permiso para crear en Actividades PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=803))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarActividadesPGAR(BasePermission):
+    message = 'No tiene permiso para actualizar en Actividades PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=804))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarActividadesPGAR(BasePermission):
+    message = 'No tiene permiso para consultar en Actividades PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=805))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# INDICADORES PGAR
+class PermisoCrearIndicadoresPGAR(BasePermission):
+    message = 'No tiene permiso para crear en Indicadores PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=806))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarIndicadoresPGAR(BasePermission):
+    message = 'No tiene permiso para actualizar en Indicadores PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=807))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarIndicadoresPGAR(BasePermission):
+    message = 'No tiene permiso para consultar en Indicadores PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=808))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# ARMONIZACIÓN DE PLANES
+class PermisoCrearArmonizacionPlanes(BasePermission):
+    message = 'No tiene permiso para crear en Armonización de Planes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=809))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarArmonizacionPlanes(BasePermission):
+    message = 'No tiene permiso para actualizar en Armonización de Planes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=810))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarArmonizacionPlanes(BasePermission):
+    message = 'No tiene permiso para consultar en Armonización de Planes'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=811))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# SEGUIMIENTO PGAR
+class PermisoCrearSeguimientoPGAR(BasePermission):
+    message = 'No tiene permiso para crear en Seguimiento PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=812))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarSeguimientoPGAR(BasePermission):
+    message = 'No tiene permiso para actualizar en Seguimiento PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=813))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarSeguimientoPGAR(BasePermission):
+    message = 'No tiene permiso para consultar en Seguimiento PGAR'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=814))
+            if permisos_modulo_rol:
+                return True
+
+        return False
