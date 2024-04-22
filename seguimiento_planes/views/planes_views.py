@@ -217,7 +217,6 @@ class BusquedaAvanzadaEjes(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = EjeEstractegico.objects.all()
         nombre_plan = request.query_params.get('nombre_plan', '')
-        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
         nombre_eje = request.query_params.get('nombre_eje', '')
 
         queryset = EjeEstractegico.objects.filter(id_plan__tipo_plan = 'PAI')
@@ -225,9 +224,6 @@ class BusquedaAvanzadaEjes(generics.ListAPIView):
         # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
         if nombre_plan != '':
             queryset = EjeEstractegico.objects.filter(id_plan__nombre_plan__icontains=nombre_plan)
-        
-        if nombre_objetivo != '':
-            queryset = EjeEstractegico.objects.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
 
         if nombre_eje != '':
             queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje)
@@ -1926,16 +1922,12 @@ class BusquedaAvanzadaEjesPGAR(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         queryset = EjeEstractegico.objects.all()
-        nombre_plan = request.query_params.get('nombre_plan', '')
         nombre_objetivo = request.query_params.get('nombre_objetivo', '')
         nombre_eje = request.query_params.get('nombre_eje', '')
 
         queryset = EjeEstractegico.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
 
         # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
-        if nombre_plan != '':
-            queryset = EjeEstractegico.objects.filter(id_plan__nombre_plan__icontains=nombre_plan)
-        
         if nombre_objetivo != '':
             queryset = EjeEstractegico.objects.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
 
@@ -2187,7 +2179,15 @@ class PlanesPAIList(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        sigla_plan = request.query_params.get('nombre_sigla_plan', '')
         planes = Planes.objects.filter(tipo_plan = 'PAI')
+
+        if nombre_plan != '':
+            planes = planes.filter(nombre_plan__icontains=nombre_plan)
+
+        if sigla_plan != '':
+            planes = planes.filter(sigla_plan__icontains=sigla_plan)
         serializer = self.serializer_class(planes, many=True)
         if not planes:
             raise NotFound('No se encontraron resultados.')
@@ -2229,6 +2229,21 @@ class ArmonizacionPGARList(generics.ListAPIView):
         
         serializer = self.serializer_class(armonizacion, many=True)
         return Response({'success': True, 'detail': 'Listado de Armonización PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+    
+class ArmonizacionPGARUpdate(generics.UpdateAPIView):
+    serializer_class = ArmonizarPAIPGARSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, pk):
+        data = request.data
+        armonizacion = ArmonizarPAIPGAR.objects.filter(id_armonizacion=pk).first()
+        if not armonizacion:
+            return Response({'success': False, 'detail': 'La Armonización PGAR ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ArmonizarPAIPGARSerializer(armonizacion, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Armonización PGAR actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
 class SeguiemientoPGARCreate(generics.CreateAPIView):
