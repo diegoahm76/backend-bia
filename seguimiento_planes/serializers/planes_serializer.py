@@ -315,7 +315,7 @@ class ArmonizarPAIPGARSerializer(serializers.ModelSerializer):
         return serializer.data
     
 class SeguiemientoPGARSerializer(serializers.ModelSerializer):
-    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    #nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
     nombre_objetivo = serializers.ReadOnlyField(source='id_objetivo.nombre_objetivo', default=None)
     nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
@@ -323,8 +323,8 @@ class SeguiemientoPGARSerializer(serializers.ModelSerializer):
     nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
     nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
-    nombre_tipo_indicador = serializers.CharField(source='get_tipo_indicador_display', default=None)
-    nombre_medida = serializers.CharField(source='get_medida_display', default=None)
+    #nombre_tipo_indicador = serializers.CharField(source='get_tipo_indicador_display', default=None)
+    #nombre_medida = serializers.CharField(source='get_medida_display', default=None)
 
     class Meta:
         model = SeguimientoPGAR

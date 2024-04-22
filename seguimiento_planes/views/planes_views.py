@@ -2237,7 +2237,7 @@ class ArmonizacionPGARUpdate(generics.UpdateAPIView):
 
     def put(self, request, pk):
         data = request.data
-        armonizacion = ArmonizarPAIPGAR.objects.filter(id_armonizacion=pk).first()
+        armonizacion = ArmonizarPAIPGAR.objects.filter(id_armonizar=pk).first()
         if not armonizacion:
             return Response({'success': False, 'detail': 'La Armonización PGAR ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
         serializer = ArmonizarPAIPGARSerializer(armonizacion, data=data, partial=True)
