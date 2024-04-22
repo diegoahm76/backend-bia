@@ -6,7 +6,7 @@ from itertools import groupby
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.ccd_serializers import CCDSerializer
-from seguridad.permissions.permissions_gestor import PermisoActualizarOrganigramas
+from seguridad.permissions.permissions_transversal import PermisoActualizarOrganigramas
 from seguridad.utils import Util
 from django.db.models import Q, F
 from datetime import datetime
