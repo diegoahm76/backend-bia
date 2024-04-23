@@ -1941,47 +1941,333 @@ class GeneradorDocumentos(generics.CreateAPIView):
 
         return Response({'succes': True, 'detail':'Se creo el documento correctamente', 'data':documento}, status=status.HTTP_201_CREATED)
 
+"""
+{
+  "cod_tipo_solicitud": "NO", ## SAS
+  "cod_tipo_documento": 1, ## SAS endpoint para buscar el servicio
+  "id_expediente_documental": 1, --> numero expediente ## SAS 
+                codigo_exp_und_serie_subserie - codigo_exp_Agno - codigo_exp_consec_por_agno ## // Hablarlo con Diana
+  "id_solicitud_tramite": 1, --> identificador solicitud ## SAS  ## id expediente o radicado
+  "id_acto_administrativo": 1,  --> NULL
+  "procede_recurso_reposicion": false,  --> NULL -- False preguntar en el Daily
+  "id_persona_titular": 1,  --> Se saca del id_solicitud_tramite
+  "id_persona_interpone": 2,  --> Se saca del id_solicitud_tramite
+  "cod_relacion_con_titular": "MP", --> Se saca del id_solicitud_tramite
+  "es_anonima": false,  Fijo
+  "permite_notificacion_email": true, --> se saca de la T010 si es vacio
+  "persona_a_quien_se_dirige": "Guillermo", --> se saca de la T010 si es vacio
+  "cod_tipo_documentoID": 1, --> se saca de la T010 si es vacio
+  "nro_documentoID": "123456", --> se saca de la T010 si es vacio
+  "cod_municipio_notificacion_nal": 1,  --> se saca de la T010 si es vacio
+  "dir_notificacion_nal": "Dirección de notificación nacional",  --> se saca de la T010 si es vacio
+  "tel_celular": "123456789", --> se saca de la T010 si es vacio
+  "tel_fijo": "987654321", --> se saca de la T010 si es vacio
+  "email_notificacion": "correo@ejemplo.com",  --> se saca de la T010 si es vacio
+  "asunto": "Asunto de la notificación", ## SAS
+  "descripcion": "Descripción de la notificación",  ## SAS
+  "cod_medio_solicitud": "SI",  Fijo
+  "fecha_solicitud": "2024-04-22T12:00:00Z",  ---> fecha de creación sistema
+  "id_persona_solicita": 1, ## SAS
+  "id_und_org_oficina_solicita": 1, --> Saca del id_persona_solicita
+  "allega_copia_fisica": false, Fijo
+  "cantidad_anexos": 2, depende de los anexos ## SAS
+  "nro_folios_totales": 10, depende de los anexos la suma de todos los folios de los anexos ## SAS
+  "id_persona_recibe_solicitud_manual": NULL, Fijo
+  "id_persona_asigna": 2,  --> NULL
+  "id_persona_asignada": 4, --> NULL
+  "cod_estado_asignacion": "Pe", --> NULL
+  "fecha_eleccion_estado": "2024-04-22T12:00:00Z", --> NULL
+  "justificacion_rechazo_asignacion": "Justificación del rechazo", --> NULL
+  "requiere_digitalizacion": False, Fijo  --> NULL
+  "fecha_envio_definitivo_a_digitalizacion": "2024-04-22T12:00:00Z", --> NULL
+  "fecha_digitalizacion_completada": "2024-04-22T12:00:00Z", --> NULL
+  "ya_digitizado": true, --> NULL
+  "fecha_rta_final_gestion": "2024-04-22T12:00:00Z", --> NULL
+  "id_persona_rta_final_gestion": 5, --> NULL
+  "solicitud_aceptada_rechazada": true, --> NULL
+  "fecha_devolucion": "2024-04-22T12:00:00Z", --> NULL
+  "justificacion_rechazo": "Justificación del rechazo", --> NULL
+  "cod_estado": "PE", fijo
+  "id_doc_de_arch_exp": 1 --> NULL
+  "anexos": [
+    {
+        "nombre_anexo": "Nombre anexo",
+        "orden_anexo_doc": 0,
+        "cod_medio_almacenamiento": "Na",
+		"medio_almacenamiento_otros_Cual": null,
+        "numero_folios": 0,
+        "ya_digitalizado": true,
+        "uso_del_documento": true,
+        "cod_tipo_documento": 3
+        },
+        {
+		"nombre_anexo": "Nombre anexo 1",
+		"orden_anexo_doc": 0,
+		"cod_medio_almacenamiento": "Na",
+		"medio_almacenamiento_otros_Cual": null,
+		"numero_folios": 0,
+		"ya_digitalizado": true,
+        "uso_del_documento": true,
+        "cod_tipo_documento": 3
+		}
+	]
+}
+"""
+#
+############################################
+
+"""
+{
+  "cod_tipo_solicitud": "NO",
+  "cod_tipo_documento": 1, 
+  "numero_expediente_documental": null,
+  "indicador_solicitud_tramite": "UNICO-2024-93",
+  "permite_notificacion_email": true,
+  "persona_a_quien_se_dirige": "Guillermo",
+  "cod_tipo_documentoID": "CC",
+  "nro_documentoID": "123456",
+  "cod_municipio_notificacion_nal": "05001", 
+  "dir_notificacion_nal": "Dirección de notificación nacional", 
+  "tel_celular": "123456789",
+  "tel_fijo": "987654321",
+  "email_notificacion": "correo@ejemplo.com",
+  "asunto": "Asunto de la notificación",
+  "descripcion": "Descripción de la notificación",
+  "id_persona_solicita": 1,
+  "cantidad_anexos": 2,
+  "nro_folios_totales": 10,
+  "anexos": [
+    {
+        "nombre_anexo": "Nombre anexo",
+		"orden_anexo_doc": 0,
+		"cod_medio_almacenamiento": "Na",
+		"medio_almacenamiento_otros_Cual": null,
+		"numero_folios": 0,
+		"ya_digitalizado": true,
+        "uso_del_documento": true,
+        "cod_tipo_documento": 3
+    },
+    {
+        "nombre_anexo": "Nombre anexo 1",
+		"orden_anexo_doc": 0,
+		"cod_medio_almacenamiento": "Na",
+		"medio_almacenamiento_otros_Cual": null,
+		"numero_folios": 0,
+		"ya_digitalizado": true,
+        "uso_del_documento": true,
+        "cod_tipo_documento": 3
+    }
+]
+}
+"""
+
 
 class NotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
     permission_classes = [IsAuthenticated]
 
-    def create_notificacion(self, data):
+    @transaction.atomic
+    def post(self, request):
+        data_total = request.data
+        data = json.loads(data_total.get('data'))
+        fecha_actual = timezone.now()
+
+        if not data.get('cod_tipo_solicitud'):
+            raise ValidationError('El cod_tipo_solicitud es obligatorio')
+        
+        if not data.get('cod_tipo_documento'):
+            raise ValidationError('El cod_tipo_documento es obligatorio')
         
         try:
-            expediente = ExpedientesDocumentales.objects.get(id_expediente=data.get('id_expediente'))
-        except ExpedientesDocumentales.DoesNotExist:
-            raise ValidationError('El expediente no existe.')
-        
-        try:
-            cod_tipo_documentoID = TiposDocumentos.objects.get(id_tipo_documento=data.get('cod_tipo_documentoID'))
+            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data.get('cod_tipo_documento'))
         except TiposDocumentos.DoesNotExist:
             raise ValidationError('El tipo de documento no existe.')
         
+        numero_expediente_documental = data.get('numero_expediente_documental')
+        if numero_expediente_documental:
+            nro_expediente_documental = numero_expediente_documental.split('-')
+            if len(nro_expediente_documental) != 3:
+                raise ValidationError('El numero_expediente_documental no tiene el formato correcto.')
+            
+            expediente_documental = ExpedientesDocumentales.objects.filter(codigo_exp_und_serie_subserie=nro_expediente_documental[0],
+                                                                           codigo_exp_Agno=nro_expediente_documental[1], codigo_exp_consec_por_agno=nro_expediente_documental[1]).first()
+            if not expediente_documental:
+                raise ValidationError('El expediente documental no existe.')
+            id_expediente_documental = expediente_documental.id_expediente_documental
+        else:
+            id_expediente_documental = None
+
+
+        indicador_solicitud_tramite = data.get('indicador_solicitud_tramite')
+
+        if indicador_solicitud_tramite:
+            numero_radicado = indicador_solicitud_tramite.split('-')
+            if len(numero_radicado) != 3:
+                raise ValidationError('El indicador_solicitud_tramite no tiene el formato correcto.')
+            
+            radicado = T262Radicados.objects.filter(prefijo_radicado=numero_radicado[0], agno_radicado=numero_radicado[1], nro_radicado=numero_radicado[2]).first()
+            
+            if not radicado:
+                raise ValidationError('El radicado no existe.')
+            
+            try:
+                solicitud_tramite = SolicitudesTramites.objects.filter(id_radicado=radicado.id_radicado).first()
+            except SolicitudesTramites.DoesNotExist:
+                raise ValidationError('La solicitud tramite no existe.')
+            
+            id_solicitud_tramite = solicitud_tramite.id_solicitud_tramite
+            id_persona_titular = solicitud_tramite.id_persona_titular.id_persona
+            id_persona_interpone = solicitud_tramite.id_persona_interpone.id_persona
+            cod_relacion_con_titular = solicitud_tramite.cod_relacion_con_el_titular
+        else:
+            id_solicitud_tramite = None
+            id_persona_titular = None
+            id_persona_interpone = None
+            cod_relacion_con_titular = None
+
+        
+        if not data.get('asunto'):
+            raise ValidationError('El asunto es obligatorio')
+        
+        if not data.get('id_persona_solicita'):
+            raise ValidationError('El id_persona_solicita es obligatorio')
+        
         try:
-            id_persona_solicita = Personas.objects.get(id_persona=data.get('id_persona_solicita'))
+            persona_solicita = Personas.objects.get(id_persona=data.get('id_persona_solicita'))
         except Personas.DoesNotExist:
             raise ValidationError('La persona solicitante no existe.')
         
-        try:
-            id_und_org_oficina_solicita = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=data.get('id_und_org_oficina_solicita'))
-        except UnidadesOrganizacionales.DoesNotExist:
-            raise ValidationError('La unidad organizacional solicitante no existe.')
+
+        data_notificacion = {
+            'id_acto_administrativo': None,
+            'procede_recurso_reposicion': None,
+            'es_anonima': False,
+            'cod_medio_solicitud': 'SI',
+            'allega_copia_fisica': False,
+            'id_persona_recibe_solicitud_manual': None,
+            'requiere_digitalizacion': False,
+            'cod_estado': 'PE',
+            'cod_tipo_solicitud': data.get('cod_tipo_solicitud'),
+            'cod_tipo_documento': tipo_documento.id_tipo_documento,
+            'id_expediente_documental': id_expediente_documental,
+            'id_solicitud_tramite': id_solicitud_tramite,
+            'id_persona_titular': id_persona_titular,
+            'id_persona_interpone': id_persona_interpone,
+            'cod_relacion_con_titular': cod_relacion_con_titular,
+            'permite_notificacion_email': data.get('permite_notificacion_email'),
+            'persona_a_quien_se_dirige': data.get('persona_a_quien_se_dirige'),
+            'cod_tipo_documentoID': data.get('cod_tipo_documentoID'),
+            'nro_documentoID': data.get('nro_documentoID'),
+            'cod_municipio_notificacion_nal': data.get('cod_municipio_notificacion_nal'),
+            'dir_notificacion_nal': data.get('dir_notificacion_nal'),
+            'tel_celular': data.get('tel_celular'),
+            'tel_fijo': data.get('tel_fijo'),
+            'email_notificacion': data.get('email_notificacion'),
+            'asunto': data.get('asunto'),
+            'descripcion': data.get('descripcion'),
+            'fecha_solicitud': fecha_actual,
+            'id_persona_solicita': persona_solicita.id_persona,
+            'id_und_org_oficina_solicita': persona_solicita.id_unidad_organizacional_actual.id_unidad_organizacional,
+            'cantidad_anexos': data.get('cantidad_anexos'),
+            'nro_folios_totales': data.get('nro_folios_totales')
+        }
+
+
         
-        
-        serializer = self.serializer_class(data=data)
+        serializer = self.serializer_class(data=data_notificacion)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        return serializer.data
-    
+        util_PQR = Util_PQR()
 
-    def post(self, request):
-        data = request.data
-        notificacion = self.create_notificacion(data)
-        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':notificacion}, status=status.HTTP_201_CREATED)
-    
+        anexos = util_PQR.set_archivo_in_anexo(data['anexos'], request.FILES, "create")
+        
+
+        if anexos:
+            anexosCreate = AnexosSistemaCreate()
+            valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, serializer.data['id_notificacion_correspondencia'], fecha_actual, persona_solicita.id_persona)
+
+        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
 
 
 
+class AnexosSistemaCreate(generics.CreateAPIView):
+    serializer_class = AnexosPostSerializer
 
+    def create_anexos_notificaciones(self, anexos, id_notificacion, fecha_actual, id_persona_recibe_solicitud):
+         nombres_anexos = [anexo['nombre_anexo'] for anexo in anexos]
+         instancia_anexos = AnexosCreate()
+         nombres_anexos_auditoria = []
+         # Validar que no haya valores repetidos
+         if len(nombres_anexos) != len(set(nombres_anexos)):
+            raise ValidationError("error': 'No se permiten nombres de anexos repetidos.")
+         
+         for anexo in anexos:
+
+            data_anexo = instancia_anexos.crear_anexo(anexo)
+
+            data_anexos = {}
+            data_anexos['id_notificacion_correspondecia'] = id_notificacion
+            data_anexos['usuario_notificado'] = False
+            data_anexos['uso_del_documento'] = 'PU'
+            data_anexos['doc_entrada_salida'] = 'EN'
+            if anexo['cod_tipo_documento']:
+                tipo_documento = TiposAnexosSoporte.objects.filter(id_tipo_anexo_soporte=anexo['cod_tipo_documento']).first()
+                data_anexos['cod_tipo_documento'] = tipo_documento.id_tipo_anexo_soporte
+            data_anexos['doc_generado'] = 'SI'
+            data_anexos['id_persona_anexa_documento'] = id_persona_recibe_solicitud
+            data_anexos['fecha_anexo'] = fecha_actual
+            data_anexos['id_anexo'] = data_anexo['id_anexo']
+
+            # Agregue usuario notificado
+            if 'usuario_notificado' in data_anexo:
+                data_anexos['usuario_notificado'] = data_anexo['usuario_notificado']
+            else:
+                data_anexos['usuario_notificado'] = False
+            anexosNotificacionCreate = AnexoNotificacionesCreate()
+            anexosNotificacionCreate.crear_anexo_notificacion(data_anexos)
+
+            #Guardar el archivo en la tabla T238
+            if anexo['archivo']:
+                archivo_creado = self.crear_archivos(anexo['archivo'], fecha_actual)
+            else:
+                raise ValidationError("No se puede crear anexos sin archivo adjunto")
+            
+            data_metadatos = {}
+            #data_metadatos['metadatos'] = anexo['metadatos']
+            data_metadatos['anexo'] = data_anexo
+            data_metadatos['fecha_registro'] = fecha_actual
+            data_metadatos['fecha_creacion_doc'] = fecha_actual
+            data_metadatos['id_archivo_digital'] = archivo_creado.data.get('data').get('id_archivo_digital')
+
+            metadatosNotificacionesCreate = MetadatosNotificacionesCreate()
+            metadatosNotificacionesCreate.create_metadatos_notificaciones(data_metadatos)
+
+
+        
+    def crear_archivos(self, uploaded_file, fecha_creacion):
+        #Valida extensión del archivo
+        nombre=uploaded_file.name
+            
+        extension = os.path.splitext(nombre)
+        extension_sin_punto = extension[1][1:] if extension[1].startswith('.') else extension
+        if not extension_sin_punto:
+            raise ValidationError("No fue posible registrar el archivo")
+        
+        formatos=FormatosTiposMedio.objects.filter(nombre__iexact=extension_sin_punto,activo=True).first()
+        if not formatos:
+            raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = fecha_creacion.year
+        ruta = os.path.join("home", "BIA", "Otros", "GDEA", "Anexos_Notificaciones", str(current_year))
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': False,
+            'ruta': ruta,
+        }
+        
+        archivos_Digitales = ArchivosDgitalesCreate()
+        archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
+        return archivo_creado
 
