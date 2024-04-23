@@ -68,7 +68,7 @@ urlpatterns = [
     #Autorizacion_Solcitud Viaje
     path('listar-solicitud-viajes-autorizar/get/',views.SolicitudesViajePersona.as_view(),name='listar-solicitud-viaje-autorizar'),
     path('aprobar-solicitud-viaje/<int:pk>/', views.AprobarSolicitudViaje.as_view(), name='aprobar_solicitud_viaje'),
-    path('rechazar-solicitud-viaje/<int:pk>/', views.AprobarSolicitudViaje.as_view(), name='rechazarr_solicitud_viaje'),
+    path('rechazar-solicitud-viaje/<int:pk>/', views.RechazarSolicitudViaje.as_view(), name='rechazarr_solicitud_viaje'),
 
 
 

@@ -3197,7 +3197,7 @@ class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
 
 class ActualizarAnexoDespachoActivosView(generics.UpdateAPIView):
     serializer_class = DespachoActivosSerializer
-
+    queryset = DespachoActivos.objects.all()  
     def update(self, request, *args, **kwargs):
         despacho = self.get_object()
 
@@ -3223,10 +3223,9 @@ class ActualizarAnexoDespachoActivosView(generics.UpdateAPIView):
             if despacho.id_archivo_doc_recibido:
                 # Eliminar el archivo adjunto existente
                 try:
-                    archivo_existente = ArchivosDigitales.objects.get(id_archivo_digital=despacho.id_archivo_doc_recibido)
+                    archivo_existente = ArchivosDigitales.objects.filter(id_archivo_digital=despacho.id_archivo_doc_recibido.id_archivo_digital)
                     archivo_existente.delete()
                 except ObjectDoesNotExist:
-                    # Si el archivo no existe, simplemente continúa con la creación del nuevo archivo
                     pass
 
             # Crear archivo en T238
@@ -3244,24 +3243,97 @@ class ActualizarAnexoDespachoActivosView(generics.UpdateAPIView):
                 'ruta': ruta,
                 'md5_hash': md5_value
             }
-            
             archivo_class = ArchivosDgitalesCreate()
             respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+         
+            # Obtener el ID del archivo digital creado
+            id_archivo_doc_recibidoo = respuesta.data.get('data').get('id_archivo_digital')
+            
+            archivo_nuevo = ArchivosDigitales.objects.filter(id_archivo_digital=id_archivo_doc_recibidoo).first()
 
-            id_archivo_doc_recibido = respuesta.data.get('data').get('id_archivo_digital')
-
-            # Actualizar el ID del archivo en el despacho activo
-            despacho.id_archivo_doc_recibido = id_archivo_doc_recibido
+            despacho.id_archivo_doc_recibido = archivo_nuevo
             despacho.save()
 
             # Actualizar campos en SolicitudesActivos si existe una solicitud asociada al despacho
             if despacho.id_solicitud_activo:
                 solicitud = despacho.id_solicitud_activo
                 solicitud.estado_solicitud = 'F'  
-                solicitud.fecha_cierre_solicitud = current_date
+                solicitud.fecha_cierra_solicitud = current_date
                 solicitud.save()
 
         return Response({'success': True, 'detail': 'Archivo adjunto actualizado correctamente.'}, status=status.HTTP_200_OK)
+
+
+# class ActualizarAnexoDespachoActivosView(generics.UpdateAPIView):
+#     serializer_class = DespachoActivosSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     # Insertar archivo digital
+
+#     # VALIDAR FORMATO ARCHIVO
+
+#     def update(self, request,id_despacho_activo):
+
+#         data = request.data
+#         data._mutable=True
+#         anexo = request.FILES.get('anexo_opcional')
+#         current_date = datetime.now()
+
+#         anexo_instance = DespachoActivos.objects.filter(id_archivo_doc_recibido=data['id_archivo_doc_recibido'],id_despacho_activo = id_despacho_activo ).first()
+#         if not anexo_instance:
+#             raise NotFound("No se encontro el anexo opcional para la baja de activos requerida.")
+
+
+#         if anexo:
+#             old_archivo_digital = copy(anexo_instance.id_archivo_digital)
+
+#             archivo_nombre = anexo.name 
+#             nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+#             extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+#             formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+            
+#             if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+#                 raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+            
+#             # CREAR ARCHIVO EN T238
+#             # Obtiene el año actual para determinar la carpeta de destino
+#             current_year = current_date.year
+#             ruta = os.path.join("home", "BIA", "Otros", "GDEA", str(current_year)) # VALIDAR RUTA
+
+#             # Calcula el hash MD5 del archivo
+#             md5_hash = hashlib.md5()
+#             for chunk in anexo.chunks():
+#                 md5_hash.update(chunk)
+
+#             # Obtiene el valor hash MD5
+#             md5_value = md5_hash.hexdigest()
+
+#             # Crea el archivo digital y obtiene su ID
+#             data_archivo = {
+#                 'es_Doc_elec_archivo': True,
+#                 'ruta': ruta,
+#                 'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+#             }
+            
+#             archivo_class = ArchivosDgitalesCreate()
+#             respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+#             # Actualizar anexo en T094
+#             data['id_archivo_digital'] = respuesta.data.get('data').get('id_archivo_digital')
+            
+#             # ELIMINAR ARCHIVO DIGITAL
+#             old_archivo_digital.delete()
+#             data.pop('anexo_opcional')
+
+#         data['fecha_creacion_anexo'] = current_date
+#         serializer_anexo = self.serializer_class(anexo_instance, data=data, partial=True)
+#         serializer_anexo.is_valid(raise_exception=True)
+#         serializer_anexo.save()
+
+        
+
+#         return Response({'success': True, 'detail': 'Se actualizó el registro de la baja correctamente', 'data': serializer_anexo.data}, status=status.HTTP_200_OK)
     
 
 #Autorizar_Despacho
@@ -3325,7 +3397,7 @@ class AceptarDespachoPut(generics.UpdateAPIView):
             return Response({'detail': 'El despacho especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
         
         if despacho.estado_despacho != 'Ep':
-            return Response({'detail': 'Solo se puede Rechazar un despacho que esté en estado "En espera".'},
+            return Response({'detail': 'Solo se puede Aceptar un despacho que esté en estado "En espera".'},
                             status=status.HTTP_400_BAD_REQUEST)
         
         persona_logueada = request.user.persona
@@ -3341,18 +3413,28 @@ class AceptarDespachoPut(generics.UpdateAPIView):
                 solicitud.estado_solicitud = 'DA'
                 solicitud.save()
 
-            # Actualizar el inventario asociado al despacho
-            inventario = Inventario.objects.filter(id_bodega=despacho.id_bodega.id_bodega).first()
-            if inventario:
-                inventario.ubicacion_en_bodega = False
-                inventario.ubicacion_asignado = despacho.despacho_sin_solicitud or (solicitud and solicitud.solicitud_prestamo == False)
-                inventario.ubicacion_prestado = solicitud and solicitud.solicitud_prestamo
-                inventario.id_persona_responsable = solicitud.id_funcionario_resp_unidad
-                inventario.fecha_ultimo_movimiento = datetime.now()
-                inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
-                inventario.save()
+            # Obtener el responsable de la asignación de activos
+            if solicitud:
+                asignacion = AsignacionActivos.objects.filter(
+                    Q(id_solicitud_activo=solicitud) | Q(id_despacho_activo=despacho)
+                ).first()
+                if asignacion:
+                    id_persona_responsable = asignacion.id_uni_org_funcionario_resp_asignado
+                else:
+                    id_persona_responsable = solicitud.id_funcionario_resp_unidad
+
+                # Actualizar el inventario asociado al despacho
+                inventario = Inventario.objects.filter(id_bodega=despacho.id_bodega.id_bodega).first()
+                if inventario:
+                    inventario.ubicacion_en_bodega = False
+                    inventario.ubicacion_asignado = despacho.despacho_sin_solicitud or (solicitud and solicitud.solicitud_prestamo == False)
+                    inventario.ubicacion_prestado = solicitud and solicitud.solicitud_prestamo
+                    inventario.id_persona_responsable = id_persona_responsable
+                    inventario.fecha_ultimo_movimiento = datetime.now()
+                    inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
+                    inventario.save()
 
             despacho.save()
         
         serializer = self.serializer_class(despacho)
-        return Response({'detail': 'El despacho asociado se ha rechazado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'detail': 'El despacho asociado se ha aceptado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
