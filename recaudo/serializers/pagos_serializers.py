@@ -12,6 +12,8 @@ class InicioPagoSerializer(serializers.ModelSerializer):
 class ConsultarPagosSerializer(serializers.ModelSerializer):
     id_liquidacion = LiquidacionesBasePostSerializer(many=False, read_only=True)
     desc_estado_pago = serializers.CharField(source='get_estado_pago_display', read_only=True)
+    tipo_usuario = serializers.CharField(source='id_persona_pago.get_tipo_persona_display', read_only=True)
+    comprobante_pago_url = serializers.ReadOnlyField(source='comprobante_pago.ruta_archivo.url', default=None)
     nombre_persona_pago = serializers.SerializerMethodField()
 
     def get_nombre_persona_pago(self, obj):
