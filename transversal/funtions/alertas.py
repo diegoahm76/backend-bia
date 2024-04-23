@@ -138,6 +138,58 @@ def complemento_mensaje_Alm_MtoVeh(id_elemento):
     return mensaje
 
 
+def complemento_mensaje_Alm_MtoAct(id_elemento):
+    mensaje="<ul>"
+    mto_activo = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_elemento).first()
+    if not mto_activo:
+        return ""
+    
+
+    mensaje += f"<li><b>Nombre del activo: </b>{mto_activo.id_articulo.nombre}</li>"
+
+    if mto_activo.id_articulo.id_marca:
+        mensaje += f"<li><b>Marca: </b>{mto_activo.id_articulo.id_marca.nombre}</li>"
+    mensaje += f"<li><b>Serial del activo: </b>{mto_activo.id_articulo.doc_identificador_nro}</li>"
+    mensaje += f"<li><b>Tipo de mantenimiento: </b>{mto_activo.get_cod_tipo_mantenimiento_display()}</li>"
+    mensaje += f"<li><b>Fecha de mantenimiento: </b>{mto_activo.fecha_programada}</li>"
+    mensaje += f"<li><b>Motivo de mantenimiento: </b>{mto_activo.motivo_mantenimiento}</li>"
+    #dias restantes
+    hoy = date.today()
+    dias = mto_activo.fecha_programada - hoy
+    mensaje += f"<li><b>Dias restantes: </b>{dias.days}</li>"
+
+    mensaje +="</ul>"
+    print(mensaje)
+    return mensaje
+
+
+def complemento_mensaje_Alm_MtoCom(id_elemento):
+
+    mensaje="<ul>"
+    mto_activo = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_elemento).first()
+    if not mto_activo:
+        return ""
+    
+
+    mensaje += f"<li><b>Nombre del Computador: </b>{mto_activo.id_articulo.nombre}</li>"
+
+    if mto_activo.id_articulo.id_marca:
+        mensaje += f"<li><b>Marca: </b>{mto_activo.id_articulo.id_marca.nombre}</li>"
+    mensaje += f"<li><b>Serial del activo: </b>{mto_activo.id_articulo.doc_identificador_nro}</li>"
+    mensaje += f"<li><b>Tipo de mantenimiento: </b>{mto_activo.get_cod_tipo_mantenimiento_display()}</li>"
+    mensaje += f"<li><b>Fecha de mantenimiento: </b>{mto_activo.fecha_programada}</li>"
+    mensaje += f"<li><b>Motivo de mantenimiento: </b>{mto_activo.motivo_mantenimiento}</li>"
+    #dias restantes
+    hoy = date.today()
+    dias = mto_activo.fecha_programada - hoy
+    mensaje += f"<li><b>Dias restantes: </b>{dias.days}</li>"
+
+    mensaje +="</ul>"
+    print(mensaje)
+    return mensaje
+
+
+
 
 def generar_alerta_segundo_plano():
     # Coloca aquí el código de la tarea que deseas ejecutar en segundo plano
@@ -235,7 +287,7 @@ def programar_alerta(programada,clasificacion,ultima_rep,agno_fijo):
         print(programada)
         id_responsable=None
         if funcion:
-            if programada.cod_clase_alerta.cod_clase_alerta == 'Gest_TRPqr' or  programada.cod_clase_alerta.cod_clase_alerta == 'Ges_EliDoc' or programada.cod_clase_alerta.cod_clase_alerta == 'Alm_VeDocV' or programada.cod_clase_alerta.cod_clase_alerta == 'Alm_MtoVeh':
+            if programada.cod_clase_alerta.cod_clase_alerta == 'Gest_TRPqr' or programada.cod_clase_alerta.cod_clase_alerta == 'Alm_MtoAct' or  programada.cod_clase_alerta.cod_clase_alerta == 'Ges_EliDoc' or programada.cod_clase_alerta.cod_clase_alerta == 'Alm_VeDocV' or  programada.cod_clase_alerta.cod_clase_alerta =='Alm_MtoCom' or programada.cod_clase_alerta.cod_clase_alerta == 'Alm_MtoVeh':
                 cadena=funcion(programada.id_elemento_implicado)
             else:
                 
