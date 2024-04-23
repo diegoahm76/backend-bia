@@ -110,7 +110,7 @@ class TipoCobro(models.Model):
 class Variables(models.Model):
     id_variables = models.AutoField(primary_key=True, db_column='T443IdVariables')
     nombre = models.CharField(max_length=255, db_column='T443Nombre')
-    tipo_cobro = models.ForeignKey('TipoCobro', on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
+    tipo_cobro = models.ForeignKey(TipoCobro, on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
     tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
     numero_dias_variable = models.IntegerField(db_column='T443numero_dias_variable', null=True, default=None)
     class Meta:
@@ -522,25 +522,259 @@ class Rt954Cobro(models.Model):
     t954consecpaso = models.SmallIntegerField()
     t954numnotificacion = models.IntegerField()
     t954anulado = models.CharField(max_length=1)
-    t954tuatm = models.CharField(max_length=10)
-    t954tuafr = models.DecimalField(max_digits=19, decimal_places=4)
-    t954tuavalortua = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trtmdbo = models.CharField(max_length=10)
-    t954trtmsst = models.CharField(max_length=10)
-    t954trfrdbo = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trfrsst = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trvalortrdbo = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trvalortrsst = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trcantperanidbo = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trcantperanisst = models.DecimalField(max_digits=19, decimal_places=4)
-    t954trtienepsmv = models.CharField(max_length=1)
-    t954tuaporcdcto = models.DecimalField(max_digits=19, decimal_places=4)
-    t954tuanormadcto = models.CharField(max_length=10)
-    t954tuausarvmanual = models.CharField(max_length=1)
-    t954replegalimportad = models.CharField(max_length=255)
-    t954tsetvb = models.CharField(max_length=15)
-    t954traplicadcto465 = models.CharField(max_length=1)
+    t954tuatm = models.CharField(max_length=10, null=True)
+    t954tuafr = models.DecimalField(max_digits=19, decimal_places=4, null=True)
+    t954tuavalortua = models.DecimalField(max_digits=19, decimal_places=4, null=True)
+    t954trtmdbo = models.CharField(max_length=10, null=True)
+    t954trtmsst = models.CharField(max_length=10, null=True)
+    t954trfrdbo = models.DecimalField(max_digits=19, decimal_places=4, null=True)
+    t954trfrsst = models.DecimalField(max_digits=19, decimal_places=4, null=True)
+    t954trvalortrdbo = models.DecimalField(max_digits=19, decimal_places=4,null=True)
+    t954trvalortrsst = models.DecimalField(max_digits=19, decimal_places=4,null=True)
+    t954trcantperanidbo = models.DecimalField(max_digits=19, decimal_places=4,null=True)
+    t954trcantperanisst = models.DecimalField(max_digits=19, decimal_places=4,null=True)
+    t954trtienepsmv = models.CharField(max_length=1,null=True)
+    t954tuaporcdcto = models.DecimalField(max_digits=19, decimal_places=7, null=True)
+    t954tuanormadcto = models.CharField(max_length=10,null=True)
+    t954tuausarvmanual = models.CharField(max_length=1,null=True)
+    t954replegalimportad = models.CharField(max_length=255,null=True)
+    t954tsetvb = models.CharField(max_length=15,null=True)
+    t954traplicadcto465 = models.CharField(max_length=1, null=True)
 
     class Meta:
         db_table = 'rt954cobro'
-        
+
+
+
+class Tercero(models.Model):
+    t03codcia = models.CharField(max_length=5, db_column='t03codcia', null=True)
+    t03nit = models.CharField(max_length=15, db_column='t03nit', null=True)
+    t03codciudadced = models.CharField(max_length=5, db_column='t03codciudadced', null=True)
+    t03codrapido = models.CharField(max_length=5, db_column='t03codrapido', null=True)
+    t03libretamil = models.CharField(max_length=20, db_column='t03libretamil', null=True)
+    t03matriprof = models.CharField(max_length=30, db_column='t03matriprof', null=True)
+    t03nombre = models.CharField(max_length=255, db_column='t03nombre', null=True)
+    t03primerapellido = models.CharField(max_length=255, db_column='t03primerapellido', null=True)
+    t03segundoapellido = models.CharField(max_length=255, db_column='t03segundoapellido', null=True)
+    t03primernombre = models.CharField(max_length=255, db_column='t03primernombre', null=True)
+    t03segundonombre = models.CharField(max_length=255, db_column='t03segundonombre', null=True)
+    t03codpostal = models.CharField(max_length=20, db_column='t03codpostal', null=True)
+    t03direccion = models.CharField(max_length=100, db_column='t03direccion', null=True)
+    t03telefono = models.CharField(max_length=100, db_column='t03telefono', null=True)
+    t03fax = models.CharField(max_length=100, db_column='t03fax', null=True)
+    t03email = models.CharField(max_length=100, db_column='t03email', null=True)
+    t03website = models.CharField(max_length=100, db_column='t03website', null=True)
+    t03codtiposociedad = models.CharField(max_length=5, db_column='t03codtiposociedad', null=True)
+    t03fechaingreso = models.DateTimeField(db_column='t03fechaingreso', null=True)
+    t03codcalifica = models.CharField(max_length=5, db_column='t03codcalifica', null=True)
+    t03observacion = models.TextField(db_column='t03observacion', null=True)
+    t03cargoexterno = models.CharField(max_length=100, db_column='t03cargoexterno', null=True)
+    t03nitrel = models.CharField(max_length=15, db_column='t03nitrel', null=True)
+    t03codtiporegimen = models.CharField(max_length=5, db_column='t03codtiporegimen', null=True)
+    t03tiposeparanombre = models.SmallIntegerField(db_column='t03tiposeparanombre', null=True)
+    t03coddpto = models.CharField(max_length=5, db_column='t03coddpto', null=True)
+    t03codmpio = models.CharField(max_length=5, db_column='t03codmpio', null=True)
+    t03codcgn = models.CharField(max_length=10, db_column='t03codcgn', null=True)
+    t03codctacontabcausa = models.CharField(max_length=20, db_column='t03codctacontabcausa', null=True)
+    t03codactrut1 = models.CharField(max_length=10, db_column='t03codactrut1', null=True)
+    t03codactrut = models.CharField(max_length=10, db_column='t03codactrut', null=True)
+    t03codactrut3 = models.CharField(max_length=10, db_column='t03codactrut3', null=True)
+    t03codpais = models.CharField(max_length=4, db_column='t03codpais', null=True)
+    t03codtipodocumid = models.CharField(max_length=5, db_column='t03codtipodocumid', null=True)
+    t03codreciproca = models.CharField(max_length=15, db_column='t03codreciproca', null=True)
+    t03entaseguradora = models.CharField(max_length=100, db_column='t03entaseguradora', null=True)
+    t03codentchip = models.CharField(max_length=9, db_column='t03codentchip', null=True)
+    t03fechanacimiento = models.DateTimeField(db_column='t03fechanacimiento', null=True)
+    t03genero = models.CharField(max_length=20, db_column='t03genero', null=True)
+    t03actcertifpyg = models.CharField(max_length=1, db_column='t03actcertifpyg', null=True)
+    t03fechaactwebinfo = models.DateTimeField(db_column='t03fechaactwebinfo', null=True)
+    t03fechasolwebinfo = models.DateTimeField(db_column='t03fechasolwebinfo', null=True)
+    t03ipaddractserv = models.CharField(max_length=50, db_column='t03ipaddractserv', null=True)
+    t03webpassword = models.CharField(max_length=10, db_column='t03webpassword', null=True)
+    t03actrecibosicar = models.CharField(max_length=1, db_column='t03actrecibosicar', null=True)
+    t03id_pci_siif = models.CharField(max_length=50, db_column='t03id_pci_siif', null=True)
+
+    class Meta:
+        db_table = 'rt03tercero'
+
+
+
+class Rt955CobroItem(models.Model):
+    t955codcia = models.CharField(max_length=5, db_column='t955codcia', null=True)
+    t955idcobro = models.IntegerField(db_column='t955idcobro', null=True)
+    t955iditemcobro = models.SmallIntegerField(db_column='t955iditemcobro', null=True)
+    t955consecutivo = models.SmallIntegerField(db_column='t955consecutivo', null=True)
+    t955valor = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955valor', null=True)
+    t955tuaqmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuaqmes', null=True)
+    t955tuanumdiasmes = models.IntegerField(db_column='t955tuanumdiasmes', null=True)
+    t955tuanumhoras = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuanumhoras', null=True)
+    t955tuavcmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuavcmes', null=True)
+    t955tuavvmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuavvmes', null=True)
+    t955tuafopmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuafopmes', null=True)
+    t955tuavmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuavmes', null=True)
+    t955tuavalortotal = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuavalortotal', null=True)
+    t955trqmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trqmes', null=True)
+    t955trnumdiasmes = models.IntegerField(db_column='t955trnumdiasmes', null=True)
+    t955trnumhoras = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trnumhoras', null=True)
+    t955trconcdbomes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trconcdbomes', null=True)
+    t955trcargacdbomes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trcargacdbomes', null=True)
+    t955trvalordbo = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trvalordbo', null=True)
+    t955trconcsstmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trconcsstmes', null=True)
+    t955trcargacsstmes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trcargacsstmes', null=True)
+    t955trvalorssst = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trvalorssst', null=True)
+    t955trvalortotal = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955trvalortotal', null=True)
+    t955tuavmesmanual = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuavmesmanual', null=True)
+    t955tuadctomes = models.DecimalField(max_digits=19, decimal_places=4, db_column='t955tuadctomes', null=True)
+
+    class Meta:
+        db_table = 'rt955cobroitem'
+
+
+
+class Rt908Liquidacion(models.Model):
+    t908codcia = models.CharField(max_length=5, db_column='t908codcia', null=True)
+    t908codtiporenta = models.CharField(max_length=5, db_column='t908codtiporenta', null=True)
+    t908numliquidacion = models.IntegerField(db_column='t908numliquidacion', null=True)
+    t908agno = models.SmallIntegerField(db_column='t908agno', null=True)
+    t908periodo = models.SmallIntegerField(db_column='t908periodo', null=True)
+    t908nit = models.CharField(max_length=15, db_column='t908nit', null=True)
+    t908fecha = models.DateTimeField(db_column='t908fecha', null=True)
+    t908valor = models.DecimalField(max_digits=19, decimal_places=4, db_column='t908valor', null=True)
+    t908valorpagado = models.DecimalField(max_digits=19, decimal_places=4, db_column='t908valorpagado', null=True)
+    t908valorprescripcion = models.DecimalField(max_digits=19, decimal_places=4, db_column='t908valorprescripcion', null=True)
+    t908anulado = models.CharField(max_length=1, db_column='t908anulado', null=True)
+    t908numresolucion = models.IntegerField(db_column='t908numresolucion', null=True)
+    t908agnoresolucion = models.SmallIntegerField(db_column='t908agnoresolucion', null=True)
+    t908codorigenliq = models.CharField(max_length=1, db_column='t908codorigenliq', null=True)
+    t908observacion = models.CharField(max_length=255, db_column='t908observacion', null=True)
+    t908codtipobeneficio = models.CharField(max_length=5, db_column='t908codtipobeneficio', null=True)
+    t908fechacontab = models.DateTimeField(db_column='t908fechacontab', null=True)
+    t908secobra = models.CharField(max_length=1, db_column='t908secobra', null=True)
+    t908fechaenfirme = models.DateTimeField(db_column='t908fechaenfirme', null=True)
+    t908numorigenliq = models.IntegerField(db_column='t908numorigenliq', null=True)
+
+    class Meta:
+        db_table = 'rt908liquidacion'
+
+
+
+class T912AnulLiquidacion(models.Model):
+    t912codcia = models.CharField(max_length=5, db_column='t912codcia', null=True)
+    t912codtiporenta = models.CharField(max_length=5, db_column='t912codtiporenta', null=True)
+    t912numanulacionliq = models.IntegerField(db_column='t912numanulacionliq', null=True)
+    t912numliquidacion = models.IntegerField(db_column='t912numliquidacion', null=True)
+    t912fecha = models.DateTimeField(db_column='t912fecha', null=True)
+    t912numerodoc = models.IntegerField(db_column='t912numerodoc', null=True)
+    t912observacion = models.TextField(db_column='t912observacion', null=True)
+
+    class Meta:
+        db_table = 'rt912anulliquidacion'
+
+
+class T920Expediente(models.Model):
+    t920codcia = models.CharField(max_length=5, db_column='t920codcia', null=True)
+    t920codexpediente = models.CharField(max_length=30, db_column='t920codexpediente', null=True)
+    t920codtipoexpcorp = models.CharField(max_length=5, db_column='t920codtipoexpcorp', null=True)
+    t920numexpedientesila = models.CharField(max_length=30, db_column='t920numexpedientesila', null=True)
+    t920codexpedienterel = models.CharField(max_length=30, db_column='t920codexpedienterel', null=True)
+    t920descripcion = models.CharField(max_length=255, db_column='t920descripcion', null=True)
+    t920codestadoexp = models.CharField(max_length=5, db_column='t920codestadoexp', null=True)
+    t920idtramiteppal = models.CharField(max_length=30, db_column='t920idtramiteppal', null=True)
+
+    class Meta:
+        db_table = 'rt920expediente'
+
+
+
+class T900TipoRenta(models.Model):
+    t900codcia = models.CharField(max_length=5, db_column='t900codcia', null=True)
+    t900codtiporenta = models.CharField(max_length=5, db_column='t900codtiporenta', null=True)
+    t900nombre = models.CharField(max_length=100, db_column='t900nombre', null=True)
+    t900descripcion = models.CharField(max_length=255, db_column='t900descripcion', null=True)
+    t900codtipocalculoint = models.CharField(max_length=5, db_column='t900codtipocalculoint', null=True)
+    t900tramite = models.CharField(max_length=1, db_column='t900tramite', null=True)
+    t900prescripcion = models.CharField(max_length=1, db_column='t900prescripcion', null=True)
+    t900facilidadpago = models.CharField(max_length=1, db_column='t900facilidadpago', null=True)
+    t900delete = models.CharField(max_length=1, db_column='t900delete', null=True)
+    t900codean13 = models.CharField(max_length=13, db_column='t900codean13', null=True)
+    t900subcodaltean13 = models.IntegerField(db_column='t900subcodaltean13', null=True)
+    t900presfavor = models.CharField(max_length=1, db_column='t900presfavor', null=True)
+
+    class Meta:
+        db_table = 'rt900tiporenta'
+
+
+class T971TramiteTercero(models.Model):
+    t971codcia = models.CharField(max_length=5, db_column='t971codcia', null=True)
+    t971idtramite = models.CharField(max_length=30, db_column='t971idtramite', null=True)
+    t971nit = models.CharField(max_length=15, db_column='t971nit', null=True)
+    t971codtramtipoter = models.CharField(max_length=5, db_column='t971codtramtipoter', null=True)
+    t971observacion = models.CharField(max_length=255, db_column='t971observacion', null=True)
+
+    class Meta:
+        db_table = 'rt971tramitetercero'
+
+
+
+
+class T972TramiteUbicacion(models.Model):
+    t972codcia = models.CharField(max_length=5, db_column='t972codcia', null=True)
+    t972idtramite = models.CharField(max_length=30, db_column='t972idtramite', null=True)
+    t972codubicacion = models.CharField(max_length=20, db_column='t972codubicacion', null=True)
+    t972direccion = models.CharField(max_length=100, db_column='t972direccion', null=True)
+    t972observacion = models.CharField(max_length=255, db_column='t972observacion', null=True)
+
+    class Meta:
+        db_table = 'rt972tramiteubicacion'
+
+
+
+class T973TramiteFteHidTra(models.Model):
+    t973codcia = models.CharField(max_length=5, db_column='t973codcia', null=True)
+    t973idtramite = models.CharField(max_length=30, db_column='t973idtramite', null=True)
+    t973consecutivo = models.SmallIntegerField(db_column='t973consecutivo', null=True)
+    t973codtipofuentehid = models.CharField(max_length=5, db_column='t973codtipofuentehid', null=True)
+    t973codfuentehid = models.CharField(max_length=10, db_column='t973codfuentehid', null=True)
+    t973codtramo = models.CharField(max_length=5, db_column='t973codtramo', null=True)
+
+    class Meta:
+        db_table = 'rt973tramiteftehidtra'
+
+
+
+class T976TramitePaso(models.Model):
+    t976codcia = models.CharField(max_length=5, db_column='t976codcia', null=True)
+    t976idtramite = models.CharField(max_length=30, db_column='t976idtramite', null=True)
+    t976idpaso = models.SmallIntegerField(db_column='t976idpaso', null=True)
+    t976consecpaso = models.SmallIntegerField(db_column='t976consecpaso', null=True)
+    t976idcobro = models.IntegerField(db_column='t976idcobro', null=True)
+    t976numradicadoentrada = models.CharField(max_length=30, db_column='t976numradicadoentrada', null=True)
+    t976fecharadicadoentrada = models.DateTimeField(db_column='t976fecharadicadoentrada', null=True)
+    t976codestadotram = models.CharField(max_length=5, db_column='t976codestadotram', null=True)
+    t976codestadotramant = models.CharField(max_length=5, db_column='t976codestadotramant', null=True)
+    t976fechainicial = models.DateTimeField(db_column='t976fechainicial', null=True)
+    t976fechafinal = models.DateTimeField(db_column='t976fechafinal', null=True)
+    t976fecharealizacion = models.DateTimeField(db_column='t976fecharealizacion', null=True)
+    t976cumplido = models.CharField(max_length=1, db_column='t976cumplido', null=True)
+    t976timestamp = models.CharField(max_length=20, db_column='t976timestamp', null=True)
+    t976afvolumentotal = models.DecimalField(max_digits=19, decimal_places=4, db_column='t976afvolumentotal', null=True)
+    t976otorgado = models.CharField(max_length=1, db_column='t976otorgado', null=True)
+    t976nit = models.CharField(max_length=15, db_column='t976nit', null=True)
+    t976fechacobro = models.DateTimeField(db_column='t976fechacobro', null=True)
+    t976direcfechasalida = models.DateTimeField(db_column='t976direcfechasalida', null=True)
+    t976direcfechadevol = models.DateTimeField(db_column='t976direcfechadevol', null=True)
+
+    class Meta:
+        db_table = 'rt976tramitepaso'
+
+
+class T918TipoExpediente(models.Model):
+    t918codcia = models.CharField(max_length=5, db_column='t918codcia', null=True)
+    t918codtipoexpcorp = models.CharField(max_length=5, db_column='t918codtipoexpcorp', null=True)
+    t918nombre = models.CharField(max_length=100, db_column='t918nombre', null=True)
+    t918observacion = models.CharField(max_length=255, db_column='t918observacion', null=True)
+    t918delete = models.CharField(max_length=1, db_column='t918delete', null=True)
+    t918codserie = models.CharField(max_length=20, db_column='t918codserie', null=True)
+
+    class Meta:
+        db_table = 'rt918tipoexpediente'
