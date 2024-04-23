@@ -314,6 +314,8 @@ class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
             vista_creadora_expediente = CrearExpedienteOPA()
             request.data['id_cat_serie_und_org_ccd_trd_prop'] = asignacion.id_catalogo_serie_subserie
             request.data['id_unidad_org_oficina_respon_original'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+            request.data['id_und_org_oficina_respon_actual'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+            request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
             respuesta = vista_creadora_expediente.create(request)
             respuesta = respuesta.data['data']
 
