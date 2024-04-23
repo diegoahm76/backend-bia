@@ -195,5 +195,8 @@ urlpatterns=[
     path('consultar-SeguimientoPGAR/',views.SeguimientoPGARList.as_view(),name='consultarSeguiemientoPGAR'),
     path('actualizar-SeguimientoPGAR/<str:pk>/',views.SeguimientoPGARUpdate.as_view(),name='actualizarSeguiemientoPGAR'),
 
+    #Tableros de Control
+    path('tablero-control-objetivos/<str:pk>/',views.TableroPGARByObjetivo.as_view(),name='tableroControlObjetivos'),
+
 
 ]

@@ -3910,8 +3910,8 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
                 if pqrsdf:
                     pqrsdf.id_expediente_doc = expediente
                     pqrsdf.save()
-                    raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada y ya se asocio a la PQRSDF seleccionada')
-            
+                    return Response({'success':True, 'detail':'Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada y ya se asocio a la PQRSDF seleccionada'}, status=status.HTTP_200_OK) 
+
         data_expediente['titulo_expediente'] = f"Expediente PQRSDF {codigo_exp_und_serie_subserie} {current_date.year}"
         data_expediente['descripcion_expediente'] = f"Expediente PQRSDF para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
         data_expediente['palabras_clave_expediente'] = f"Expediente|PQRSDF|{codigo_exp_und_serie_subserie}|{current_date.year}"
@@ -3986,7 +3986,6 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
     serializer_class = ArchivoSoporteSerializer
     permission_classes = [IsAuthenticated]
 
-    @transaction.atomic
     def post(self,request):
         data_in = request.data
 

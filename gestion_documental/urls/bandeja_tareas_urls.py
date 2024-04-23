@@ -6,6 +6,7 @@ from gestion_documental.views import bandeja_tareas_views as views
 from gestion_documental.views import bandeja_tareas_otros_views as views_otros
 from gestion_documental.views import bandeja_tareas_tramites_views as views_tramites
 from gestion_documental.views import bandeja_tareas_opas_views as views_opas
+from pathlib import Path
 
 urlpatterns = [
 
@@ -97,5 +98,10 @@ urlpatterns = [
     #Archivar Otros
 
     path('archivar/otros/create/', views.ArchiarSolicitudOtros.as_view(), name='crear-archivar-otros'),
+
+
+    #acta_inicio
+    path('acta_inicio/create/<str:pk>/', views_opas.acta_inicio, name='crear-acta-inicio'),
+
     
 ]
