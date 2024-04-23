@@ -2,10 +2,12 @@ import copy
 from datetime import datetime, date, timedelta
 
 import json
+from django.conf import settings
 from django.db.models import Q
 from django.forms import model_to_dict
 import os
 from django.db import transaction
+from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -1186,3 +1188,21 @@ class RespuestaPQRSDFByTra(generics.UpdateAPIView):
         serializer = self.serializer_class(respuesta,many=True)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
         
+
+from docxtpl import DocxTemplate
+def acta_inicio(request, pk):
+
+
+    context = {
+        'key':pk
+
+    }
+
+    pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/prueba.docx'
+    outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
+
+    doc = DocxTemplate(pathToTemplate)
+    doc.render(context)
+    doc.save(outputPath)
+
+    return render(request, 'hola')
