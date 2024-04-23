@@ -351,3 +351,40 @@ class SeguiemientoPGARSerializer(serializers.ModelSerializer):
         ejes_estractegicos = EjeEstractegico.objects.filter(id_plan=obj.id_armonizar.id_planPAI)
         serializer = EjeEstractegicoSerializer(ejes_estractegicos, many=True)
         return serializer.data    
+    
+
+class TableroPGARByObjetivoSerializer(serializers.ModelSerializer):
+    porcentajes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EjeEstractegico
+        fields = '__all__'
+
+
+    def get_porcentajes(self, obj):
+        #ObjetivoSerializer
+        porcentajes = {
+            "pvance_fisico": 0,
+            "pavance_fisico_acomulado": 0,
+            "pavance_financiero": 0,
+            "pavance_recursos_obligados": 0
+        }
+        pvance_fisico = 0
+        pavance_fisico_acomulado = 0
+        pavance_financiero = 0
+        pavance_recursos_obligados = 0
+        iterador = 0
+        seguimientoPGAR = SeguimientoPGAR.objects.filter(id_eje_estrategico=obj.id_eje_estrategico)
+        for seguimiento in seguimientoPGAR:
+            porcentajes['pvance_fisico'] = porcentajes['pvance_fisico'] + seguimiento.pavance_fisico
+            porcentajes['pavance_fisico_acomulado'] = porcentajes['pavance_fisico_acomulado'] + seguimiento.pavance_fisico_acumulado
+            porcentajes['pavance_financiero'] = porcentajes['pavance_financiero'] + seguimiento.pavance_financiero
+            porcentajes['pavance_recursos_obligados'] = porcentajes['pavance_recursos_obligados'] + seguimiento.pavance_recurso_obligado
+            iterador = iterador + 1
+        if iterador == 0:
+            return 0
+        porcentajes['pvance_fisico'] = porcentajes['pvance_fisico'] / iterador
+        porcentajes['pavance_fisico_acomulado'] = porcentajes['pavance_fisico_acomulado'] / iterador
+        porcentajes['pavance_financiero'] = porcentajes['pavance_financiero'] / iterador
+        porcentajes['pavance_recursos_obligados'] = porcentajes['pavance_recursos_obligados'] / iterador
+        return porcentajes
