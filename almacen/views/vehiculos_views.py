@@ -1319,7 +1319,7 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                 personas_existentes = request.data.get('personas_existentes', [])
                 for persona_data in personas_existentes:
                     persona_viaja_id = persona_data.get('id_persona_viaja')
-                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')
+                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')  # Tomar el id de solicitud de viaje de la persona existente
                     persona_confirma_viaje = persona_data.get('persona_confirma_viaje')
                     observacion = persona_data.get('observacion', '')
                     inspeccion_vehiculo = instancia_inspeccion  
@@ -1370,8 +1370,16 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                         fecha_confirmacion=fecha_confirmacion
                     )
 
-            data = serializer.data
+                # Actualizar el campo 'realizo_inspeccion' en ViajesAgendados
+                for persona_data in personas_existentes:
+                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')  # Tomar el id de solicitud de viaje de la persona existente
+                    viaje_agendado = ViajesAgendados.objects.filter(id_solicitud_viaje=solicitud_viaje_id).first()
+                    if viaje_agendado:
+                        viaje_agendado.realizo_inspeccion = True
+                        viaje_agendado.save()
 
+            data = serializer.data
+            
             #GENERACION DE ALERTA
             if data['requiere_verificacion']:
                 
@@ -1899,6 +1907,8 @@ class CrearAprobacion(generics.CreateAPIView):
         if not id_persona_conductor:
             return JsonResponse({'error': 'El conductor del vehículo asignado no fue especificado.'}, status=status.HTTP_400_BAD_REQUEST)
         
+        print(id_persona_conductor)
+        
         # Obtener la persona logueada y la unidad organizacional actual
         persona_logueada = request.user.persona
         unidad_org_actual = persona_logueada.id_unidad_organizacional_actual
@@ -2089,9 +2099,9 @@ class ObtenerSolicitudViaje(generics.RetrieveAPIView):
 
 class ObtenerInformacionViajes(generics.RetrieveAPIView):
     queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
-    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  # Usar el serializador correspondiente para ViajesAgendados
-    solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
-    personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  # Usar el serializador correspondiente para PersonasSolicitudViaje
+    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  
+    solicitudes_serializer_class = SolicitudViajeSerializer  
+    personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  
 
     def get(self, request, id_solicitud_viaje):
         try:

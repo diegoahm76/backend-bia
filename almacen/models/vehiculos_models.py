@@ -199,6 +199,7 @@ class ViajesAgendados(models.Model):
     ya_llego = models.BooleanField(default=True, db_column="T077yaLlego")
     multiples_asignaciones = models.BooleanField(default=True, db_column="T077multiplesAsignaciones")
     estado = models.CharField(max_length=2, choices=estado_aprobacion_CHOICES, db_column="T077estado")
+    realizo_inspeccion =  models.BooleanField(default=False, db_column="T077realizoInspeccion")
 
     def __str__(self):
         return str(self.id_viaje_agendado)
