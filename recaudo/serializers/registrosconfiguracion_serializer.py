@@ -26,6 +26,8 @@ class TipoRentaSerializer(serializers.ModelSerializer):
 
 
 class VariablesSerializer(serializers.ModelSerializer):
+    nombre_renta = serializers.ReadOnlyField(source='tipo_renta.nombre_tipo_renta')
+    nombre_cobro = serializers.ReadOnlyField(source='tipo_cobro.nombre_tipo_cobro')
     class Meta:
         model = Variables
         fields = '__all__'
@@ -96,7 +98,7 @@ class IndicadoresSemestralSerializer(serializers.ModelSerializer):
                   'vigencia_reporta', 'dependencia_grupo_regional', 'objetivo_indicador',
                   'unidad_medicion_reporte', 'descripcion_variable_1', 'descripcion_variable_2',
                   'origen_datos', 'fecha_creacion', 'responsable_creacion', 'tipo_indicador',
-                  'formulario', 'indicadorvalor_set']
+                  'formulario', 'indicadorvalor_set','formula','interpretacion']
 
     def create(self, validated_data):
         indicador_valores_data = validated_data.pop('indicadorvalor_set')

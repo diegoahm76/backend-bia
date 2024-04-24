@@ -575,8 +575,15 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
      
     
 #__________________________________________________________________
-# from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
+from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
 
+
+class ProbarCronJop(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        # Llamar a la función desde la instancia creada
+        extraccion_pimisis_job()
+        return Response({'message': 'La función extraccion_pimisis_job ha sido activada correctamente.'})
+ 
 class Vista_IndicadoresSemestral(generics.ListAPIView):
     serializer_class = IndicadoresSemestralSerializer
     permission_classes = [IsAuthenticated]
