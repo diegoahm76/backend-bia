@@ -190,7 +190,7 @@ class RegisterExternoSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url','creado_por_portal']
+        fields = ['nombre_de_usuario', 'persona', 'password','redirect_url','creado_por_portal','is_active']
 
 class UserSerializerWithToken(UserSerializer):
     token = serializers.SerializerMethodField(read_only=True)
