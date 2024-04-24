@@ -16,6 +16,9 @@ urlpatterns = [
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
     path('update-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-tarea'),
 
+    path('cancelar-asignacion-notificacion/<int:pk>/', views.CancelarAsignacionNotificacion.as_view(),name='cancelar-asignacion-notificacion'),
+    path('cancelar-asignacion-tarea/<int:pk>/', views.CancelarAsignacionTarea.as_view(),name='cancelar-asignacion-tarea'),
+
     # Tipos de Notificaciones
     path('create-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-notificaciones'),
     path('get-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaGet.as_view(),name='get-tipos-notificaciones'),
@@ -79,7 +82,13 @@ urlpatterns = [
     path('create-soportes-anexos-correspondencia/', views.AnexosSoporteCorrespondenciaCreate.as_view(),name='create-soportes-anexos-correspondencia'),
     path('update-registro-notificacion-correspondencia/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-registro-notificacion-correspondencia'),
 
- 
+    # Generar constancias de notificaciones
+    #path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.ConstanciasNotificacionGet.as_view(),name='get-constancias-notificacion'),
+    path('get-constancias-notificacion/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
+    path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
+    path('generador-documentos/', views.GeneradorDocumentos.as_view(),name='generador-documentos'),
+    path('notificaciones-automaticas-create/', views.NotificacionesAutomaticasCreate.as_view(),name='notificaciones-automaticas-create'),
+    
 
     
 

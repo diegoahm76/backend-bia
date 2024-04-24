@@ -20,12 +20,14 @@ urlpatterns=[
     path('consultar-planes-total/',views.PlanesGetAll.as_view(),name='consultarplanesnacionalesdesarrollo'),
     path('consultar-planes-total-id/<str:pk>/',views.PlanesGetId.as_view(),name='consultarplanetotalid'),
     # Ejes Estratégicos
-    path('consultar-ejes-estrategicos/',views.EjeEstractegicoList.as_view(),name='consultarejesestrategicos'),
+    path('consultar-ejes-estrategicos/',views.EjeEstractegicoPAIList.as_view(),name='consultarejesestrategicos'),
     path('crear-ejes-estrategicos/',views.EjeEstractegicoCreate.as_view(),name='crearejesestrategicos'),
     path('actualizar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoUpdate.as_view(),name='actualizarejesestrategicos'),
     path('eliminar-ejes-estrategicos/<str:pk>/',views.EjeEstractegicoDelete.as_view(),name='eliminarejesestrategicos'),
     path('consultar-ejes-estrategicos-id/<str:pk>/',views.EjeEstractegicoDetail.as_view(),name='consultarejesestrategicosid'),
     path('consultar-ejes-estrategicos-id-planes/<str:pk>/',views.EjeEstractegicoListIdPlanes.as_view(),name='consultarejesestrategicosidplanes'),
+    path('consultar-ejes-estrategicos-id-objetivo/<str:pk>/',views.EjeEstractegicoListIdObjetivo.as_view(),name='consultarejesestrategicosidobjetivo'),
+
     # Busqueda Avanzada eje por nombre plan, y nombre
     path('busqueda-avanzada-ejes/', views.BusquedaAvanzadaEjes.as_view(), name='busquedaavanzadaejes'),    
     # Objetivos
@@ -43,7 +45,7 @@ urlpatterns=[
     path('actualizar-programas/<str:pk>/',views.ProgramaUpdate.as_view(),name='actualizarprogramas'),
     path('eliminar-programas/<str:pk>/',views.ProgramaDelete.as_view(),name='eliminarprogramas'),
     path('consultar-programas-id/<str:pk>/',views.ProgramaDetail.as_view(),name='consultarprogramasid'),
-    path('consultar-programas-id-planes/<str:pk>/',views.ProgramaListIdPlanes.as_view(),name='consultarprogramasidplanes'),
+    path('consultar-programas-id-eje-estrategico/<str:pk>/',views.ProgramaListIdEjeEstrategico.as_view(),name='consultarprogramasIdEjeEstrategico'),
     # Listar por periodo de tiempo, debe ingresar el usuario fecha_inicial y fecha final e id plan 
     path('consultar-programas-periodo/',views.ProgramaListPeriodoTiempo.as_view(),name='consultarprogramasperiodo'),
     # Busqueda Avanzada Programas por nombre programa y nombre plan
@@ -151,4 +153,51 @@ urlpatterns=[
     path('consultar-subprogramas-id-programa/<str:pk>/',views.SubprogramaListIdPrograma.as_view(),name='consultarsubprogramasidprograma'),
     # Busqueda Avanzada subprogramas por nombre programa y nombre subprograma
     path('busqueda-avanzada-subprogramas/', views.BusquedaAvanzadaSubprogramas.as_view(), name='busquedaavanzadasubprogramas'),
+
+    #PGAR
+    path('consultar-ejes-estrategicosPGAR/',views.EjeEstractegicoPGARList.as_view(),name='consultarejesestrategicosPGAR'),
+    path('busqueda-avanzada-ejes-estrategicosPGAR/',views.BusquedaAvanzadaEjesPGAR.as_view(),name='busquedaAvanzadaEjesEstrategicosPGAR'),
+
+
+    # Metas PGAR
+    path('consultar-metasPGAR-idEjeEstrategico/<str:pk>/',views.MetasPGARListByIdEjeEstrategico.as_view(),name='consultarMetasPGARIdEjeEstrategico'),
+    path('busqueda-avanzada-metasPGAR/', views.MetasPGARList.as_view(), name='busquedaavanzadametasPGAR'),
+    path('crear-metasPGAR/',views.MetasPGARCreate.as_view(),name='crearmetasPGAR'),
+    path('actualizar-metasPGAR/<str:pk>/',views.MetasPGARUpdate.as_view(),name='actualizarmetasPGAR'),
+
+    #Linea Base
+    path('consultar-linea-base-id-meta/<str:pk>/',views.LineaBaseListByIdMeta.as_view(),name='consultarLineasBaseIdMeta'),
+    path('busqueda-avanzada-lineas-base/', views.BusquedaAvnzadaLineaBase.as_view(), name='busquedaAvanzadaLineasBase'),
+    path('crear-linea-base/',views.LineaBaseCreate.as_view(),name='crearlineabase'),
+    path('actualizar-linea-base/<str:pk>/',views.LineaBaseUpdate.as_view(),name='actualizarlineabase'),
+
+    #Actividades PGAR
+    path('consultar-actividades-id-linea-base/<str:pk>/',views.ActividadesListByIdLineaBase.as_view(),name='consultarActividadesPGARIdLineaBase'),
+    path('crear-actividadesPGAR/',views.ActividadesCreate.as_view(),name='crearActividadesPGAR'),
+    path('actualizar-actividadesPGAR/<str:pk>/',views.ActividadesUpdate.as_view(),name='actualizaractividadesPGAR'),
+    path('busqueda-avanzada-actividadesPGAR/', views.BusquedaAvanzadaActividadesPGAR.as_view(), name='busquedaAvanzadaActividadesPGAR'),
+
+    #Indicadores PGAR
+    path('consultar-indicadores-id-actividad/<str:pk>/',views.IndicadoresByIdActividad.as_view(),name='consultarIndicadoresPGARIdActividad'),
+    path('crear-indicadoresPGAR/',views.IndicaresCreate.as_view(),name='crearIndicadoresPGAR'),
+    path('actualizar-indicadoresPGAR/<str:pk>/',views.IndicadoresUpdate.as_view(),name='actualizarindicadoresPGAR'),    
+
+    #Armonizacion PGAR
+    path('consultar-planesPAI/',views.PlanesPAIList.as_view(),name='consultarPlanesPAI'),
+    path('consultar-planesPGAR/',views.PlanesPGARList.as_view(),name='consultarPlanesPGAR'),
+    path('crear-ArmonizacionPGAR/',views.ArmonizacionPGARCreate.as_view(),name='crearArmonizacionPGAR'),
+    path('consultar-ArmonizacionPGARPAI/',views.ArmonizacionPGARList.as_view(),name='consultarArmonizacionPGARPAI'),
+    path('actualizar-ArmonizacionPGAR/<str:pk>/',views.ArmonizacionPGARUpdate.as_view(),name='actualizarARmonizacionPGAR'),
+
+
+    #Seguiemiento PGAR
+    path('crear-SeguiemientoPGAR/',views.SeguiemientoPGARCreate.as_view(),name='crearSeguiemientoPGAR'),
+    path('consultar-SeguimientoPGAR/',views.SeguimientoPGARList.as_view(),name='consultarSeguiemientoPGAR'),
+    path('actualizar-SeguimientoPGAR/<str:pk>/',views.SeguimientoPGARUpdate.as_view(),name='actualizarSeguiemientoPGAR'),
+
+    #Tableros de Control
+    path('tablero-control-objetivos/<str:pk>/',views.TableroPGARByObjetivo.as_view(),name='tableroControlObjetivos'),
+    path('tablero-control-ejes/',views.TableroPGARByEje.as_view(),name='tableroControlEjes'),
+
+
 ]

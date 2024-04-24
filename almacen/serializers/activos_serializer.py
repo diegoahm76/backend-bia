@@ -75,8 +75,7 @@ class AnexosOpcionalesDocsAlmaSerializer(serializers.ModelSerializer):
 class ArchivosDigitalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArchivosDigitales
-        fields = '__all__'  # Agrega aquí los campos que necesites para los archivos digitales
-
+        fields = '__all__'  
 class BajaActivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = BajaActivos
@@ -86,7 +85,7 @@ class BajaActivosSerializer(serializers.ModelSerializer):
 
 class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
     id_baja_activo = BajaActivosSerializer()
-    id_archivo_digital = ArchivosDigitalesSerializer()  # Agrega el serializador para los archivos digitales
+    id_archivo_digital = ArchivosDigitalesSerializer()  
 
     class Meta:
         model = AnexosDocsAlma
@@ -253,7 +252,15 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
     tipo_solicitud = serializers.SerializerMethodField()
     numero_activos = serializers.SerializerMethodField()
     id_funcionario_resp_asignado = serializers.SerializerMethodField()
-
+    primer_nombre_funcionario_resp_asignado = serializers.SerializerMethodField()
+    primer_apellido_funcionario_resp_asignado = serializers.SerializerMethodField()
+    tipo_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
+    numero_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
+    id_persona_operario_asignado = serializers.SerializerMethodField()
+    primer_nombre_persona_operario_asignado = serializers.SerializerMethodField()
+    primer_apellido_persona_operario_asignado = serializers.SerializerMethodField()
+    tipo_documento_persona_operario_asignado = serializers.SerializerMethodField()
+    numero_documento_persona_operario_asignado = serializers.SerializerMethodField()
     class Meta:
         model = DespachoActivos
         fields = '__all__'
@@ -288,12 +295,67 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         # Obtener el número de activos relacionados con esta solicitud
         return ItemsDespachoActivos.objects.filter(id_despacho_activo=instance).count()
     
+    #Persona_Responsable
     def get_id_funcionario_resp_asignado(self, obj):
         asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
         if asignacion:
             return asignacion.id_funcionario_resp_asignado.id_persona
         return None
-        
+    
+    def get_primer_nombre_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.primer_nombre
+        return None
+    
+    def get_primer_apellido_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.primer_apellido
+        return None
+    
+    def get_tipo_documento_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.tipo_documento.cod_tipo_documento
+        return None
+    
+    def get_numero_documento_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.numero_documento
+        return None
+    
+    #Persona_Operario
+    def get_id_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.id_persona
+        return None
+    
+    def get_primer_nombre_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.primer_nombre
+        return None
+    
+    def get_primer_apellido_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.primer_apellido
+        return None
+    
+    def get_tipo_documento_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.tipo_documento.cod_tipo_documento
+        return None
+    
+    def get_numero_documento_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.numero_documento
+        return None    
 
     
 
@@ -357,6 +419,8 @@ class DevolucionActivosSerializer(serializers.ModelSerializer):
             nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
             nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
         return nombre_persona_anulacion
+    
+    
 
 class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()
@@ -432,6 +496,7 @@ class AsignacionActivosSerializer(serializers.ModelSerializer):
 class ItemsDespachoActivosSerializer(serializers.ModelSerializer):
     codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
     nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    identificador_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.doc_identificador_nro', default=None)
     nombre_bodega_despachado = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     id_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.id_marca', default=None)
     nombre_marca_despachado = serializers.ReadOnlyField(source='id_bien_despachado.id_marca.nombre', default=None)

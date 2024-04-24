@@ -10,6 +10,8 @@ from xml.etree import ElementTree
 from django.db.models import Q
 from django.db import transaction
 from rest_framework import generics
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from jobs.updater import scheduler
 from datetime import datetime, timedelta
 from jobs.jobs import update_estado_pago
@@ -19,6 +21,7 @@ from dotenv import load_dotenv
 from recaudo.models.liquidaciones_models import LiquidacionesBase
 from recaudo.models.pagos_models import Pagos
 from recaudo.serializers.pagos_serializers import ConsultarPagosSerializer, InicioPagoSerializer
+from seguridad.utils import Util
 from transversal.models.personas_models import Personas
 load_dotenv()
 
@@ -134,10 +137,13 @@ class IniciarPagoView(generics.CreateAPIView):
             if scheduler:
                 print("ENTRÓ A SONDA")
                 execution_time = datetime.now() + timedelta(minutes=10)
+                print("EXECUTION TIME: ", execution_time)
                 scheduler.add_job(update_estado_pago, args=[pago_creado.id_pago, request, scheduler, VerificarPagoView], trigger='date', run_date=execution_time)
 
-            return redirect(redirect_url)
-            # return Response({"success": True, "message": "Inicio de pago exitoso", "data": {"id_transaccion": id_transaccion}}, status=status.HTTP_201_CREATED)
+            data_response = serializer_pago.data
+            data_response['redirect_url'] = redirect_url
+
+            return Response({"success": True, "message": "Inicio de pago exitoso", "data": data_response}, status=status.HTTP_201_CREATED)
         else:
             return ValidationError('Ocurrió un error obteniendo el ID de la transacción')
 
@@ -225,8 +231,12 @@ class VerificarPagoView(generics.CreateAPIView):
             raise ValidationError(f'Ocurrió un error: {error_detail.text}')
         
 class NotificarPagoView(generics.CreateAPIView):
+    def generar_comprobante_pago(self, info_archivo, id_liquidacion):
+        archivo_creado =  UtilsGestor.generar_archivo_blanco(info_archivo, f"Comprobante de Pago - Liquidacion {id_liquidacion}.pdf", "home,BIA,Recaudo,GDEA,Pagos")
+        return archivo_creado
 
     def create(self, request):
+        print("Entró a servicio de Notificar Pago")
         id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
 
@@ -253,8 +263,47 @@ class NotificarPagoView(generics.CreateAPIView):
                     pago.fecha_pago = datetime.now()
                     pago.notificacion = True
                     pago.save()
+
+                    # ACTUALIZAR T273 BOOL PAGO Y FOREIGN KEY PAGO CUANDO ESTADO == 1 (PRIMERA VEZ). ACTUALIZAR ESTADO LIQUIDACION EN T403 - CREAR COMPROBANTE DE PAGO Y GUARDAR EN T468
+                    if estado_pago == "1":
+                        # GENERAR COMPROBANTE DE PAGO
+                        client_ip = Util.get_client_ip(request)
+                        pago_serializado = ConsultarPagosSerializer(pago)
+                        pago_serializado = pago_serializado.data
+                        info_archivo = {
+                            "Nombre Empresa": "CORMACARENA",
+                            "Fax Empresa": "NA",
+                            "Dirección Empresa": "CR 43 NO. 20A 47 MZ D CA 8",
+                            "Teléfono Empresa": 3102268176,
+                            "NIT Empresa": 9015152013,
+                            "Nombre Cliente": pago_serializado['nombre_persona_pago'],
+                            "Email Cliente": pago.id_persona_pago.email,
+                            "Identificación Cliente": pago.id_persona_pago.numero_documento,
+                            "Teléfono Cliente": pago.id_persona_pago.telefono_celular,
+                            "IP Cliente": client_ip,
+                            "Id Pago": pago.id_pago,
+                            "Medio Pago": "Pago PSE - débito desde su cuenta corriente o de ahorros",
+                            "Estado Pago": pago_serializado['desc_estado_pago'],
+                            "Fecha Pago": datetime.now().strftime('%d-%m-%Y %H:%M:%S'),
+                            "Iva": "0.00",
+                            "Total Pago": pago.id_liquidacion.valor,
+                            "Tipo Usuario": f"Persona {pago_serializado['tipo_usuario']}",
+                            "Descripcion Pago": "Test", # Pendiente por definir
+                            "Ciclo Transacción": request.query_params.get('ciclo_transaccion'),
+                            "Código Transacción": request.query_params.get('codigo_transaccion'),
+                            "Nombre Banco": request.query_params.get('nombre_banco'),
+                            "Codigo Banco": request.query_params.get('codigo_banco'),
+                            "Ticket": request.query_params.get('ticketID'),
+                            "Fecha Solicitud": datetime.now().strftime('%d-%m-%Y'),
+                            "Código Servicio": "2701"
+                        }
+                        comprobante = self.generar_comprobante_pago(info_archivo, pago.id_liquidacion.id)
+                        comprobante_instance = ArchivosDigitales.objects.filter(id_archivo_digital=comprobante.data.get('data').get('id_archivo_digital')).first()
+
+                        pago.comprobante_pago = comprobante_instance
+                        pago.save()
                 else:
-                    url_get_pimisys = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
+                    url_get_pimisys = "http://cormacarenatest.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
                     params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
                     # ENVIAR NOTIFICACION A PIMYSIS

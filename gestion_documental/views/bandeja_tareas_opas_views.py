@@ -1,24 +1,32 @@
 import copy
 from datetime import datetime, date, timedelta
 
+from io import BytesIO
 import json
+from django.conf import settings
 from django.db.models import Q
 from django.forms import model_to_dict
 import os
 from django.db import transaction
+from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
+from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales, IndicesElectronicosExp
+from gestion_documental.serializers.expedientes_serializers import AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
+from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
 from gestion_documental.views.pqr_views import RadicadoCreate
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import  AsignacionTramites, BandejaTareasPersona, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
-from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import  AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaOPAGetSerializer, RespuestaOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, RespuestasOPAGetSeralizer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TipologiasDoc
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import  ActosAdministrativosCreateSerializer, AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaOPAGetSerializer, RespuestaOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, RespuestasOPAGetSeralizer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import AnexosCreate, Estados_PQRCreate, MetadatosAnexosTmpCreate, TareaBandejaTareasPersonaUpdate
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites, TiposActosAdministrativos
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.utils import UtilsGestor
 from seguridad.utils import Util
@@ -110,10 +118,128 @@ class DetalleOpaGetbyId(generics.ListAPIView):
         serializador = self.serializer_class(instance)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
 
+class CrearExpedienteOPA(generics.CreateAPIView):
+    serializer_class = AperturaExpedienteSimpleSerializer
+    serializer_class_complejo = AperturaExpedienteComplejoSerializer
+    permission_classes = [IsAuthenticated]
 
 
+    
+
+    def create(self, request):
+        data = request.data
+
+        data_expediente = {}
+        
+        # Crear codigo expediente
+        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data['id_cat_serie_und_org_ccd_trd_prop']).first()
+        
+        if not tripleta_trd:
+            raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+        #PENDIENTE EL AÑO
+        configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg).first()
+
+        if not configuracion_expediente:
+            raise ValidationError('No se encontró la configuración de expediente para la tripleta de TRD seleccionada')
+        
+        cod_unidad = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.codigo
+        cod_serie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
+        cod_subserie = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        
+        codigo_exp_und_serie_subserie = cod_unidad + '.' + cod_serie + '.' + cod_subserie if cod_subserie else cod_unidad + '.' + cod_serie
+        
+        
+        current_date = datetime.now()
+        
+        
+        data_expediente['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+        data_expediente['codigo_exp_Agno'] = current_date.year
+        
+        # OBTENER CONSECUTIVO ACTUAL
+        codigo_exp_consec_por_agno = None
+        
+        if configuracion_expediente.cod_tipo_expediente == 'C':
+            # LLAMAR CLASE PARA GENERAR CONSECUTIVO
+            fecha_actual = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            clase_consec = ConfiguracionTipoExpedienteAgnoGetConsect()
+            codigo_exp_consec_por_agno = clase_consec.generar_radicado(
+                tripleta_trd.id_catserie_unidadorg,
+                request.user.persona.id_persona,
+                fecha_actual
+            )
+            codigo_exp_consec_por_agno = codigo_exp_consec_por_agno.data.get('data').get('consecutivo_actual')
+        else:
+            expediente = ExpedientesDocumentales.objects.filter(id_cat_serie_und_org_ccd_trd_prop=tripleta_trd.id_catserie_unidadorg, codigo_exp_Agno=current_date.year).first()
+        
+            if expediente:
+                raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada')
+            
+        data_expediente['titulo_expediente'] = f"Expediente OPA {codigo_exp_und_serie_subserie} {current_date.year}"
+        data_expediente['descripcion_expediente'] = f"Expediente OPA para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
+        data_expediente['palabras_clave_expediente'] = f"Expediente|OPA|{codigo_exp_und_serie_subserie}|{current_date.year}"
+        data_expediente['id_cat_serie_und_org_ccd_trd_prop'] = tripleta_trd.id_catserie_unidadorg
+        data_expediente['id_trd_origen'] = tripleta_trd.id_trd.id_trd
+        data_expediente['id_und_seccion_propietaria_serie'] = tripleta_trd.id_cat_serie_und.id_unidad_organizacional.id_unidad_organizacional
+        data_expediente['id_serie_origen'] = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.id_serie_doc
+        data_expediente['id_subserie_origen'] = tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc if tripleta_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else None
+        data_expediente['codigo_exp_consec_por_agno'] = codigo_exp_consec_por_agno
+        data_expediente['estado'] = 'A'
+        data_expediente['fecha_apertura_expediente'] = current_date
+        data_expediente['fecha_folio_inicial'] = current_date
+        data_expediente['cod_etapa_de_archivo_actual_exped'] = 'G'
+        data_expediente['tiene_carpeta_fisica'] = False
+        data_expediente['ubicacion_fisica_esta_actualizada'] = False
+        data_expediente['creado_automaticamente'] = True
+        data_expediente['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        data_expediente['id_unidad_org_oficina_respon_original'] = data['id_unidad_org_oficina_respon_original']
+        data_expediente['id_und_org_oficina_respon_actual'] = data['id_unidad_org_oficina_respon_original']
+
+
+        request.data['cod_tipo_expediente'] = configuracion_expediente.cod_tipo_expediente
+        request.data['codigo_exp_und_serie_subserie'] = codigo_exp_und_serie_subserie
+
+        
+        if configuracion_expediente.cod_tipo_expediente == 'S':
+            serializer = self.serializer_class(data=data_expediente, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        elif configuracion_expediente.cod_tipo_expediente == 'C':
+            serializer = self.serializer_class_complejo(data=data_expediente, context = {'request':request})
+            serializer.is_valid(raise_exception=True)
+            expediente_creado = serializer.save()
+        
+
+        
+        # CREAR INDICE - PENDIENTE VALIDAR SI ES CORRECTO REALIZARLO ASÍ
+        IndicesElectronicosExp.objects.create(
+            id_expediente_doc = expediente_creado,
+            fecha_indice_electronico = current_date,
+            abierto = True
+        )
+        
+        # AUDITORIA
+        usuario = request.user.id_usuario
+        descripcion = {
+            "CodigoExpUndSerieSubserie": str(codigo_exp_und_serie_subserie),
+            "CodigoExpAgno": str(serializer.data.get('codigo_exp_Agno')),
+        }
+        if codigo_exp_consec_por_agno:
+            descripcion['CodigoExpConsecPorAgno'] = str(codigo_exp_consec_por_agno)
+        
+        direccion = Util.get_client_ip(request)
+        auditoria_data = {
+            "id_modulo" : 188,
+            "cod_permiso": "CR",
+            "subsistema": 'GEST',
+            "dirip": direccion,
+            "descripcion": descripcion,
+        }
+        Util.save_auditoria(auditoria_data)
+            
+        return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
     serializer_class = TareasAsignadasOpasUpdateSerializer
+    actos_administrativo = ActosAdministrativosCreateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
@@ -178,7 +304,7 @@ class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
                     reasignacion.save()
 
         else:
-            #print(id_asignacion)
+            print(id_asignacion)
             asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=id_asignacion,cod_estado_asignacion__isnull=True).first()
             #asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=id_asignacion,cod_estado_asignacion__isnull=True).first()
             #asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
@@ -186,12 +312,38 @@ class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Ac'
             asignacion.save()
-            #print(data_in)
-            #print(asignacion)
-           
+
+            #APERTURA DEL EXPEDIENTE
+
+            vista_creadora_expediente = CrearExpedienteOPA()
+            request.data['id_cat_serie_und_org_ccd_trd_prop'] = asignacion.id_catalogo_serie_subserie
+            request.data['id_unidad_org_oficina_respon_original'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+            request.data['id_und_org_oficina_respon_actual'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+            request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
+            respuesta = vista_creadora_expediente.create(request)
+            respuesta = respuesta.data['data']
+
+            id_expediente = respuesta['id_expediente_documental']
+            expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
+            if not expediente:
+                raise NotFound("No se encontro el expediente")
            
 
-        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+           #hola
+           #TiposActosAdministrativos
+            tipo_acto = TiposActosAdministrativos.objects.filter(id_tipo_acto_administrativo=1).first()
+            #acta_inicio
+
+            expediente.id_tipo_acto = tipo_acto
+            tramite = asignacion.id_solicitud_tramite
+            tramite.id_expediente = expediente
+            tramite.fecha_expediente = respuesta['fecha_apertura_expediente']
+            tramite.save()
+           
+
+
+
+        return Response({'success':True,'detail':"Se acepto la tarea correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 
@@ -894,7 +1046,7 @@ class RequerimienntoSobreOpaTramiteCreate(generics.CreateAPIView):
 
 
         # #Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos. tabla T271
-        tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(nombre_configuracion='Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.').first()
+        tiempo_respuesta = ConfiguracionTiemposRespuesta.objects.filter(id_configuracion_tiempo_respuesta=6).first()#'Tiempo que tiene un usuario para responder una Solicitud de Complementación o Solicitud de Requerimientos.
 
         if not tiempo_respuesta:
             raise ValidationError("No se encontro el tiempo de respuesta comuniquese con un administrador")
@@ -1045,3 +1197,70 @@ class RespuestaPQRSDFByTra(generics.UpdateAPIView):
         serializer = self.serializer_class(respuesta,many=True)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
         
+
+from docxtpl import DocxTemplate
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
+
+class ActaInicioCreate(generics.CreateAPIView):
+
+
+
+    @transaction.atomic
+    def create(self, request):
+        fecha_actual =datetime.now()
+        data_in = request.data
+
+
+
+        dato=self.acta_inicio(data_in['pk'])
+        memoria = self.document_to_inmemory_uploadedfile(dato)
+        data_archivos =[]
+        vista_archivos = ArchivosDgitalesCreate()
+        ruta = "home,BIA,Otros,RecursoHidrico,Avances"
+
+        respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},memoria)
+        data_archivo = respuesta_archivo.data['data']
+        if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+            return respuesta_archivo
+        
+        
+        print(dato)
+
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':data_archivo, }, status=status.HTTP_200_OK)
+
+
+
+    def document_to_inmemory_uploadedfile(self,doc):
+        # Guardar el documento en un búfer de memoria
+        buffer = BytesIO()
+        doc.save(buffer)
+        
+        # Crear un objeto InMemoryUploadedFile
+        file = InMemoryUploadedFile(
+            buffer,  # El búfer de memoria que contiene los datos
+            None,    # El campo de archivo (no es relevante en este contexto)
+            'output.docx',  # El nombre del archivo
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # El tipo MIME del archivo
+            buffer.tell(),  # El tamaño del archivo en bytes
+            None     # El conjunto de caracteres (no es relevante en este contexto)
+        )
+        
+        return file
+    def acta_inicio(self,pk):
+
+
+        context = {
+            'key':pk
+
+        }
+
+        pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/prueba.docx'
+        outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
+
+        doc = DocxTemplate(pathToTemplate)
+        doc.render(context)
+        #doc.save(outputPath)
+
+        return doc

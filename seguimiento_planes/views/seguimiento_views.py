@@ -5,12 +5,14 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.pagination import PageNumberPagination
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
+from seguimiento_planes.models.planes_models import Metas, Rubro
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -21,8 +23,8 @@ class FuenteFinanciacionIndicadoresList(generics.ListAPIView):
     serializer_class = FuenteFinanciacionIndicadoresSerializer
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
-        fuentes = self.get_queryset()
+    def get(self, request, pk):
+        fuentes = self.get_queryset().filter(id_meta=pk)
         serializer = FuenteFinanciacionIndicadoresSerializer(fuentes, many=True)
         if not fuentes:
             raise NotFound("No se encontraron resultados para esta consulta.")
@@ -35,6 +37,23 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        fuentes = FuenteFinanciacionIndicadores.objects.filter(id_meta=request.data['id_meta'])
+        meta = Metas.objects.filter(id_meta=request.data['id_meta']).first()
+
+        if meta == None:
+            raise ValidationError("No se encontró una meta con este ID.")
+
+        valor_fuentes = 0
+        valor_total = 0
+        for fuente in fuentes:
+            valor_fuentes = valor_fuentes + fuente.valor_total
+        valor_total = valor_fuentes + request.data['valor_total']
+        
+
+        if valor_total > int(meta.valor_meta):
+            raise ValidationError("El valor total de las fuentes de financiación no puede ser mayor al valor de la meta.")
+
+
         serializer = FuenteFinanciacionIndicadoresSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -687,17 +706,41 @@ class EstadoVFDelete(generics.DestroyAPIView):
 
 # Listar todos los registros de códigos UNSP
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'results': data
+        })
+
 class CodigosUNSPList(generics.ListAPIView):
-    queryset = CodigosUNSP.objects.all()
     serializer_class = CodigosUNSPSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = CustomPageNumberPagination
 
     def get(self, request):
-        codigos = self.get_queryset()
+        codigos = CodigosUNSP.objects.all()
+        nombre = request.query_params.get('nombre')
+        codigo = request.query_params.get('codigo')
+        if codigo:
+            codigos = CodigosUNSP.objects.filter(codigo_unsp__icontains = codigo)
+        if nombre:
+            codigos = CodigosUNSP.objects.filter(nombre_producto_unsp__icontains = nombre)
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(codigos, request)
+        if page is not None:
+            serializer = CodigosUNSPSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
         serializer = CodigosUNSPSerializer(codigos, many=True)
-        if not codigos:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.data)
     
 # Crear un registro de código UNSP
 
@@ -939,8 +982,8 @@ class BancoProyectoList(generics.ListAPIView):
     serializer_class = BancoProyectoSerializer
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
-        bancos = self.get_queryset()
+    def get(self, request, pk):
+        bancos = self.get_queryset().filter(id_meta=pk)
         serializer = BancoProyectoSerializer(bancos, many=True)
         if not bancos:
             raise NotFound("No se encontraron resultados para esta consulta.")
@@ -953,6 +996,11 @@ class BancoProyectoCreate(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request):
+        rubro = Rubro.objects.get(id_rubro=request.data['id_rubro'])
+
+        if request.data['banco_valor'] > rubro.valcuenta:
+            raise ValidationError('El valor del banco de proyecto no puede ser mayor al valor de la cuenta del rubro.')
+
         serializer = BancoProyectoSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -1126,7 +1174,7 @@ class PAACodUNSPList(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
-        paas = self.get_queryset()
+        paas = self.get_queryset().values('id_plan', 'codigo_unsp', 'descripcion', 'unidad_medida', 'cantidad', 'valor_unitario', 'valor_total', 'fuente', 'estado', 'observaciones')
         serializer = PAACodgigoUNSPSerializer(paas, many=True)
         if not paas:
             raise NotFound("No se encontraron resultados para esta consulta.")

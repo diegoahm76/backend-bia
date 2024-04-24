@@ -3,7 +3,7 @@ from seguimiento_planes.views import seguimiento_views as views
 
 urlpatterns=[
     # Fuentes de financiacion indicadores
-    path('consultar-fuentes-financiacion-indicadores/',views.FuenteFinanciacionIndicadoresList.as_view(),name='consultarfuentesfinanciacionindicadores'),
+    path('consultar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresList.as_view(),name='consultarfuentesfinanciacionindicadores'),
     path('crear-fuentes-financiacion-indicadores/',views.FuenteFinanciacionIndicadoresCreate.as_view(),name='crearfuentesfinanciacionindicadores'),
     path('actualizar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresUpdate.as_view(),name='actualizarfuentesfinanciacionindicadores'),
     path('eliminar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresDelete.as_view(),name='eliminarfuentesfinanciacionindicadores'),
@@ -70,7 +70,7 @@ urlpatterns=[
     #Busqueda Avanzada de fuentes de financiación por nombre_fuente, concepto
     path('consultar-fuentes-financiacion-avanzado/',views.BusquedaAvanzadaFuenteFinanciacion.as_view(),name='consultarfuentesfinanciacionavanzado'),
     # Banco de proyectos
-    path('consultar-banco-proyectos/',views.BancoProyectoList.as_view(),name='consultarbanco_proyectos'),
+    path('consultar-banco-proyectos/<str:pk>/',views.BancoProyectoList.as_view(),name='consultarbanco_proyectos'),
     path('crear-banco-proyectos/',views.BancoProyectoCreate.as_view(),name='crearbanco_proyectos'),
     path('actualizar-banco-proyectos/<str:pk>/',views.BancoProyectoUpdate.as_view(),name='actualizarbanco_proyectos'),
     path('eliminar-banco-proyectos/<str:pk>/',views.BancoProyectoDelete.as_view(),name='eliminarbanco_proyectos'),

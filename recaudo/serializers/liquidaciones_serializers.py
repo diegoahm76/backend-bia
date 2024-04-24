@@ -10,6 +10,15 @@ from recaudo.models.liquidaciones_models import (
 
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
+    usada = serializers.SerializerMethodField()
+
+    def get_usada(self, obj):
+        detalles_liquidacion = DetalleLiquidacionBase.objects.filter(id_opcion_liq=obj.id)
+        if detalles_liquidacion.exists():
+            return True
+        else:
+            return False
+
     class Meta:
         model = OpcionesLiquidacionBase
         fields = '__all__'

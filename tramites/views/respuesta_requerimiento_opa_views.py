@@ -63,6 +63,14 @@ class RespuestaRequerimientoOpaTramiteCreate(generics.CreateAPIView):
 
         data_in = json.loads(respuesta)
 
+        if not 'id_requerimiento' in data_in:
+            raise ValidationError("Se requiere informacion del Requerimiento")
+        id_requerimiento = data_in['id_requerimiento']
+
+        respuestas= RespuestasRequerimientos.objects.filter(id_requerimiento=id_requerimiento).first()
+        if respuestas:
+            raise ValidationError("Ya existe una respuesta para este requerimiento")
+
         #for archivo in archivos:
         for archivo in archivos:
             if  archivo:
