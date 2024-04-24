@@ -13,7 +13,7 @@ from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, time
 
 from tramites.models.tramites_models import SolicitudesTramites
 from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer
@@ -1819,6 +1819,8 @@ class CancelarAsignacionTarea(generics.UpdateAPIView):
             tarea.delete()
             queryset.delete()
             return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
+        
+
 class GenerarConstanciaNotificacion(generics.CreateAPIView):
     serializer_class = ConstanciaNotificacionSerializer
     permission_classes = [IsAuthenticated]
@@ -1833,8 +1835,13 @@ class GenerarConstanciaNotificacion(generics.CreateAPIView):
         if not data.get('id_registro_notificacion_correspondencia'):
             raise ValidationError('id_registro_notificacion_correspondencia es un parametro requerido.')
         
-        if not data.get('id_tipo_notificacion_correspondencia'):
-            raise ValidationError('id_tipo_notificacion_correspondencia es un parametro requerido.')
+        id_registro_notificacion_correspondencia = data.get('id_registro_notificacion_correspondencia')
+
+        try:
+            registro_notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion_correspondencia)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('El registro de la notificación no existe.')
+       
         
         fecha_inicial = datetime.strptime(data.get('fecha_inicial'), '%Y-%m-%d').date()
         fecha_final = datetime.strptime(data.get('fecha_final'), '%Y-%m-%d').date()
@@ -1852,7 +1859,8 @@ class GenerarConstanciaNotificacion(generics.CreateAPIView):
             'fecha_inicial': fecha_inicial,
             'fecha_final': fecha_final,
             'dias_habiles': dias_habiles,
-            'fecha_habil': fecha_habil
+            'fecha_habil': fecha_habil,
+            'persona_titular': registro_notificacion
         }
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_out}, status=status.HTTP_200_OK)
@@ -1881,7 +1889,7 @@ class GenerarConstanciaNotificacion(generics.CreateAPIView):
 
         # instancia_constancia = ConstanciaNotificacionCreate()
         # constancia = instancia_constancia.create_constancia(data)
-        return Response({'succes': True, 'detail':'Se creo la constancia correctamente', 'data':data_out}, status=status.HTTP_201_CREATED)
+        # return Response({'succes': True, 'detail':'Se creo la constancia correctamente', 'data':data_out}, status=status.HTTP_201_CREATED)
 
      
 class GeneradorDocumentos(generics.CreateAPIView):
@@ -2062,7 +2070,7 @@ class GeneradorDocumentos(generics.CreateAPIView):
 """
 
 
-class NotificacionesCorrespondenciaCreate(generics.CreateAPIView):
+class NotificacionesAutomaticasCreate(generics.CreateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
     permission_classes = [IsAuthenticated]
 
@@ -2236,7 +2244,6 @@ class AnexosSistemaCreate(generics.CreateAPIView):
             #data_metadatos['metadatos'] = anexo['metadatos']
             data_metadatos['anexo'] = data_anexo
             data_metadatos['fecha_registro'] = fecha_actual
-            data_metadatos['fecha_creacion_doc'] = fecha_actual
             data_metadatos['id_archivo_digital'] = archivo_creado.data.get('data').get('id_archivo_digital')
 
             metadatosNotificacionesCreate = MetadatosNotificacionesCreate()
@@ -2270,4 +2277,6 @@ class AnexosSistemaCreate(generics.CreateAPIView):
         archivos_Digitales = ArchivosDgitalesCreate()
         archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
         return archivo_creado
+
+
 

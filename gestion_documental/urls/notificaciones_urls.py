@@ -87,7 +87,7 @@ urlpatterns = [
     path('get-constancias-notificacion/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
     path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
     path('generador-documentos/', views.GeneradorDocumentos.as_view(),name='generador-documentos'),
-    path('notificaciones-correspondencia-create/', views.NotificacionesCorrespondenciaCreate.as_view(),name='notificaciones-correspondencia-create'),
+    path('notificaciones-automaticas-create/', views.NotificacionesAutomaticasCreate.as_view(),name='notificaciones-automaticas-create'),
     
 
     

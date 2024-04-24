@@ -8,7 +8,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
+from tramites.models.tramites_models import ActosAdministrativos, AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -17,6 +17,12 @@ from transversal.models.personas_models import Personas
 class TareasAsignadasOpasUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = TareasAsignadas
+        fields = '__all__'
+
+
+class ActosAdministrativosCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActosAdministrativos
         fields = '__all__'
 
 class SolicitudesTramitesOpaDetalleSerializer(serializers.ModelSerializer):
