@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime, date, timedelta
 
+from io import BytesIO
 import json
 from django.conf import settings
 from django.db.models import Q
@@ -22,10 +23,10 @@ from gestion_documental.models.configuracion_tiempos_respuesta_models import Con
 from gestion_documental.models.radicados_models import  AsignacionTramites, BandejaTareasPersona, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from rest_framework.exceptions import ValidationError,NotFound
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_opas_serializer import  AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaOPAGetSerializer, RespuestaOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, RespuestasOPAGetSeralizer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
+from gestion_documental.serializers.bandeja_tareas_opas_serializer import  ActosAdministrativosCreateSerializer, AdicionalesDeTareasopaGetByTareaSerializer, Anexos_TramitresAnexosGetSerializer, AnexosRespuestaRequerimientosGetSerializer, AnexosTramiteCreateSerializer, OpaTramiteDetalleGetBandejaTareasSerializer, OpaTramiteTitularGetBandejaTareasSerializer, RequerimientoSobreOPACreateSerializer, RequerimientoSobreOPATramiteGetSerializer, RequerimientosOpaTramiteCreateserializer, RespuestaOPAGetSerializer, RespuestaOpaTramiteCreateserializer, RespuestaRequerimientoOPACreateserializer, RespuestasOPAGetSeralizer, SolicitudesTramitesOpaDetalleSerializer, TareasAsignadasOpasGetSerializer, TareasAsignadasOpasUpdateSerializer,Anexos_RequerimientoCreateSerializer,RequerimientoSobreOPAGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import AnexosCreate, Estados_PQRCreate, MetadatosAnexosTmpCreate, TareaBandejaTareasPersonaUpdate
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites, TiposActosAdministrativos
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.utils import UtilsGestor
 from seguridad.utils import Util
@@ -238,6 +239,7 @@ class CrearExpedienteOPA(generics.CreateAPIView):
         return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':serializer.data}, status=status.HTTP_201_CREATED)
 class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
     serializer_class = TareasAsignadasOpasUpdateSerializer
+    actos_administrativo = ActosAdministrativosCreateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
@@ -326,6 +328,13 @@ class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
             if not expediente:
                 raise NotFound("No se encontro el expediente")
            
+
+           #hola
+           #TiposActosAdministrativos
+            tipo_acto = TiposActosAdministrativos.objects.filter(id_tipo_acto_administrativo=1).first()
+            #acta_inicio
+
+            expediente.id_tipo_acto = tipo_acto
             tramite = asignacion.id_solicitud_tramite
             tramite.id_expediente = expediente
             tramite.fecha_expediente = respuesta['fecha_apertura_expediente']
@@ -1190,19 +1199,68 @@ class RespuestaPQRSDFByTra(generics.UpdateAPIView):
         
 
 from docxtpl import DocxTemplate
-def acta_inicio(request, pk):
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
-    context = {
-        'key':pk
+class ActaInicioCreate(generics.CreateAPIView):
 
-    }
 
-    pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/prueba.docx'
-    outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
 
-    doc = DocxTemplate(pathToTemplate)
-    doc.render(context)
-    doc.save(outputPath)
+    @transaction.atomic
+    def create(self, request):
+        fecha_actual =datetime.now()
+        data_in = request.data
 
-    return render(request, 'hola')
+
+
+        dato=self.acta_inicio(data_in['pk'])
+        memoria = self.document_to_inmemory_uploadedfile(dato)
+        data_archivos =[]
+        vista_archivos = ArchivosDgitalesCreate()
+        ruta = "home,BIA,Otros,RecursoHidrico,Avances"
+
+        respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},memoria)
+        data_archivo = respuesta_archivo.data['data']
+        if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+            return respuesta_archivo
+        
+        
+        print(dato)
+
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':data_archivo, }, status=status.HTTP_200_OK)
+
+
+
+    def document_to_inmemory_uploadedfile(self,doc):
+        # Guardar el documento en un búfer de memoria
+        buffer = BytesIO()
+        doc.save(buffer)
+        
+        # Crear un objeto InMemoryUploadedFile
+        file = InMemoryUploadedFile(
+            buffer,  # El búfer de memoria que contiene los datos
+            None,    # El campo de archivo (no es relevante en este contexto)
+            'output.docx',  # El nombre del archivo
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # El tipo MIME del archivo
+            buffer.tell(),  # El tamaño del archivo en bytes
+            None     # El conjunto de caracteres (no es relevante en este contexto)
+        )
+        
+        return file
+    def acta_inicio(self,pk):
+
+
+        context = {
+            'key':pk
+
+        }
+
+        pathToTemplate = str(settings.BASE_DIR) + '/recaudo/templates/prueba.docx'
+        outputPath = str(settings.BASE_DIR) + '/recaudo/templates/output.docx'
+
+        doc = DocxTemplate(pathToTemplate)
+        doc.render(context)
+        #doc.save(outputPath)
+
+        return doc

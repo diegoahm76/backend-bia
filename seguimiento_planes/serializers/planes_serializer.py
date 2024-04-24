@@ -362,19 +362,15 @@ class TableroPGARByObjetivoSerializer(serializers.ModelSerializer):
 
 
     def get_porcentajes(self, obj):
-        #ObjetivoSerializer
+        agno = self.context['agno']
         porcentajes = {
             "pvance_fisico": 0,
             "pavance_fisico_acomulado": 0,
             "pavance_financiero": 0,
             "pavance_recursos_obligados": 0
         }
-        pvance_fisico = 0
-        pavance_fisico_acomulado = 0
-        pavance_financiero = 0
-        pavance_recursos_obligados = 0
         iterador = 0
-        seguimientoPGAR = SeguimientoPGAR.objects.filter(id_eje_estrategico=obj.id_eje_estrategico)
+        seguimientoPGAR = SeguimientoPGAR.objects.filter(id_eje_estrategico=obj.id_eje_estrategico, ano_PGAR=agno)
         for seguimiento in seguimientoPGAR:
             porcentajes['pvance_fisico'] = porcentajes['pvance_fisico'] + seguimiento.pavance_fisico
             porcentajes['pavance_fisico_acomulado'] = porcentajes['pavance_fisico_acomulado'] + seguimiento.pavance_fisico_acumulado
@@ -388,3 +384,43 @@ class TableroPGARByObjetivoSerializer(serializers.ModelSerializer):
         porcentajes['pavance_financiero'] = porcentajes['pavance_financiero'] / iterador
         porcentajes['pavance_recursos_obligados'] = porcentajes['pavance_recursos_obligados'] / iterador
         return porcentajes
+    
+class TableroPGARByEjeSerializer(serializers.ModelSerializer):
+    porcentajes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EjeEstractegico
+        fields = '__all__'
+
+
+    def get_porcentajes(self, obj):
+        agno_inicio = self.context['agno_inicio']
+        agno_fin = self.context['agno_fin']
+        agnos = []
+        
+        for agno in range(agno_inicio, agno_fin + 1):
+            porcenjates_año = {
+                "año": 0,
+                "pvance_fisico": 0,
+                "pavance_fisico_acomulado": 0,
+                "pavance_financiero": 0,
+                "pavance_recursos_obligados": 0
+            }
+            iterador = 0
+            seguimientoPGAR = SeguimientoPGAR.objects.filter(id_eje_estrategico=obj.id_eje_estrategico, ano_PGAR=agno)
+            for seguimiento in seguimientoPGAR:
+                porcenjates_año['pvance_fisico'] = porcenjates_año['pvance_fisico'] + seguimiento.pavance_fisico
+                porcenjates_año['pavance_fisico_acomulado'] = porcenjates_año['pavance_fisico_acomulado'] + seguimiento.pavance_fisico_acumulado
+                porcenjates_año['pavance_financiero'] = porcenjates_año['pavance_financiero'] + seguimiento.pavance_financiero
+                porcenjates_año['pavance_recursos_obligados'] = porcenjates_año['pavance_recursos_obligados'] + seguimiento.pavance_recurso_obligado
+                iterador = iterador + 1
+            if iterador != 0:
+                porcenjates_año['pvance_fisico'] = porcenjates_año['pvance_fisico'] / iterador
+                porcenjates_año['pavance_fisico_acomulado'] = porcenjates_año['pavance_fisico_acomulado'] / iterador
+                porcenjates_año['pavance_financiero'] = porcenjates_año['pavance_financiero'] / iterador
+                porcenjates_año['pavance_recursos_obligados'] = porcenjates_año['pavance_recursos_obligados'] / iterador
+                print(agno)
+                porcenjates_año['año'] = agno - (agno_inicio - 1)
+                agnos.append(porcenjates_año)
+
+        return agnos

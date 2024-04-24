@@ -497,6 +497,7 @@ class ConstanciaNotificacionSerializer(serializers.ModelSerializer):
                   'id_persona_notifica',
                   'id_registro_notificacion_correspondencia',
                   'id_tipo_notificacion_correspondencia',
+                  'nombre_tipo_notificacion',
                   'id_causa_o_anomalia',
                   'observaciones',
                   'id_estado_actual_notificacion_correspondencia')

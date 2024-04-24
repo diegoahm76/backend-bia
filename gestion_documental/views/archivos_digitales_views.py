@@ -89,6 +89,7 @@ class ArchivosDgitalesCreate(generics.CreateAPIView):
         try:
             data = data
             archivo = data_archivos
+            print(type(archivo))
 
             ruta = ""
             if 'ruta' in data:
