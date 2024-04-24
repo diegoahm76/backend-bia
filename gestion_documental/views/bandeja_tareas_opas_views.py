@@ -30,6 +30,11 @@ from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitude
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.utils import UtilsGestor
 from seguridad.utils import Util
+
+from docxtpl import DocxTemplate
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
 class TareasAsignadasGetOpasByPersona(generics.ListAPIView):
     serializer_class = TareasAsignadasOpasGetSerializer
     queryset = TareaBandejaTareasPersona.objects.all()
@@ -332,7 +337,7 @@ class TareasAsignadasAceptarOpaUpdate(generics.UpdateAPIView):
            #hola
            #TiposActosAdministrativos
             tipo_acto = TiposActosAdministrativos.objects.filter(id_tipo_acto_administrativo=1).first()
-            #acta_inicio
+            ActaInicioCreate
 
             expediente.id_tipo_acto = tipo_acto
             tramite = asignacion.id_solicitud_tramite
@@ -1198,9 +1203,6 @@ class RespuestaPQRSDFByTra(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
         
 
-from docxtpl import DocxTemplate
-
-from django.core.files.uploadedfile import InMemoryUploadedFile
 
 
 class ActaInicioCreate(generics.CreateAPIView):
