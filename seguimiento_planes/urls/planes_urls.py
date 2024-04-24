@@ -197,6 +197,7 @@ urlpatterns=[
 
     #Tableros de Control
     path('tablero-control-objetivos/<str:pk>/',views.TableroPGARByObjetivo.as_view(),name='tableroControlObjetivos'),
+    path('tablero-control-ejes/',views.TableroPGARByEje.as_view(),name='tableroControlEjes'),
 
 
 ]
