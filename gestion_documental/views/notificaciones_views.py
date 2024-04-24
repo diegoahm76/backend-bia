@@ -693,7 +693,7 @@ class MetadatosNotificacionesCreate(generics.CreateAPIView):
         anexo = data_metadatos['anexo']
 
         metadato['id_anexo'] = anexo['id_anexo']
-        metadato['fecha_creacion_doc'] = datetime.combine(data_metadatos['fecha_registro'].date() , time())
+        metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro']
         metadato['cod_origen_archivo'] = "E"
         metadato['es_version_original'] = True
         metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']

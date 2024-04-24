@@ -321,7 +321,8 @@ class SeguiemientoPGARSerializer(serializers.ModelSerializer):
     nombre_armonizacion = serializers.ReadOnlyField(source='id_armonizar.nombre_relacion', default=None)
     nombre_planPGAR = serializers.ReadOnlyField(source='id_armonizar.id_planPGAR.nombre_plan', default=None)
     nombre_planPAI = serializers.ReadOnlyField(source='id_armonizar.id_planPAI.nombre_plan', default=None)
-    nombre_objetivo = serializers.ReadOnlyField(source='id_objetivo.nombre_objetivo', default=None)
+    id_objetivo = serializers.ReadOnlyField(source='id_eje_estrategico.id_objetivo.id_objetivo', default=None)
+    nombre_objetivo = serializers.ReadOnlyField(source='id_eje_estrategico.id_objetivo.nombre_objetivo', default=None)
     nombre_eje_estrategico = serializers.ReadOnlyField(source='id_eje_estrategico.nombre', default=None)
     nombre_meta = serializers.ReadOnlyField(source='id_meta_eje.nombre_meta_eje', default=None)
     nombre_linea_base = serializers.ReadOnlyField(source='id_linea_base.nombre_linea_base', default=None)
@@ -329,6 +330,8 @@ class SeguiemientoPGARSerializer(serializers.ModelSerializer):
     nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
     nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
     nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
+    id_producto = serializers.ReadOnlyField(source='id_actividad.id_producto.id_producto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_actividad.id_producto.nombre_producto', default=None)
     nombre_unidad_org = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     nombre_indicador_seg = serializers.ReadOnlyField(source='id_indicador_seg.nombre_indicador', default=None)
     objetivoPGAR = serializers.SerializerMethodField()
@@ -420,6 +423,46 @@ class TableroPGARByEjeSerializer(serializers.ModelSerializer):
                 porcenjates_año['pavance_financiero'] = porcenjates_año['pavance_financiero'] / iterador
                 porcenjates_año['pavance_recursos_obligados'] = porcenjates_año['pavance_recursos_obligados'] / iterador
                 print(agno)
+                porcenjates_año['año'] = agno - (agno_inicio - 1)
+                agnos.append(porcenjates_año)
+
+        return agnos
+    
+
+class TableroPGARObjetivoEjeSerializer(serializers.ModelSerializer):
+    porcentajes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EjeEstractegico
+        fields = '__all__'
+
+
+    def get_porcentajes(self, obj):
+        agno_inicio = self.context['agno_inicio']
+        agno_fin = self.context['agno_fin']
+        agnos = []
+        
+        for agno in range(agno_inicio, agno_fin + 1):
+            porcenjates_año = {
+                "año": 0,
+                "pvance_fisico": 0,
+                "pavance_fisico_acomulado": 0,
+                "pavance_financiero": 0,
+                "pavance_recursos_obligados": 0
+            }
+            iterador = 0
+            seguimientoPGAR = SeguimientoPGAR.objects.filter(id_eje_estrategico=obj.id_eje_estrategico, ano_PGAR=agno)
+            for seguimiento in seguimientoPGAR:
+                porcenjates_año['pvance_fisico'] = porcenjates_año['pvance_fisico'] + seguimiento.pavance_fisico
+                porcenjates_año['pavance_fisico_acomulado'] = porcenjates_año['pavance_fisico_acomulado'] + seguimiento.pavance_fisico_acumulado
+                porcenjates_año['pavance_financiero'] = porcenjates_año['pavance_financiero'] + seguimiento.pavance_financiero
+                porcenjates_año['pavance_recursos_obligados'] = porcenjates_año['pavance_recursos_obligados'] + seguimiento.pavance_recurso_obligado
+                iterador = iterador + 1
+            if iterador != 0:
+                porcenjates_año['pvance_fisico'] = porcenjates_año['pvance_fisico'] / iterador
+                porcenjates_año['pavance_fisico_acomulado'] = porcenjates_año['pavance_fisico_acomulado'] / iterador
+                porcenjates_año['pavance_financiero'] = porcenjates_año['pavance_financiero'] / iterador
+                porcenjates_año['pavance_recursos_obligados'] = porcenjates_año['pavance_recursos_obligados'] / iterador
                 porcenjates_año['año'] = agno - (agno_inicio - 1)
                 agnos.append(porcenjates_año)
 
