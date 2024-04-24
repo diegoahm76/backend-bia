@@ -3,7 +3,7 @@ from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesSerializer
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
+from recurso_hidrico.models.bibliotecas_models import AccionesCorrectivas, ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from transversal.models.personas_models import Personas
 
 
@@ -569,4 +569,9 @@ class DatosSesionPruebaBombeoDeleteSerializer(serializers.ModelSerializer):
 class DatosSesionPruebaBombeoGetSerializer(serializers.ModelSerializer):
     class Meta:
         model=DatosSesionPruebaBombeo
+        fields=('__all__')
+
+class AccionesCorrectivasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=AccionesCorrectivas
         fields=('__all__')
