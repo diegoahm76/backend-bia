@@ -532,8 +532,8 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         cursor.execute("DELETE FROM rt973tramiteftehidtra")
         cursor.execute("DELETE FROM rt976tramitepaso")
         cursor.execute("DELETE FROM rt918tipoexpediente")
-        # cursor.execute("DELETE FROM rt909liqconcepto")
-        # cursor.execute("DELETE FROM rt919estadoexpediente")
+        cursor.execute("DELETE FROM rt909liqconcepto")
+        cursor.execute("DELETE FROM rt919estadoexpediente")
 
 
 
@@ -962,9 +962,9 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
  """
 
 
-        # for dato_909 in data_909:
-        #   dato_909 = tuple(None if val is None else val for val in dato_909)
-        #   cursor.execute(insert_query_909, dato_909)
+        for dato_909 in data_909:
+          dato_909 = tuple(None if val is None else val for val in dato_909)
+          cursor.execute(insert_query_909, dato_909)
 
 
 
@@ -975,50 +975,9 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     VALUES (%s, %s, %s, %s, %s)
  """
 
-        # for dato_919 in data_919:
-        #   dato_919 = tuple(None if val is None else val for val in dato_919)
-        #   cursor.execute(insert_query_919, dato_919)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        for dato_919 in data_919:
+          dato_919 = tuple(None if val is None else val for val in dato_919)
+          cursor.execute(insert_query_919, dato_919)
 
 
 

@@ -778,3 +778,34 @@ class T918TipoExpediente(models.Model):
 
     class Meta:
         db_table = 'rt918tipoexpediente'
+
+
+
+class T909LiqConcepto(models.Model):
+    t909codcia = models.CharField(max_length=5, db_column='t909codcia', null=True)
+    t909codtiporenta = models.CharField(max_length=5, db_column='t909codtiporenta', null=True)
+    t909numliquidacion = models.IntegerField(db_column='t909numliquidacion', null=True)
+    t909codconcepto = models.CharField(max_length=5, db_column='t909codconcepto', null=True)
+    t909valor = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valor', null=True)
+    t909valorpagado = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valorpagado', null=True)
+    t909valorbasesancion = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valorbasesancion', null=True)
+    t909fechabasesancion = models.DateTimeField(db_column='t909fechabasesancion', null=True)
+    t909valorprescripcion = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valorprescripcion', null=True)
+    t909valordescbenef = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valordescbenef', null=True)
+    t909valorpagoantbenef = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valorpagoantbenef', null=True)
+    t909valordeterioro = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valordeterioro', null=True)
+    t909valorpagadodet = models.DecimalField(max_digits=19, decimal_places=4, db_column='t909valorpagadodet', null=True)
+
+    class Meta:
+        db_table = 'rt909liqconcepto'
+
+
+class T919EstadoExpediente(models.Model):
+    t919codcia = models.CharField(max_length=5, db_column='t919codcia', null=True)
+    t919codestadoexp = models.CharField(max_length=5, db_column='t919codestadoexp', null=True)
+    t919nombre = models.CharField(max_length=100, db_column='t919nombre', null=True)
+    t919observacion = models.CharField(max_length=255, db_column='t919observacion', null=True)
+    t919delete = models.CharField(max_length=1, db_column='t919delete', null=True)
+
+    class Meta:
+        db_table = 'rt919estadoexpediente'
