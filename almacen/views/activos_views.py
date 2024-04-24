@@ -939,7 +939,7 @@ class CrearArchivosOpcionales(generics.CreateAPIView):
         data_archivo = {
             'es_Doc_elec_archivo': True,
             'ruta': ruta,
-            'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            'md5_hash': md5_value
         }
         
         archivo_class = ArchivosDgitalesCreate()
