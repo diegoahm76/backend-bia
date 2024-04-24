@@ -101,7 +101,7 @@ urlpatterns = [
 
 
     #acta_inicio
-    path('acta_inicio/create/', views_opas.ActaInicioCreate.as_view(), name='crear-acta-inicio'),
+    path('4 ', views_opas.ActaInicioCreate.as_view(), name='crear-acta-inicio'),
 
     
 ]

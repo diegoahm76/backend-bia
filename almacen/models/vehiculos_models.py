@@ -123,7 +123,7 @@ class SolicitudesViajes(models.Model):
     tiene_expediente_asociado = models.BooleanField(default=False, db_column="T075tieneExpedienteAsociado")
     id_expediente_asociado = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, db_column='T075Id_ExpedienteAsociado',null=True, blank=True)
     motivo_viaje = models.CharField(max_length=255, db_column="T075motivoViajeSolicitado")
-    direccion = models.CharField(max_length=255, db_column="T075direccion")
+    direccion = models.CharField(max_length=255,null=True, blank=True, db_column="T075direccion")
     cod_municipio = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T075Cod_MunicipioDestino")
     indicaciones_destino = models.CharField(max_length=255, db_column="T075indicacionesDestino")
     nro_pasajeros = models.SmallIntegerField(db_column="T075nroPasajeros")
