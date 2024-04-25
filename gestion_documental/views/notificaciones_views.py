@@ -251,7 +251,6 @@ class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada,}, status=status.HTTP_200_OK)   
 
-
     
 class GetNotificacionesCorrespondeciaAnexos(generics.RetrieveAPIView):
     serializer_class = NotificacionesCorrespondenciaAnexosSerializer
@@ -270,7 +269,6 @@ class GetNotificacionesCorrespondeciaAnexos(generics.RetrieveAPIView):
         except Exception as e:
             return Response({'success': False, 'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
     
 class UpdateSolicitudNotificacionAsignacion(generics.UpdateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
@@ -283,7 +281,8 @@ class UpdateSolicitudNotificacionAsignacion(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return instance
-    
+
+ 
 class CrearAsignacionNotificacion(generics.CreateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -360,7 +359,8 @@ class CrearTareas(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return instance
-    
+
+  
 class UpdateTareasAsignacion(generics.UpdateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
 
@@ -573,7 +573,8 @@ class CrearNotiicacionManual(generics.CreateAPIView):
             valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, serializer.data['id_notificacion_correspondencia'], fecha_actual, id_persona_recibe_solicitud)
 
         return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
-        
+
+      
 class AnexosCreate(generics.CreateAPIView):
     serializer_class = AnexosPostSerializer
 
@@ -661,6 +662,7 @@ class AnexosCreate(generics.CreateAPIView):
         archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
         return archivo_creado
 
+
 class AnexoNotificacionesCreate(generics.CreateAPIView):
     serializer_class = AnexosNotificacionPostSerializer
     
@@ -673,7 +675,8 @@ class AnexoNotificacionesCreate(generics.CreateAPIView):
 
         except Exception as e:
             raise ValidationError(str(e))  
-        
+
+
 class MetadatosNotificacionesCreate(generics.CreateAPIView):
     serializer_class = MetadatosPostSerializer
 
@@ -726,7 +729,8 @@ class TiposNotificacionesCorrespondenciaGet(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-    
+
+
 class TiposNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
     permission_classes = [IsAuthenticated]
@@ -797,7 +801,8 @@ class EstadosNotificacionesCorrespondenciaGet(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-    
+
+
 class EstadosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
     permission_classes = [IsAuthenticated]
@@ -867,7 +872,8 @@ class CausaOAnomaliasNotificacionesCorrespondenciaGet(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-    
+
+
 class CausaOAnomaliasNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
     permission_classes = [IsAuthenticated]
@@ -938,7 +944,8 @@ class TiposAnexosNotificacionesCorrespondenciaGet(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-    
+
+
 class TiposAnexosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
     permission_classes = [IsAuthenticated]
@@ -1000,7 +1007,8 @@ class TiposDocumentosNotificacionesCorrespondenciaGet(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-    
+
+
 class TiposDocumentosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
     permission_classes = [IsAuthenticated]
@@ -1311,7 +1319,8 @@ class RechazoNotificacionCorrespondencia(generics.UpdateAPIView):
             return Response({'succes': True, 'detail': 'La notificación se devolvio correctamente.', 'data': data}, status=status.HTTP_200_OK)
         else:
             return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+      
 class UpdateAsignacionTarea(generics.UpdateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -1358,6 +1367,38 @@ class UpdateAsignacionTarea(generics.UpdateAPIView):
             else:
                 return Response({'succes': False, 'detail': 'justificacion_rechazo es un parametro requerido.'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+class CancelarAsignacionNotificacion(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        queryset = AsignacionNotificacionCorrespondencia.objects.filter(id_notificacion_correspondencia=pk, cod_estado_asignacion='Pe').first()
+        if not queryset:
+            raise ValidationError(f'La asignación de la notificación con id {pk} no existe.')
+        else:
+            notificacion = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=pk)
+            notificacion.id_persona_asignada = None
+            notificacion.id_persona_asigna = None
+            notificacion.fecha_eleccion_estado = None
+            notificacion.cod_estado_asignacion = None
+            notificacion.save()
+            queryset.delete()
+            return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
+
+
+class CancelarAsignacionTarea(generics.UpdateAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        queryset = AsignacionNotificacionCorrespondencia.objects.filter(id_orden_notificacion=pk, cod_estado_asignacion='Pe').first()
+        if not queryset:
+            raise ValidationError(f'La asignación de la tarea con id {pk} no existe.')
+        else:
+            tarea = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=pk).first()
+            tarea.delete()
+            queryset.delete()
+            return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
+        
 
 ## Endpoints para la gaceta
 
@@ -1549,8 +1590,6 @@ class RegistrosNotificacionesCorrespondenciaGacetaUpdate(generics.UpdateAPIView)
         return Response({'succes': True, 'detail':'Se actualizó el registro correctamente', 'data':registro}, status=status.HTTP_200_OK)
 
 
-
-
 ## Endpoints para la pagina edictos
 
 class DatosNotificacionEdictosGet(generics.RetrieveAPIView):
@@ -1693,6 +1732,123 @@ class RegistrosNotificacionesCorrespondenciaCorreoUpdate(generics.CreateAPIView)
         registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
+## Endpoints para la pagina avisos
+
+class DatosNotificacionAvisosGet(generics.RetrieveAPIView):
+    serializer_class = RegistroNotificacionesCorrespondenciaPaginasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_registro_notificacion(self, id_registro_notificacion):
+        notificacion = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=id_registro_notificacion).first()
+        if not notificacion:
+            raise ValidationError(f'El registro de la notificacion con id {id_registro_notificacion} no existe.')
+        return notificacion
+    
+    def get(self, request, id_registro_notificacion):
+        registro_notificacion = self.get_registro_notificacion(id_registro_notificacion)
+        serializer = self.serializer_class(registro_notificacion)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class AnexosNotificacionAvisosGet(generics.ListAPIView):
+    serializer_class = AnexosNotificacionesCorrespondenciaDatosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_anexos(self, id_registro_notificacion):
+
+        try:
+            notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('El registro de la notificación no existe.')
+        
+        anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia)
+        return anexos
+
+    def get(self, request, id_registro_notificacion):
+        anexos = self.get_anexos(id_registro_notificacion)
+        serializer = self.serializer_class(anexos, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class AnexosSoporteAvisosCreate(generics.CreateAPIView):
+    serializer_class = AnexosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        instancia_anexos = AnexosSoporteGacetaCreate()
+        anexo = instancia_anexos.create_anexo(data)
+        return Response({'succes': True, 'detail':'Se creo el anexo correctamente', 'data':anexo}, status=status.HTTP_201_CREATED)
+    
+
+class RegistrosNotificacionesCorrespondenciaAvisosUpdate(generics.CreateAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_registro_notificacion):
+        data = request.data
+        instancia_registro = RegistrosNotificacionesCorrespondenciaGacetaUpdate()
+        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
+        return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
+
+## Endpoints para la pagina personal
+
+class DatosNotificacionPersonalGet(generics.RetrieveAPIView):
+    serializer_class = RegistroNotificacionesCorrespondenciaPaginasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_registro_notificacion(self, id_registro_notificacion):
+        notificacion = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=id_registro_notificacion).first()
+        if not notificacion:
+            raise ValidationError(f'El registro de la notificacion con id {id_registro_notificacion} no existe.')
+        return notificacion
+    
+    def get(self, request, id_registro_notificacion):
+        registro_notificacion = self.get_registro_notificacion(id_registro_notificacion)
+        serializer = self.serializer_class(registro_notificacion)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class AnexosNotificacionPersonalGet(generics.ListAPIView):
+    serializer_class = AnexosNotificacionesCorrespondenciaDatosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_anexos(self, id_registro_notificacion):
+
+        try:
+            notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('El registro de la notificación no existe.')
+        
+        anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia)
+        return anexos
+
+    def get(self, request, id_registro_notificacion):
+        anexos = self.get_anexos(id_registro_notificacion)
+        serializer = self.serializer_class(anexos, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class AnexosSoportePersonalCreate(generics.CreateAPIView):
+    serializer_class = AnexosNotificacionesCorrespondenciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        instancia_anexos = AnexosSoporteGacetaCreate()
+        anexo = instancia_anexos.create_anexo(data)
+        return Response({'succes': True, 'detail':'Se creo el anexo correctamente', 'data':anexo}, status=status.HTTP_201_CREATED)
+    
+
+class RegistrosNotificacionesCorrespondenciaPersonalUpdate(generics.CreateAPIView):
+    serializer_class = Registros_NotificacionesCorrespondeciaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_registro_notificacion):
+        data = request.data
+        instancia_registro = RegistrosNotificacionesCorrespondenciaGacetaUpdate()
+        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
+        return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 
 ## Endpoints para la correspondencia fisica
@@ -1725,7 +1881,6 @@ class DatosTitularesCorrespondenciaGet(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
-
 
 
 class AnexosNotificacionCorrespondenciaGet(generics.ListAPIView):
@@ -1789,37 +1944,6 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Updat
 
         return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
     
-
-class CancelarAsignacionNotificacion(generics.UpdateAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, pk):
-        queryset = AsignacionNotificacionCorrespondencia.objects.filter(id_notificacion_correspondencia=pk, cod_estado_asignacion='Pe').first()
-        if not queryset:
-            raise ValidationError(f'La asignación de la notificación con id {pk} no existe.')
-        else:
-            notificacion = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=pk)
-            notificacion.id_persona_asignada = None
-            notificacion.id_persona_asigna = None
-            notificacion.fecha_eleccion_estado = None
-            notificacion.cod_estado_asignacion = None
-            notificacion.save()
-            queryset.delete()
-            return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
-        
-class CancelarAsignacionTarea(generics.UpdateAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, pk):
-        queryset = AsignacionNotificacionCorrespondencia.objects.filter(id_orden_notificacion=pk, cod_estado_asignacion='Pe').first()
-        if not queryset:
-            raise ValidationError(f'La asignación de la tarea con id {pk} no existe.')
-        else:
-            tarea = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=pk).first()
-            tarea.delete()
-            queryset.delete()
-            return Response({'succes': True, 'detail':'Se canceló la asignación de la notificación correctamente'}, status=status.HTTP_200_OK)
-        
 
 class GenerarConstanciaNotificacion(generics.CreateAPIView):
     serializer_class = ConstanciaNotificacionSerializer
@@ -2195,7 +2319,6 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
             valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, serializer.data['id_notificacion_correspondencia'], fecha_actual, persona_solicita.id_persona)
 
         return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
-
 
 
 class AnexosSistemaCreate(generics.CreateAPIView):

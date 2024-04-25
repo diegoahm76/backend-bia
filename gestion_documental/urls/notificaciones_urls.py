@@ -68,6 +68,18 @@ urlpatterns = [
     path('create-soportes-anexos-edictos/', views.AnexosSoporteEdictosCreate.as_view(),name='create-soportes-anexos-edictos'),
     path('update-registro-notificacion-edictos/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaEdictosUpdate.as_view(),name='update-registro-notificacion-edictos'),
 
+    # Pagina Avisos
+    path('get-datos-notificacion-avisos/<int:id_registro_notificacion>/', views.DatosNotificacionAvisosGet.as_view(),name='get-datos-notificacion-avisos'),
+    path('get-datos-notificacion-anexos-avisos/<int:id_registro_notificacion>/', views.AnexosNotificacionAvisosGet.as_view(),name='get-datos-notificacion-anexos-avisos'),
+    path('create-soportes-anexos-avisos/', views.AnexosSoporteAvisosCreate.as_view(),name='create-soportes-anexos-avisos'),
+    path('update-registro-notificacion-avisos/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaAvisosUpdate.as_view(),name='update-registro-notificacion-avisos'),
+
+    # Pagina Personal
+    path('get-datos-notificacion-personal/<int:id_registro_notificacion>/', views.DatosNotificacionPersonalGet.as_view(),name='get-datos-notificacion-personal'),
+    path('get-datos-notificacion-anexos-personal/<int:id_registro_notificacion>/', views.AnexosNotificacionPersonalGet.as_view(),name='get-datos-notificacion-anexos-personal'),
+    path('create-soportes-anexos-personal/', views.AnexosSoportePersonalCreate.as_view(),name='create-soportes-anexos-personal'),
+    path('update-registro-notificacion-personal/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaPersonalUpdate.as_view(),name='update-registro-notificacion-personal'),
+
     # Correo electronico
     path('get-datos-notificacion-correo/<int:id_registro_notificacion>/', views.DatosNotificacionCorreoGet.as_view(),name='get-datos-notificacion-correo'),
     path('get-datos-titular-correo/<int:id_registro_notificacion>/', views.DatosTitularesCorreoGet.as_view(),name='get-datos-titular-correo'),
