@@ -69,10 +69,31 @@ class UpdateArrendarVehiculoSerializer(serializers.ModelSerializer):
 
 class SolicitudViajeSerializer(serializers.ModelSerializer):
     cod_departamento = serializers.ReadOnlyField(source='cod_municipio.cod_departamento.cod_departamento')
+    nombre_persona_solicita = serializers.SerializerMethodField()
+    nombre_persona_responsable = serializers.SerializerMethodField()
 
     class Meta:
         model = SolicitudesViajes
         fields = '__all__'
+
+
+    def get_nombre_persona_solicita(self, obj):
+        nombre_persona_solicita = None
+        if obj.id_persona_solicita:
+            nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                            obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+            nombre_persona_solicita = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_solicita = nombre_persona_solicita if nombre_persona_solicita != "" else None
+        return nombre_persona_solicita
+    
+    def get_nombre_persona_responsable(self, obj):
+        nombre_persona_responsable = None
+        if obj.id_persona_responsable:
+            nombre_list = [obj.id_persona_responsable.primer_nombre, obj.id_persona_responsable.segundo_nombre,
+                            obj.id_persona_responsable.primer_apellido, obj.id_persona_responsable.segundo_apellido]
+            nombre_persona_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_responsable = nombre_persona_responsable if nombre_persona_responsable != "" else None
+        return nombre_persona_responsable
 
 class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
     placa = serializers.SerializerMethodField()

@@ -1,5 +1,7 @@
 import copy
 from datetime import datetime
+from io import BytesIO
+from django.conf import settings
 from django.db import transaction
 from rest_framework import generics,status
 from rest_framework.response import Response
@@ -27,7 +29,70 @@ from tramites.models.tramites_models import SolicitudesTramites
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
 
+from docxtpl import DocxTemplate
 
+from django.core.files.uploadedfile import InMemoryUploadedFile
+
+
+
+class ActaInicioCreate(generics.CreateAPIView):
+
+
+
+    @transaction.atomic
+    def create(self, request):
+        fecha_actual =datetime.now()
+        data_in = request.data
+
+
+
+        dato=self.acta_inicio(data_in)
+        memoria = self.document_to_inmemory_uploadedfile(dato)
+        data_archivos =[]
+        vista_archivos = ArchivosDgitalesCreate()
+        ruta = "home,BIA,Otros,RecursoHidrico,Avances"
+
+        respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},memoria)
+        data_archivo = respuesta_archivo.data['data']
+        if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+            return respuesta_archivo
+        
+        
+        print(dato)
+
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':data_archivo, }, status=status.HTTP_200_OK)
+
+
+
+    def document_to_inmemory_uploadedfile(self,doc):
+        # Guardar el documento en un búfer de memoria
+        buffer = BytesIO()
+        doc.save(buffer)
+        
+        # Crear un objeto InMemoryUploadedFile
+        file = InMemoryUploadedFile(
+            buffer,  # El búfer de memoria que contiene los datos
+            None,    # El campo de archivo (no es relevante en este contexto)
+            'output.docx',  # El nombre del archivo
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # El tipo MIME del archivo
+            buffer.tell(),  # El tamaño del archivo en bytes
+            None     # El conjunto de caracteres (no es relevante en este contexto)
+        )
+        
+        return file
+    def acta_inicio(self,data):
+
+
+        context = data
+
+        pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/auto_plantilla.docx'
+        outputPath = str(settings.BASE_DIR) + '/gestion_documental/templates/output.docx'
+
+        doc = DocxTemplate(pathToTemplate)
+        doc.render(context)
+        #doc.save(outputPath)
+
+        return doc
 
 
 class TareasAsignadasGetTramitesByPersona(generics.ListAPIView):
@@ -419,21 +484,43 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             request.data['id_und_org_oficina_respon_actual'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
             request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
             respuesta = vista_creadora_expediente.create(request)
-            respuesta = respuesta.data['data']
 
-            id_expediente = respuesta['id_expediente_documental']
+            print(respuesta.data)
+            #raise ValidationError("HAAA")
+            respuesta_expediente = respuesta.data['data']
+
+            id_expediente = respuesta_expediente['id_expediente_documental']
             expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
             if not expediente:
                 raise NotFound("No se encontro el expediente")
            
+            data_auto = {}
+
+            data_auto['n_auto'] = 1
+
+
+            crear = ActaInicioCreate()
+
+            data_acto= {}
+            request.data['n_auto'] = 'Auto 1'
+            request.data['n_expediente'] = respuesta_expediente['codigo_exp_consec_por_agno']
+           
+            archivo_acto = crear.create(request)
+
+            print(archivo_acto)
+            raise ValidationError("HAAA")
             tramite = asignacion.id_solicitud_tramite
             tramite.id_expediente = expediente
-            tramite.fecha_expediente = respuesta['fecha_apertura_expediente']
+            tramite.fecha_expediente = respuesta_expediente['fecha_apertura_expediente']
             tramite.save()
+
+            
+
+
             
            
 
-        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':"Se acepto el tramite correctamente.","data":serializer.data,'data_asignacion':data_asignacion,'data_expediente':{**respuesta_expediente}},status=status.HTTP_200_OK)
     
 
 
