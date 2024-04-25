@@ -2,9 +2,11 @@ from rest_framework import serializers
 from unittest.util import _MAX_LENGTH
 from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, AsignacionTramites
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesSerializer
 from recurso_hidrico.models.bibliotecas_models import AccionesCorrectivas, ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from transversal.models.personas_models import Personas
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
 
 
 class SeccionesSerializer(serializers.ModelSerializer):
@@ -572,6 +574,48 @@ class DatosSesionPruebaBombeoGetSerializer(serializers.ModelSerializer):
         fields=('__all__')
 
 class AccionesCorrectivasSerializer(serializers.ModelSerializer):
+    nombre_tramite = serializers.ReadOnlyField(source ='id_tramite.nombre_proyecto', default=None)
+    tipo_tramite = serializers.SerializerMethodField()
     class Meta:
         model=AccionesCorrectivas
         fields=('__all__')
+
+    def get_tipo_tramite(self, obj):
+        permisosAmbSolicitudesTramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_tramite).first()
+        return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
+    
+class TramiteSerializer(serializers.ModelSerializer):
+    nombre_proyecto = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre_proyecto')
+    numero_documento = serializers.ReadOnlyField(source='id_persona_titular.numero_documento')
+    radicado = serializers.SerializerMethodField()
+    nombre_solicitante = serializers.SerializerMethodField()
+    grupo_funcional = serializers.SerializerMethodField()
+    class Meta:
+        model=SolicitudesTramites
+        fields=('__all__')
+
+    def get_nombre_solicitante(self, obj):
+        if obj.id_persona_titular.tipo_persona == 'N':
+            return f'{obj.id_persona_titular.primer_nombre} {obj.id_persona_titular.segundo_nombre} {obj.id_persona_titular.primer_apellido} {obj.id_persona_titular.segundo_apellido}'
+        else:
+            return obj.id_persona_titular.razon_social
+        
+    def get_radicado(self, obj):
+        cadena = ""
+        radicado = obj
+        if radicado.id_radicado:
+            agno_radicado = radicado.fecha_radicado.year
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=agno_radicado ,cod_tipo_radicado=radicado.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        else: 
+            return 'SIN RADICAR'
+        
+    def get_grupo_funcional(self, obj):
+        asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
+        if asignacion.id_und_org_seccion_asignada:
+            return asignacion.id_und_org_seccion_asignada.nombre
+        else:
+            return asignacion.id_und_org_oficina_asignada.nombre
