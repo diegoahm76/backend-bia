@@ -253,16 +253,16 @@ class IndicadorValor(models.Model):
     
 
 
-# class ModeloBaseSueldoMinimo(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     capacidad=models.CharField(max_length=255,db_column='T465Origen_de_datos')
-#     valor=
+class ModeloBaseSueldoMinimo(models.Model):
+    id = models.AutoField(primary_key=True)
+    capacidad=models.CharField(max_length=255,db_column='T470Capacidad')
+    valor=models.DecimalField(max_digits=15, decimal_places=0, db_column='T470Valor')
+    editable=models.BooleanField(default=False, db_column='T470Editable')
 
 
-
-#     class Meta:
-#         db_table = 'T465IndicadoresSemestral'
-#         verbose_name = 'Configuracion Interes'
-#         verbose_name_plural = 'Configuracion Interes'
+    class Meta:
+        db_table = 'T470ModeloBaseSueldoMinimo'
+        verbose_name = 'ModeloBase Sueldo Minimo'
+        verbose_name_plural = 'ModeloBase Sueldo Minimo'
      
 
