@@ -585,8 +585,11 @@ class AccionesCorrectivasSerializer(serializers.ModelSerializer):
         return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
     
 class TramiteSerializer(serializers.ModelSerializer):
-    nombre_proyecto = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre_proyecto')
-    numero_documento = serializers.ReadOnlyField(source='id_persona_titular.numero_documento')
+    #nombre_proyecto = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre_proyecto')
+    numero_auto_inicio = serializers.ReadOnlyField(source='id_auto_inicio.numero_acto_administrativo', default=None)
+    numero_expediente = serializers.SerializerMethodField()
+    tipo_tramite = serializers.SerializerMethodField() 
+    numero_documento = serializers.ReadOnlyField(source='id_persona_titular.numero_documento', default=None)
     radicado = serializers.SerializerMethodField()
     nombre_solicitante = serializers.SerializerMethodField()
     grupo_funcional = serializers.SerializerMethodField()
@@ -619,3 +622,14 @@ class TramiteSerializer(serializers.ModelSerializer):
             return asignacion.id_und_org_seccion_asignada.nombre
         else:
             return asignacion.id_und_org_oficina_asignada.nombre
+        
+    def get_tipo_tramite(self, obj):
+        permisosAmbSolicitudesTramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
+        if permisosAmbSolicitudesTramite:
+            return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
+        else:
+            return "Sin tipo de trámite"
+    
+    def get_numero_expediente(self, obj):
+        return f'{obj.id_expediente.codigo_exp_und_serie_subserie}-{obj.id_expediente.codigo_exp_Agno}-{obj.id_expediente.codigo_exp_consec_por_agno}'
+    
