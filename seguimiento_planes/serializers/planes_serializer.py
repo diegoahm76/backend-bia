@@ -422,7 +422,13 @@ class TableroPGARByEjeSerializer(serializers.ModelSerializer):
                 porcenjates_año['pavance_fisico_acomulado'] = porcenjates_año['pavance_fisico_acomulado'] / iterador
                 porcenjates_año['pavance_financiero'] = porcenjates_año['pavance_financiero'] / iterador
                 porcenjates_año['pavance_recursos_obligados'] = porcenjates_año['pavance_recursos_obligados'] / iterador
-                print(agno)
+                porcenjates_año['año'] = agno - (agno_inicio - 1)
+                agnos.append(porcenjates_año)
+            else:
+                porcenjates_año['pvance_fisico'] = 0
+                porcenjates_año['pavance_fisico_acomulado'] = 0
+                porcenjates_año['pavance_financiero'] = 0
+                porcenjates_año['pavance_recursos_obligados'] = 0
                 porcenjates_año['año'] = agno - (agno_inicio - 1)
                 agnos.append(porcenjates_año)
 

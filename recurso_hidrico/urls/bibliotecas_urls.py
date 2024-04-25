@@ -100,4 +100,13 @@ urlpatterns = [
     path('datos_sesiones_prueba_bombeo/delete/<str:pk>/',views.DatosSesionPruebaBombeoDelete.as_view(),name='delete_datos_sesiones_prueba_bombeo'),
     path('datos_sesiones_prueba_bombeo/get-by-id/<str:pk>/',views.DatosSesionPruebaBombeoGetById.as_view(),name='get-dato-sesion-pruebas-bombeo-by-id'),
     path('datos_sesiones_prueba_bombeo/get-by-sesion/<str:pk>/',views.DatosSesionPruebaBombeoGetBySesion.as_view(),name='get-dato-sesion-pruebas-bombeo-by-sesion'),
+
+
+    #Acciones Correctivas
+    path('acciones_correctivas/get-by-id-tramite/<str:pk>/',views.AccionesCorrectivasListByIdTramite.as_view(),name='list_acciones_correctivas'),
+    path('acciones_correctivas/create/',views.AccionesCorrectivasCreate.as_view(),name='create_acciones_correctivas'),
+    path('acciones_correctivas/update/<str:pk>/',views.AccionesCorrectivasUpdate.as_view(),name='update_acciones_correctivas'),
+    path('busqueda_tramites/',views.BusquedaTramitesByExpediente.as_view(),name='busqueda_tramites'),
+    
+    
 ]   
