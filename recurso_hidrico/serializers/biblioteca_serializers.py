@@ -611,7 +611,6 @@ class TramiteSerializer(serializers.ModelSerializer):
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=agno_radicado ,cod_tipo_radicado=radicado.id_radicado.cod_tipo_radicado).first()
             numero_con_ceros = str(radicado.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
-        
             return cadena
         else: 
             return 'SIN RADICAR'
@@ -620,8 +619,10 @@ class TramiteSerializer(serializers.ModelSerializer):
         asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
         if asignacion.id_und_org_seccion_asignada:
             return asignacion.id_und_org_seccion_asignada.nombre
-        else:
+        elif asignacion.id_und_org_oficina_asignada:
             return asignacion.id_und_org_oficina_asignada.nombre
+        else:
+            return "Sin asignar"
         
     def get_tipo_tramite(self, obj):
         permisosAmbSolicitudesTramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
@@ -631,5 +632,8 @@ class TramiteSerializer(serializers.ModelSerializer):
             return "Sin tipo de trámite"
     
     def get_numero_expediente(self, obj):
-        return f'{obj.id_expediente.codigo_exp_und_serie_subserie}-{obj.id_expediente.codigo_exp_Agno}-{obj.id_expediente.codigo_exp_consec_por_agno}'
+        if obj.id_expediente:
+            return f'{obj.id_expediente.codigo_exp_und_serie_subserie}-{obj.id_expediente.codigo_exp_Agno}-{obj.id_expediente.codigo_exp_consec_por_agno}'
+        else:
+            return "Sin expediente"
     
