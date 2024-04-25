@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from estaciones.serializers.parametros_serializers import ParametrosEstacionesUpdateSerializer, ParametrosEstacionesSerializer
 from estaciones.models.estaciones_models import ParametrosReferencia
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarParametrosReferenciaSensoresRecu
 
 class ConsultarParametroEstacion(generics.ListAPIView):
     serializer_class = ParametrosEstacionesSerializer
@@ -22,7 +23,7 @@ class ConsultarParametroEstacion(generics.ListAPIView):
 class ActualizarParametro(generics.UpdateAPIView):
     serializer_class = ParametrosEstacionesUpdateSerializer
     queryset = ParametrosReferencia.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarParametrosReferenciaSensoresRecu]
 
     def put(self, request, pk):
         data=request.data

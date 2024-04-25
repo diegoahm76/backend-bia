@@ -4,6 +4,7 @@ from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
 from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES,FORMULARIO_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta, Variables,ValoresVariables
+from seguridad.permissions.permissions_recaudo import PermisoActualizarConfiguracionVariablesRecaudo, PermisoActualizarIndicadoresGestionRecaudo, PermisoActualizarProfesionalesRecaudo, PermisoBorrarConfiguracionVariablesRecaudo, PermisoBorrarProfesionalesRecaudo, PermisoCrearConfiguracionVariablesRecaudo, PermisoCrearIndicadoresGestionRecaudo, PermisoCrearProfesionalesRecaudo
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -234,6 +235,7 @@ class Vista_Variables(generics.ListAPIView):
 class Crear_Variables(generics.CreateAPIView):
     queryset = Variables.objects.all()
     serializer_class = VariablesSerializer
+    permission_classes = [IsAuthenticated, ]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -256,6 +258,7 @@ class Crear_Variables(generics.CreateAPIView):
 class Borrar_Variables(generics.DestroyAPIView):
     queryset = Variables.objects.all()
     serializer_class = VariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarConfiguracionVariablesRecaudo]
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -271,6 +274,7 @@ class Borrar_Variables(generics.DestroyAPIView):
 class Actualizar_Variables(generics.UpdateAPIView):
     queryset = Variables.objects.all()
     serializer_class = VariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -305,6 +309,7 @@ class Vista_ValoresVariables(generics.ListAPIView):
 class Crear_ValoresVariables(generics.CreateAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearConfiguracionVariablesRecaudo]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -327,6 +332,7 @@ class Crear_ValoresVariables(generics.CreateAPIView):
 class Borrar_ValoresVariables(generics.DestroyAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarConfiguracionVariablesRecaudo]
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -342,6 +348,7 @@ class Borrar_ValoresVariables(generics.DestroyAPIView):
 class Actualizar_ValoresVariables(generics.UpdateAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -384,6 +391,7 @@ class CalculadoraDiasMeses(generics.CreateAPIView):
 class Crear_AdministraciondePersonal(generics.CreateAPIView):
     queryset = AdministraciondePersonal.objects.all()
     serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearProfesionalesRecaudo]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -452,6 +460,7 @@ class Vista_AdministraciondePersonal(generics.ListAPIView):
 class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
     queryset = AdministraciondePersonal.objects.all()
     serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarProfesionalesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -465,6 +474,7 @@ class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
 class Eliminar_AdministraciondePersonal(generics.DestroyAPIView):
     queryset = AdministraciondePersonal.objects.all()
     serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarProfesionalesRecaudo]
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -619,6 +629,7 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
 class CrearIndicadoresSemestral(generics.CreateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearIndicadoresGestionRecaudo]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -671,6 +682,7 @@ class Borrar_IndicadoresSemestral(generics.DestroyAPIView):
 class Actualizar_IndicadoresSemestral(generics.UpdateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarIndicadoresGestionRecaudo]
 
     def put(self, request, *args, **kwargs):
         try:

@@ -35,6 +35,7 @@ from recaudo.models.procesos_models import Bienes
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.garantias_models import RolesGarantias
 from recaudo.models.liquidaciones_models import Deudores
+from seguridad.permissions.permissions_recaudo import PermisoActualizarSolicitudFacilidadPago, PermisoCrearSolicitudFacilidadPago
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import ClasesTerceroPersona
 from recaudo.models.cobros_models import Cartera
@@ -280,6 +281,7 @@ class TiposBienesView(generics.ListAPIView):
 
 class AvaluoCreateView(generics.CreateAPIView):
     serializer_class = AvaluosSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_avaluo(self, data_in):
         bien = Bienes.objects.filter(id=data_in['id_bien']).first()
@@ -315,6 +317,7 @@ class AvaluoCreateView(generics.CreateAPIView):
 
 class BienCreateView(generics.CreateAPIView):
     serializer_class = BienSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_bien(self, data):
         serializer = self.serializer_class(data=data)
@@ -336,6 +339,7 @@ class BienCreateView(generics.CreateAPIView):
 
 class DetallesBienFacilidadPagoCreateView(generics.CreateAPIView):
     serializer_class = DetallesBienFacilidadPagoSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_bienes_facilidad(self, data):
         bien = Bienes.objects.filter(id=data['id_bien']).first()
@@ -366,6 +370,7 @@ class DetallesBienFacilidadPagoCreateView(generics.CreateAPIView):
 
 class GarantiasFacilidadCreateView(generics.CreateAPIView):
     serializer_class = GarantiasFacilidadSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_garantias_facilidad(self, data):
         rol = RolesGarantias.objects.filter(id=data['id_rol']).first()
@@ -396,6 +401,7 @@ class GarantiasFacilidadCreateView(generics.CreateAPIView):
 
 class CumplimientoRequisitosCreateView(generics.CreateAPIView):
     serializer_class = CumplimientoRequisitosSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_cumplimiento_requisitos(self, data):
         requisito_actuacion = RequisitosActuacion.objects.filter(id=data['id_requisito_actuacion']).first()
@@ -426,6 +432,7 @@ class CumplimientoRequisitosCreateView(generics.CreateAPIView):
 
 class DetallesFacilidadPagoCreateView(generics.CreateAPIView):
     serializer_class = DetallesFacilidadPagoSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_cartera_facilidad(self, data):
         cartera = Cartera.objects.filter(id=data['id_cartera']).first()
@@ -459,6 +466,7 @@ class DetallesFacilidadPagoCreateView(generics.CreateAPIView):
 
 class FacilidadPagoCreateView(generics.CreateAPIView):
     serializer_class = FacilidadesPagoSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_facilidad_pago(self, data):
         serializer = self.serializer_class(data=data)
@@ -719,6 +727,7 @@ class ListadoFacilidadesPagoFuncionarioViews(generics.ListAPIView):
 
 class FacilidadPagoFuncionarioUpdateView(generics.UpdateAPIView):
     serializer_class = FacilidadesPagoFuncionarioPutSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarSolicitudFacilidadPago]
 
     def update_funcionario(self, serializer):
         id_funcionario = serializer.validated_data.get('id_funcionario')

@@ -1,4 +1,5 @@
 from gestion_documental.serializers.ventanilla_serializers import PersonasSerializer, ActualizarAutorizacionesPersonaSerializer, AutorizacionNotificacionesSerializer
+from seguridad.permissions.permissions_transversal import PermisoActualizarAutorizacionNotificacionesOtrasCuentas
 from transversal.models.personas_models import Personas
 from rest_framework import generics,status
 from rest_framework.response import Response
@@ -257,6 +258,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
 class AutorizacionNotificacionesVentanilla(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarAutorizacionNotificacionesOtrasCuentas]
 
     def put(self, request, id_persona):
         persona_ = self.request.user.id_usuario

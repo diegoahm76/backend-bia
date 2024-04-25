@@ -2,6 +2,7 @@ from rest_framework import generics,status
 from rest_framework.response import Response
 from conservacion.models.viveros_models import HistoricoResponsableVivero, Vivero
 from almacen.models.generics_models import Bodegas
+from seguridad.permissions.permissions_transversal import PermisoActualizarVinculaciónColaboradores
 from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.serializers.vinculacion_serializers import BusquedaHistoricoCargoUndSerializer, GetDesvinculacion_persona, VinculacionColaboradorSerializer, ConsultaVinculacionColaboradorSerializer, UpdateVinculacionColaboradorSerializer
 from seguridad.models import HistoricoActivacion, OperacionesSobreUsuario, User
@@ -21,7 +22,7 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 class VinculacionColaboradorView(generics.UpdateAPIView):
     serializer_class = VinculacionColaboradorSerializer
     queryset = Personas.objects.filter(tipo_persona='N')
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarVinculaciónColaboradores]
 
     def put(self, request, id_persona):
         persona = self.queryset.all().filter(id_persona=id_persona).first()
@@ -132,7 +133,7 @@ class ConsultaVinculacionColaboradorView(generics.ListAPIView):
 class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = UpdateVinculacionColaboradorSerializer
     queryset = Personas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarVinculaciónColaboradores]
 
     def put(self, request, id_persona):
 
@@ -255,7 +256,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
 class Desvinculacion_persona(generics.UpdateAPIView):
     serializer_class = GetDesvinculacion_persona
     queryset = Personas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarVinculaciónColaboradores]
     
     def put(self,request,id_persona):
         

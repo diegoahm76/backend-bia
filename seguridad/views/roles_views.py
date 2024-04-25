@@ -59,14 +59,14 @@ class GetRol(ListAPIView):
     
 class RegisterRol(CreateAPIView):
     serializer_class=RolesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRoles]
     queryset=Roles.objects.all()
 
 #------------------------------------------------> Borrar un rol a un usuario
 class DeleteUserRol(DestroyAPIView):
     serializer_class = UsuarioRolesSerializers
     queryset = UsuariosRol.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRoles]
     
     def delete(self, request, pk):
         try:
@@ -102,7 +102,7 @@ class DeleteUserRol(DestroyAPIView):
 class DeleteRol(generics.RetrieveDestroyAPIView):
     serializer_class = RolesSerializer
     queryset = Roles.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRoles]
 
     def delete(self, request, id_rol):
 

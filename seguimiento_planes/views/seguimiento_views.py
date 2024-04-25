@@ -12,6 +12,7 @@ from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
 from seguimiento_planes.models.planes_models import Metas
+from seguridad.permissions.permissions_planes import PermisoActualizarCodigosUnspsc, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarSector, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearCodigosUnspsc, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearSector, PermisoCrearUbicaciones
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -20,7 +21,7 @@ from seguimiento_planes.models.planes_models import Metas
 class FuenteFinanciacionIndicadoresList(generics.ListAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         fuentes = self.get_queryset().filter(id_meta=pk)
@@ -33,7 +34,7 @@ class FuenteFinanciacionIndicadoresList(generics.ListAPIView):
 
 class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         fuentes = FuenteFinanciacionIndicadores.objects.filter(id_meta=request.data['id_meta'])
@@ -65,7 +66,7 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
 class FuenteFinanciacionIndicadoresUpdate(generics.UpdateAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -82,7 +83,7 @@ class FuenteFinanciacionIndicadoresUpdate(generics.UpdateAPIView):
 class FuenteFinanciacionIndicadoresDelete(generics.DestroyAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -100,7 +101,7 @@ class FuenteFinanciacionIndicadoresDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaFuentesFinanciacionIndicadores(generics.ListAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         nombre_fuente = request.GET.get('nombre_fuente')
@@ -130,7 +131,7 @@ class BusquedaAvanzadaFuentesFinanciacionIndicadores(generics.ListAPIView):
 class FuenteFinanciacionIndicadoresPorIndicadorList(generics.ListAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         id_indicador = request.GET.get('id_indicador')
@@ -148,7 +149,7 @@ class FuenteFinanciacionIndicadoresPorIndicadorList(generics.ListAPIView):
 class FuenteFinanciacionIndicadoresPorMetaList(generics.ListAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         id_meta = request.GET.get('id_meta')
@@ -168,7 +169,7 @@ class FuenteFinanciacionIndicadoresPorMetaList(generics.ListAPIView):
 class SectorList(generics.ListAPIView):
     queryset = Sector.objects.all()
     serializer_class = SectorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         sectores = self.get_queryset()
@@ -181,7 +182,7 @@ class SectorList(generics.ListAPIView):
 
 class SectorCreate(generics.CreateAPIView):
     serializer_class = SectorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearSector]
 
     def post(self, request):
         data_in = request.data
@@ -201,7 +202,7 @@ class SectorCreate(generics.CreateAPIView):
 class SectorUpdate(generics.UpdateAPIView):
     queryset = Sector.objects.all()
     serializer_class = SectorSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarSector]
 
     def put(self, request, pk):
         data = request.data
@@ -222,7 +223,7 @@ class SectorUpdate(generics.UpdateAPIView):
 class SectorDelete(generics.DestroyAPIView):
     queryset = Sector.objects.all()
     serializer_class = SectorSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarSector]
 
     def delete(self, request, pk):
         sector = self.queryset.all().filter(id_sector=pk).first()
@@ -242,7 +243,7 @@ class SectorDelete(generics.DestroyAPIView):
 class DetalleInversionCuentasList(generics.ListAPIView):
     queryset = DetalleInversionCuentas.objects.all()
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         detalle = self.get_queryset()
@@ -255,7 +256,7 @@ class DetalleInversionCuentasList(generics.ListAPIView):
 
 class DetalleInversionCuentasCreate(generics.CreateAPIView):
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = DetalleInversionCuentasSerializer(data=request.data)
@@ -271,7 +272,7 @@ class DetalleInversionCuentasCreate(generics.CreateAPIView):
 class DetalleInversionCuentasUpdate(generics.UpdateAPIView):
     queryset = DetalleInversionCuentas.objects.all()
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -285,7 +286,7 @@ class DetalleInversionCuentasUpdate(generics.UpdateAPIView):
 class DetalleInversionCuentasDelete(generics.DestroyAPIView):
     queryset = DetalleInversionCuentas.objects.all()
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -303,7 +304,7 @@ class DetalleInversionCuentasDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaDetalleInversionCuentas(generics.ListAPIView):
     queryset = DetalleInversionCuentas.objects.all()
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         cuenta = request.GET.get('cuenta')
@@ -338,7 +339,7 @@ class BusquedaAvanzadaDetalleInversionCuentas(generics.ListAPIView):
 class ModalidadList(generics.ListAPIView):
     queryset = Modalidad.objects.all()
     serializer_class = ModalidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         modalidades = self.get_queryset()
@@ -351,7 +352,7 @@ class ModalidadList(generics.ListAPIView):
 
 class ModalidadCreate(generics.CreateAPIView):
     serializer_class = ModalidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearModalidades]
 
     def post(self, request):
         data_in = request.data
@@ -371,7 +372,7 @@ class ModalidadCreate(generics.CreateAPIView):
 class ModalidadUpdate(generics.UpdateAPIView):
     queryset = Modalidad.objects.all()
     serializer_class = ModalidadSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarModalidades]
 
     def put(self, request, pk):
         data = request.data
@@ -392,7 +393,7 @@ class ModalidadUpdate(generics.UpdateAPIView):
 class ModalidadDelete(generics.DestroyAPIView):
     queryset = Modalidad.objects.all()
     serializer_class = ModalidadSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarModalidades]
 
     def delete(self, request, pk):
         modalidad = self.queryset.all().filter(id_modalidad=pk).first()
@@ -412,7 +413,7 @@ class ModalidadDelete(generics.DestroyAPIView):
 class UbicacionesList(generics.ListAPIView):
     queryset = Ubicaciones.objects.all()
     serializer_class = UbicacionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         ubicaciones = self.get_queryset()
@@ -425,7 +426,7 @@ class UbicacionesList(generics.ListAPIView):
 
 class UbicacionesCreate(generics.CreateAPIView):
     serializer_class = UbicacionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearUbicaciones]
 
     def post(self, request):
         data_in = request.data
@@ -445,7 +446,7 @@ class UbicacionesCreate(generics.CreateAPIView):
 class UbicacionesUpdate(generics.UpdateAPIView):
     queryset = Ubicaciones.objects.all()
     serializer_class = UbicacionesSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarUbicaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -466,7 +467,7 @@ class UbicacionesUpdate(generics.UpdateAPIView):
 class UbicacionesDelete(generics.DestroyAPIView):
     queryset = Ubicaciones.objects.all()
     serializer_class = UbicacionesSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarUbicaciones]
 
     def delete(self, request, pk):
         ubicacion = self.queryset.all().filter(id_ubicacion=pk).first()
@@ -486,7 +487,7 @@ class UbicacionesDelete(generics.DestroyAPIView):
 class FuenteRecursosPaaList(generics.ListAPIView):
     queryset = FuenteRecursosPaa.objects.all()
     serializer_class = FuenteRecursosPaaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         fuentes = self.get_queryset()
@@ -499,7 +500,7 @@ class FuenteRecursosPaaList(generics.ListAPIView):
 
 class FuenteRecursosPaaCreate(generics.CreateAPIView):
     serializer_class = FuenteRecursosPaaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearFuentesFinanciacionPAA]
 
     def post(self, request):
         data_in = request.data
@@ -519,7 +520,7 @@ class FuenteRecursosPaaCreate(generics.CreateAPIView):
 class FuenteRecursosPaaUpdate(generics.UpdateAPIView):
     queryset = FuenteRecursosPaa.objects.all()
     serializer_class = FuenteRecursosPaaSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarFuentesFinanciacionPAA]
 
     def put(self, request, pk):
         data = request.data
@@ -540,7 +541,7 @@ class FuenteRecursosPaaUpdate(generics.UpdateAPIView):
 class FuenteRecursosPaaDelete(generics.DestroyAPIView):
     queryset = FuenteRecursosPaa.objects.all()
     serializer_class = FuenteRecursosPaaSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarFuentesFinanciacionPAA]
 
     def delete(self, request, pk):
         fuente = self.queryset.all().filter(id_fuente=pk).first()
@@ -560,7 +561,7 @@ class FuenteRecursosPaaDelete(generics.DestroyAPIView):
 class IntervaloList(generics.ListAPIView):
     queryset = Intervalo.objects.all()
     serializer_class = IntervaloSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         intervalos = self.get_queryset()
@@ -573,7 +574,7 @@ class IntervaloList(generics.ListAPIView):
 
 class IntervaloCreate(generics.CreateAPIView):
     serializer_class = IntervaloSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearIntervalos]
 
     def post(self, request):
         data_in = request.data
@@ -593,7 +594,7 @@ class IntervaloCreate(generics.CreateAPIView):
 class IntervaloUpdate(generics.UpdateAPIView):
     queryset = Intervalo.objects.all()
     serializer_class = IntervaloSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarIntervalos]
 
     def put(self, request, pk):
         data = request.data
@@ -614,7 +615,7 @@ class IntervaloUpdate(generics.UpdateAPIView):
 class IntervaloDelete(generics.DestroyAPIView):
     queryset = Intervalo.objects.all()
     serializer_class = IntervaloSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarIntervalos]
 
     def delete(self, request, pk):
         intervalo = self.queryset.all().filter(id_intervalo=pk).first()
@@ -634,7 +635,7 @@ class IntervaloDelete(generics.DestroyAPIView):
 class EstadoVFList(generics.ListAPIView):
     queryset = EstadoVF.objects.all()
     serializer_class = EstadoVFSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         estados = self.get_queryset()
@@ -647,7 +648,7 @@ class EstadoVFList(generics.ListAPIView):
 
 class EstadoVFCreate(generics.CreateAPIView):
     serializer_class = EstadoVFSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearEstadosVigenciaFutura]
 
     def post(self, request):
         data_in = request.data
@@ -667,7 +668,7 @@ class EstadoVFCreate(generics.CreateAPIView):
 class EstadoVFUpdate(generics.UpdateAPIView):
     queryset = EstadoVF.objects.all()
     serializer_class = EstadoVFSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarEstadosVigenciaFutura]
 
     def put(self, request, pk):
         data = request.data
@@ -688,7 +689,7 @@ class EstadoVFUpdate(generics.UpdateAPIView):
 class EstadoVFDelete(generics.DestroyAPIView):
     queryset = EstadoVF.objects.all()
     serializer_class = EstadoVFSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarEstadosVigenciaFutura]
 
     def delete(self, request, pk):
         estado = self.queryset.all().filter(id_estado=pk).first()
@@ -707,7 +708,7 @@ class EstadoVFDelete(generics.DestroyAPIView):
 
 class CodigosUNSPList(generics.ListAPIView):
     serializer_class = CodigosUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         codigos = CodigosUNSP.objects.all().values('id_codigo', 'codigo_unsp', 'nombre_producto_unsp', 'activo')
@@ -720,7 +721,7 @@ class CodigosUNSPList(generics.ListAPIView):
 
 class CodigosUNSPCreate(generics.CreateAPIView):
     serializer_class = CodigosUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearCodigosUnspsc]
 
     def post(self, request):
         data_in = request.data
@@ -740,7 +741,7 @@ class CodigosUNSPCreate(generics.CreateAPIView):
 class CodigosUNSPUpdate(generics.UpdateAPIView):
     queryset = CodigosUNSP.objects.all()
     serializer_class = CodigosUNSPSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarCodigosUnspsc]
 
     def put(self, request, pk):
         data = request.data
@@ -761,7 +762,7 @@ class CodigosUNSPUpdate(generics.UpdateAPIView):
 class CodigosUNSPDelete(generics.DestroyAPIView):
     queryset = CodigosUNSP.objects.all()
     serializer_class = CodigosUNSPSerializerUpdate
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarCodigosUnspsc]
 
     def delete(self, request, pk):
         codigo = self.queryset.all().filter(id_codigo=pk).first()
@@ -781,7 +782,7 @@ class CodigosUNSPDelete(generics.DestroyAPIView):
 class ConceptoPOAIList(generics.ListAPIView):
     queryset = ConceptoPOAI.objects.all()
     serializer_class = ConceptoPOAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         conceptos = self.get_queryset()
@@ -794,7 +795,7 @@ class ConceptoPOAIList(generics.ListAPIView):
 
 class ConceptoPOAICreate(generics.CreateAPIView):
     serializer_class = ConceptoPOAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = ConceptoPOAISerializer(data=request.data)
@@ -810,7 +811,7 @@ class ConceptoPOAICreate(generics.CreateAPIView):
 class ConceptoPOAIUpdate(generics.UpdateAPIView):
     queryset = ConceptoPOAI.objects.all()
     serializer_class = ConceptoPOAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -825,7 +826,7 @@ class ConceptoPOAIUpdate(generics.UpdateAPIView):
 class ConceptoPOAIDelete(generics.DestroyAPIView):
     queryset = ConceptoPOAI.objects.all()
     serializer_class = ConceptoPOAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -843,7 +844,7 @@ class ConceptoPOAIDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
     queryset = ConceptoPOAI.objects.all()
     serializer_class = ConceptoPOAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         concepto = request.GET.get('concepto')
@@ -869,7 +870,7 @@ class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
 class FuenteFinanciacionList(generics.ListAPIView):
     queryset = FuenteFinanciacion.objects.all()
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         fuentes = self.get_queryset()
@@ -882,7 +883,7 @@ class FuenteFinanciacionList(generics.ListAPIView):
 
 class FuenteFinanciacionCreate(generics.CreateAPIView):
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = FuenteFinanciacionSerializer(data=request.data)
@@ -898,7 +899,7 @@ class FuenteFinanciacionCreate(generics.CreateAPIView):
 class FuenteFinanciacionUpdate(generics.UpdateAPIView):
     queryset = FuenteFinanciacion.objects.all()
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -913,7 +914,7 @@ class FuenteFinanciacionUpdate(generics.UpdateAPIView):
 class FuenteFinanciacionDelete(generics.DestroyAPIView):
     queryset = FuenteFinanciacion.objects.all()
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -931,7 +932,7 @@ class FuenteFinanciacionDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaFuenteFinanciacion(generics.ListAPIView):
     queryset = FuenteFinanciacion.objects.all()
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         nombre_fuente = request.GET.get('nombre_fuente')
@@ -954,7 +955,7 @@ class BusquedaAvanzadaFuenteFinanciacion(generics.ListAPIView):
 class BancoProyectoList(generics.ListAPIView):
     queryset = BancoProyecto.objects.all()
     serializer_class = BancoProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         bancos = self.get_queryset().filter(id_meta=pk)
@@ -967,7 +968,7 @@ class BancoProyectoList(generics.ListAPIView):
 
 class BancoProyectoCreate(generics.CreateAPIView):
     serializer_class = BancoProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = BancoProyectoSerializer(data=request.data)
@@ -983,7 +984,7 @@ class BancoProyectoCreate(generics.CreateAPIView):
 class BancoProyectoUpdate(generics.UpdateAPIView):
     queryset = BancoProyecto.objects.all()
     serializer_class = BancoProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -997,7 +998,7 @@ class BancoProyectoUpdate(generics.UpdateAPIView):
 class BancoProyectoDelete(generics.DestroyAPIView):
     queryset = BancoProyecto.objects.all()
     serializer_class = BancoProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -1015,7 +1016,7 @@ class BancoProyectoDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaBancoProyecto(generics.ListAPIView):
     queryset = BancoProyecto.objects.all()
     serializer_class = BancoProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         objeto_contrato = request.GET.get('objeto_contrato')
@@ -1047,7 +1048,7 @@ class BusquedaAvanzadaBancoProyecto(generics.ListAPIView):
 class PlanAnualAdquisicionesList(generics.ListAPIView):
     queryset = PlanAnualAdquisiciones.objects.all()
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         planes = self.get_queryset()
@@ -1060,7 +1061,7 @@ class PlanAnualAdquisicionesList(generics.ListAPIView):
 
 class PlanAnualAdquisicionesCreate(generics.CreateAPIView):
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = PlanAnualAdquisicionesSerializer(data=request.data)
@@ -1076,7 +1077,7 @@ class PlanAnualAdquisicionesCreate(generics.CreateAPIView):
 class PlanAnualAdquisicionesUpdate(generics.UpdateAPIView):
     queryset = PlanAnualAdquisiciones.objects.all()
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -1091,7 +1092,7 @@ class PlanAnualAdquisicionesUpdate(generics.UpdateAPIView):
 class PlanAnualAdquisicionesDelete(generics.DestroyAPIView):
     queryset = PlanAnualAdquisiciones.objects.all()
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -1109,7 +1110,7 @@ class PlanAnualAdquisicionesDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaPlanAnualAdquisiciones(generics.ListAPIView):
     queryset = PlanAnualAdquisiciones.objects.all()
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         descripcion = request.GET.get('descripcion')
@@ -1140,7 +1141,7 @@ class BusquedaAvanzadaPlanAnualAdquisiciones(generics.ListAPIView):
 class PAACodUNSPList(generics.ListAPIView):
     queryset = PAACodgigoUNSP.objects.all()
     serializer_class = PAACodgigoUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         paas = self.get_queryset().values('id_plan', 'codigo_unsp', 'descripcion', 'unidad_medida', 'cantidad', 'valor_unitario', 'valor_total', 'fuente', 'estado', 'observaciones')
@@ -1154,7 +1155,7 @@ class PAACodUNSPList(generics.ListAPIView):
 
 class PAACodUNSPCreate(generics.CreateAPIView):
     serializer_class = PAACodgigoUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = PAACodgigoUNSPSerializer(data=request.data)
@@ -1170,7 +1171,7 @@ class PAACodUNSPCreate(generics.CreateAPIView):
 class PAACodUNSPUpdate(generics.UpdateAPIView):
     queryset = PAACodgigoUNSP.objects.all()
     serializer_class = PAACodgigoUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -1185,7 +1186,7 @@ class PAACodUNSPUpdate(generics.UpdateAPIView):
 class PAACodUNSPDelete(generics.DestroyAPIView):
     queryset = PAACodgigoUNSP.objects.all()
     serializer_class = PAACodgigoUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -1203,7 +1204,7 @@ class PAACodUNSPDelete(generics.DestroyAPIView):
 class PAACodUNSPListIdPAA(generics.ListAPIView):
     queryset = PAACodgigoUNSP.objects.all()
     serializer_class = PAACodgigoUNSPSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         paas = self.get_queryset().filter(id_plan=pk)
@@ -1219,7 +1220,7 @@ class PAACodUNSPListIdPAA(generics.ListAPIView):
 class SeguimientoPAIList(generics.ListAPIView):
     queryset = SeguimientoPAI.objects.all()
     serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         seguimientos = self.get_queryset()
@@ -1232,7 +1233,7 @@ class SeguimientoPAIList(generics.ListAPIView):
 
 class SeguimientoPAIListPeriodo(generics.ListAPIView):
     serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         fecha_inicio = self.request.query_params.get('fecha_inicio', None)
@@ -1254,7 +1255,7 @@ class SeguimientoPAIListPeriodo(generics.ListAPIView):
 
 class SeguimientoPAICreate(generics.CreateAPIView):
     serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = SeguimientoPAISerializer(data=request.data)
@@ -1270,7 +1271,7 @@ class SeguimientoPAICreate(generics.CreateAPIView):
 class SeguimientoPAIUpdate(generics.UpdateAPIView):
     queryset = SeguimientoPAI.objects.all()
     serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -1285,7 +1286,7 @@ class SeguimientoPAIUpdate(generics.UpdateAPIView):
 class SeguimientoPAIDelete(generics.DestroyAPIView):
     queryset = SeguimientoPAI.objects.all()
     serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -1303,7 +1304,7 @@ class SeguimientoPAIDelete(generics.DestroyAPIView):
 class BusquedaAvanzadaSeguimientoPAI(generics.ListAPIView):
     queryset = SeguimientoPAI.objects.all()
     serializer_class = SeguimientoPAISerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         nombre_programa = request.GET.get('nombre_programa')
@@ -1341,7 +1342,7 @@ class BusquedaAvanzadaSeguimientoPAI(generics.ListAPIView):
 class SeguimientoPAIDocumentosList(generics.ListAPIView):
     queryset = SeguimientoPAIDocumentos.objects.all()
     serializer_class = SeguimientoPAIDocumentosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
     serializer_archivo = ArchivosDigitalesCreateSerializer
     def get(self, request):
         documentos = self.get_queryset()
@@ -1360,7 +1361,7 @@ class SeguimientoPAIDocumentosList(generics.ListAPIView):
 
 class SeguimientoPAIDocumentosCreate(generics.CreateAPIView):
     serializer_class = SeguimientoPAIDocumentosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
     vista_archivos = ArchivosDgitalesCreate()
     def post(self, request):
         data_seguimiento_documentos=[]
@@ -1390,7 +1391,7 @@ class SeguimientoPAIDocumentosCreate(generics.CreateAPIView):
 class SeguimientoPAIDocumentosUpdate(generics.UpdateAPIView):
     queryset = SeguimientoPAIDocumentos.objects.all()
     serializer_class = SeguimientoPAIDocumentosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -1405,7 +1406,7 @@ class SeguimientoPAIDocumentosUpdate(generics.UpdateAPIView):
 class SeguimientoPAIDocumentosDelete(generics.DestroyAPIView):
     queryset = SeguimientoPAIDocumentos.objects.all()
     serializer_class = SeguimientoPAIDocumentosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -1423,7 +1424,7 @@ class SeguimientoPAIDocumentosDelete(generics.DestroyAPIView):
 class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
     queryset = SeguimientoPAIDocumentos.objects.all()
     serializer_class = SeguimientoPAIDocumentosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
     serializer_archivo = ArchivosDigitalesCreateSerializer
     def get(self, request, pk):
         documentos = self.get_queryset().filter(id_seguimiento_pai=pk)
@@ -1444,7 +1445,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 # class SeguimientoPOAIList(generics.ListAPIView):
 #     queryset = SeguimientoPOAI.objects.all()
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = (IsAuthenticated,)
+#     permission_classes = [IsAuthenticated]
 
 #     def get(self, request):
 #         seguimientos = self.get_queryset()
@@ -1457,7 +1458,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 
 # class SeguimientoPOAICreate(generics.CreateAPIView):
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = (IsAuthenticated,)
+#     permission_classes = [IsAuthenticated]
 
 #     def post(self, request):
 #         serializer = SeguimientoPOAISerializer(data=request.data)
@@ -1473,7 +1474,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 # class SeguimientoPOAIUpdate(generics.UpdateAPIView):
 #     queryset = SeguimientoPOAI.objects.all()
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = (IsAuthenticated,)
+#     permission_classes = [IsAuthenticated]
 
 #     def put(self, request, pk):
 #         data = request.data
@@ -1488,7 +1489,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 # class SeguimientoPOAIDelete(generics.DestroyAPIView):
 #     queryset = SeguimientoPOAI.objects.all()
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = (IsAuthenticated,)
+#     permission_classes = [IsAuthenticated]
 
 #     def get_object(self, pk):
 #         try:
@@ -1506,7 +1507,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 # class BusquedaAvanzadaSeguimientoPOAI(generics.ListAPIView):
 #     queryset = SeguimientoPOAI.objects.all()
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = (IsAuthenticated,)
+#     permission_classes = [IsAuthenticated]
 
 #     def get(self, request):
 #         nombre_plan = request.GET.get('nombre_plan')
