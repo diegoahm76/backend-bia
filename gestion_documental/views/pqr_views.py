@@ -915,13 +915,13 @@ class MetadatosPQRCreate(generics.CreateAPIView):
 
         if data_metadatos['isCreateForWeb']:
             metadato['id_anexo'] = anexo['id_anexo']
-            metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro'].date()
+            metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro']
             metadato['cod_origen_archivo'] = "E"
             metadato['es_version_original'] = True
             metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']
         else:
             data_metadato['id_anexo'] = anexo['id_anexo']
-            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro'].date()
+            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_registro']
             data_metadato['nro_folios_documento'] = anexo['numero_folios']
             data_metadato['es_version_original'] = True
             data_metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']
@@ -1603,13 +1603,13 @@ class MetadatosRespuestaPQRCreate(generics.CreateAPIView):
 
         if data_metadatos['isCreateForWeb']:
             metadato['id_anexo'] = anexo['id_anexo']
-            metadato['fecha_creacion_doc'] = data_metadatos['fecha_respuesta'].date()
+            metadato['fecha_creacion_doc'] = data_metadatos['fecha_respuesta']
             metadato['cod_origen_archivo'] = "E"
             metadato['es_version_original'] = True
             metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']
         else:
             data_metadato['id_anexo'] = anexo['id_anexo']
-            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_respuesta'].date()
+            data_metadato['fecha_creacion_doc'] = data_metadatos['fecha_respuesta']
             data_metadato['nro_folios_documento'] = anexo['numero_folios']
             data_metadato['es_version_original'] = True
             data_metadato['id_archivo_sistema'] = data_metadatos['id_archivo_digital']
@@ -3910,8 +3910,8 @@ class CrearExpedientePQRSDF(generics.CreateAPIView):
                 if pqrsdf:
                     pqrsdf.id_expediente_doc = expediente
                     pqrsdf.save()
-                    raise ValidationError('Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada y ya se asocio a la PQRSDF seleccionada')
-            
+                    return Response({'success':True, 'detail':'Ya existe un expediente simple para este año en la Serie-Subserie-Unidad seleccionada y ya se asocio a la PQRSDF seleccionada'}, status=status.HTTP_200_OK) 
+
         data_expediente['titulo_expediente'] = f"Expediente PQRSDF {codigo_exp_und_serie_subserie} {current_date.year}"
         data_expediente['descripcion_expediente'] = f"Expediente PQRSDF para la unidad {codigo_exp_und_serie_subserie} y el año {current_date.year}"
         data_expediente['palabras_clave_expediente'] = f"Expediente|PQRSDF|{codigo_exp_und_serie_subserie}|{current_date.year}"
@@ -3986,7 +3986,6 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
     serializer_class = ArchivoSoporteSerializer
     permission_classes = [IsAuthenticated]
 
-    @transaction.atomic
     def post(self,request):
         data_in = request.data
 

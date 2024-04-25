@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
 from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
@@ -2282,3 +2282,76 @@ class SeguimientoPGARUpdate(generics.UpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'success': True, 'detail': 'Seguimiento PGAR actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#Tableros de Control PGAR
+class TableroPGARByObjetivo(generics.ListAPIView):
+
+    def get(self, request, pk):
+        agno = request.query_params.get('agno', '')
+
+        if agno == '':
+            raise ValidationError('El año es requerido.')
+        #pavance_fisico = 0
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo=pk)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = TableroPGARByObjetivoSerializer(ejes_estrategicos, many=True, context={'agno': agno})
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class TableroPGARByEje(generics.ListAPIView):
+
+    def get(self, request):
+        planPAI = request.query_params.get('planPAI', '')
+        planPGAR = request.query_params.get('planPGAR', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        objetivos = Objetivo.objects.filter(id_plan = planPGAR)
+        if not objetivos:
+            raise NotFound('No se encontraron resultados.')
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo__in = objetivos)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+        
+        serializer = TableroPGARByEjeSerializer(ejes_estrategicos, many=True, context = context)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class TableroPGARObjetivoEje(generics.ListAPIView):
+
+    def get(self, request):
+        eje_estrategico = request.query_params.get('eje_estrategico', '')
+        planPAI = request.query_params.get('planPAI', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        if eje_estrategico == '':
+            raise ValidationError('El eje estrategico es requerido.')
+        
+        eje_estrategicoo = EjeEstractegico.objects.filter(id_eje_estrategico = eje_estrategico)
+        if not eje_estrategicoo:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+
+        serializer = TableroPGARObjetivoEjeSerializer(eje_estrategicoo, many=True, context=context)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)

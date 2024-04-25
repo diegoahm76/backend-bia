@@ -10,6 +10,15 @@ from recaudo.models.liquidaciones_models import (
 
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
+    usada = serializers.SerializerMethodField()
+
+    def get_usada(self, obj):
+        detalles_liquidacion = DetalleLiquidacionBase.objects.filter(id_opcion_liq=obj.id)
+        if detalles_liquidacion.exists():
+            return True
+        else:
+            return False
+
     class Meta:
         model = OpcionesLiquidacionBase
         fields = '__all__'
@@ -57,20 +66,24 @@ class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class LiquidacionesBasePostMasivoSerializer(serializers.ModelSerializer):
-    id_expediente = serializers.ListField(child=serializers.IntegerField())
+    id_expediente = serializers.ListField(child=serializers.IntegerField(), write_only=True)  
 
     class Meta:
         model = LiquidacionesBase
-        fields = ('id', 'id_deudor', 'id_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'estado', 'ciclo_liquidacion')
+        fields = ( 'id_expediente','id', 'id_deudor', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'estado', 'ciclo_liquidacion', 'valor')
 
     def create(self, validated_data):
         id_expedientes = validated_data.pop('id_expediente', [])
-        instance = super().create(validated_data)
+        instances = []
         for id_expediente in id_expedientes:
-            expediente = Expedientes.objects.get(pk=id_expediente)
-            expediente.estado = 'guardado'
-            expediente.save()
-        return instance
+            expediente_instance = Expedientes.objects.get(pk=id_expediente)
+            validated_data['id_expediente'] = expediente_instance  # Reemplazamos la lista de IDs con la instancia del expediente
+            instance = LiquidacionesBase.objects.create(**validated_data)
+            expediente_instance.estado = 'guardado'
+            expediente_instance.save()
+            instances.append(instance)
+        return instances
+
 
 class DetallesLiquidacionBasePostSerializer(serializers.ModelSerializer):
     class Meta:

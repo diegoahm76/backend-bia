@@ -2375,6 +2375,31 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
                 if not asignacion.cod_estado_asignacion:
                     raise ValidationError("La solicitud está pendiente por respuesta.")
 
+
+            agno_actual = datetime.now().year
+            # Verificar si se envió el ID de solicitud de OPA
+
+            if 'id_catalogo_serie_subserie' not in data_in:
+                raise ValidationError("No se envió el ID de la Subserie")
+            
+
+            #id_catalogo_serie_subserie
+            catalogo = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_catalogo_serie_subserie']).first()
+            if not catalogo:
+                raise ValidationError("No se encontró la Subserie")
+            tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data_in['id_catalogo_serie_subserie']).first()
+            
+            if not tripleta_trd:
+                raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+            #BUSCAR EL AÑO
+
+            configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg,agno_expediente=agno_actual).first()
+            if not configuracion_expediente:
+                raise ValidationError("Este catalogo de de series-suberie no cuenta con configuracion para este año.")
+
+
+
+
             # Obtener el líder de la Subsección planeacion
             lider_subseccion = self.obtener_lider_subseccion(subseccion_id)
 

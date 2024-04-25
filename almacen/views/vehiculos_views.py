@@ -1319,7 +1319,7 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                 personas_existentes = request.data.get('personas_existentes', [])
                 for persona_data in personas_existentes:
                     persona_viaja_id = persona_data.get('id_persona_viaja')
-                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')
+                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')  # Tomar el id de solicitud de viaje de la persona existente
                     persona_confirma_viaje = persona_data.get('persona_confirma_viaje')
                     observacion = persona_data.get('observacion', '')
                     inspeccion_vehiculo = instancia_inspeccion  
@@ -1370,8 +1370,16 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
                         fecha_confirmacion=fecha_confirmacion
                     )
 
-            data = serializer.data
+                # Actualizar el campo 'realizo_inspeccion' en ViajesAgendados
+                for persona_data in personas_existentes:
+                    solicitud_viaje_id = persona_data.get('id_solicitud_viaje')  # Tomar el id de solicitud de viaje de la persona existente
+                    viaje_agendado = ViajesAgendados.objects.filter(id_solicitud_viaje=solicitud_viaje_id).first()
+                    if viaje_agendado:
+                        viaje_agendado.realizo_inspeccion = True
+                        viaje_agendado.save()
 
+            data = serializer.data
+            
             #GENERACION DE ALERTA
             if data['requiere_verificacion']:
                 
@@ -1698,9 +1706,10 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
         for solicitud in queryset:
             data.append({
                 'id_solicitud_viaje': solicitud.id_solicitud_viaje,
-                "id_persona_solicita": solicitud.id_persona_solicita.id_persona,
-                'primer_nombre_solicitante': solicitud.id_persona_solicita.primer_nombre,
-                'primer_apellido_solicitante': solicitud.id_persona_solicita.primer_apellido,
+                'id_persona_solicita': solicitud.id_persona_solicita.id_persona if solicitud.id_persona_solicita else None,
+                'primer_nombre_solicitante': solicitud.id_persona_solicita.primer_nombre if solicitud.id_persona_solicita else None,
+                'id_unidad_organizacional_solicitante': solicitud.id_unidad_org_solicita.id_unidad_organizacional if solicitud.id_unidad_org_solicita else None,
+                'nombre_unidad_organizacional_solicitante': solicitud.id_unidad_org_solicita.nombre if solicitud.id_unidad_org_solicita else None,
                 'cod_municipio': solicitud.cod_municipio.cod_municipio,                
                 'nombre_municipio': solicitud.cod_municipio.nombre,
                 'fecha_solicitud': solicitud.fecha_solicitud,
@@ -1716,6 +1725,12 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
                 'hora_retorno': solicitud.hora_retorno,
                 'requiere_compagnia_militar': solicitud.requiere_compagnia_militar,
                 'consideraciones_adicionales': solicitud.consideraciones_adicionales,
+                'id_persona_responsable': solicitud.id_persona_responsable.id_persona if solicitud.id_persona_responsable else None,
+                'primer_nombre_responsable': solicitud.id_persona_responsable.primer_nombre if solicitud.id_persona_responsable else None,
+                'primer_apellido_responsable': solicitud.id_persona_responsable.primer_apellido if solicitud.id_persona_responsable else None,
+
+                'id_unidad_organizacional_responsable': solicitud.id_unidad_org_responsable.id_unidad_organizacional if solicitud.id_unidad_org_responsable else None,
+                'nombre_unidad_organizacional_responsable': solicitud.id_unidad_org_responsable.nombre if solicitud.id_unidad_org_responsable else None,                 
                 'fecha_aprobacion_responsable': solicitud.fecha_aprobacion_responsable,
                 'fecha_rechazo': solicitud.fecha_rechazo,
                 'justificacion_rechazo': solicitud.justificacion_rechazo,
@@ -1898,6 +1913,8 @@ class CrearAprobacion(generics.CreateAPIView):
         id_persona_conductor = data.get('id_persona_conductor')
         if not id_persona_conductor:
             return JsonResponse({'error': 'El conductor del vehículo asignado no fue especificado.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        print(id_persona_conductor)
         
         # Obtener la persona logueada y la unidad organizacional actual
         persona_logueada = request.user.persona
@@ -2089,9 +2106,9 @@ class ObtenerSolicitudViaje(generics.RetrieveAPIView):
 
 class ObtenerInformacionViajes(generics.RetrieveAPIView):
     queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
-    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  # Usar el serializador correspondiente para ViajesAgendados
-    solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
-    personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  # Usar el serializador correspondiente para PersonasSolicitudViaje
+    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  
+    solicitudes_serializer_class = SolicitudViajeSerializer  
+    personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  
 
     def get(self, request, id_solicitud_viaje):
         try:

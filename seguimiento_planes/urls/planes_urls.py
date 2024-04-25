@@ -195,5 +195,11 @@ urlpatterns=[
     path('consultar-SeguimientoPGAR/',views.SeguimientoPGARList.as_view(),name='consultarSeguiemientoPGAR'),
     path('actualizar-SeguimientoPGAR/<str:pk>/',views.SeguimientoPGARUpdate.as_view(),name='actualizarSeguiemientoPGAR'),
 
+    #Tableros de Control
+    path('tablero-control-objetivos/<str:pk>/',views.TableroPGARByObjetivo.as_view(),name='tableroControlObjetivos'),
+    path('tablero-control-ejes/',views.TableroPGARByEje.as_view(),name='tableroControlEjes'),
+    path('tablero-control-objetivo-ejes/',views.TableroPGARObjetivoEje.as_view(),name='tableroControlObjetivosEjes'),
+
+
 
 ]
