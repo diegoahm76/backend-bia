@@ -1906,7 +1906,7 @@ class CrearAprobacion(generics.CreateAPIView):
         
 
         # Validar que la solicitud de viaje esté en estado de espera
-        if solicitud_viaje.estado_solicitud != 'ES':
+        if solicitud_viaje.estado_solicitud != 'AP':
             return JsonResponse({'error': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validar si existe el conductor del vehículo asignado al viaje
