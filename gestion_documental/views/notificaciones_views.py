@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from django.db import transaction
 from gestion_documental.models.radicados_models import T262Radicados
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from seguridad.permissions.permissions_notificaciones import PermisoActualizarAsignacionTareasNotificaciones, PermisoActualizarAutorizarAsignaciones, PermisoActualizarCausasAnomaliasNotificaciones, PermisoActualizarEstadosNotificaciones, PermisoActualizarRechazarNotificaciones, PermisoActualizarTiposAnexosNotificaciones, PermisoActualizarTiposDocumentoNoti, PermisoActualizarTiposNotificaciones, PermisoBorrarCausasAnomaliasNotificaciones, PermisoBorrarEstadosNotificaciones, PermisoBorrarTiposAnexosNotificaciones, PermisoBorrarTiposDocumentoNoti, PermisoBorrarTiposNotificaciones, PermisoCrearAsignacionTareasNotificaciones, PermisoCrearCausasAnomaliasNotificaciones, PermisoCrearCrearNotificaciones, PermisoCrearEstadosNotificaciones, PermisoCrearGeneradorDocumentosNotificaciones, PermisoCrearPublicarGacetaAmbiental, PermisoCrearTiposAnexosNotificaciones, PermisoCrearTiposDocumentoNoti, PermisoCrearTiposNotificaciones
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -489,7 +490,7 @@ class GetAsignacionesCorrespondencia(generics.ListAPIView):
     
 class CrearNotiicacionManual(generics.CreateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCrearNotificaciones]
 
     def post(self, request):
         data_total = request.data
@@ -707,7 +708,7 @@ class MetadatosNotificacionesCreate(generics.CreateAPIView):
 #TiposNotificacionesCorrespondencia
 class TiposNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -733,7 +734,7 @@ class TiposNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class TiposNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -751,7 +752,7 @@ class TiposNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
 
 class TiposNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposNotificaciones]
 
     def delete(self, request, pk):
         tipo_notificacion = TiposNotificacionesCorrespondencia.objects.filter(id_tipo_notificacion_correspondencia=pk).first()
@@ -770,7 +771,7 @@ class TiposNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
 #EstadosNotificacionesCorrespondencia
 class EstadosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearEstadosNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -805,7 +806,7 @@ class EstadosNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class EstadosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEstadosNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -823,7 +824,7 @@ class EstadosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
 
 class EstadosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarEstadosNotificaciones]
 
     def delete(self, request, pk):
         estado_notificacion = EstadosNotificacionesCorrespondencia.objects.filter(id_estado_notificacion_correspondencia=pk).first()
@@ -841,7 +842,7 @@ class EstadosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
 #CausasOAnomaliasNotificacionesCorrespondencia
 class CausaOAnomaliasNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCausasAnomaliasNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -876,7 +877,7 @@ class CausaOAnomaliasNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class CausaOAnomaliasNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCausasAnomaliasNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -894,7 +895,7 @@ class CausaOAnomaliasNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView)
 
 class CausaOAnomaliasNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarCausasAnomaliasNotificaciones]
 
     def delete(self, request, pk):
         causa_notificacion = CausasOAnomalias.objects.filter(id_causa_o_anomalia=pk).first()
@@ -913,7 +914,7 @@ class CausaOAnomaliasNotificacionesCorrespondenciaDelete(generics.DestroyAPIView
 #TiposAnexosNotificacionesCorrespondencia
 class TiposAnexosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposAnexosNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -948,7 +949,7 @@ class TiposAnexosNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class TiposAnexosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposAnexosNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -966,7 +967,7 @@ class TiposAnexosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
 
 class TiposAnexosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposAnexosNotificaciones]
 
     def delete(self, request, pk):
         tipo_anexo_notificacion = TiposAnexosSoporte.objects.filter(id_tipo_anexo_soporte=pk).first()
@@ -985,7 +986,7 @@ class TiposAnexosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
 #TiposDocumentosNotificacionesCorrespondencia
 class TiposDocumentosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposDocumentoNoti]
 
     def post(self, request):
         data = request.data
@@ -1011,7 +1012,7 @@ class TiposDocumentosNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class TiposDocumentosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposDocumentoNoti]
 
     def put(self, request, pk):
         data = request.data
@@ -1029,7 +1030,7 @@ class TiposDocumentosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView)
 
 class TiposDocumentosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposDocumentoNoti]
 
     def delete(self, request, pk):
         tipo_documento_notificacion = TiposDocumentos.objects.filter(id_tipo_documento=pk).first()
@@ -1254,7 +1255,7 @@ class ActosAdministrativosGet(generics.ListAPIView):
 
 class UpdateAsignacionNotificacion(generics.UpdateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAutorizarAsignaciones]
 
     def put(self, request, pk):
 
@@ -1300,7 +1301,7 @@ class UpdateAsignacionNotificacion(generics.UpdateAPIView):
 
 class RechazoNotificacionCorrespondencia(generics.UpdateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRechazarNotificaciones]
 
     def put(self, request, pk):
 
@@ -1478,7 +1479,7 @@ class CausasOAnomaliasGacetaGet(generics.ListAPIView):
 
 class AnexosSoporteGacetaCreate(generics.CreateAPIView):
     serializer_class = AnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearPublicarGacetaAmbiental]
 
     def create_anexo(self, data):
         try:
@@ -1916,7 +1917,7 @@ class AnexosSoporteCorrespondenciaCreate(generics.CreateAPIView):
 
 class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.CreateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAsignacionTareasNotificaciones]
 
     def put(self, request, id_registro_notificacion):
         data = request.data
@@ -1927,7 +1928,7 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Creat
 
 class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAsignacionTareasNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -2018,7 +2019,7 @@ class GenerarConstanciaNotificacion(generics.CreateAPIView):
      
 class GeneradorDocumentos(generics.CreateAPIView):
     serializer_class = GeneradorDocumentosSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearGeneradorDocumentosNotificaciones]
 
     def generador_documentos(self, data):
         try:
