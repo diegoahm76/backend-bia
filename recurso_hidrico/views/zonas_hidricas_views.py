@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica, CuencasSubZonas
-from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer
+from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,SubZonaHidricaTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer
 import copy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
@@ -69,7 +69,6 @@ class CuencasListView (generics.ListCreateAPIView):
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
     
-#crear datos
 
 class CrearSubZonaHidricaVista(generics.CreateAPIView):
     queryset = SubZonaHidrica.objects.all()
@@ -80,9 +79,6 @@ class CrearSubZonaHidricaVista(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
                       
-            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
-            # serializer.validated_data['campo_adicional'] = valor
-
             serializer.save()
 
             return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
@@ -171,9 +167,6 @@ class CrearZonaHidricaVista(generics.CreateAPIView):
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
                   
-            # Agregar lógica adicional si es necesario, por ejemplo, asignar valores antes de guardar
-            # serializer.validated_data['campo_adicional'] = valor
-
             serializer.save()
 
             return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
@@ -239,8 +232,27 @@ class EnviarCORREOView(generics.CreateAPIView):
         
 
 
-class SubZonaHidricaListViewwww(generics.ListAPIView):
+class SubZonaHidricaTuaListVieww(generics.ListAPIView):
     queryset = SubZonaHidrica.objects.all()
-    serializer_class = SubZonaHidricaSerializerr
+    serializer_class = SubZonaHidricaTuaSerializerr
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        data_rios = SubZonaHidrica.objects.all()
+        serializer = self.serializer_class(data_rios,many=True)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class SubZonaHidricaTrListVieww(generics.ListAPIView):
+    queryset = SubZonaHidrica.objects.all()
+    serializer_class = SubZonaHidricaTrSerializerr
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        dato_rios = SubZonaHidrica.objects.all()
+        serializer = self.serializer_class(dato_rios,many=True)
+
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
 
