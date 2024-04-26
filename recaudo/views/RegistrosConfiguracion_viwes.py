@@ -2,8 +2,8 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
-from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta,Formulario, Variables,ValoresVariables
+from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer,ModeloBaseSueldoMinimoSerializer
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta,Formulario, Variables,ValoresVariables,ModeloBaseSueldoMinimo
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -716,7 +716,7 @@ class Vista_Formulario (generics.ListAPIView):
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
-class Crear_Formularioerializer(generics.CreateAPIView):
+class Crear_Formulario_Serializer(generics.CreateAPIView):
     queryset = Formulario.objects.all()
     serializer_class = Formularioerializer
 
@@ -748,3 +748,64 @@ class Borrar_Formulario(generics.DestroyAPIView):
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({e.detail})
         
+
+
+class Crear_ModeloBase_Sueldo_Minimo(generics.CreateAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+    
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+
+class Vista_ModeloBase_Sueldo_Minimo(generics.ListAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'succes': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data, },
+                        status=status.HTTP_200_OK)
+    
+class UpDate_ModeloBase_Sueldo_Minimo(generics.UpdateAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+
+    def put(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success': True, 'detail': 'Registro actualizado correctamente', 'data': serializer.data},
+                        status=status.HTTP_200_OK)
+
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+class Borrar_ModeloBase_Sueldo_Minimo(generics.DestroyAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+                            status=status.HTTP_200_OK)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({e.detail})

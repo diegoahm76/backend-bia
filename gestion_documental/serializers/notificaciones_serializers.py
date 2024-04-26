@@ -487,6 +487,11 @@ class CausasOAnomaliasSerializer(serializers.ModelSerializer):
         fields = ('id_causa_o_anomalia', 'nombre')
 
 
+class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentosDeArchivoExpediente
+        fields = '__all__'
+
 class ConstanciaNotificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificacionesCorrespondencia
