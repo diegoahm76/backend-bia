@@ -1,4 +1,5 @@
 
+from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTiemposRespuesta
 from seguridad.utils import Util
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from rest_framework.permissions import IsAuthenticated
@@ -24,7 +25,7 @@ class ConfiguracionTiemposRespuestaUpdate(generics.UpdateAPIView):
 
     serializer_class = ConfiguracionTiemposRespuestaPutSerializer
     queryset = ConfiguracionTiemposRespuesta.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTiemposRespuesta]
     
 
     def put(self, request, pk):
