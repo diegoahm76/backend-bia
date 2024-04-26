@@ -44,22 +44,27 @@ class CuencasSerializer(serializers.ModelSerializer):
 
 
 
-class SubZonaHidricaSerializerr(serializers.ModelSerializer):
+class SubZonaHidricaTuaSerializerr(serializers.ModelSerializer):
     nombre_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
     id_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.id_macro_cuenca')
     nombre_zona_hidirca= serializers.ReadOnlyField(source='id_zona_hidrica.nombre_zona_hidrica')
    
-
-
     class Meta:
         model = SubZonaHidrica
-        fields = '__all__'
+        exclude = ['valor_regional_tr']
+
+
+class SubZonaHidricaTrSerializerr(serializers.ModelSerializer):
+    nombre_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
+    id_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.id_macro_cuenca')
+    nombre_zona_hidirca= serializers.ReadOnlyField(source='id_zona_hidrica.nombre_zona_hidrica')
+   
+    class Meta:
+        model = SubZonaHidrica
+        exclude = ['valor_regional_tua']
 
 class SubZonaHidricaValorRegionalSerializer(serializers.ModelSerializer):
-    valor_regional = serializers.CharField()  # Permitir editar solo este campo
-    fecha_inicio = serializers.DateField(read_only=True)
-    fecha_fin = serializers.DateField(read_only=True)
-
+  
     class Meta:
         model = SubZonaHidrica
-        fields = ['valor_regional', 'fecha_inicio', 'fecha_fin']
+        fields = ['valor_regional_tr','valor_regional_tua', 'fecha_inicio', 'fecha_fin']

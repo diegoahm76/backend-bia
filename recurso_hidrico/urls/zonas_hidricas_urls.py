@@ -26,7 +26,9 @@ urlpatterns = [
         path('enviar_correo/', views.EnviarCORREOView.as_view(), name='enviar_correo'),
 
 
-        path('data_rios_completa/', views.SubZonaHidricaListViewwww.as_view(), name='subzonashidricas-list'),
+        path('data_rios_completa/tua/', views.SubZonaHidricaTuaListVieww.as_view(), name='subzonashidricas-list-tua'),
+        path('data_rios_completa/tr/', views.SubZonaHidricaTrListVieww.as_view(), name='subzonashidricas-list-tr'),
+
 ]
     
 
