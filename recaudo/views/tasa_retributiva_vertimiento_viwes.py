@@ -8,9 +8,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 import json
 
 
+from seguridad.permissions.permissions_recaudo import PermisoActualizarGeneradorDocumentosRecaudo, PermisoCrearFormularioAguaCaptadaRecaudo, PermisoCrearGeneradorDocumentosRecaudo
 from transversal.models.entidades_models import ConfiguracionEntidad
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.personas_models import Personas
@@ -22,6 +24,7 @@ class CrearDocumentoFormularioRecuado(generics.CreateAPIView):
     queryset = documento_formulario_recuado.objects.all()
     serializer_class = documento_formulario_recuados_serializer
     archivos_dgitales_create = ArchivosDgitalesCreate()
+    permission_classes = [IsAuthenticated, PermisoCrearGeneradorDocumentosRecaudo]
 
 
 
@@ -157,6 +160,8 @@ class DocumentoFormularioRecaudoGET(generics.ListAPIView):
 
 
 class T0444444FormularioView(APIView):
+    permission_classes = [IsAuthenticated, PermisoCrearFormularioAguaCaptadaRecaudo]
+
     def post(self, request, *args, **kwargs):
         json_informacionFuentesAbastecimiento=json.loads(request.data.get('informacionFuentesAbastecimiento'))
         json_factoresUtilizacion= json.loads(request.data.get('factoresUtilizacion'))
@@ -205,6 +210,8 @@ class T0444FormularioListView(APIView):
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 class T0444444FormularioPut(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def put(self, request, pk, *args, **kwargs):
         try:
             formulario = T0444Formulario.objects.get(pk=pk)

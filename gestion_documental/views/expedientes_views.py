@@ -24,6 +24,7 @@ from gestion_documental.serializers.transferencias_documentales_serializers impo
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
+from seguridad.permissions.permissions_gestor import PermisoActualizarAperturaExpedientes, PermisoActualizarConcesionAccesoDocumentos, PermisoActualizarConcesionAccesoExpedientes, PermisoActualizarIndexacionDocumentos, PermisoActualizarReubicacionFisicaExpedientes, PermisoAnularAperturaExpedientes, PermisoAnularIndexacionDocumentos, PermisoBorrarAperturaExpedientes, PermisoBorrarIndexacionDocumentos, PermisoCrearAperturaExpedientes, PermisoCrearCierreExpedientesDocumentales, PermisoCrearFirmaCierreIndiceElectronico, PermisoCrearIndexacionDocumentos, PermisoCrearReaperturaExpedientesDocumentales
 from seguridad.utils import Util
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -104,7 +105,7 @@ class ConfiguracionExpedienteGet(generics.ListAPIView):
 class AperturaExpedienteCreate(generics.CreateAPIView):
     serializer_class = AperturaExpedienteSimpleSerializer
     serializer_class_complejo = AperturaExpedienteComplejoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAperturaExpedientes]
 
     def create(self, request):
         data = request.data
@@ -228,7 +229,7 @@ class AperturaExpedienteGet(generics.ListAPIView):
 class AperturaExpedienteUpdate(generics.UpdateAPIView):
     serializer_class = AperturaExpedienteUpdateAutSerializer
     serializer_class_no_aut = AperturaExpedienteUpdateNoAutSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAperturaExpedientes]
 
     def update(self, request, id_expediente_documental):
         data = request.data
@@ -306,7 +307,7 @@ class AperturaExpedienteUpdate(generics.UpdateAPIView):
 
 class AnularExpediente(generics.UpdateAPIView):
     serializer_class = AnularExpedienteSerializer
-    permission_classes = [IsAuthenticated] # PENDIENTE VALIDACIÓN permisos de Creación de Expediente en la Serie Documental elegida y adicionalmente la persona como tal debe tener permisos de Anulación del módulo
+    permission_classes = [IsAuthenticated, PermisoAnularAperturaExpedientes] # PENDIENTE VALIDACIÓN permisos de Creación de Expediente en la Serie Documental elegida y adicionalmente la persona como tal debe tener permisos de Anulación del módulo
 
     def update(self, request, id_expediente_documental):
         data = request.data
@@ -357,7 +358,7 @@ class AnularExpediente(generics.UpdateAPIView):
 
 class BorrarExpediente(generics.DestroyAPIView):
     serializer_class = BorrarExpedienteSerializer
-    permission_classes = [IsAuthenticated] # PENDIENTE VALIDACIÓN permisos de Creación de Expediente en la Serie Documental elegida y adicionalmente la persona como tal debe tener permisos de Anulación del módulo
+    permission_classes = [IsAuthenticated, PermisoBorrarAperturaExpedientes] # PENDIENTE VALIDACIÓN permisos de Creación de Expediente en la Serie Documental elegida y adicionalmente la persona como tal debe tener permisos de Anulación del módulo
 
     def delete(self, request, id_expediente_documental):
         expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente_documental).first()
@@ -882,7 +883,7 @@ class ListarTipologias(generics.ListAPIView):
 
 class CierreExpediente(generics.CreateAPIView):
     serializer_class = CierreExpedienteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCierreExpedientesDocumentales]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -1493,7 +1494,7 @@ class CierresReaperturasExpedienteDetailView(generics.RetrieveAPIView):
 
 class ReaperturaExpediente(generics.CreateAPIView):
     serializer_class = CierreExpedienteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearReaperturaExpedientesDocumentales]
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -1617,7 +1618,7 @@ class ExpedientesSimpleGet(generics.ListAPIView):
 
 class IndexarDocumentosCreate(generics.CreateAPIView):
     serializer_class = IndexarDocumentosCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearIndexacionDocumentos]
     
     def create(self, request, id_expediente_documental):
         data = request.data
@@ -1763,7 +1764,7 @@ class IndexarDocumentosGet(generics.ListAPIView):
 class IndexarDocumentosUpdate(generics.UpdateAPIView):
     serializer_class = IndexarDocumentosUpdateSerializer
     serializer_aut_class = IndexarDocumentosUpdateAutSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarIndexacionDocumentos]
     
     def update(self, request, id_documento_de_archivo_exped):
         data = request.data
@@ -1813,7 +1814,7 @@ class IndexarDocumentosUpdate(generics.UpdateAPIView):
 
 class IndexarDocumentosAnular(generics.UpdateAPIView):
     serializer_class = IndexarDocumentosAnularSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularIndexacionDocumentos]
     
     def update(self, request, id_documento_de_archivo_exped):
         data = request.data
@@ -1855,7 +1856,7 @@ class IndexarDocumentosAnular(generics.UpdateAPIView):
 
 class IndexarDocumentosBorrar(generics.DestroyAPIView):
     serializer_class = IndexarDocumentosAnularSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarIndexacionDocumentos]
     
     def delete(self, request, id_documento_de_archivo_exped):
         doc_expediente = DocumentosDeArchivoExpediente.objects.filter(id_documento_de_archivo_exped=id_documento_de_archivo_exped).first()
@@ -2112,7 +2113,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
 
 class FirmaCierreView(generics.UpdateAPIView):
     serializer_class = EnvioCodigoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearFirmaCierreIndiceElectronico]
     
     def update(self, request):
         id_indice_electronico_exp = request.data.get('id_indice_electronico_exp')
@@ -2312,6 +2313,7 @@ class ExpedienteCarpetaAgregarEliminar(generics.UpdateAPIView):
     lookup_field = 'id_expediente_documental'
     queryset = ExpedientesDocumentales.objects.all()
     serializer_class = ExpedientesDocumentalesGetSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarReubicacionFisicaExpedientes]
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
@@ -2470,7 +2472,7 @@ class ConcesionAccesoPersonasFiltroView(generics.ListAPIView):
 
 class ConcesionAccesoExpedientesCreateView(generics.CreateAPIView):
     serializer_class = ConcesionAccesoExpedientesCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConcesionAccesoExpedientes]
     
     def create(self, request, id_expediente):
         data = request.data
@@ -2532,7 +2534,7 @@ class ConcesionAccesoExpedientesCreateView(generics.CreateAPIView):
 
 class ConcesionAccesoExpedientesUpdateView(generics.UpdateAPIView):
     serializer_class = ConcesionAccesoUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConcesionAccesoExpedientes]
     
     def delete_concesiones(self, list_eliminar):
         concesiones_eliminar = ConcesionesAccesoAExpsYDocs.objects.filter(id_concesion_acc__in=list_eliminar).annotate(
@@ -2656,7 +2658,7 @@ class ConcesionAccesoExpedientesUpdateView(generics.UpdateAPIView):
 
 class ConcesionAccesoDocumentosCreateView(generics.CreateAPIView):
     serializer_class = ConcesionAccesoDocumentosCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConcesionAccesoDocumentos]
     
     def create(self, request, id_documento_de_archivo_exped):
         data = request.data
@@ -2718,7 +2720,7 @@ class ConcesionAccesoDocumentosCreateView(generics.CreateAPIView):
 
 class ConcesionAccesoDocumentosUpdateView(generics.UpdateAPIView):
     serializer_class = ConcesionAccesoUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConcesionAccesoDocumentos]
     
     def delete_concesiones(self, list_eliminar):
         concesiones_eliminar = ConcesionesAccesoAExpsYDocs.objects.filter(id_concesion_acc__in=list_eliminar).annotate(

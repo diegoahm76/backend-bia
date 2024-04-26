@@ -939,7 +939,7 @@ class CrearArchivosOpcionales(generics.CreateAPIView):
         data_archivo = {
             'es_Doc_elec_archivo': True,
             'ruta': ruta,
-            'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            'md5_hash': md5_value
         }
         
         archivo_class = ArchivosDgitalesCreate()
@@ -3438,3 +3438,39 @@ class AceptarDespachoPut(generics.UpdateAPIView):
         
         serializer = self.serializer_class(despacho)
         return Response({'detail': 'El despacho asociado se ha aceptado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class BusquedaGeneralInventario(generics.ListAPIView):
+    serializer_class = InventarioSerializer
+
+    def get_queryset(self):
+        queryset = Inventario.objects.all()
+
+        # Obtener parámetros de consulta
+        tipo_movimiento = self.request.query_params.get('tipo_movimiento')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+
+        # Filtrar por tipo de movimiento
+        if tipo_movimiento:
+            queryset = queryset.filter(tipo_doc_ultimo_movimiento=tipo_movimiento)
+        
+        # Filtrar por rango de fechas
+        if fecha_desde:
+            queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
+            
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = {
+            'success': True,
+            'detail': 'Búsqueda realizada exitosamente.',
+            'data': serializer.data
+        }
+        return Response(data)

@@ -3,6 +3,7 @@ from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSerie
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TablaRetencionDocumental
 from gestion_documental.serializers.conf__tipos_exp_serializers import CatalogosSeriesSecSubGetSerializer, ConfiguracionTipoExpedienteAgnoCreateSerializer, ConfiguracionTipoExpedienteAgnoGetSerializer, ConfiguracionTipoExpedienteAgnoHistorialSerializer, SecSubUnidadOrgaGetSerializer, XXGetSerializer, XYGetSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTiposExpedientesActuales, PermisoActualizarRegistrarCambiosTiposExpedientesProximoAnio, PermisoCrearConfiguracionTiposExpedientesActuales, PermisoCrearRegistrarCambiosTiposExpedientesProximoAnio
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -85,7 +86,7 @@ class SerieSubserioUnidadGet(generics.ListAPIView):
 
 class ConfiguracionTipoExpedienteAgnoCreate(generics.CreateAPIView):
     serializer_class = ConfiguracionTipoExpedienteAgnoCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearConfiguracionTiposExpedientesActuales|PermisoCrearRegistrarCambiosTiposExpedientesProximoAnio)]
     queryset = ConfiguracionTipoExpedienteAgno.objects.all()
     
     def post(self,request):    
@@ -144,7 +145,7 @@ class ConfiguracionTipoExpedienteAgnoCreate(generics.CreateAPIView):
 class ConfiguracionTipoExpedienteAgnoUpdate(generics.UpdateAPIView):
     serializer_class = ConfiguracionTipoExpedienteAgnoCreateSerializer
     queryset = ConfiguracionTipoExpedienteAgno.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionTiposExpedientesActuales|PermisoActualizarRegistrarCambiosTiposExpedientesProximoAnio)]
     
     def put(self,request,pk):
     

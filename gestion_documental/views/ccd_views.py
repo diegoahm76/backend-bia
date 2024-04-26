@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from django.db import transaction
+from seguridad.permissions.permissions_gestor import PermisoActualizarAsignacionSeccionesResponsablesCCD, PermisoActualizarCCD, PermisoActualizarDelegacionOficinasResponsablesExpedientes, PermisoActualizarHomologacionSeccionesPersistentesCCD, PermisoCrearAsignacionSeccionesResponsablesCCD, PermisoCrearCCD, PermisoCrearDelegacionOficinasResponsablesExpedientes, PermisoCrearHomologacionSeccionesPersistentesCCD
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -61,7 +62,7 @@ from transversal.serializers.organigrama_serializers import UnidadesGetSerialize
 class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
     serializer_class = CCDPostSerializer
     queryset = CuadrosClasificacionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCCD]
 
     def post(self, request):
         data = request.data
@@ -101,7 +102,7 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
 class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
     serializer_class = CCDPutSerializer
     queryset = CuadrosClasificacionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCCD]
 
     def patch(self, request, pk):
         data = request.data
@@ -181,7 +182,7 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 class FinalizarCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
     serializer_class = CCDActivarSerializer
     queryset = CuadrosClasificacionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearCCD|PermisoActualizarCCD)]
 
     def put(self, request, pk):
         ccd = self.queryset.all().filter(id_ccd=pk).first()
@@ -278,7 +279,7 @@ class GetCCDTerminado(generics.ListAPIView):
 class CreateSeriesDoc(generics.CreateAPIView):
     serializer_class = SeriesDocPostSerializer
     queryset = SeriesDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCCD]
     
     def post(self,request):
         data = request.data
@@ -345,7 +346,7 @@ class CreateSeriesDoc(generics.CreateAPIView):
 class UpdateSeriesDoc(generics.RetrieveUpdateAPIView):
     serializer_class = SeriesDocPutSerializer
     queryset = SeriesDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCCD]
     
 
     def put(self, request, id_serie_doc):
@@ -520,7 +521,7 @@ class GetSeriesIndependent(generics.ListAPIView):
 class CreateSubseriesDoc(generics.CreateAPIView):
     serializer_class = SubseriesDocPostSerializer
     queryset = SubseriesDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCCD]
     
     def post(self,request):
         data = request.data
@@ -572,7 +573,7 @@ class CreateSubseriesDoc(generics.CreateAPIView):
 class UpdateSubseriesDoc(generics.RetrieveUpdateAPIView):
     serializer_class = SubseriesDocPutSerializer
     queryset = SubseriesDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCCD]
 
     def put(self, request, id_subserie_doc):
         subserie = self.queryset.all().filter(id_subserie_doc=id_subserie_doc).first()
@@ -697,7 +698,7 @@ class GetSubseriesByIdSerieDoc(generics.ListAPIView):
 
 class CreateCatalogoSerieSubserie(generics.CreateAPIView):
     serializer_class = CatalogoSerieSubserieSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCCD]
     
     def post(self,request):
         data = request.data
@@ -766,7 +767,7 @@ class GetCatalogoSerieSubserieByIdCCD(generics.ListAPIView):
 class ReanudarCuadroClasificacionDocumental(generics.UpdateAPIView):
     serializer_class = CCDActivarSerializer
     queryset = CuadrosClasificacionDocumental
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCCD]
 
     def put(self, request, pk):
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()
@@ -791,7 +792,7 @@ class ReanudarCuadroClasificacionDocumental(generics.UpdateAPIView):
 class UpdateCatalogoUnidad(generics.UpdateAPIView):
     serializer_class = CatalogosSeriesUnidadSerializer
     queryset = CatalogosSeriesUnidad.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCCD]
     
     def put(self,request,id_ccd):
         data = request.data
@@ -1146,7 +1147,7 @@ class CompararSeriesDocUnidadCatSerieView(generics.ListAPIView):
  
 class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
     serializer_class = UnidadesSeccionPersistenteTemporalSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearHomologacionSeccionesPersistentesCCD|PermisoActualizarHomologacionSeccionesPersistentesCCD)]
 
     def crear_actualizar_unidades_persistentes_tmp(self, data_in):
 
@@ -1251,7 +1252,7 @@ class UnidadesSeccionPersistenteTemporalCreateView(generics.CreateAPIView):
 
 class AgrupacionesDocumentalesPersistenteTemporalCreateView(generics.CreateAPIView):
     serializer_class = AgrupacionesDocumentalesPersistenteTemporalSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearHomologacionSeccionesPersistentesCCD|PermisoActualizarHomologacionSeccionesPersistentesCCD)]
 
     def crear_actualizar_agrupaciones_persistentes_tmp(self, data_in):
         try:
@@ -1314,7 +1315,7 @@ class AgrupacionesDocumentalesPersistenteTemporalCreateView(generics.CreateAPIVi
 
 
 class PersistenciaConfirmadaCreateView(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearHomologacionSeccionesPersistentesCCD|PermisoActualizarHomologacionSeccionesPersistentesCCD)]
 
     def post(self, request):
         data = request.data
@@ -1597,7 +1598,7 @@ class UnidadesSeccionResponsableCCDNuevoGetView(generics.ListAPIView):
 
 class UnidadesSeccionResponsableTemporalCreateView(generics.CreateAPIView):
     serializer_class = UnidadesSeccionResponsableTemporalSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearAsignacionSeccionesResponsablesCCD|PermisoActualizarAsignacionSeccionesResponsablesCCD)]
 
     def crear_actualizar_unidades_responsable_tmp(self, data_in):
         
@@ -1845,7 +1846,7 @@ class OficinasUnidadOrganizacionalNuevaGetView(generics.ListAPIView):
 
 class OficinasDelegacionTemporalCreateView(generics.CreateAPIView):
     serializer_class = OficinasDelegacionTemporalSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearDelegacionOficinasResponsablesExpedientes|PermisoActualizarDelegacionOficinasResponsablesExpedientes)]
 
     def busqueda_oficinas_delegadas(self, id_unidad_org_padre, id_ccd_nuevo):
         unidades_delegadas = UnidadesSeccionResponsableTemporal.objects.filter(

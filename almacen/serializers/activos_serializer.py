@@ -21,6 +21,8 @@ class InventarioSerializer(serializers.ModelSerializer):
     estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
+    cantidad = serializers.SerializerMethodField()
+    ubicacion = serializers.SerializerMethodField()
 
     def get_valor_unitario(self, obj):
         id_bien = obj.id_bien
@@ -34,10 +36,22 @@ class InventarioSerializer(serializers.ModelSerializer):
         id_item_entrada_almacen = item_entrada.id_item_entrada_almacen if item_entrada else None
         return id_item_entrada_almacen
 
+    def get_cantidad(self, obj):
+        return 1  
+
+    def get_ubicacion(self, obj):
+        if obj.ubicacion_en_bodega:
+            return 'En Bodega'
+        elif obj.ubicacion_asignado:
+            return 'Asignado a Funcionario'
+        elif obj.ubicacion_prestado:
+            return 'Prestado a Funcionario'
+        else:
+            return 'Ubicación desconocida'
+
     class Meta:
         model = Inventario
         fields = '__all__'
-
 
 
 
@@ -162,19 +176,7 @@ class BusquedaSolicitudActivoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SolicitudesActivos
-        fields = (
-            'id_solicitud_activo',
-            'fecha_solicitud',
-            'motivo',
-            'estado_solicitud',
-            'id_persona_solicita',
-            'primer_nombre_persona_solicita',
-            'primer_apellido_persona_solicita',
-            'id_funcionario_resp_unidad',
-            'primer_nombre_funcionario_resp_unidad',
-            'primer_apellido_funcionario_resp_unidad',
-            'numero_activos',  # Campo adicional para el cálculo del número de activos
-        )
+        fields = '__all__'
 
     def get_numero_activos(self, instance):
         # Obtener el número de activos relacionados con esta solicitud

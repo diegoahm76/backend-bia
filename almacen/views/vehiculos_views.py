@@ -1706,9 +1706,10 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
         for solicitud in queryset:
             data.append({
                 'id_solicitud_viaje': solicitud.id_solicitud_viaje,
-                "id_persona_solicita": solicitud.id_persona_solicita.id_persona,
-                'primer_nombre_solicitante': solicitud.id_persona_solicita.primer_nombre,
-                'primer_apellido_solicitante': solicitud.id_persona_solicita.primer_apellido,
+                'id_persona_solicita': solicitud.id_persona_solicita.id_persona if solicitud.id_persona_solicita else None,
+                'primer_nombre_solicitante': solicitud.id_persona_solicita.primer_nombre if solicitud.id_persona_solicita else None,
+                'id_unidad_organizacional_solicitante': solicitud.id_unidad_org_solicita.id_unidad_organizacional if solicitud.id_unidad_org_solicita else None,
+                'nombre_unidad_organizacional_solicitante': solicitud.id_unidad_org_solicita.nombre if solicitud.id_unidad_org_solicita else None,
                 'cod_municipio': solicitud.cod_municipio.cod_municipio,                
                 'nombre_municipio': solicitud.cod_municipio.nombre,
                 'fecha_solicitud': solicitud.fecha_solicitud,
@@ -1724,6 +1725,12 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
                 'hora_retorno': solicitud.hora_retorno,
                 'requiere_compagnia_militar': solicitud.requiere_compagnia_militar,
                 'consideraciones_adicionales': solicitud.consideraciones_adicionales,
+                'id_persona_responsable': solicitud.id_persona_responsable.id_persona if solicitud.id_persona_responsable else None,
+                'primer_nombre_responsable': solicitud.id_persona_responsable.primer_nombre if solicitud.id_persona_responsable else None,
+                'primer_apellido_responsable': solicitud.id_persona_responsable.primer_apellido if solicitud.id_persona_responsable else None,
+
+                'id_unidad_organizacional_responsable': solicitud.id_unidad_org_responsable.id_unidad_organizacional if solicitud.id_unidad_org_responsable else None,
+                'nombre_unidad_organizacional_responsable': solicitud.id_unidad_org_responsable.nombre if solicitud.id_unidad_org_responsable else None,                 
                 'fecha_aprobacion_responsable': solicitud.fecha_aprobacion_responsable,
                 'fecha_rechazo': solicitud.fecha_rechazo,
                 'justificacion_rechazo': solicitud.justificacion_rechazo,
@@ -1899,7 +1906,7 @@ class CrearAprobacion(generics.CreateAPIView):
         
 
         # Validar que la solicitud de viaje esté en estado de espera
-        if solicitud_viaje.estado_solicitud != 'ES':
+        if solicitud_viaje.estado_solicitud != 'AP':
             return JsonResponse({'error': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validar si existe el conductor del vehículo asignado al viaje

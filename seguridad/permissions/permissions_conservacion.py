@@ -15,6 +15,7 @@ class PermisoEsCoordinadorViveros(BasePermission):
 
         return False
 
+# ADMINISTRAR VIVEROS
 class PermisoCrearAdministrarViveros(BasePermission):
     message = 'No tiene permiso para crear viveros'
     def has_permission(self, request, view):
@@ -66,7 +67,8 @@ class PermisoBorrarAdministrarViveros(BasePermission):
                 return True
 
         return False
-    
+
+# RETIROR CUARENTENA
 class PermisoIngresoRetiroCuarentena(BasePermission):
     message = 'No tiene permiso para ingresar o retirar viveros de cuarentena'
     def has_permission(self, request, view):
@@ -80,6 +82,7 @@ class PermisoIngresoRetiroCuarentena(BasePermission):
 
         return False
 
+# ABRIR/CERRAR VIVEROS
 class PermisoAperturaCierreVivero(BasePermission):
     message = 'No tiene permiso para abrir o cerrar viveros'
     def has_permission(self, request, view):
@@ -92,7 +95,8 @@ class PermisoAperturaCierreVivero(BasePermission):
                 return True
 
         return False
-    
+
+# TIPIFICACION BIENES CONSUMO VIVEROS
 class PermisoConsultarTipificaciónBienesConsumoViveros(BasePermission):
     message = 'No tiene permiso para consultar la tipificación de los bienes de consumo utilizables en viveros para la producción'
     def has_permission(self, request, view):
@@ -119,6 +123,7 @@ class PermisoActualizarTipificaciónBienesConsumoViveros(BasePermission):
 
         return False
 
+# RECEPCION Y DISTRIBUCION DE DESPACHOS ENTRANTES VIVEROS
 class PermisoCrearRecepciónDistribuciónDespachosEntrantesVivero(BasePermission):
     message = 'No tiene permiso para distribuir las entradas de bienes de consumo de viveros en los diferentes viveros de la entidad'
     def has_permission(self, request, view):
@@ -171,6 +176,7 @@ class PermisoBorrarRecepciónDistribuciónDespachosEntrantesVivero(BasePermissio
 
         return False
 
+# ADMINISTRACION DE CAMAS DE GERMINACION
 class PermisoCrearAdministraciónCamasGerminación(BasePermission):
     message = 'No tiene permiso para crear la administración de las camas de germinación para los diferntes viveros'
     def has_permission(self, request, view):
@@ -223,6 +229,7 @@ class PermisoBorrarAdministraciónCamasGerminación(BasePermission):
 
         return False
 
+# SIEMBRAS DE SEMILLAS DE MATERIAL VEGETAL
 class PermisoCrearSiembraSemillas(BasePermission):
     message = 'No tiene permiso para crear y administrar las siembras de semillas de material vegetal realizadas en los diferentes viveros'
     def has_permission(self, request, view):
@@ -275,6 +282,7 @@ class PermisoBorrarSiembraSemillas(BasePermission):
 
         return False
 
+# CAMBIOS DE ETAPA DE UNIDADES DE MATERIAL VEGETAL
 class PermisoCrearCambioEtapaMaterialVegetal(BasePermission):
     message = 'No tiene permiso para crear el cambio de etapa de unidades de material vegetal de un lote específico'
     def has_permission(self, request, view):
@@ -327,6 +335,7 @@ class PermisoAnularCambioEtapaMaterialVegetal(BasePermission):
 
         return False
 
+# TRASLADOS DE BIENES ENTRE VIVEROS
 class PermisoCrearTrasladosEntreViveros(BasePermission):
     message = 'No tiene permiso para crear los traslados de bienes entre viveros'
     def has_permission(self, request, view):
@@ -379,6 +388,7 @@ class PermisoAnularTrasladosEntreViveros(BasePermission):
 
         return False
 
+# INGRESO A CUARENTENA DE MATERIAL VEGETAL
 class PermisoCrearIngresoCuarentenaMaterialVegetal(BasePermission):
     message = 'No tiene permiso para crear el ingreso de plantas y plántulas de un lote de un vivero a cuarentena'
     def has_permission(self, request, view):
@@ -431,6 +441,7 @@ class PermisoAnularIngresoCuarentenaMaterialVegetal(BasePermission):
 
         return False
 
+# LEVANTAMIENTO DE MATERIAL VEGETAL EN CUARENTENA
 class PermisoCrearLevantamientoCuarentenaMaterialVegetal(BasePermission):
     message = 'No tiene permiso para crear el levantamiento de plantas y plántulas de un lote de un vivero en cuarentena'
     def has_permission(self, request, view):
@@ -483,6 +494,7 @@ class PermisoAnularLevantamientoCuarentenaMaterialVegetal(BasePermission):
 
         return False
 
+# BAJAS DE MATERIAL VEGETAL EN INVENTARIO
 class PermisoCrearBajasHerramientasInsumosSemillas(BasePermission):
     message = 'No tiene permiso para crear la baja de elementos del tipo Herramientas, Insumos y Semillas del inventario'
     def has_permission(self, request, view):
@@ -535,6 +547,7 @@ class PermisoAnularBajasHerramientasInsumosSemillas(BasePermission):
 
         return False
 
+# MORTALIDAD DE MATERIAL VEGETAL EN INVENTARIO
 class PermisoCrearMortalidadPlantasPlántulas(BasePermission):
     message = 'No tiene permiso para crear el registro de la mortalidad de plantas y plántulas de un vivero'
     def has_permission(self, request, view):
@@ -587,8 +600,9 @@ class PermisoAnularMortalidadPlantasPlántulas(BasePermission):
 
         return False
 
+# MEZCLAS
 class PermisoCrearMezclas(BasePermission):
-    message = 'No tiene permiso para crear los nombres de las mezclas en el sistema'
+    message = 'No tiene permiso para crear mezclas en el sistema'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -601,7 +615,7 @@ class PermisoCrearMezclas(BasePermission):
         return False
 
 class PermisoConsultarMezclas(BasePermission):
-    message = 'No tiene permiso para consultar los nombres de las mezclas en el sistema'
+    message = 'No tiene permiso para consultar mezclas en el sistema'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -614,7 +628,7 @@ class PermisoConsultarMezclas(BasePermission):
         return False
 
 class PermisoActualizarMezclas(BasePermission):
-    message = 'No tiene permiso para actualizar los nombres de las mezclas en el sistema'
+    message = 'No tiene permiso para actualizar mezclas en el sistema'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -627,7 +641,7 @@ class PermisoActualizarMezclas(BasePermission):
         return False
 
 class PermisoBorrarMezclas(BasePermission):
-    message = 'No tiene permiso para borrar los nombres de las mezclas en el sistema'
+    message = 'No tiene permiso para borrar mezclas en el sistema'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -639,6 +653,7 @@ class PermisoBorrarMezclas(BasePermission):
 
         return False
 
+# PREPARACIÓN MEZCLAS
 class PermisoCrearPreparacionMezclas(BasePermission):
     message = 'No tiene permiso para crear el registro de la preparación de mezclas a utilizar en un vivero'
     def has_permission(self, request, view):
@@ -653,7 +668,7 @@ class PermisoCrearPreparacionMezclas(BasePermission):
         return False
 
 class PermisoConsultarPreparacionMezclas(BasePermission):
-    message = 'No tiene permiso para crear el registro de la preparación de mezclas a utilizar en un vivero'
+    message = 'No tiene permiso para consultar el registro de la preparación de mezclas a utilizar en un vivero'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
         user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
@@ -691,6 +706,7 @@ class PermisoAnularPreparacionMezclas(BasePermission):
 
         return False
 
+# INCIDENCIAS MATERIAL VEGETAL
 class PermisoCrearRegistroIncidenciasMaterialVegetal(BasePermission):
     message = 'No tiene permiso para crear el registro de las incidencias que se realicen o presenten sobre un lote de material vegetal de un vivero'
     def has_permission(self, request, view):
@@ -743,6 +759,7 @@ class PermisoAnularRegistroIncidenciasMaterialVegetal(BasePermission):
 
         return False
 
+# SOLICITUDES PLANTAS E INSUMOS
 class PermisoCrearSolicitudesPlantasInsumosViveros(BasePermission):
     message = 'No tiene permiso para crear el registro de las solicitudes de Plantas e Insumos de un Vivero determinado'
     def has_permission(self, request, view):
@@ -795,6 +812,208 @@ class PermisoAnularSolicitudesPlantasInsumosViveros(BasePermission):
 
         return False
 
+# LISTADO SOLICITUDES PENDIENTES DE VIVEROS - FUNCIONARIO
+class PermisoConsultarListadoSolicitudesPendientesFuncionario(BasePermission):
+    message = 'No tiene permiso para consultar el listado de solicitudes pendientes de aprobación como funcionario'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=202))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# APROBACION SOLICITUDES VIVEROS - FUNCIONARIO
+class PermisoCrearAprobacionSolicitudesViverosFuncionario(BasePermission):
+    message = 'No tiene permiso para crear aprobaciones de solicitudes a viveros como funcionario'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=203))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarAprobacionSolicitudesViverosFuncionario(BasePermission):
+    message = 'No tiene permiso para consultar aprobaciones de solicitudes a viveros como funcionario'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=204))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarAprobacionSolicitudesViverosFuncionario(BasePermission):
+    message = 'No tiene permiso para actualizar aprobaciones de solicitudes a viveros como funcionario'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=205))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# LISTADO SOLICITUDES PENDIENTES DE VIVEROS - COORDINADOR VIVEROS
+class PermisoConsultarListadoSolicitudesPendientesCoordinadorViveros(BasePermission):
+    message = 'No tiene permiso para consultar el listado de solicitudes pendientes de aprobación como coordinador de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=206))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# APROBACION SOLICITUDES VIVEROS - COORDINADOR VIVEROS
+class PermisoCrearAprobacionSolicitudesViverosCoordinadorViveros(BasePermission):
+    message = 'No tiene permiso para crear aprobaciones de solicitudes a viveros como coordinador de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=207))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarAprobacionSolicitudesViverosCoordinadorViveros(BasePermission):
+    message = 'No tiene permiso para consultar aprobaciones de solicitudes a viveros como coordinador de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=208))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarAprobacionSolicitudesViverosCoordinadorViveros(BasePermission):
+    message = 'No tiene permiso para actualizar aprobaciones de solicitudes a viveros como coordinador de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=209))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# CIERRE SOLICITUDES VIVEROS - NO DISPONIBILIDAD
+class PermisoCrearCierreSolicitudesViverosNoDisponibilidad(BasePermission):
+    message = 'No tiene permiso para crear cierres de solicitudes a viveros por no disponibilidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=210))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarCierreSolicitudesViverosNoDisponibilidad(BasePermission):
+    message = 'No tiene permiso para consultar cierres de solicitudes a viveros por no disponibilidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=211))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarCierreSolicitudesViverosNoDisponibilidad(BasePermission):
+    message = 'No tiene permiso para actualizar cierres de solicitudes a viveros por no disponibilidad'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=212))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# DESPACHO VIVEROS
+class PermisoCrearDespachoViveros(BasePermission):
+    message = 'No tiene permiso para crear despachos de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=213))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarDespachoViveros(BasePermission):
+    message = 'No tiene permiso para consultar despachos de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=214))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoActualizarDespachoViveros(BasePermission):
+    message = 'No tiene permiso para actualizar despachos de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=215))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoAnularDespachoViveros(BasePermission):
+    message = 'No tiene permiso para anular despachos de viveros'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=216))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# RESPONSABLES VIVEROS
 class PermisoCrearResponsablesViveros(BasePermission):
     message = 'No tiene permiso para crear la configuracion de los responsables de cada vivero en la entidad'
     def has_permission(self, request, view):
@@ -816,6 +1035,89 @@ class PermisoConsultarResponsablesViveros(BasePermission):
 
         for rol in user_roles:
             permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=218))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# CONFIGURACION ALERTAS CONSERVACION
+class PermisoActualizarConfiguracionAlertasConservacion(BasePermission):
+    message = 'No tiene permiso para actualizar la configuración de alertas de conservación'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=358))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+class PermisoConsultarConfiguracionAlertasConservacion(BasePermission):
+    message = 'No tiene permiso para consultar la configuración de alertas de conservación'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=359))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# TABLERO DE CONTROL CONSERVACION
+class PermisoConsultarTableroControlConservacion(BasePermission):
+    message = 'No tiene permiso para consultar el tablero de control de conservación'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=366))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# HISTORICO MOVIMIENTOS POR MODULO
+class PermisoConsultarHistoricoMovimientosModulo(BasePermission):
+    message = 'No tiene permiso para consultar el histórico de movimientos por módulo'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=367))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# COMPENDIOS
+class PermisoConsultarCompendios(BasePermission):
+    message = 'No tiene permiso para consultar los compendios'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=368))
+            if permisos_modulo_rol:
+                return True
+
+        return False
+
+# ANALITICA DE DATOS
+class PermisoConsultarAnaliticaDatos(BasePermission):
+    message = 'No tiene permiso para consultar la analítica de datos'
+    def has_permission(self, request, view):
+        id_user = request.user.id_usuario
+        user_roles = UsuariosRol.objects.filter(id_usuario=id_user)
+
+        for rol in user_roles:
+            permisos_modulo_rol = PermisosModuloRol.objects.filter(Q(id_rol=rol.id_rol) & Q(id_permiso_modulo=369))
             if permisos_modulo_rol:
                 return True
 

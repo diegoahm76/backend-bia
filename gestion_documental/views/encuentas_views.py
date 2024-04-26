@@ -12,6 +12,7 @@ from gestion_documental.serializers.encuentas_serializers import AlertasGenerada
 from django.db.models import Max
 from datetime import datetime
 from django.db import transaction
+from seguridad.permissions.permissions_gestor import PermisoActualizarAdminEncuestas, PermisoBorrarAdminEncuestas, PermisoCrearAdminEncuestas
 from seguridad.utils import Util
 from django.db.models import Count
 from transversal.admin import PersonasAdmin
@@ -26,7 +27,7 @@ from transversal.serializers.alertas_serializers import AlertasBandejaAlertaPers
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
 class EncabezadoEncuestaCreate(generics.CreateAPIView):
     serializer_class = EncabezadoEncuestaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdminEncuestas]
     queryset = EncabezadoEncuesta.objects.all()
     
     def post(self,request):
@@ -86,7 +87,7 @@ class EncabezadoEncuestaCreate(generics.CreateAPIView):
 class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
     queryset = EncabezadoEncuesta.objects.all()
     serializer_class = EncabezadoEncuestaUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdminEncuestas]
     def put(self, request, *args, **kwargs):
 
 
@@ -175,7 +176,7 @@ class EncabezadoEncuestaUpdate(generics.UpdateAPIView):
 
 class PreguntasEncuestaCreate(generics.CreateAPIView):
     serializer_class = PreguntasEncuestaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdminEncuestas]
     queryset = PreguntasEncuesta.objects.all()
     
     def crear_pregunta(self,data,request):
@@ -241,7 +242,7 @@ class PreguntasEncuestaCreate(generics.CreateAPIView):
 class PreguntasEncuestaUpdate(generics.UpdateAPIView):
     queryset = PreguntasEncuesta.objects.all()
     serializer_class = PreguntasEncuestaUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdminEncuestas]
     def actualizar_pregunta(self,data,pk,request):
         data_in=data
         instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
@@ -335,7 +336,7 @@ class PreguntasEncuestaUpdate(generics.UpdateAPIView):
 class PreguntasEncuestaDelete(generics.DestroyAPIView):
     queryset = PreguntasEncuesta.objects.all()
     serializer_class = PreguntasEncuestaDeleteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarAdminEncuestas]
     def eliminar(self,pk,request):
         instance = PreguntasEncuesta.objects.filter(id_pregunta_encuesta=pk).first()
         previus = copy.copy(instance)
@@ -371,7 +372,7 @@ class PreguntasEncuestaDelete(generics.DestroyAPIView):
     
 class OpcionesRtaCreate(generics.CreateAPIView):
     serializer_class = OpcionesRtaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdminEncuestas]
     queryset = OpcionesRta.objects.all()
     
     def crear_opciones_rta(self,data,request):
@@ -416,7 +417,7 @@ class OpcionesRtaCreate(generics.CreateAPIView):
 class OpcionesRtaUpdate(generics.UpdateAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdminEncuestas]
     def actualizar_opciones_rta(self,data,pk,request):
         data_in=data
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
@@ -466,7 +467,7 @@ class OpcionesRtaUpdate(generics.UpdateAPIView):
 class OpcionesRtaDelete(generics.DestroyAPIView):
     queryset = OpcionesRta.objects.all()
     serializer_class = OpcionesRtaDeleteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarAdminEncuestas]
     def eliminar(self,pk,request):
         instance = OpcionesRta.objects.filter(id_opcion_rta=pk).first()
         previus = copy.copy(instance)
@@ -550,6 +551,7 @@ class EncabezadoEncuestaDetalleGet(generics.ListAPIView):
 class EncabezadoEncuestaDelete(generics.DestroyAPIView):
     queryset = EncabezadoEncuesta.objects.all()
     serializer_class = EncabezadoEncuestaDeleteSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarAdminEncuestas]
     
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()

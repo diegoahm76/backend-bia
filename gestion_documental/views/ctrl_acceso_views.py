@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 import copy
 
+from seguridad.permissions.permissions_gestor import PermisoActualizarControlAccesoClasificacionExpedientes, PermisoCrearControlAccesoClasificacionExpedientes
 from seguridad.utils import Util
 
 class CtrlAccesoGetView(generics.ListAPIView):
@@ -37,7 +38,7 @@ class CtrlAccesoPutView(generics.UpdateAPIView):
     serializer_class_cod_clasif = CtrlAccesoCodClasifPutSerializer
     serializer_class_cat_und = CtrlAccesoCatUndPutSerializer
     queryset = CtrlAccesoClasificacionExpCCD.objects.filter()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearControlAccesoClasificacionExpedientes|PermisoActualizarControlAccesoClasificacionExpedientes)]
 
     def put(self, request):
         data = request.data
