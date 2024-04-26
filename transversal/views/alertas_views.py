@@ -31,7 +31,7 @@ from seguridad.utils import Util
 class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
     serializer_class = ConfiguracionClaseAlertaUpdateSerializer
     queryset = ConfiguracionClaseAlerta.objects.all()
-    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionAlertasRecursoHidrico, PermisoActualizarConfiguracionAlertasRecaudo, PermisoActualizarConfiguracionAlertasGestionDocumental)]
+    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionAlertasRecursoHidrico|PermisoActualizarConfiguracionAlertasRecaudo|PermisoActualizarConfiguracionAlertasGestionDocumental)]
 
     def put(self, request, *args, **kwargs):
         pk = kwargs.get('pk')
