@@ -7,7 +7,7 @@ from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
 from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
-from seguridad.permissions.permissions_planes import PermisoActualizarAdministracionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarMedicionIndicador, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearAdministracionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearMedicionIndicador, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
+from seguridad.permissions.permissions_planes import PermisoActualizarActividades, PermisoActualizarActividadesPGAR, PermisoActualizarAdministracionPlanes, PermisoActualizarArmonizacionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarIndicadores, PermisoActualizarIndicadoresPGAR, PermisoActualizarLineasBasePGAR, PermisoActualizarMedicionIndicador, PermisoActualizarMetas, PermisoActualizarMetasPGAR, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarRubros, PermisoActualizarSeguimientoPGAR, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearActividades, PermisoCrearActividadesPGAR, PermisoCrearAdministracionPlanes, PermisoCrearArmonizacionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearIndicadores, PermisoCrearIndicadoresPGAR, PermisoCrearLineasBasePGAR, PermisoCrearMedicionIndicador, PermisoCrearMetas, PermisoCrearMetasPGAR, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearRubros, PermisoCrearSeguimientoPGAR, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -311,7 +311,7 @@ class EjeEstractegicoListIdPlanes(generics.ListAPIView):
 
 class EjeEstractegicoListIdObjetivo(generics.ListAPIView):
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         queryset = EjeEstractegico.objects.all()
@@ -867,7 +867,7 @@ class ActividadListPeriodoTiempo(generics.ListAPIView):
 class ActividadCreate(generics.ListCreateAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearActividades]
 
     def post(self,request):
         data = request.data
@@ -881,7 +881,7 @@ class ActividadCreate(generics.ListCreateAPIView):
 class ActividadUpdate(generics.RetrieveUpdateAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarActividades]
 
     def put(self, request, pk):
         data = request.data
@@ -1269,7 +1269,7 @@ class RubroList(generics.ListCreateAPIView):
 class RubroCreate(generics.ListCreateAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRubros]
 
     def post(self,request):
         data = request.data
@@ -1283,7 +1283,7 @@ class RubroCreate(generics.ListCreateAPIView):
 class RubroUpdate(generics.RetrieveUpdateAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRubros]
 
     def put(self, request, pk):
         data = request.data
@@ -1385,7 +1385,7 @@ class IndicadorListPeriodoTiempo(generics.ListAPIView):
 class IndicadorCreate(generics.ListCreateAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearIndicadores]
 
     def post(self,request):
         data = request.data
@@ -1399,7 +1399,7 @@ class IndicadorCreate(generics.ListCreateAPIView):
 class IndicadorUpdate(generics.RetrieveUpdateAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarIndicadores]
 
     def put(self, request, pk):
         data = request.data
@@ -1585,7 +1585,7 @@ class MetaListPeriodoTiempoPorPlan(generics.ListAPIView):
 class MetaCreate(generics.ListCreateAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearMetas]
 
     def post(self,request):
         data = request.data
@@ -1599,7 +1599,7 @@ class MetaCreate(generics.ListCreateAPIView):
 class MetaUpdate(generics.RetrieveUpdateAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarMetas]
 
     def put(self, request, pk):
         data = request.data
@@ -1908,7 +1908,7 @@ class PlanesGetId(generics.ListAPIView):
 #Metas PGAR
 class EjeEstractegicoPGARList(generics.ListCreateAPIView):
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         ejes = EjeEstractegico.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
@@ -1945,7 +1945,7 @@ class BusquedaAvanzadaEjesPGAR(generics.ListAPIView):
 
 class MetasPGARListByIdEjeEstrategico(generics.ListAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         metas = MetasEjePGAR.objects.filter(id_eje_estrategico=pk)
@@ -1956,7 +1956,7 @@ class MetasPGARListByIdEjeEstrategico(generics.ListAPIView):
     
 class MetasPGARList(generics.ListAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         metas = MetasEjePGAR.objects.all()
@@ -1978,7 +1978,7 @@ class MetasPGARList(generics.ListAPIView):
     
 class MetasPGARCreate(generics.CreateAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearMetasPGAR]
 
     def post(self, request):
         data = request.data
@@ -1989,7 +1989,7 @@ class MetasPGARCreate(generics.CreateAPIView):
     
 class MetasPGARUpdate(generics.UpdateAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarMetasPGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -2005,7 +2005,7 @@ class MetasPGARUpdate(generics.UpdateAPIView):
 #Linea Base
 class LineaBaseListByIdMeta(generics.ListAPIView):
     serializer_class = LineasBasePGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         lineas_base = LineasBasePGAR.objects.filter(id_meta_eje=pk)
@@ -2017,7 +2017,7 @@ class LineaBaseListByIdMeta(generics.ListAPIView):
     
 class LineaBaseCreate(generics.CreateAPIView):
     serializer_class = LineasBasePGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearLineasBasePGAR]
 
     def post(self, request):
         data = request.data
@@ -2028,7 +2028,7 @@ class LineaBaseCreate(generics.CreateAPIView):
     
 class LineaBaseUpdate(generics.UpdateAPIView):
     serializer_class = LineasBasePGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarLineasBasePGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -2065,7 +2065,7 @@ class BusquedaAvnzadaLineaBase(generics.ListAPIView):
 
 class ActividadesListByIdLineaBase(generics.ListAPIView):
     serializer_class = ActividadesPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):        
         actividades = Actividad.objects.filter(id_linea_base=pk)
@@ -2078,7 +2078,7 @@ class ActividadesListByIdLineaBase(generics.ListAPIView):
     
 class ActividadesCreate(generics.CreateAPIView):
     serializer_class = ActividadesPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearActividadesPGAR]
 
     def post(self, request):
         data = request.data
@@ -2089,7 +2089,7 @@ class ActividadesCreate(generics.CreateAPIView):
     
 class ActividadesUpdate(generics.UpdateAPIView):
     serializer_class = ActividadesPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarActividadesPGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -2138,7 +2138,7 @@ class BusquedaAvanzadaActividadesPGAR(generics.ListAPIView):
 #Indicadores
 class IndicadoresByIdActividad(generics.ListAPIView):
     serializer_class = IndicadoresPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicadores = Indicador.objects.filter(id_actividad=pk)
@@ -2150,7 +2150,7 @@ class IndicadoresByIdActividad(generics.ListAPIView):
     
 class IndicaresCreate(generics.CreateAPIView):
     serializer_class = IndicadoresPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearIndicadoresPGAR]
 
     def post(self, request):
         data = request.data
@@ -2161,7 +2161,7 @@ class IndicaresCreate(generics.CreateAPIView):
 
 class IndicadoresUpdate(generics.UpdateAPIView):
     serializer_class = IndicadoresPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarIndicadoresPGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -2177,7 +2177,7 @@ class IndicadoresUpdate(generics.UpdateAPIView):
 #Armonización PGAR
 class PlanesPAIList(generics.ListAPIView):
     serializer_class = PlanesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         nombre_plan = request.query_params.get('nombre_plan', '')
@@ -2197,7 +2197,7 @@ class PlanesPAIList(generics.ListAPIView):
 
 class PlanesPGARList(generics.ListAPIView):
     serializer_class = PlanesSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         planes = Planes.objects.filter(tipo_plan = 'PGR')
@@ -2209,7 +2209,7 @@ class PlanesPGARList(generics.ListAPIView):
 
 class ArmonizacionPGARCreate(generics.CreateAPIView):
     serializer_class = ArmonizarPAIPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearArmonizacionPlanes]
 
     def post(self, request):
         data = request.data
@@ -2221,7 +2221,7 @@ class ArmonizacionPGARCreate(generics.CreateAPIView):
 
 class ArmonizacionPGARList(generics.ListAPIView):
     serializer_class = ArmonizarPAIPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         armonizacion = ArmonizarPAIPGAR.objects.all()
@@ -2234,7 +2234,7 @@ class ArmonizacionPGARList(generics.ListAPIView):
     
 class ArmonizacionPGARUpdate(generics.UpdateAPIView):
     serializer_class = ArmonizarPAIPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarArmonizacionPlanes]
 
     def put(self, request, pk):
         data = request.data
@@ -2249,7 +2249,7 @@ class ArmonizacionPGARUpdate(generics.UpdateAPIView):
 
 class SeguiemientoPGARCreate(generics.CreateAPIView):
     serializer_class = SeguiemientoPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearSeguimientoPGAR]
 
     def post(self, request):
         data = request.data
@@ -2260,7 +2260,7 @@ class SeguiemientoPGARCreate(generics.CreateAPIView):
     
 class SeguimientoPGARList(generics.ListAPIView):
     serializer_class = SeguiemientoPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         seguimiento = SeguimientoPGAR.objects.all()
@@ -2272,7 +2272,7 @@ class SeguimientoPGARList(generics.ListAPIView):
     
 class SeguimientoPGARUpdate(generics.UpdateAPIView):
     serializer_class = SeguiemientoPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarSeguimientoPGAR]
 
     def put(self, request, pk):
         data = request.data

@@ -13,7 +13,7 @@ from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
 from seguimiento_planes.models.planes_models import Metas, Rubro
-from seguridad.permissions.permissions_planes import PermisoActualizarCodigosUnspsc, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarSector, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearCodigosUnspsc, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearSector, PermisoCrearUbicaciones
+from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -35,7 +35,7 @@ class FuenteFinanciacionIndicadoresList(generics.ListAPIView):
 
 class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearFuentesFinanciacionIndicadores]
 
     def post(self, request):
         fuentes = FuenteFinanciacionIndicadores.objects.filter(id_meta=request.data['id_meta'])
@@ -67,7 +67,7 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
 class FuenteFinanciacionIndicadoresUpdate(generics.UpdateAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
     serializer_class = FuenteFinanciacionIndicadoresSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarFuentesFinanciacionIndicadores]
 
     def put(self, request, pk):
         data = request.data
@@ -257,7 +257,7 @@ class DetalleInversionCuentasList(generics.ListAPIView):
 
 class DetalleInversionCuentasCreate(generics.CreateAPIView):
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearDetalleInversionCuentas]
 
     def post(self, request):
         serializer = DetalleInversionCuentasSerializer(data=request.data)
@@ -273,7 +273,7 @@ class DetalleInversionCuentasCreate(generics.CreateAPIView):
 class DetalleInversionCuentasUpdate(generics.UpdateAPIView):
     queryset = DetalleInversionCuentas.objects.all()
     serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarDetalleInversionCuentas]
 
     def put(self, request, pk):
         data = request.data
@@ -821,7 +821,7 @@ class ConceptoPOAIList(generics.ListAPIView):
 
 class ConceptoPOAICreate(generics.CreateAPIView):
     serializer_class = ConceptoPOAISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearConceptoPOAI]
 
     def post(self, request):
         serializer = ConceptoPOAISerializer(data=request.data)
@@ -837,7 +837,7 @@ class ConceptoPOAICreate(generics.CreateAPIView):
 class ConceptoPOAIUpdate(generics.UpdateAPIView):
     queryset = ConceptoPOAI.objects.all()
     serializer_class = ConceptoPOAISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConceptoPOAI]
 
     def put(self, request, pk):
         data = request.data
@@ -909,7 +909,7 @@ class FuenteFinanciacionList(generics.ListAPIView):
 
 class FuenteFinanciacionCreate(generics.CreateAPIView):
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearFuenteFinanciacionPOAI]
 
     def post(self, request):
         serializer = FuenteFinanciacionSerializer(data=request.data)
@@ -925,7 +925,7 @@ class FuenteFinanciacionCreate(generics.CreateAPIView):
 class FuenteFinanciacionUpdate(generics.UpdateAPIView):
     queryset = FuenteFinanciacion.objects.all()
     serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarFuenteFinanciacionPOAI]
 
     def put(self, request, pk):
         data = request.data
@@ -994,7 +994,7 @@ class BancoProyectoList(generics.ListAPIView):
 
 class BancoProyectoCreate(generics.CreateAPIView):
     serializer_class = BancoProyectoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearBancoProyectos]
 
     def post(self, request):
         rubro = Rubro.objects.get(id_rubro=request.data['id_rubro'])
@@ -1015,7 +1015,7 @@ class BancoProyectoCreate(generics.CreateAPIView):
 class BancoProyectoUpdate(generics.UpdateAPIView):
     queryset = BancoProyecto.objects.all()
     serializer_class = BancoProyectoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarBancoProyectos]
 
     def put(self, request, pk):
         data = request.data
@@ -1092,7 +1092,7 @@ class PlanAnualAdquisicionesList(generics.ListAPIView):
 
 class PlanAnualAdquisicionesCreate(generics.CreateAPIView):
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearPlanAnualAdquisiciones]
 
     def post(self, request):
         serializer = PlanAnualAdquisicionesSerializer(data=request.data)
@@ -1108,7 +1108,7 @@ class PlanAnualAdquisicionesCreate(generics.CreateAPIView):
 class PlanAnualAdquisicionesUpdate(generics.UpdateAPIView):
     queryset = PlanAnualAdquisiciones.objects.all()
     serializer_class = PlanAnualAdquisicionesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarPlanAnualAdquisiciones]
 
     def put(self, request, pk):
         data = request.data
@@ -1286,7 +1286,7 @@ class SeguimientoPAIListPeriodo(generics.ListAPIView):
 
 class SeguimientoPAICreate(generics.CreateAPIView):
     serializer_class = SeguimientoPAISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearSeguimientoTecnicoPAI]
 
     def post(self, request):
         serializer = SeguimientoPAISerializer(data=request.data)
@@ -1302,7 +1302,7 @@ class SeguimientoPAICreate(generics.CreateAPIView):
 class SeguimientoPAIUpdate(generics.UpdateAPIView):
     queryset = SeguimientoPAI.objects.all()
     serializer_class = SeguimientoPAISerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarSeguimientoTecnicoPAI]
 
     def put(self, request, pk):
         data = request.data
@@ -1489,7 +1489,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 
 # class SeguimientoPOAICreate(generics.CreateAPIView):
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = [IsAuthenticated]
+#     permission_classes = [IsAuthenticated, PermisoCrearSeguimientoPOAI]
 
 #     def post(self, request):
 #         serializer = SeguimientoPOAISerializer(data=request.data)
@@ -1505,7 +1505,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 # class SeguimientoPOAIUpdate(generics.UpdateAPIView):
 #     queryset = SeguimientoPOAI.objects.all()
 #     serializer_class = SeguimientoPOAISerializer
-#     permission_classes = [IsAuthenticated]
+#     permission_classes = [IsAuthenticated, PermisoActualizarSeguimientoPOAI]
 
 #     def put(self, request, pk):
 #         data = request.data
