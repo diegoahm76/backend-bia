@@ -848,6 +848,7 @@ class RegisterExternoView(generics.CreateAPIView):
             raise PermissionDenied('No puede contener espacios en el nombre de usuario')
         
         user['creado_por_portal'] = True
+        user['is_active'] = True
         
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
@@ -891,19 +892,19 @@ class RegisterExternoView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        token = RefreshToken.for_user(serializer_response)
+        # token = RefreshToken.for_user(serializer_response)
 
-        current_site=get_current_site(request).domain
+        # current_site=get_current_site(request).domain
 
-        relativeLink= reverse('verify')
-        absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+        # relativeLink= reverse('verify')
+        # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
         
-        subject = "Verifica tu usuario"
-        template = "activación-de-usuario.html"
+        subject = "Usuario registrado exitosamente"
+        template = "email-verified.html"
 
-        Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
+        Util.notificacion(persona,subject,template)
     
-        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'data':user_data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo', 'data':user_data}, status=status.HTTP_201_CREATED)
 
 class Verify(views.APIView):
 

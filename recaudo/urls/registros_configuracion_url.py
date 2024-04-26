@@ -62,8 +62,14 @@ urlpatterns = [
 
         path('frecuencia-choices/', viwes.FrecuenciaMedicionListView.as_view(), name='frecuencia_choices'),
         path('tipo-cobro-choices/', viwes.MONTH_CHOICESListVieas.as_view(), name='tipo_cobro_choices'),
-        path('indicador-choices/', viwes.FORMULARIO_CHOICESListView.as_view(), name='tipo_renta_choices'),
-    
 
+
+        path('formularios_indicadores/',viwes.Vista_Formulario.as_view(), name='formularios_indicadores'),
+        path('formularios_indicadores/post/', viwes.Crear_Formularioerializer.as_view(), name='formularios_indicadores'),
+        path('formularios_indicadores/delete/<str:pk>/', viwes.Borrar_Formulario.as_view(), name='formularios_indicadores'),
+
+
+
+        path('cronjop/', viwes.ProbarCronJop.as_view(), name='ProbarCronJop'),
     ]
 

@@ -57,6 +57,12 @@ urlpatterns = [
     #  path('descargar-correo/<int:email_id>/<str:nombre_archivo>/',views.DescargarArchivoAdjuntoView.as_view(), name='eliminar-correo'),
 
 
+    #Crear expediente de PQRSDF para la unidad organizacional seleccionada
+    path('crear-expediente-pqrsdf/', views.CrearExpedientePQRSDF.as_view(), name='crear-expediente-pqrsdf'),
+
+    path('archivar-pqrsdf/', views.ArchiarSolicitudPQRSDF.as_view(), name='archivar-pqrsdf'),
+
+
 
 
 ]

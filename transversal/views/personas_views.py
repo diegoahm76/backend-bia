@@ -1215,6 +1215,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         
         #USUARIO
         data['creado_por_portal'] = True
+        data['is_active'] = True
         data['persona'] = serializador.id_persona
         
         serializer = self.serializer_class_usuario(data=data)
@@ -1272,18 +1273,18 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         Util.save_auditoria(auditoria_data)
 
 
-        token = RefreshToken.for_user(serializer_response)
+        # token = RefreshToken.for_user(serializer_response)
 
-        current_site=get_current_site(request).domain
+        # current_site=get_current_site(request).domain
 
-        relativeLink= reverse('verify')
-        absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+        # relativeLink= reverse('verify')
+        # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
 
-        subject = "Verifica tu usuario"
-        template = "activación-de-usuario.html"
+        subject = "Usuario registrado exitosamente"
+        template = "email-verified.html"
 
-        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
+        Util.notificacion(serializador,subject,template)
         #CREACION DE BANDEJA DE ALERTAS
         crear_bandeja=BandejaAlertaPersonaCreate()
 
@@ -1348,6 +1349,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             serializador.save()
             
             data['creado_por_portal'] = True
+            data['is_active'] = True
             data['persona'] = serializador.id_persona
             
             serializer = self.serializer_class_usuario(data=data)
@@ -1393,14 +1395,14 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
                 'descripcion': descripcion,
                 'valores_creados_detalles': valores_creados_detalles
             }
-            Util.save_auditoria_maestro_detalle(auditoria_data)
+            # Util.save_auditoria_maestro_detalle(auditoria_data)
             
-            token = RefreshToken.for_user(serializer_response)
+            # token = RefreshToken.for_user(serializer_response)
 
-            current_site=get_current_site(request).domain
+            # current_site=get_current_site(request).domain
 
-            relativeLink= reverse('verify')
-            absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+            # relativeLink= reverse('verify')
+            # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
             
             subject = "Verifica tu usuario"
             template = "activación-de-usuario.html"
@@ -1420,7 +1422,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
                 return respuesta_bandeja
 
             #FIN CREACION DE BANDEJA DE TAREAS
-            Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
+            Util.notificacion(serializador,subject,template)
         
             return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
     

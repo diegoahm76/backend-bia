@@ -25,6 +25,7 @@ from almacen.models.bienes_models import (
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos
 )
+from transversal.models.alertas_models import ConfiguracionClaseAlerta
 from transversal.models.personas_models import (
     Personas
 )
@@ -39,6 +40,8 @@ from datetime import datetime, date, timedelta
 import pytz
 import copy
 from holidays_co import get_colombia_holidays_by_year
+
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 class GetMantenimientosProgramadosById(generics.RetrieveAPIView):
     serializer_class=SerializerProgramacionMantenimientos
@@ -631,10 +634,43 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                     raise ValidationError('La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy')
                 
             i['fecha_generada'] = datetime.now()
-            
+            #raise ValidationError("SIUUU") 
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            instance = serializer.save()
+            #GENERACION DE ALERTA
+            #VALIDACION DE TIPO DE ACTIVO
+            cod_alerta = ''
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'Veh':
+                cod_alerta = 'Alm_MtoVeh'
+                print("CAROOO")
+      
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'OAc':
+                cod_alerta = 'Alm_MtoAct'
+                print("OTROOO")
+      
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'Com':
+                cod_alerta = 'Alm_MtoCom'
+         
+
+            conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=cod_alerta).first()
+            if conf :
+                crear_alerta=AlertasProgramadasCreate()
+
+                data_alerta = {
+                'cod_clase_alerta':cod_alerta,
+                'dia_cumplimiento':instance.fecha_programada.day,
+                'mes_cumplimiento':instance.fecha_programada.month,
+                'age_cumplimiento':instance.fecha_programada.year,
+                'id_elemento_implicado':instance.id_programacion_mtto,
+                "tiene_implicado":False
+                }
+
+                response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+                if response_alerta.status_code!=status.HTTP_201_CREATED:
+                    return response_alerta
+
+
             # AUDITORIA CREACIÓN DE MANTENIMIENTO
             user_logeado = request.user.id_usuario
             dirip = Util.get_client_ip(request)
@@ -650,6 +686,8 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 'valores_actualizados': valores_actualizados
             }
             Util.save_auditoria(auditoria_data)
+
+            
         
         return Response({'success':True, 'detail':'Mantenimiento programado con éxtio'}, status=status.HTTP_200_OK)
    
