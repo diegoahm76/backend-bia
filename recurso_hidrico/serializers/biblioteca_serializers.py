@@ -582,7 +582,10 @@ class AccionesCorrectivasSerializer(serializers.ModelSerializer):
 
     def get_tipo_tramite(self, obj):
         permisosAmbSolicitudesTramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_tramite).first()
-        return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
+        if permisosAmbSolicitudesTramite:
+            return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
+        else:
+            return "Sin tipo de trámite"
     
 class TramiteSerializer(serializers.ModelSerializer):
     numero_auto_inicio = serializers.ReadOnlyField(source='id_auto_inicio.numero_acto_administrativo', default=None)
