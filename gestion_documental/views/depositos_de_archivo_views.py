@@ -16,6 +16,7 @@ from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 from seguridad.models import Personas
 from gestion_documental.models.depositos_models import  CarpetaCaja, Deposito, EstanteDeposito, BandejaEstante, CajaBandeja
 from gestion_documental.serializers.depositos_serializers import  BandejaEstanteSerializer, CajaBandejaSerializer, CarpetaCajaConsultSerializer, CarpetaCajaGetOrdenSerializer, CarpetaCajaRotuloSerializer,BandejaEstanteCreateSerializer, BandejaEstanteDeleteSerializer, BandejaEstanteGetOrdenSerializer, BandejaEstanteMoveSerializer, BandejaEstanteSearchSerializer, BandejaEstanteUpDateSerializer, BandejaListCarpetaInfoSerializer, BandejasByEstanteListSerializer, CajaBandejaCreateSerializer, CajaBandejaGetOrdenSerializer, CajaListBandejaInfoSerializer, CajaBandejaMoveSerializer, CajaBandejaUpDateSerializer, CajaEstanteDeleteSerializer, CajaEstanteSearchAdvancedSerializer, CajaEstanteSearchSerializer, CajaListDepositoInfoSerializer, CajaListEstanteInfoSerializer, CajaRotuloSerializer, CajasByBandejaListSerializer, CarpetaCajaCreateSerializer, CarpetaCajaDeleteSerializer, CarpetaCajaMoveSerializer, CarpetaCajaSearchAdvancedSerializer, CarpetaCajaSearchSerializer, CarpetaCajaSerializer, CarpetaCajaUpDateSerializer, CarpetaListCajaInfoSerializer, CarpetasByCajaListSerializer, DepositoChoicesSerializer, DepositoCreateSerializer, DepositoDeleteSerializer, DepositoGetAllSerializer, DepositoListCarpetaInfoSerializer, DepositoSearchSerializer, DepositoSerializer, DepositoUpdateSerializer, EstanteDepositoCreateSerializer,DepositoGetSerializer, EstanteDepositoDeleteSerializer, EstanteDepositoSearchSerializer, EstanteDepositoGetOrdenSerializer, EstanteDepositoSerializer, EstanteDepositoUpDateSerializer, EstanteGetByDepositoSerializer, EstanteListCarpetaInfoSerializer, MoveEstanteSerializer, ReviewExpedienteSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarCajasArchivoDocumental, PermisoActualizarCarpetasArchivoDocumental, PermisoActualizarDepositosArchivo, PermisoActualizarEstantesDepositosArchivo, PermisoBorrarCajasArchivoDocumental, PermisoBorrarCarpetasArchivoDocumental, PermisoBorrarDepositosArchivo, PermisoBorrarEstantesDepositosArchivo, PermisoCrearCajasArchivoDocumental, PermisoCrearCarpetasArchivoDocumental, PermisoCrearDepositosArchivo, PermisoCrearEstantesDepositosArchivo
 from seguridad.utils import Util
 
 
@@ -24,7 +25,7 @@ from seguridad.utils import Util
 #CREAR_DEPOSITO
 class DepositoCreate(generics.CreateAPIView):
     serializer_class = DepositoCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearDepositosArchivo]
     queryset = Deposito.objects.all()
     
     def post(self,request):
@@ -69,7 +70,7 @@ class DepositoCreate(generics.CreateAPIView):
 class DepositoDelete(generics.DestroyAPIView):
     serializer_class = DepositoDeleteSerializer
     queryset = Deposito.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarDepositosArchivo]
     
     def delete(self,request,pk):
         
@@ -123,7 +124,7 @@ class DepositoDelete(generics.DestroyAPIView):
 class DepositoUpdate(generics.UpdateAPIView):
     serializer_class = DepositoUpdateSerializer
     queryset = Deposito.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarDepositosArchivo]
     
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -284,7 +285,7 @@ class DepositoSearch(generics.ListAPIView):
 class EstanteDepositoCreate(generics.CreateAPIView):
 
     serializer_class = EstanteDepositoCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearEstantesDepositosArchivo]
     queryset = EstanteDeposito.objects.all()
     
     def post(self,request):
@@ -398,7 +399,7 @@ class EstanteDepositoGetOrdenActual(generics.ListAPIView):
 class EstanteDepositoUpDate(generics.UpdateAPIView):
     serializer_class = EstanteDepositoUpDateSerializer
     queryset = EstanteDeposito.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEstantesDepositosArchivo]
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -420,7 +421,7 @@ class EstanteDepositoDelete(generics.DestroyAPIView):
         
     serializer_class = EstanteDepositoDeleteSerializer
     queryset = EstanteDeposito.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarEstantesDepositosArchivo]
     
     def delete(self, request, pk):
         
@@ -496,7 +497,7 @@ class EstanteGetAll(generics.ListAPIView):
 class MoveEstante(generics.UpdateAPIView):
     serializer_class = MoveEstanteSerializer
     queryset = EstanteDeposito.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEstantesDepositosArchivo]
     
     def put(self, request, identificacion_por_deposito):
         # Paso 1: Obtener el estante a mover
@@ -806,7 +807,7 @@ class BandejaEstanteAll(generics.ListAPIView):
 class CajaBandejaCreate(generics.CreateAPIView):
 
     serializer_class = CajaBandejaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCajasArchivoDocumental]
     queryset = CajaBandeja.objects.all()
     
     def post(self,request):
@@ -932,7 +933,7 @@ class CajaEstanteSearch(generics.ListAPIView):
 class cajaBandejaUpDate(generics.UpdateAPIView):
     serializer_class = CajaBandejaUpDateSerializer
     queryset = CajaBandeja.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCajasArchivoDocumental]
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -955,7 +956,7 @@ class cajaBandejaUpDate(generics.UpdateAPIView):
 class CajaEstanteBandejaMove(generics.UpdateAPIView):
     serializer_class = CajaBandejaMoveSerializer
     queryset = CajaBandeja.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCajasArchivoDocumental]
 
     @transaction.atomic
     def put(self, request, id_caja_bandeja):
@@ -1103,7 +1104,7 @@ class CajaEstanteDelete(generics.DestroyAPIView):
         
     serializer_class = CajaEstanteDeleteSerializer
     queryset = CajaBandeja.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarCajasArchivoDocumental]
     
     def delete(self, request, pk):
         
@@ -1303,7 +1304,7 @@ class CajaRotulo(generics.ListAPIView):
 class CarpetaCajaCreate(generics.CreateAPIView):
 
     serializer_class = CarpetaCajaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCarpetasArchivoDocumental]
     queryset = CarpetaCaja.objects.all()
     
     def post(self,request):
@@ -1444,7 +1445,7 @@ class CarpetaCajaDelete(generics.DestroyAPIView):
         
     serializer_class = CarpetaCajaDeleteSerializer
     queryset = CarpetaCaja.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarCarpetasArchivoDocumental]
 
     def destroy(self, request, *args, **kwargs):
         carpeta = self.get_object()
@@ -1488,7 +1489,7 @@ class CarpetasByCajaList(generics.ListAPIView):
 class CarpetaCajaUpDate(generics.UpdateAPIView):
     serializer_class = CarpetaCajaUpDateSerializer
     queryset = CarpetaCaja.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCarpetasArchivoDocumental]
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -1657,6 +1658,7 @@ class CarpetaListDepositoInfo(generics.ListAPIView):
 class CarpetaCajaMove(generics.UpdateAPIView):
     serializer_class = CarpetaCajaMoveSerializer
     queryset = CarpetaCaja.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarCarpetasArchivoDocumental]
 
     @transaction.atomic
     def put(self, request, id_carpeta_caja):
