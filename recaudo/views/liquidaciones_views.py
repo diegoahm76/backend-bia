@@ -30,10 +30,19 @@ from docxtpl import DocxTemplate
 from django.conf import settings
 import calendar
 
+from seguridad.permissions.permissions_recaudo import PermisoActualizarConstructorFormulas, PermisoActualizarGeneradorLiquidacionesRecaudo, PermisoBorrarConstructorFormulas, PermisoCrearConstructorFormulas, PermisoCrearGeneradorLiquidacionesRecaudo
+
 class OpcionesLiquidacionBaseView(generics.ListAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
     #permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
+        method = self.request.method
+        if method == 'POST':
+            permissions.append(PermisoCrearConstructorFormulas())
+        return permissions
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -52,6 +61,13 @@ class DetalleOpcionesLiquidacionBaseView(generics.GenericAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
     #permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
+        method = self.request.method
+        if method == 'PUT':
+            permissions.append(PermisoActualizarConstructorFormulas())
+        return permissions
 
     def get(self, request, pk):
         queryset = OpcionesLiquidacionBase.objects.filter(pk=pk).first()
@@ -72,7 +88,7 @@ class DetalleOpcionesLiquidacionBaseView(generics.GenericAPIView):
 class EliminarOpcionesLiquidacionBaseView(generics.GenericAPIView):
     queryset = OpcionesLiquidacionBase.objects.all()
     serializer_class = OpcionesLiquidacionBaseSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarConstructorFormulas]
 
     def get(self, request, pk):
         opcion_liquidacion = OpcionesLiquidacionBase.objects.filter(pk=pk).first()
@@ -110,6 +126,13 @@ class LiquidacionBaseView(generics.ListAPIView):
     queryset = LiquidacionesBase.objects.all()
     serializer_class = LiquidacionesBaseSerializer
     #permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
+        method = self.request.method
+        if method == 'POST':
+            permissions.append(PermisoCrearGeneradorLiquidacionesRecaudo())
+        return permissions
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -188,6 +211,15 @@ class ObtenerLiquidacionPorIdExpedienteBaseView(generics.GenericAPIView):
 class DetallesLiquidacionBaseView(generics.GenericAPIView):
     serializer_class = DetallesLiquidacionBaseSerializer
     #permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
+        method = self.request.method
+        if method == 'POST':
+            permissions.append(PermisoCrearGeneradorLiquidacionesRecaudo())
+        if method == 'PUT':
+            permissions.append(PermisoActualizarGeneradorLiquidacionesRecaudo())
+        return permissions
 
     def get(self, request, liquidacion):
         queryset = DetalleLiquidacionBase.objects.filter(id_liquidacion__id=liquidacion)

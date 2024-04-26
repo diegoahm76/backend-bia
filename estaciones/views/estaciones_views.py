@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from estaciones.serializers.estaciones_serializers import EstacionesSerializer
 from estaciones.models.estaciones_models import Estaciones, Datos
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarEstacionesHidrometeorologicasRecu, PermisoBorrarEstacionesHidrometeorologicasRecu, PermisoCrearEstacionesHidrometeorologicasRecu
 
 # Listar Estaciones
 
@@ -22,7 +23,7 @@ class ConsultarEstacion(generics.ListAPIView):
 class CrearEstacion(generics.CreateAPIView):
     serializer_class = EstacionesSerializer
     queryset = Estaciones.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearEstacionesHidrometeorologicasRecu]
 
     def post(self, request):
         data = request.data
@@ -44,7 +45,7 @@ class CrearEstacion(generics.CreateAPIView):
 class ActualizarEstacion(generics.UpdateAPIView):
     serializer_class = EstacionesSerializer
     queryset = Estaciones.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEstacionesHidrometeorologicasRecu]
 
     def put(self, request, pk):
         data = request.data
@@ -66,7 +67,7 @@ class ActualizarEstacion(generics.UpdateAPIView):
 class EliminarEstacion(generics.DestroyAPIView):
     serializer_class = EstacionesSerializer
     queryset = Estaciones.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarEstacionesHidrometeorologicasRecu]
 
     def delete(self, request, pk):
         estacion = self.queryset.all().filter(id_estacion=pk).first()

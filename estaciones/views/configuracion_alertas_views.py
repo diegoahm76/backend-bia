@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from estaciones.serializers.configuracion_alertas_serializers import ConfiguracionAlertasCreateSerializer ,ConfiguracionAlertasUpdateSerializer, ConfiguracionAlertasGetSerializer
 from estaciones.models.estaciones_models import ConfiguracionAlertaPersonas
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarMensajesAlertaExternosRecu, PermisoBorrarMensajesAlertaExternosRecu, PermisoCrearMensajesAlertaExternosRecu
 
 # Listar Alerta
 
@@ -22,7 +23,7 @@ class ConsultarAlertaEstacion(generics.ListAPIView):
 class CrearAlertaEstacion(generics.CreateAPIView):
     serializer_class = ConfiguracionAlertasCreateSerializer
     queryset = ConfiguracionAlertaPersonas.objects.all().using('bia-estaciones')
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearMensajesAlertaExternosRecu]
 
     def post(self, request):
         data=request.data
@@ -36,7 +37,7 @@ class CrearAlertaEstacion(generics.CreateAPIView):
 class ActualizarAlertaEstacion(generics.UpdateAPIView):
     serializer_class = ConfiguracionAlertasUpdateSerializer
     queryset = ConfiguracionAlertaPersonas.objects.all().using('bia-estaciones')
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarMensajesAlertaExternosRecu]
 
     def put(self, request, pk):
         data=request.data
@@ -54,7 +55,7 @@ class ActualizarAlertaEstacion(generics.UpdateAPIView):
 class EliminarAlertaEstacion(generics.DestroyAPIView):
     serializer_class = ConfiguracionAlertasCreateSerializer
     queryset = ConfiguracionAlertaPersonas.objects.all().using('bia-estaciones')
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarMensajesAlertaExternosRecu]
 
     def delete(self, request, pk):
         alerta=self.queryset.all().filter(id_confi_alerta_persona=pk).first()

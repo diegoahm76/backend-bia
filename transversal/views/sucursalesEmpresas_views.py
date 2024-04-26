@@ -4,6 +4,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from seguridad.permissions.permissions_transversal import PermisoActualizarSucursalesEntidad, PermisoBorrarSucursalesEntidad, PermisoCrearSucursalesEntidad
 from seguridad.utils import Util
 
 from transversal.serializers.entidades_serializers import SucursalesEmpresasSerializer, SucursalesEmpresasPostSerializer, SucursalesEmpresasPutSerializer
@@ -15,6 +16,8 @@ from transversal.models.personas_models import Personas
 
 class GetSucursalesEmpresasView(generics.ListAPIView):
     serializer_class = SucursalesEmpresasSerializer
+    permission_classes = [IsAuthenticated, ]
+
     def get(self, request, id):
         queryset = SucursalesEmpresas.objects.all().filter(id_persona_empresa=id)
         serializer = self.serializer_class(queryset, many=True)
@@ -29,7 +32,7 @@ class getSucursalEmpresaById(generics.RetrieveAPIView):
 class CrearSucursalEmpresaView(generics.CreateAPIView):
     serializer_class = SucursalesEmpresasPostSerializer 
     queryset = SucursalesEmpresas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearSucursalesEntidad]
     
     def post(self, request, *args, **kwargs):
         data = request.data
@@ -85,7 +88,7 @@ class CrearSucursalEmpresaView(generics.CreateAPIView):
 class PutSucursalEmpresa(generics.RetrieveUpdateAPIView):
     serializer_class = SucursalesEmpresasPutSerializer
     queryset = SucursalesEmpresas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarSucursalesEntidad]
     
     def put(self, request, id):
         sucursal = SucursalesEmpresas.objects.filter(id_sucursal_empresa=id).first()
@@ -134,7 +137,7 @@ class PutSucursalEmpresa(generics.RetrieveUpdateAPIView):
 class DeleteSucursalEmpresa(generics.DestroyAPIView):
     serializer_class = SucursalesEmpresasSerializer
     queryset = SucursalesEmpresas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarSucursalesEntidad]
     
     def delete(self,request,id):
         sucursal=SucursalesEmpresas.objects.filter(id_sucursal_empresa=id).first()

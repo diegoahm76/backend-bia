@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from django.db import transaction
 from gestion_documental.models.radicados_models import T262Radicados
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from seguridad.permissions.permissions_notificaciones import PermisoActualizarAsignacionTareasNotificaciones, PermisoActualizarAutorizarAsignaciones, PermisoActualizarCausasAnomaliasNotificaciones, PermisoActualizarEstadosNotificaciones, PermisoActualizarRechazarNotificaciones, PermisoActualizarTiposAnexosNotificaciones, PermisoActualizarTiposDocumentoNoti, PermisoActualizarTiposNotificaciones, PermisoBorrarCausasAnomaliasNotificaciones, PermisoBorrarEstadosNotificaciones, PermisoBorrarTiposAnexosNotificaciones, PermisoBorrarTiposDocumentoNoti, PermisoBorrarTiposNotificaciones, PermisoCrearAsignacionTareasNotificaciones, PermisoCrearCausasAnomaliasNotificaciones, PermisoCrearCrearNotificaciones, PermisoCrearEstadosNotificaciones, PermisoCrearGeneradorDocumentosNotificaciones, PermisoCrearPublicarGacetaAmbiental, PermisoCrearTiposAnexosNotificaciones, PermisoCrearTiposDocumentoNoti, PermisoCrearTiposNotificaciones
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -62,6 +63,7 @@ from gestion_documental.serializers.notificaciones_serializers import (
     CausasOAnomaliasSerializer,
     AnexosNotificacionesCorrespondenciaSerializer,
     DatosTitularesCorreoSerializer,
+    DocumentosDeArchivoExpedienteSerializer,
     ConstanciaNotificacionSerializer,
     GeneradorDocumentosSerializer
     )
@@ -489,7 +491,7 @@ class GetAsignacionesCorrespondencia(generics.ListAPIView):
     
 class CrearNotiicacionManual(generics.CreateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCrearNotificaciones]
 
     def post(self, request):
         data_total = request.data
@@ -707,7 +709,7 @@ class MetadatosNotificacionesCreate(generics.CreateAPIView):
 #TiposNotificacionesCorrespondencia
 class TiposNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -733,7 +735,7 @@ class TiposNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class TiposNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -751,7 +753,7 @@ class TiposNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
 
 class TiposNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = TiposNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposNotificaciones]
 
     def delete(self, request, pk):
         tipo_notificacion = TiposNotificacionesCorrespondencia.objects.filter(id_tipo_notificacion_correspondencia=pk).first()
@@ -770,7 +772,7 @@ class TiposNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
 #EstadosNotificacionesCorrespondencia
 class EstadosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearEstadosNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -805,7 +807,7 @@ class EstadosNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class EstadosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEstadosNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -823,7 +825,7 @@ class EstadosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
 
 class EstadosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = EstadosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarEstadosNotificaciones]
 
     def delete(self, request, pk):
         estado_notificacion = EstadosNotificacionesCorrespondencia.objects.filter(id_estado_notificacion_correspondencia=pk).first()
@@ -841,7 +843,7 @@ class EstadosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
 #CausasOAnomaliasNotificacionesCorrespondencia
 class CausaOAnomaliasNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCausasAnomaliasNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -876,7 +878,7 @@ class CausaOAnomaliasNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class CausaOAnomaliasNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCausasAnomaliasNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -894,7 +896,7 @@ class CausaOAnomaliasNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView)
 
 class CausaOAnomaliasNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = CausasOAnomaliasNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarCausasAnomaliasNotificaciones]
 
     def delete(self, request, pk):
         causa_notificacion = CausasOAnomalias.objects.filter(id_causa_o_anomalia=pk).first()
@@ -913,7 +915,7 @@ class CausaOAnomaliasNotificacionesCorrespondenciaDelete(generics.DestroyAPIView
 #TiposAnexosNotificacionesCorrespondencia
 class TiposAnexosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposAnexosNotificaciones]
 
     def post(self, request):
         data = request.data
@@ -948,7 +950,7 @@ class TiposAnexosNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class TiposAnexosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposAnexosNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -966,7 +968,7 @@ class TiposAnexosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
 
 class TiposAnexosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = TiposAnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposAnexosNotificaciones]
 
     def delete(self, request, pk):
         tipo_anexo_notificacion = TiposAnexosSoporte.objects.filter(id_tipo_anexo_soporte=pk).first()
@@ -985,7 +987,7 @@ class TiposAnexosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
 #TiposDocumentosNotificacionesCorrespondencia
 class TiposDocumentosNotificacionesCorrespondenciaCreate(generics.CreateAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposDocumentoNoti]
 
     def post(self, request):
         data = request.data
@@ -1011,7 +1013,7 @@ class TiposDocumentosNotificacionesCorrespondenciaGet(generics.ListAPIView):
 
 class TiposDocumentosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposDocumentoNoti]
 
     def put(self, request, pk):
         data = request.data
@@ -1029,7 +1031,7 @@ class TiposDocumentosNotificacionesCorrespondenciaUpdate(generics.UpdateAPIView)
 
 class TiposDocumentosNotificacionesCorrespondenciaDelete(generics.DestroyAPIView):
     serializer_class = TiposDocumentosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposDocumentoNoti]
 
     def delete(self, request, pk):
         tipo_documento_notificacion = TiposDocumentos.objects.filter(id_tipo_documento=pk).first()
@@ -1254,7 +1256,7 @@ class ActosAdministrativosGet(generics.ListAPIView):
 
 class UpdateAsignacionNotificacion(generics.UpdateAPIView):
     serializer_class = AsignacionNotiCorresCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAutorizarAsignaciones]
 
     def put(self, request, pk):
 
@@ -1300,7 +1302,7 @@ class UpdateAsignacionNotificacion(generics.UpdateAPIView):
 
 class RechazoNotificacionCorrespondencia(generics.UpdateAPIView):
     serializer_class = NotificacionesCorrespondenciaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRechazarNotificaciones]
 
     def put(self, request, pk):
 
@@ -1478,7 +1480,7 @@ class CausasOAnomaliasGacetaGet(generics.ListAPIView):
 
 class AnexosSoporteGacetaCreate(generics.CreateAPIView):
     serializer_class = AnexosNotificacionesCorrespondenciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearPublicarGacetaAmbiental]
 
     def create_anexo(self, data):
         try:
@@ -1916,7 +1918,7 @@ class AnexosSoporteCorrespondenciaCreate(generics.CreateAPIView):
 
 class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.CreateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAsignacionTareasNotificaciones]
 
     def put(self, request, id_registro_notificacion):
         data = request.data
@@ -1927,7 +1929,7 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Creat
 
 class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.UpdateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAsignacionTareasNotificaciones]
 
     def put(self, request, pk):
         data = request.data
@@ -1944,48 +1946,174 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Updat
 
         return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
     
+## Generador de Constancias
+
+class DocumentosConstanciaNotificacionCreate(generics.CreateAPIView):
+    serializer_class = DocumentosDeArchivoExpedienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create_documento(self, data):
+        try:
+            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data.get('id_tipo_documento'))
+        except TiposDocumentos.DoesNotExist:
+            raise ValidationError('El tipo de documento no existe.')
+        
+        try:
+            notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=data.get('id_notificacion_correspondencia'))
+        except NotificacionesCorrespondencia.DoesNotExist:
+            raise ValidationError('La notificación no existe.')
+        
+        try:
+            persona = Personas.objects.get(id_persona=data.get('id_persona'))
+        except Personas.DoesNotExist:
+            raise ValidationError('La persona no existe.')
+        
+        try:
+            expediente = ExpedientesDocumentales.objects.get(id_expediente=data.get('id_expediente'))
+        except ExpedientesDocumentales.DoesNotExist:
+            raise ValidationError('El expediente no existe.')
+        
+        try:
+            tipo_acto = TiposActosAdministrativos.objects.get(id_tipo_acto_administrativo=data.get('id_tipo_acto_administrativo'))
+        except TiposActosAdministrativos.DoesNotExist:
+            raise ValidationError('El tipo de acto administrativo no existe.')
+        
+        try:
+            acto_administrativo = ActosAdministrativos.objects.get(id_acto_administrativo=data.get('id_acto_administrativo'))
+        except ActosAdministrativos.DoesNotExist:
+            raise ValidationError('El acto administrativo no existe.')
+        
+        try:
+            causa = CausasOAnomalias.objects.get(id_causa_o_anomalia=data.get('id_causa_o_anomalia'))
+        except CausasOAnomalias.DoesNotExist:
+            raise ValidationError('La causa o anomalia no existe.')
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return serializer.data
+
 
 class GenerarConstanciaNotificacion(generics.CreateAPIView):
     serializer_class = ConstanciaNotificacionSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, *args, **kwargs):
+    def create_constancia(self, data):
+        instacia_archivo = DocumentosConstanciaNotificacionCreate()
+
+        # documento_de_archivo_exped = {
+        #     'identificacion_doc_en_expediente': identificacion_doc_en_expediente,
+        #     'nombre_asignado_documento': nombre_asignado_documento,
+        #     'nombre_original_del_archivo': nombre_original_del_archivo,
+        #     'fecha_creacion_doc': fecha_creacion_doc,
+        #     'fecha_incorporacion_doc_a_Exp': fecha_incorporacion_doc_a_Exp,
+        #     'descripcion': descripcion,
+        #     'asunto': asunto,
+        #     'id_persona_titular': id_persona_titular,
+        #     'cod_categoria_archivo': cod_categoria_archivo,
+        #     'es_version_original': es_version_original,
+        #     'tiene_replica_fisica': tiene_replica_fisica,
+        #     'nro_folios_del_doc': nro_folios_del_doc,
+        #     'cod_origen_archivo': cod_origen_archivo,
+        #     'orden_en_expediente': orden_en_expediente,
+        #     'id_tipologia_documental': id_tipologia_documental,
+        #     'codigo_tipologia_doc_prefijo': codigo_tipologia_doc_prefijo,
+        #     'codigo_tipologia_doc_agno': codigo_tipologia_doc_agno,
+        #     'codigo_tipologia_doc_consecutivo': codigo_tipologia_doc_consecutivo,
+        #     'es_un_archivo_anexo': es_un_archivo_anexo,
+        #     'id_doc_de_arch_del_cual_es_anexo': id_doc_de_arch_del_cual_es_anexo,
+        #     'tipologia_no_creada_trd': tipologia_no_creada_trd,
+        #     'anexo_corresp_a_lista_chequeo': anexo_corresp_a_lista_chequeo,
+        #     'cantidad_anexos': cantidad_anexos,
+        #     'id_archivo_sistema': id_archivo_sistema,
+        #     'palabras_clave_documento': palabras_clave_documento,
+        #     'sub_sistema_incorporacion': sub_sistema_incorporacion,
+        #     'cod_tipo_radicado': cod_tipo_radicado,
+        #     'codigo_radicado_prefijo': codigo_radicado_prefijo,
+        #     'codigo_radicado_agno': codigo_radicado_agno,
+        #     'codigo_radicado_consecutivo': codigo_radicado_consecutivo,
+        #     'es_radicado_inicial_de_solicitud': es_radicado_inicial_de_solicitud,
+        #     'documento_requiere_rta': documento_requiere_rta,
+        #     'creado_automaticamente': creado_automaticamente,
+        #     'fecha_indexacion_manual_sistema': fecha_indexacion_manual_sistema,
+        #     'anulado': anulado,
+        #     'observacion_anulacion': observacion_anulacion,
+        #     'fecha_anulacion': fecha_anulacion,
+        #     'id_persona_anula': id_persona_anula,
+        #     'id_doc_arch_respondido': id_doc_arch_respondido,
+        #     'id_doc_arch_rad_ini_exp_simple': id_doc_arch_rad_ini_exp_simple,
+        #     'id_und_org_oficina_creadora': id_und_org_oficina_creadora,
+        #     'id_persona_que_crea': id_persona_que_crea,
+        #     'id_und_org_oficina_respon_actual': id_und_org_oficina_respon_actual
+        # }
+
+
+        archivo = instacia_archivo.create_documento(data)
+        return archivo
+
+
+    def get(self, request, id_registro_notificacion, *args, **kwargs):
 
         data = request.query_params
 
         if not data.get('fecha_inicial'):
             raise ValidationError('fecha_inicial es un parametro requerido.')
         
-        if not data.get('id_registro_notificacion_correspondencia'):
-            raise ValidationError('id_registro_notificacion_correspondencia es un parametro requerido.')
-        
-        id_registro_notificacion_correspondencia = data.get('id_registro_notificacion_correspondencia')
-
-        try:
-            registro_notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion_correspondencia)
-        except Registros_NotificacionesCorrespondecia.DoesNotExist:
-            raise ValidationError('El registro de la notificación no existe.')
-       
+        if not data.get('fecha_final'):
+            raise ValidationError('fecha_final es un parametro requerido.')
         
         fecha_inicial = datetime.strptime(data.get('fecha_inicial'), '%Y-%m-%d').date()
         fecha_final = datetime.strptime(data.get('fecha_final'), '%Y-%m-%d').date()
+        
 
-        if not fecha_inicial:
-            raise ValidationError('fecha_inicial es un parametro requerido.')
+        try:
+            registro_notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('El registro de la notificación no existe.')
         
-        if not fecha_final:
-            raise ValidationError('fecha_final es un parametro requerido.')
+        try:
+            notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=registro_notificacion.id_notificacion_correspondencia.id_notificacion_correspondencia)
+        except NotificacionesCorrespondencia.DoesNotExist:
+            raise ValidationError('La notificación no existe.')
         
-        dias_habiles = UtilsGestor.get_dias_habiles(fecha_inicial, fecha_final)
-        fecha_habil = UtilsGestor.get_fecha_habil(fecha_inicial, dias_habiles)
+        if notificacion.id_persona_titular is not None:
+            persona = Personas.objects.filter(id_persona=notificacion.id_persona_titular.id_persona).first()
+            razon_social = persona.razon_social
+            nombre_completo = [persona.primer_nombre, persona.segundo_nombre, persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo =  ' '.join(filter(None, nombre_completo))
+            tipo_documento = persona.tipo_documento.cod_tipo_documento
+            numero_documento = persona.numero_documento
+        else:
+            razon_social = None
+            nombre_completo = None
+            tipo_documento = None
+            numero_documento = None
+
+        if notificacion.id_acto_administrativo is not None:
+            fecha_acto_administrativo = notificacion.id_acto_administrativo.fecha_acto_administrativo
+        else:
+            fecha_acto_administrativo = None
+        
+        if notificacion.id_expediente_documental is not None:
+            numero_expediente = notificacion.id_expediente_documental.codigo_exp_und_serie_subserie + '-' + notificacion.id_expediente_documental.codigo_exp_Agno + '-' + notificacion.id_expediente_documental.codigo_exp_consec_por_agno
+        else:
+            numero_expediente = None
+        
 
         data_out = {
             'fecha_inicial': fecha_inicial,
             'fecha_final': fecha_final,
-            'dias_habiles': dias_habiles,
-            'fecha_habil': fecha_habil,
-            'persona_titular': registro_notificacion
+            'razon_social': razon_social,
+            'nombre_completa': nombre_completo,
+            'tipo_documento': tipo_documento,
+            'numero_documento': numero_documento,
+            'numero_acto_administrativo': None,
+            'fecha_acto_administrativo': fecha_acto_administrativo,
+            'numero_expediente': numero_expediente,
+            'fecha_notificacion': registro_notificacion.fecha_inicial_registro,
+            'nombre_funcionario': request.user.persona.primer_nombre + ' ' + request.user.persona.primer_apellido
         }
+
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_out}, status=status.HTTP_200_OK)
 
@@ -2018,7 +2146,7 @@ class GenerarConstanciaNotificacion(generics.CreateAPIView):
      
 class GeneradorDocumentos(generics.CreateAPIView):
     serializer_class = GeneradorDocumentosSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearGeneradorDocumentosNotificaciones]
 
     def generador_documentos(self, data):
         try:
@@ -2199,7 +2327,7 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     @transaction.atomic
-    def post(self, request):
+    def create_notificacion_sistema(self, request, sistema):
         data_total = request.data
         data = json.loads(data_total.get('data'))
         fecha_actual = timezone.now()
@@ -2269,6 +2397,34 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
         except Personas.DoesNotExist:
             raise ValidationError('La persona solicitante no existe.')
         
+        if sistema == 'SAS':
+            permite_notificacion_email = data.get('permite_notificacion_email')
+            persona_a_quien_se_dirige = data.get('persona_a_quien_se_dirige')
+            cod_tipo_documentoID = data.get('cod_tipo_documentoID')
+            nro_documentoID = data.get('nro_documentoID')
+            cod_municipio_notificacion_nal = data.get('cod_municipio_notificacion_nal')
+            dir_notificacion_nal = data.get('dir_notificacion_nal')
+            tel_celular = data.get('tel_celular')
+            tel_fijo = data.get('tel_fijo')
+            email_notificacion = data.get('email_notificacion')
+
+        if sistema == 'BIA':
+            persona_titular = Personas.objects.filter(id_persona=id_persona_titular).first()
+            permite_notificacion_email = persona_titular.acepta_notificacion_email
+            if persona_titular.primer_nombre is not None:
+                nombre_completo = [persona_titular.primer_nombre, persona_titular.segundo_nombre, persona_titular.primer_apellido, persona_titular.segundo_apellido]
+                persona_a_quien_se_dirige =  ' '.join(filter(None, nombre_completo))
+            else:
+                persona_a_quien_se_dirige = persona_titular.razon_social
+            cod_tipo_documentoID = persona_titular.tipo_documento.cod_tipo_documento
+            nro_documentoID = persona_titular.numero_documento
+            cod_municipio_notificacion_nal = persona_titular.cod_municipio_notificacion_nal.cod_municipio
+            dir_notificacion_nal = persona_titular.direccion_notificaciones
+            tel_celular = persona_titular.telefono_celular
+            tel_fijo = persona_titular.telefono_fijo_residencial
+            email_notificacion = persona_titular.email
+
+        
 
         data_notificacion = {
             'id_acto_administrativo': None,
@@ -2286,15 +2442,15 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
             'id_persona_titular': id_persona_titular,
             'id_persona_interpone': id_persona_interpone,
             'cod_relacion_con_titular': cod_relacion_con_titular,
-            'permite_notificacion_email': data.get('permite_notificacion_email'),
-            'persona_a_quien_se_dirige': data.get('persona_a_quien_se_dirige'),
-            'cod_tipo_documentoID': data.get('cod_tipo_documentoID'),
-            'nro_documentoID': data.get('nro_documentoID'),
-            'cod_municipio_notificacion_nal': data.get('cod_municipio_notificacion_nal'),
-            'dir_notificacion_nal': data.get('dir_notificacion_nal'),
-            'tel_celular': data.get('tel_celular'),
-            'tel_fijo': data.get('tel_fijo'),
-            'email_notificacion': data.get('email_notificacion'),
+            'permite_notificacion_email': permite_notificacion_email,
+            'persona_a_quien_se_dirige': persona_a_quien_se_dirige,
+            'cod_tipo_documentoID': cod_tipo_documentoID,
+            'nro_documentoID': nro_documentoID,
+            'cod_municipio_notificacion_nal': cod_municipio_notificacion_nal,
+            'dir_notificacion_nal': dir_notificacion_nal,
+            'tel_celular': tel_celular,
+            'tel_fijo': tel_fijo,
+            'email_notificacion': email_notificacion,
             'asunto': data.get('asunto'),
             'descripcion': data.get('descripcion'),
             'fecha_solicitud': fecha_actual,
@@ -2303,8 +2459,6 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
             'cantidad_anexos': data.get('cantidad_anexos'),
             'nro_folios_totales': data.get('nro_folios_totales')
         }
-
-
         
         serializer = self.serializer_class(data=data_notificacion)
         serializer.is_valid(raise_exception=True)
@@ -2312,14 +2466,30 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
         util_PQR = Util_PQR()
 
         anexos = util_PQR.set_archivo_in_anexo(data['anexos'], request.FILES, "create")
-        
 
         if anexos:
             anexosCreate = AnexosSistemaCreate()
             valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, serializer.data['id_notificacion_correspondencia'], fecha_actual, persona_solicita.id_persona)
 
-        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data}}, status=status.HTTP_201_CREATED)
+        return  serializer.data
+    
+    def post(self, request):
+        sistema = 'SAS'
+        data = self.create_notificacion_sistema(request, sistema)
+        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':data}, status=status.HTTP_201_CREATED)
 
+
+class NotificacionesAutomaticasBiaCreate(generics.CreateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        instancia_notificacion = NotificacionesAutomaticasCreate()
+        sistema = 'BIA'
+        data = instancia_notificacion.create_notificacion_sistema(request, sistema)
+        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':data}, status=status.HTTP_201_CREATED)
+
+        
 
 class AnexosSistemaCreate(generics.CreateAPIView):
     serializer_class = AnexosPostSerializer

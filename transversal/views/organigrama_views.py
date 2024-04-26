@@ -6,7 +6,7 @@ from itertools import groupby
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.ccd_serializers import CCDSerializer
-from seguridad.permissions.permissions_gestor import PermisoActualizarOrganigramas
+from seguridad.permissions.permissions_transversal import PermisoActualizarOrganigramas, PermisoActualizarTrasladoMasivoUnidadesEntidad, PermisoCambiarOrganigrama, PermisoCrearOrganigramas, PermisoEjecutarTrasladoMasivoUnidadUnidad, PermisoEjecutarTrasladoMasivoUnidadesEntidad
 from seguridad.utils import Util
 from django.db.models import Q, F
 from datetime import datetime
@@ -52,7 +52,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 class UpdateNiveles(generics.UpdateAPIView):
     serializer_class = NivelesUpdateSerializer
     queryset = NivelesOrganigrama.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearOrganigramas, PermisoActualizarOrganigramas]
 
     def put(self, request, id_organigrama):
         data = request.data
@@ -161,7 +161,7 @@ class GetNivelesByOrganigrama(generics.ListAPIView):
 class UpdateUnidades(generics.UpdateAPIView):
     serializer_class=UnidadesPutSerializer
     queryset=UnidadesOrganizacionales.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearOrganigramas, PermisoActualizarOrganigramas]
 
     def put(self, request, pk):
         data = request.data
@@ -594,7 +594,7 @@ class GetUnidadesOrganigramaActual(generics.ListAPIView):
 class FinalizarOrganigrama(generics.UpdateAPIView):
     serializer_class=OrganigramaSerializer
     queryset=Organigramas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
     
     def put(self,request,pk):
         persona_logueada = request.user.persona.id_persona
@@ -659,7 +659,7 @@ class FinalizarOrganigrama(generics.UpdateAPIView):
 class CreateOrgChart(generics.CreateAPIView):
     serializer_class = OrganigramaPostSerializer
     queryset = Organigramas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearOrganigramas]
     def post(self, request):
         persona = request.user.persona.id_persona
         
@@ -692,7 +692,7 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
     serializer_class = OrganigramaPutSerializer
     queryset= Organigramas.objects.all()
     lookup_field='id_organigrama'
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
 
     def patch(self, request, id_organigrama):
         persona_logueada = request.user.persona.id_persona
@@ -879,7 +879,7 @@ class GetNuevoUserOrganigramaFilters(generics.ListCreateAPIView):
 class AsignarOrganigramaUser(generics.CreateAPIView):
     serializer_class = NewUserOrganigramaSerializer
     queryset = Personas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
     
     def post(self, request):
         fecha_sistema = datetime.now()
@@ -961,6 +961,7 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
     serializer_class = OrganigramaCambioDeOrganigramaActualSerializer
     queryset = Organigramas.objects.exclude(fecha_terminado=None)
     queryset2 = CuadrosClasificacionDocumental.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCambiarOrganigrama]
     
     def put(self,request):
         data = request.data
@@ -1220,7 +1221,7 @@ class ObtenerOrganigramasPosibles(generics.ListAPIView):
 
 class ActualizacionUnidadOrganizacionalAntigua(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarTrasladoMasivoUnidadesEntidad|PermisoEjecutarTrasladoMasivoUnidadUnidad)]
 
     def put(self, request, *args, **kwargs):
         nueva_id_unidad_organizacional = request.data.get('id_nueva_unidad_organizacional')
@@ -1451,6 +1452,7 @@ class ListadoPersonasOrganigramaActual(generics.ListAPIView):
 
 class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarTrasladoMasivoUnidadesEntidad]
     
     def put(self, request, id_organigrama):
         personas_nuevas_unidades = request.data
@@ -1513,7 +1515,7 @@ class GuardarActualizacionUnidadOrganizacional(generics.UpdateAPIView):
 
 class ProcederActualizacionUnidad(generics.UpdateAPIView):
     serializer_class = ActUnidadOrgAntiguaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEjecutarTrasladoMasivoUnidadesEntidad]
     
     def put(self, request, format=None):
         personas_nuevas_unidades = request.data

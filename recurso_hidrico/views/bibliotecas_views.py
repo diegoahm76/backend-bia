@@ -17,6 +17,7 @@ from django.db import transaction
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recurso_hidrico.models.bibliotecas_models import AccionesCorrectivas, ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
 from recurso_hidrico.serializers.biblioteca_serializers import TramiteSerializer, AccionesCorrectivasSerializer, ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarAdministracionInstrumentosBiblioteca, PermisoActualizarRegistroCuencas, PermisoActualizarRegistroParametrosLaboratorio, PermisoActualizarRegistroPozos, PermisoActualizarRegistroSeccionesBiblioteca, PermisoBorrarAdministracionInstrumentosBiblioteca, PermisoBorrarRegistroCuencas, PermisoBorrarRegistroParametrosLaboratorio, PermisoBorrarRegistroPozos, PermisoBorrarRegistroSeccionesBiblioteca, PermisoCrearAdministracionInstrumentosBiblioteca, PermisoCrearRegistroCuencas, PermisoCrearRegistroParametrosLaboratorio, PermisoCrearRegistroPozos, PermisoCrearRegistroSeccionesBiblioteca
 from seguridad.utils import Util
 from tramites.models.tramites_models import SolicitudesTramites
 from gestion_documental.models.radicados_models import AsignacionTramites
@@ -55,7 +56,7 @@ class GetSubseccionesPorSecciones(generics.ListAPIView):
 
 class RegistroSeccion(generics.CreateAPIView):
     serializer_class = RegistrarSeccionesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroSeccionesBiblioteca]
     queryset = Secciones.objects.all()
     
     def post(self,request):
@@ -72,7 +73,7 @@ class RegistroSeccion(generics.CreateAPIView):
     
 class RegistroSubSeccion(generics.CreateAPIView):
     serializer_class = RegistrarSubSeccionesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroSeccionesBiblioteca]
     queryset = Subsecciones.objects.all()
     
     def crear_subseccion(self,request,data):
@@ -154,7 +155,7 @@ class RegistroSeccionSubseccionx(generics.CreateAPIView):
 
 
 class RegistroSeccionSubseccion(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroSeccionesBiblioteca]
     serializer_class = RegistrarSeccionesSerializer
     queryset = Secciones.objects.all()
 
@@ -233,7 +234,7 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
     
     serializer_class = ActualizarSeccionesSerializer
     queryset = Secciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroSeccionesBiblioteca]
 
     def obtener_repetido(self,lista_archivos):
         contador = Counter(lista_archivos)
@@ -348,7 +349,7 @@ class ActualizarSecciones(generics.UpdateAPIView):
     
     serializer_class = ActualizarSeccionesSerializer
     queryset = Secciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroSeccionesBiblioteca]
     
     def actualizar_seccion(self,data,seccion):
         
@@ -379,7 +380,7 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     
     serializer_class = ActualizarSubseccionesSerializer
     queryset = Subsecciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroSeccionesBiblioteca]
     
     def actualizar_subseccion(self,data,pk):
         instancia_seccion = None
@@ -429,7 +430,7 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
 class EliminarSubseccion(generics.DestroyAPIView):
     serializer_class = EliminarSubseccionSerializer
     queryset = Subsecciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroSeccionesBiblioteca]
     
     def delete(self,request,pk):
         
@@ -476,7 +477,7 @@ class GetSeccionSubseccion(generics.RetrieveAPIView):
 class EliminarSeccion(generics.DestroyAPIView):
     serializer_class = EliminarSeccionSerializer
     queryset = Secciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroSeccionesBiblioteca]
     
     def delete(self,request,pk):
         
@@ -652,7 +653,7 @@ class ArchivosInstrumentoGet(generics.ListAPIView):
 
 class CuencaCreate(generics.CreateAPIView):
     serializer_class = CuencasPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroCuencas]
     queryset = Cuencas.objects.all()
     
     def post(self,request):
@@ -676,7 +677,7 @@ class CuencaDelete(generics.DestroyAPIView):
 
     serializer_class = CuencasPostSerializer
     queryset = Cuencas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroCuencas]
     
     def delete(self,request,pk):
         
@@ -744,7 +745,7 @@ class CuencaUpdate(generics.UpdateAPIView):
 
     serializer_class = CuencasUpdateSerializer
     queryset = Cuencas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroCuencas]
     
 
     def put(self, request, pk):
@@ -773,7 +774,7 @@ class CuencaUpdate(generics.UpdateAPIView):
 #POZOS
 class PozoCreate(generics.CreateAPIView):
     serializer_class = PozosPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroPozos]
     queryset = Pozos.objects.all()
     
     def post(self,request):
@@ -796,7 +797,7 @@ class PozoDelete(generics.DestroyAPIView):
 
     serializer_class = PozosPostSerializer
     queryset = Pozos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroPozos]
     
     def delete(self,request,pk):
         
@@ -820,7 +821,7 @@ class PozoUpdate(generics.UpdateAPIView):
 
     serializer_class = PozosUpdateSerializer
     queryset = Pozos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroPozos]
     
     def put(self,request,pk):
 
@@ -905,7 +906,7 @@ class PozoGetById(generics.ListAPIView):
 #Parametros de laboratorio
 class ParametrosLaboratorioCreate(generics.CreateAPIView):
     serializer_class = ParametrosLaboratorioPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroParametrosLaboratorio]
     queryset = ParametrosLaboratorio.objects.all()
     
     def post(self,request):
@@ -928,7 +929,7 @@ class ParametrosLaboratorioDelete(generics.DestroyAPIView):
 
     serializer_class = ParametrosLaboratorioPostSerializer
     queryset = ParametrosLaboratorio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroParametrosLaboratorio]
     
     def delete(self,request,pk):
         
@@ -955,7 +956,7 @@ class ParametrosLaboratorioUpdate(generics.UpdateAPIView):
     
     serializer_class = ParametrosLaboratorioUpdateSerializer
     queryset = ParametrosLaboratorio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroParametrosLaboratorio]
     
     def put(self,request,pk):
 
@@ -1177,7 +1178,7 @@ class ArchivosInstrumentoGetByCarteraAforos(generics.ListAPIView):
 
 class InstrumentoCreate(generics.CreateAPIView):
     serializer_class = InstrumentosPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministracionInstrumentosBiblioteca]
     queryset = Instrumentos.objects.all()
     
 
@@ -1274,7 +1275,7 @@ class InstrumentoUpdate(generics.UpdateAPIView):
 
     serializer_class = InstrumentosUpdateSerializer
     queryset = Instrumentos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministracionInstrumentosBiblioteca]
 
     def obtener_repetido(self,lista_archivos):
         
@@ -1382,7 +1383,7 @@ class InstrumentoUpdate(generics.UpdateAPIView):
 class InstrumentoDelete(generics.DestroyAPIView):
     serializer_class = InstrumentosDeleteSerializer
     queryset = Instrumentos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarAdministracionInstrumentosBiblioteca]
     
     def delete(self, request, pk):
         
@@ -2835,6 +2836,8 @@ class BusquedaTramitesByExpediente(generics.ListAPIView):
         queryset = SolicitudesTramites.objects.all()
         expediente = request.query_params.get('nro_expediente', None)
         nombre_proyecto = request.query_params.get('nombre_proyecto', None)
+
+        queryset = queryset.exclude(id_expediente=None)
         
         if expediente:
             if '-' in expediente:
