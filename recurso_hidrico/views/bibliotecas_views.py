@@ -2836,6 +2836,8 @@ class BusquedaTramitesByExpediente(generics.ListAPIView):
         queryset = SolicitudesTramites.objects.all()
         expediente = request.query_params.get('nro_expediente', None)
         nombre_proyecto = request.query_params.get('nombre_proyecto', None)
+
+        queryset = queryset.exclude(id_expediente=None)
         
         if expediente:
             if '-' in expediente:

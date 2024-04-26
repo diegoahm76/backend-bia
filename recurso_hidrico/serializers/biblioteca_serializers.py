@@ -582,10 +582,12 @@ class AccionesCorrectivasSerializer(serializers.ModelSerializer):
 
     def get_tipo_tramite(self, obj):
         permisosAmbSolicitudesTramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=obj.id_tramite).first()
-        return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
+        if permisosAmbSolicitudesTramite:
+            return permisosAmbSolicitudesTramite.id_permiso_ambiental.get_cod_tipo_permiso_ambiental_display()
+        else:
+            return "Sin tipo de trámite"
     
 class TramiteSerializer(serializers.ModelSerializer):
-    #nombre_proyecto = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre_proyecto')
     numero_auto_inicio = serializers.ReadOnlyField(source='id_auto_inicio.numero_acto_administrativo', default=None)
     numero_expediente = serializers.SerializerMethodField()
     tipo_tramite = serializers.SerializerMethodField() 
@@ -593,6 +595,7 @@ class TramiteSerializer(serializers.ModelSerializer):
     radicado = serializers.SerializerMethodField()
     nombre_solicitante = serializers.SerializerMethodField()
     grupo_funcional = serializers.SerializerMethodField()
+
     class Meta:
         model=SolicitudesTramites
         fields=('__all__')
@@ -617,10 +620,11 @@ class TramiteSerializer(serializers.ModelSerializer):
         
     def get_grupo_funcional(self, obj):
         asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).first()
-        if asignacion.id_und_org_seccion_asignada:
-            return asignacion.id_und_org_seccion_asignada.nombre
-        elif asignacion.id_und_org_oficina_asignada:
-            return asignacion.id_und_org_oficina_asignada.nombre
+        if asignacion:  
+            if asignacion.id_und_org_seccion_asignada:
+                return asignacion.id_und_org_seccion_asignada.nombre
+            elif asignacion.id_und_org_oficina_asignada:
+                return asignacion.id_und_org_oficina_asignada.nombre
         else:
             return "Sin asignar"
         
