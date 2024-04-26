@@ -96,10 +96,10 @@ urlpatterns = [
 
     # Generar constancias de notificaciones
     #path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.ConstanciasNotificacionGet.as_view(),name='get-constancias-notificacion'),
-    path('get-constancias-notificacion/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
     path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
     path('generador-documentos/', views.GeneradorDocumentos.as_view(),name='generador-documentos'),
     path('notificaciones-automaticas-create/', views.NotificacionesAutomaticasCreate.as_view(),name='notificaciones-automaticas-create'),
+    path('notificaciones-automaticas-bia-create/', views.NotificacionesAutomaticasBiaCreate.as_view(),name='notificaciones-automaticas-bia-create'),
     
 
     
