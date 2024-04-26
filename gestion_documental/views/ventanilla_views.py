@@ -1,4 +1,6 @@
 from gestion_documental.serializers.ventanilla_serializers import PersonasSerializer, ActualizarAutorizacionesPersonaSerializer, AutorizacionNotificacionesSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarPersonasDesdeVentanilla, PermisoCreaciónPersonasDesdeVentanilla
+from seguridad.permissions.permissions_transversal import PermisoActualizarAutorizacionNotificacionesOtrasCuentas
 from transversal.models.personas_models import Personas
 from rest_framework import generics,status
 from rest_framework.response import Response
@@ -39,6 +41,7 @@ class BusquedaPersonaParaRegistro(generics.RetrieveAPIView):
         
 class RegisterPersonaNatural(generics.CreateAPIView):
     serializer_class = PersonaNaturalPostSerializer
+    permission_classes = [IsAuthenticated, PermisoCreaciónPersonasDesdeVentanilla]
     
     def post(self, request):
         persona = request.data
@@ -80,6 +83,7 @@ class RegisterPersonaNatural(generics.CreateAPIView):
 
 class RegisterPersonaJuridica(generics.CreateAPIView):
     serializer_class = PersonaJuridicaPostSerializer
+    permission_classes = [IsAuthenticated, PermisoCreaciónPersonasDesdeVentanilla] 
 
     def post(self, request):
         persona = request.data
@@ -121,7 +125,7 @@ class RegisterPersonaJuridica(generics.CreateAPIView):
 class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
     http_method_names = ['patch']
     serializer_class = PersonaNaturalUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarPersonasDesdeVentanilla]
     queryset = Personas.objects.all()
     
     def patch(self, request, id_persona):
@@ -176,7 +180,7 @@ class UpdatePersonaNaturalByVentanilla(generics.RetrieveUpdateAPIView):
 class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
     http_method_names = ['patch']
     serializer_class = PersonaJuridicaUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarPersonasDesdeVentanilla]
     queryset = Personas.objects.all()
     
     def patch(self,request,id_persona):
@@ -257,6 +261,7 @@ class UpdatePersonaJuridicaByVentanilla(generics.UpdateAPIView):
 class AutorizacionNotificacionesVentanilla(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarAutorizacionNotificacionesOtrasCuentas]
 
     def put(self, request, id_persona):
         persona_ = self.request.user.id_usuario

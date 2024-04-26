@@ -6,6 +6,7 @@ import json
 import os
 import io
 import subprocess
+from seguridad.permissions.permissions_gestor import PermisoActualizarPQRSDF, PermisoActualizarTiposMediosSolicitud, PermisoActualizarTiposPQRSDF, PermisoBorrarPQRSDF, PermisoBorrarTiposMediosSolicitud, PermisoCrearPQRSDF, PermisoCrearTiposMediosSolicitud
 from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
 from django.utils import timezone
@@ -73,7 +74,7 @@ class TiposPQRGet(generics.ListAPIView):
 class TiposPQRUpdate(generics.UpdateAPIView):
     serializer_class = TiposPQRUpdateSerializer
     queryset = TiposPQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposPQRSDF]
     
     def put(self,request,pk):
     
@@ -146,7 +147,7 @@ class GetPQRSDFForPanel(generics.RetrieveAPIView):
 
 class PQRSDFCreate(generics.CreateAPIView):
     serializer_class = PQRSDFPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearPQRSDF]
 
     @transaction.atomic
     def post(self, request):
@@ -260,7 +261,7 @@ class PQRSDFCreate(generics.CreateAPIView):
 class PQRSDFUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = PQRSDFPostSerializer
     queryset = PQRSDF.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarPQRSDF]
 
     @transaction.atomic
     def put(self, request):
@@ -401,7 +402,7 @@ class PQRSDFDelete(generics.RetrieveDestroyAPIView):
     serializer_class = PQRSDFSerializer
     borrar_estados = Estados_PQRDelete
     queryset = PQRSDF.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarPQRSDF]
 
     @transaction.atomic
     def delete(self, request):
@@ -1028,7 +1029,7 @@ class Util_PQR:
 class MediosSolicitudCreate(generics.CreateAPIView):
     queryset = MediosSolicitud.objects.all()
     serializer_class = MediosSolicitudCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposMediosSolicitud]
 
 
 #BUSCAR_MEDIOS_SOLICITUD
@@ -1091,6 +1092,7 @@ class MediosSolicitudDelete(generics.DestroyAPIView):
     queryset = MediosSolicitud.objects.all()
     serializer_class = MediosSolicitudDeleteSerializer 
     lookup_field = 'id_medio_solicitud'
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposMediosSolicitud]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1113,6 +1115,7 @@ class MediosSolicitudUpdate(generics.UpdateAPIView):
     queryset = MediosSolicitud.objects.all()
     serializer_class = MediosSolicitudUpdateSerializer  
     lookup_field = 'id_medio_solicitud'
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposMediosSolicitud]
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

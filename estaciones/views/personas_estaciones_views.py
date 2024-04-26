@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from estaciones.serializers.personas_estaciones_serializers import PersonasEstacionesCreateSerializer ,PersonasEstacionesUpdateSerializer, PersonasEstacionesSerializer
 from estaciones.models.estaciones_models import PersonasEstaciones, PersonasEstacionesEstacion, Estaciones
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarUsuariosEstacion, PermisoBorrarUsuariosEstacion, PermisoCrearUsuariosEstacion
 
 # Listar persona
 
@@ -22,7 +23,7 @@ class ConsultarPersonaEstacion(generics.ListAPIView):
 class CrearPersonaEstacion(generics.CreateAPIView):
     serializer_class = PersonasEstacionesCreateSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearUsuariosEstacion]
 
     def post(self, request):
         data=request.data
@@ -50,7 +51,7 @@ class CrearPersonaEstacion(generics.CreateAPIView):
 class ActualizarPersonaEstacion(generics.UpdateAPIView):
     serializer_class = PersonasEstacionesUpdateSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarUsuariosEstacion]
 
     def put(self, request, pk):
         data=request.data
@@ -68,7 +69,7 @@ class ActualizarPersonaEstacion(generics.UpdateAPIView):
 class EliminarPersonaEstacion(generics.DestroyAPIView):
     serializer_class = PersonasEstacionesSerializer
     queryset = PersonasEstaciones.objects.all().using("bia-estaciones")
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarUsuariosEstacion]
 
     def delete(self, request, pk):
         persona=self.queryset.all().filter(id_persona=pk).first()

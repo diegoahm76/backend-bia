@@ -6,6 +6,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from seguridad.permissions.permissions_transversal import PermisoActualizarConfiguracionEntidad
 from seguridad.utils import Util
 
 from transversal.serializers.entidades_serializers import ConfiguracionEntidadSerializer, HistoricoPerfilesEntidadGetSerializer, PersonaEntidadCormacarenaGetSerializer
@@ -46,7 +47,8 @@ class UpdateConfiguracionEntidad(generics.UpdateAPIView):
     serializer_class = ConfiguracionEntidadSerializer
     queryset = ConfiguracionEntidad.objects.all()
     lookup_field = 'id_persona_entidad'
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionEntidad]
+
     def buscarConsecutivo(self,cod_perfil_histo):
         max_valor = HistoricoPerfilesEntidad.objects.filter(cod_tipo_perfil_histo=cod_perfil_histo).aggregate(max_valor=Max('consec_asignacion_perfil_histo'))
         #print("dato maximo de "+str(cod_perfil_histo))

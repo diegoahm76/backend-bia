@@ -14,6 +14,7 @@ from datetime import date
 from django.utils import timezone
 from seguridad.models import Personas
 
+from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTiposRadicadoActuales, PermisoActualizarConfiguracionTiposRadicadoProximoAnio
 from seguridad.utils import Util
 from transversal.views.bandeja_alertas_views import BandejaAlertaPersonaCreate
 from datetime import datetime, date, timedelta, timezone
@@ -25,7 +26,7 @@ class GetLisPerfilesSistema(APIView):
 class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
     serializer_class = ConfigTiposRadicadoAgnoUpDateSerializer
     queryset = ConfigTiposRadicadoAgno.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionTiposRadicadoActuales|PermisoActualizarConfiguracionTiposRadicadoProximoAnio)]
 
     def actualizar_config_tipos_radicado_agno(self,data,pk):
         
@@ -151,7 +152,7 @@ class ConfigTiposRadicadoAgnoUpdate(generics.UpdateAPIView):
 
 class ConfigTiposRadicadoAgnoCreate(generics.CreateAPIView):
     serializer_class = ConfigTiposRadicadoAgnoCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionTiposRadicadoActuales|PermisoActualizarConfiguracionTiposRadicadoProximoAnio)]
 
     def crear_config_tipos_radicado_agno(self, data):
         data_in = data
