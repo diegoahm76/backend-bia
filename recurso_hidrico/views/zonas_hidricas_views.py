@@ -250,8 +250,8 @@ class SubZonaHidricaTrListVieww(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data_rios = SubZonaHidrica.objects.all()
-        serializer = self.serializer_class(data_rios,many=True)
+        dato_rios = SubZonaHidrica.objects.all()
+        serializer = self.serializer_class(dato_rios,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
