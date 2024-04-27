@@ -2,6 +2,7 @@ from almacen.models.bienes_models import CatalogoBienes
 from rest_framework import generics,status
 from rest_framework.response import Response
 from almacen.serializers.solicitudes_serialiers import PersonasResponsablesFilterSerializer
+from seguridad.permissions.permissions_almacen import PermisoActualizarAprobacionSolicitudesConsumoVivero, PermisoActualizarSolicitudConsumoViveros, PermisoCrearAprobacionSolicitudesConsumoVivero, PermisoCrearSolicitudConsumoViveros
 from transversal.models import UnidadesOrganizacionales, NivelesOrganigrama
 from transversal.models.personas_models import Personas
 from seguridad.utils import Util
@@ -28,7 +29,7 @@ import copy
 class CreateSolicitudViveros(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesviverosPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
-    
+    permission_classes = [IsAuthenticated, (PermisoCrearSolicitudConsumoViveros|PermisoActualizarSolicitudConsumoViveros)]
     serializer_item_solicitud = CrearItemsSolicitudViveroPostSerializer
     
     def put(self, request, *args, **kwargs):
@@ -279,6 +280,7 @@ class GetNroDocumentoSolicitudesBienesConsumoVivero(generics.ListAPIView):
 class RevisionSolicitudBienConsumosViveroPorSupervisor(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesviverosPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoCrearAprobacionSolicitudesConsumoVivero|PermisoActualizarAprobacionSolicitudesConsumoVivero)]
     
     def put(self, request, id_solicitud,*args, **kwargs):
         datos_ingresados = request.data

@@ -6,7 +6,7 @@ import json
 import os
 import io
 import subprocess
-from seguridad.permissions.permissions_gestor import PermisoActualizarPQRSDF, PermisoActualizarTiposMediosSolicitud, PermisoActualizarTiposPQRSDF, PermisoBorrarPQRSDF, PermisoBorrarTiposMediosSolicitud, PermisoCrearPQRSDF, PermisoCrearTiposMediosSolicitud
+from seguridad.permissions.permissions_gestor import PermisoActualizarPQRSDF, PermisoActualizarTiposMediosSolicitud, PermisoActualizarTiposPQRSDF, PermisoBorrarPQRSDF, PermisoBorrarRadicacionEmail, PermisoBorrarTiposMediosSolicitud, PermisoCrearPQRSDF, PermisoCrearRespuestaSolicitudPQRSDF, PermisoCrearTiposMediosSolicitud
 from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
 from django.utils import timezone
@@ -1150,7 +1150,7 @@ class MediosSolicitudUpdate(generics.UpdateAPIView):
     
 class RespuestaPQRSDFCreate(generics.CreateAPIView):
     serializer_class = RespuestaPQRSDFPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRespuestaSolicitudPQRSDF]
 
     @transaction.atomic
     def post(self, request):
@@ -3794,6 +3794,7 @@ class ObtenerCorreosView(generics.ListAPIView):
 
 #Eliminar_Correo
 class EliminarCorreoView(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated, PermisoBorrarRadicacionEmail]
     
     def delete(self, request, *args, **kwargs):
         try:

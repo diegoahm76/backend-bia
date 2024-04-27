@@ -1,7 +1,7 @@
 from conservacion.utils import UtilConservacion
 from rest_framework import generics, status
 from rest_framework.views import APIView
-from seguridad.permissions.permissions_conservacion import PermisoEsCoordinadorViveros
+from seguridad.permissions.permissions_conservacion import PermisoActualizarAprobacionSolicitudesViverosCoordinadorViveros, PermisoActualizarAprobacionSolicitudesViverosFuncionario, PermisoCrearAprobacionSolicitudesViverosCoordinadorViveros, PermisoCrearAprobacionSolicitudesViverosFuncionario, PermisoEsCoordinadorViveros
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -80,7 +80,7 @@ class DetailSolicitudView(generics.GenericAPIView):
 class GestionarSolicitudSupervisorView(generics.RetrieveUpdateAPIView):
     serializer_class = GestionarSolicitudResponsableSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearAprobacionSolicitudesViverosFuncionario|PermisoActualizarAprobacionSolicitudesViverosFuncionario)]
 
     def patch(self, request, id_solicitud):
         data = request.data
@@ -145,7 +145,7 @@ class GestionarSolicitudSupervisorView(generics.RetrieveUpdateAPIView):
 class GestionarSolicitudesVencidasSupervisorView(generics.RetrieveUpdateAPIView):
     serializer_class = GestionarSolicitudResponsableSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearAprobacionSolicitudesViverosFuncionario|PermisoActualizarAprobacionSolicitudesViverosFuncionario)]
 
     def patch(self, request, id_solicitud):
         data = request.data
@@ -213,7 +213,7 @@ class ListSolicitudesCoordinadorView(generics.ListAPIView):
 class GestionarSolicitudCoordinadorView(generics.RetrieveUpdateAPIView):
     serializer_class = GestionarSolicitudCoordinadorSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated, PermisoEsCoordinadorViveros]
+    permission_classes = [IsAuthenticated, PermisoEsCoordinadorViveros, (PermisoCrearAprobacionSolicitudesViverosCoordinadorViveros|PermisoActualizarAprobacionSolicitudesViverosCoordinadorViveros)]
 
     def patch(self, request, id_solicitud):
         data = request.data

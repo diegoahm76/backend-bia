@@ -6,6 +6,7 @@ from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.viveros_models import Vivero
 from conservacion.models.traslados_models import TrasladosViveros, ItemsTrasladoViveros
 from almacen.models.bienes_models import CatalogoBienes
+from seguridad.permissions.permissions_conservacion import PermisoActualizarTrasladosEntreViveros, PermisoAnularTrasladosEntreViveros, PermisoBorrarTrasladosEntreViveros, PermisoCrearTrasladosEntreViveros
 from transversal.models.personas_models import Personas
 from datetime import datetime, timedelta
 from rest_framework.permissions import IsAuthenticated
@@ -17,7 +18,7 @@ import copy
 class TrasladosCreate(generics.UpdateAPIView):
     serializer_class = TrasladosViverosSerializers
     queryset = TrasladosViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTrasladosEntreViveros]
     serializer_items_traslado = ItemsTrasladosViverosSerielizers
     
     def put(self, request):
@@ -343,7 +344,7 @@ class GetItemsTrasladoByIdTraslado(generics.ListAPIView):
 class TrasladosActualizar(generics.UpdateAPIView):
     serializer_class = TrasladosViverosSerializers
     queryset = TrasladosViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarTrasladosEntreViveros|PermisoBorrarTrasladosEntreViveros)]
     serializer_items_traslado = ItemsTrasladosViverosSerielizers
     
     def put(self, request):
@@ -723,7 +724,7 @@ class TrasladosActualizar(generics.UpdateAPIView):
 class TrasladosAnular(generics.UpdateAPIView):
     serializer_class = TrasladosViverosSerializers
     queryset = TrasladosViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularTrasladosEntreViveros]
     serializer_items_traslado = ItemsTrasladosViverosSerielizers
     
     def put(self, request, id_traslado_a_anular):

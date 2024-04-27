@@ -2,6 +2,7 @@ from django.db import transaction
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoActualizarAdministracionCamasGerminacion, PermisoActualizarSiembraSemillas, PermisoBorrarAdministracionCamasGerminacion, PermisoBorrarSiembraSemillas, PermisoCrearAdministracionCamasGerminacion, PermisoCrearSiembraSemillas
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -60,7 +61,7 @@ from conservacion.utils import UtilConservacion
 class CamasGerminacion(generics.UpdateAPIView):
     serializer_class = CamasGerminacionPost
     queryset = CamasGerminacionVivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearAdministracionCamasGerminacion|PermisoActualizarAdministracionCamasGerminacion|PermisoBorrarAdministracionCamasGerminacion)]
     
     def put(self, request, id_vivero_procesar):
         datos_ingresados = request.data
@@ -217,7 +218,7 @@ class CreateSiembraView(generics.CreateAPIView):
     serializer_class = CreateSiembrasSerializer
     serializer_class_consumidos = CreateBienesConsumidosSerializer
     queryset = Siembras.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearSiembraSemillas]
     
     def create_maestro(self, request):
         data_siembra = json.loads(request.data['data_siembra'])
@@ -472,7 +473,7 @@ class UpdateSiembraView(generics.RetrieveUpdateAPIView):
     serializer_class = UpdateSiembraSerializer
     serializer_class_detalles = UpdateBienesConsumidosSerializer
     queryset = Siembras.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarSiembraSemillas]
 
     def update_maestro(self, request, id_siembra):
         data_siembra = request.data['data_siembra']
@@ -1001,7 +1002,7 @@ class GetBienesConsumidosSiembraView(generics.ListAPIView):
 class DeleteSiembraView(generics.RetrieveDestroyAPIView):
     serializer_class = DeleteSiembraSerializer
     queryset = Siembras.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarSiembraSemillas]
 
     def delete(self, request, id_siembra):
         data_siembra = request.data

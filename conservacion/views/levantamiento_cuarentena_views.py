@@ -8,6 +8,7 @@ from conservacion.serializers.levantamiento_cuarentena_serializers import (
     ItemsLevantamientoCuarentenaSerializer,CuarentenaMaterialVegetalSerializer,
     AnulacionGetCuarentenaMaterialVegetalSerializer
 )
+from seguridad.permissions.permissions_conservacion import PermisoActualizarLevantamientoCuarentenaMaterialVegetal, PermisoAnularLevantamientoCuarentenaMaterialVegetal, PermisoCrearLevantamientoCuarentenaMaterialVegetal
 from seguridad.utils import Util
 from rest_framework import generics,status
 from rest_framework.response import Response
@@ -136,7 +137,7 @@ class GetCuarentenaMaterialVegetalById(generics.ListAPIView):
 class GuardarLevantamientoCuarentena(generics.CreateAPIView):
     serializer_class= ItemsLevantamientoCuarentenaSerializer
     queryset = ItemsLevantaCuarentena.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearLevantamientoCuarentenaMaterialVegetal]
     
     def post (self,request):
         data = request.data
@@ -319,6 +320,7 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
     
     serializer_class = ItemsLevantamientoCuarentenaSerializer
     queryset = ItemsLevantaCuarentena.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarLevantamientoCuarentenaMaterialVegetal]
     
     def put(self,request,id_item_levanta_cuarentena):
         
@@ -467,7 +469,7 @@ class UpdateLevantamientoCuarentena (generics.UpdateAPIView):
 class AnularLevantamientoCuarentena (generics.UpdateAPIView):
     serializer_class = ItemsLevantamientoCuarentenaSerializer
     queryset = ItemsLevantaCuarentena.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularLevantamientoCuarentenaMaterialVegetal]
     
     def put (self,request,id_item_levanta_cuarentena):
         
