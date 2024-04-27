@@ -199,7 +199,7 @@ urlpatterns=[
     path('tablero-control-objetivos/<str:pk>/',views.TableroPGARByObjetivo.as_view(),name='tableroControlObjetivos'),
     path('tablero-control-ejes/',views.TableroPGARByEje.as_view(),name='tableroControlEjes'),
     path('tablero-control-objetivo-ejes/',views.TableroPGARObjetivoEje.as_view(),name='tableroControlObjetivosEjes'),
-
+    path('tablero-control-general-ejes/',views.TableroControlGeneral.as_view(),name='tableroControlGeneralEjes'),
 
 
 ]

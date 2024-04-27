@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from seguridad.models import Personas
 from rest_framework.permissions import IsAuthenticated
+from transversal.models.alertas_models import ConfiguracionClaseAlerta
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from datetime import datetime, date, timedelta, timezone
 from rest_framework.response import Response
@@ -36,6 +37,8 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from transversal.models.base_models import ClasesTerceroPersona
 
 from copy import copy
+
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 
 class BuscarBien(generics.ListAPIView):
@@ -1767,6 +1770,32 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
                 item_despacho_activo = ItemsDespachoActivos.objects.get(id_item_despacho_activo=id_item_despacho_activo)
                 item_despacho_activo.se_devolvio = True
                 item_despacho_activo.save()
+                print("FECHA DE DEVOLUCION")
+                print(item_despacho_activo)
+                print(item_despacho_activo.fecha_devolucion)
+
+                if item_despacho_activo.fecha_devolucion :
+
+
+                    #GENERACION DE ALERTA
+                    conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta='Alm_DVActv').first()
+                    if conf :
+                        crear_alerta=AlertasProgramadasCreate()
+
+                        data_alerta = {
+                        'cod_clase_alerta':'Alm_DVActv',
+                        'dia_cumplimiento':item_despacho_activo.fecha_devolucion.day,
+                        'mes_cumplimiento':item_despacho_activo.fecha_devolucion.month,
+                        'age_cumplimiento':item_despacho_activo.fecha_devolucion.year,
+                        'id_elemento_implicado':item_despacho_activo.id_item_despacho_activo,
+                        "tiene_implicado":False
+                        }
+
+                        response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+                        if response_alerta.status_code!=status.HTTP_201_CREATED:
+                            return response_alerta
+
+                        print(data_alerta)
 
             # Actualizar T062Inventario
             id_bien_despachado = activo_devolucionado_data.get('id_bien_despachado')
@@ -1779,7 +1808,7 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
                 inventario_obj.tipo_doc_ultimo_movimiento = 'DEV'
                 inventario_obj.id_registro_doc_ultimo_movimiento = None
                 inventario_obj.save()
-
+        #raise ValidationError("PERE")
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
 
@@ -3438,3 +3467,39 @@ class AceptarDespachoPut(generics.UpdateAPIView):
         
         serializer = self.serializer_class(despacho)
         return Response({'detail': 'El despacho asociado se ha aceptado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class BusquedaGeneralInventario(generics.ListAPIView):
+    serializer_class = InventarioSerializer
+
+    def get_queryset(self):
+        queryset = Inventario.objects.all()
+
+        # Obtener parámetros de consulta
+        tipo_movimiento = self.request.query_params.get('tipo_movimiento')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+
+        # Filtrar por tipo de movimiento
+        if tipo_movimiento:
+            queryset = queryset.filter(tipo_doc_ultimo_movimiento=tipo_movimiento)
+        
+        # Filtrar por rango de fechas
+        if fecha_desde:
+            queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
+            
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = {
+            'success': True,
+            'detail': 'Búsqueda realizada exitosamente.',
+            'data': serializer.data
+        }
+        return Response(data)

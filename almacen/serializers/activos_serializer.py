@@ -21,6 +21,8 @@ class InventarioSerializer(serializers.ModelSerializer):
     estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
+    cantidad = serializers.SerializerMethodField()
+    ubicacion = serializers.SerializerMethodField()
 
     def get_valor_unitario(self, obj):
         id_bien = obj.id_bien
@@ -34,10 +36,22 @@ class InventarioSerializer(serializers.ModelSerializer):
         id_item_entrada_almacen = item_entrada.id_item_entrada_almacen if item_entrada else None
         return id_item_entrada_almacen
 
+    def get_cantidad(self, obj):
+        return 1  
+
+    def get_ubicacion(self, obj):
+        if obj.ubicacion_en_bodega:
+            return 'En Bodega'
+        elif obj.ubicacion_asignado:
+            return 'Asignado a Funcionario'
+        elif obj.ubicacion_prestado:
+            return 'Prestado a Funcionario'
+        else:
+            return 'Ubicación desconocida'
+
     class Meta:
         model = Inventario
         fields = '__all__'
-
 
 
 
