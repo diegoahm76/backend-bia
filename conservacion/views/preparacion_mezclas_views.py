@@ -14,6 +14,7 @@ from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.viveros_models import Vivero
 from conservacion.models.traslados_models import TrasladosViveros, ItemsTrasladoViveros
 from almacen.models.bienes_models import CatalogoBienes
+from seguridad.permissions.permissions_conservacion import PermisoActualizarPreparacionMezclas, PermisoAnularPreparacionMezclas, PermisoCrearPreparacionMezclas
 from transversal.models.personas_models import Personas
 from datetime import datetime, timedelta
 from rest_framework.permissions import IsAuthenticated
@@ -41,7 +42,7 @@ class GetMezclasByNombre(generics.ListAPIView):
 class CreatePreparacionMezclas(generics.UpdateAPIView):
     serializer_class = PreparacionMezclasSerializer
     queryset = PreparacionMezclas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearPreparacionMezclas]
     serializador_items_preparacion_mezclas = ItemsPreparacionMezclasSerializer
     
     def put(self, request):
@@ -270,7 +271,7 @@ class GetBienInsumosByCodigoAndName(generics.ListAPIView):
 class UpdatePreparacionMezclas(generics.UpdateAPIView):
     serializer_class = PreparacionMezclasSerializer
     queryset = PreparacionMezclas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarPreparacionMezclas]
     serializador_items_preparacion_mezclas = ItemsPreparacionMezclasSerializer
     serializador_actualizar_items = ItemsPreparacionMezclaActualizarSerializer
     
@@ -516,7 +517,7 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
 class AnularPreparacionMezclas(generics.UpdateAPIView):
     serializer_class = PreparacionMezclasSerializer
     queryset = PreparacionMezclas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularPreparacionMezclas]
     serializador_items_preparacion_mezclas = ItemsPreparacionMezclasSerializer
     
     def put(self, request, id_preparacion_anular):

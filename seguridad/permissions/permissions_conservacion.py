@@ -124,7 +124,7 @@ class PermisoActualizarTipificaciónBienesConsumoViveros(BasePermission):
         return False
 
 # RECEPCION Y DISTRIBUCION DE DESPACHOS ENTRANTES VIVEROS
-class PermisoCrearRecepciónDistribuciónDespachosEntrantesVivero(BasePermission):
+class PermisoCrearRecepcionDistribucionDespachosEntrantesVivero(BasePermission):
     message = 'No tiene permiso para distribuir las entradas de bienes de consumo de viveros en los diferentes viveros de la entidad'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -137,7 +137,7 @@ class PermisoCrearRecepciónDistribuciónDespachosEntrantesVivero(BasePermission
 
         return False
 
-class PermisoConsultarRecepciónDistribuciónDespachosEntrantesVivero(BasePermission):
+class PermisoConsultarRecepcionDistribucionDespachosEntrantesVivero(BasePermission):
     message = 'No tiene permiso para consultar las entradas de bienes de consumo de viveros en los diferentes viveros de la entidad'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -150,7 +150,7 @@ class PermisoConsultarRecepciónDistribuciónDespachosEntrantesVivero(BasePermis
 
         return False
 
-class PermisoActualizarRecepciónDistribuciónDespachosEntrantesVivero(BasePermission):
+class PermisoActualizarRecepcionDistribucionDespachosEntrantesVivero(BasePermission):
     message = 'No tiene permiso para actualizar las entradas de bienes de consumo de viveros en los diferentes viveros de la entidad'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -163,7 +163,7 @@ class PermisoActualizarRecepciónDistribuciónDespachosEntrantesVivero(BasePermi
 
         return False
 
-class PermisoBorrarRecepciónDistribuciónDespachosEntrantesVivero(BasePermission):
+class PermisoBorrarRecepcionDistribucionDespachosEntrantesVivero(BasePermission):
     message = 'No tiene permiso para borrar las entradas de bienes de consumo de viveros en los diferentes viveros de la entidad'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -177,7 +177,7 @@ class PermisoBorrarRecepciónDistribuciónDespachosEntrantesVivero(BasePermissio
         return False
 
 # ADMINISTRACION DE CAMAS DE GERMINACION
-class PermisoCrearAdministraciónCamasGerminación(BasePermission):
+class PermisoCrearAdministracionCamasGerminacion(BasePermission):
     message = 'No tiene permiso para crear la administración de las camas de germinación para los diferntes viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -190,7 +190,7 @@ class PermisoCrearAdministraciónCamasGerminación(BasePermission):
 
         return False
     
-class PermisoConsultarAdministraciónCamasGerminación(BasePermission):
+class PermisoConsultarAdministracionCamasGerminacion(BasePermission):
     message = 'No tiene permiso para consultar la administración de las camas de germinación para los diferntes viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -203,7 +203,7 @@ class PermisoConsultarAdministraciónCamasGerminación(BasePermission):
 
         return False
 
-class PermisoActualizarAdministraciónCamasGerminación(BasePermission):
+class PermisoActualizarAdministracionCamasGerminacion(BasePermission):
     message = 'No tiene permiso para actualizar la administración de las camas de germinación para los diferntes viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -216,7 +216,7 @@ class PermisoActualizarAdministraciónCamasGerminación(BasePermission):
 
         return False
 
-class PermisoBorrarAdministraciónCamasGerminación(BasePermission):
+class PermisoBorrarAdministracionCamasGerminacion(BasePermission):
     message = 'No tiene permiso para borrar la administración de las camas de germinación para los diferntes viveros'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -548,7 +548,7 @@ class PermisoAnularBajasHerramientasInsumosSemillas(BasePermission):
         return False
 
 # MORTALIDAD DE MATERIAL VEGETAL EN INVENTARIO
-class PermisoCrearMortalidadPlantasPlántulas(BasePermission):
+class PermisoCrearMortalidadPlantasPlantulas(BasePermission):
     message = 'No tiene permiso para crear el registro de la mortalidad de plantas y plántulas de un vivero'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -561,7 +561,7 @@ class PermisoCrearMortalidadPlantasPlántulas(BasePermission):
 
         return False
 
-class PermisoConsultarMortalidadPlantasPlántulas(BasePermission):
+class PermisoConsultarMortalidadPlantasPlantulas(BasePermission):
     message = 'No tiene permiso para consultar el registro de la mortalidad de plantas y plántulas de un vivero'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -574,7 +574,7 @@ class PermisoConsultarMortalidadPlantasPlántulas(BasePermission):
 
         return False
 
-class PermisoActualizarMortalidadPlantasPlántulas(BasePermission):
+class PermisoActualizarMortalidadPlantasPlantulas(BasePermission):
     message = 'No tiene permiso para actualizar el registro de la mortalidad de plantas y plántulas de un vivero'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
@@ -587,7 +587,7 @@ class PermisoActualizarMortalidadPlantasPlántulas(BasePermission):
 
         return False
 
-class PermisoAnularMortalidadPlantasPlántulas(BasePermission):
+class PermisoAnularMortalidadPlantasPlantulas(BasePermission):
     message = 'No tiene permiso para anular el registro de la mortalidad de plantas y plántulas de un vivero'
     def has_permission(self, request, view):
         id_user = request.user.id_usuario
