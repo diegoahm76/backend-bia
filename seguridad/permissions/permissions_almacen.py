@@ -798,6 +798,7 @@ class PermisoAnularSolicitudConsumo(BasePermission):
 
         return False
 
+# SOLICITUDES DE CONSUMO PARA VIVEROS
 class PermisoCrearSolicitudConsumoViveros(BasePermission):
     message = 'No tiene permiso para crear solicitudes de bienes de consumo para viveros'
     def has_permission(self, request, view):
@@ -811,7 +812,6 @@ class PermisoCrearSolicitudConsumoViveros(BasePermission):
 
         return False
 
-# SOLICITUDES DE CONSUMO PARA VIVEROS
 class PermisoConsultarSolicitudConsumoViveros(BasePermission):
     message = 'No tiene permiso para consultar solicitudes de bienes de consumo para viveros'
     def has_permission(self, request, view):
@@ -1034,6 +1034,7 @@ class PermisoAnularDespachoBienesConsumo(BasePermission):
                 return True
         return False
 
+# ENTREGA DONACIONES RESARCIMIENTOS
 class PermisoCrearEntregaDonacionesResarcimientosCompensacionesViveros(BasePermission):
     message = 'No se puede crear la entrega de los bienes de consumo de viveros que ingresaron mediante una Donación, Resarcimiento o Compensación'
     def has_permission(self, request, view):
@@ -1082,6 +1083,7 @@ class PermisoAnularEntregaDonacionesResarcimientosCompensacionesViveros(BasePerm
                 return True
         return False
 
+# CIERRE SOLICITUDES BIENES NO DISPONIBILIDAD
 class PermisoCrearCierreSolicitudesBienesNoDisponibilidad(BasePermission):
     message = 'No se puede crear el cierre por parte de Almacén una solicitud de bienes por no tener disponibilidad de ninguno de los items solicitados'
     def has_permission(self, request, view):

@@ -4,6 +4,7 @@ import json
 
 from conservacion.serializers.incidencias_serializers import ActualizacionIncidenciaSerializer
 
+from seguridad.permissions.permissions_conservacion import PermisoActualizarRegistroIncidenciasMaterialVegetal, PermisoAnularRegistroIncidenciasMaterialVegetal, PermisoCrearRegistroIncidenciasMaterialVegetal
 from seguridad.utils import Util
 
 from conservacion.utils import UtilConservacion
@@ -109,7 +110,7 @@ class GuardarIncidencia(generics.CreateAPIView):
     serializer_class = IncidenciaSerializer
     serializer_class_items = ConsumosIncidenciasMVSerializer
     queryset = IncidenciasMatVegetal.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroIncidenciasMaterialVegetal]
     
     def post(self,request,id_vivero):
         data = request.data
@@ -362,7 +363,7 @@ class GetElementoYMezclaByLupa(generics.ListAPIView):
 class AnulacionIncidencia(generics.UpdateAPIView):
     serializer_class = IncidenciaSerializer
     queryset = IncidenciasMatVegetal.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularRegistroIncidenciasMaterialVegetal]
     
     def put(self,request,id_incidencias_mat_vegetal):
         
@@ -459,6 +460,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
     serializer_class_items = ConsumosIncidenciasMVSerializer
     serializer_class = ActualizacionIncidenciaSerializer
     queryset = IncidenciasMatVegetal.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroIncidenciasMaterialVegetal]
     
     def put(self,request,id_incidencias_mat_vegetal):
         
