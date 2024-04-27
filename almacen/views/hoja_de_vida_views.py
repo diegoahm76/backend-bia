@@ -1,6 +1,7 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from django.db.models import Q
+from seguridad.permissions.permissions_almacen import PermisoActualizarHojasVidaComputadores, PermisoActualizarHojasVidaOtrosActivos, PermisoActualizarHojasVidaVehiculos, PermisoBorrarHojasVidaComputadores, PermisoBorrarHojasVidaOtrosActivos, PermisoBorrarHojasVidaVehiculos
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
@@ -42,7 +43,7 @@ from transversal.views.alertas_views import AlertasProgramadasCreate
 class CreateHojaDeVidaComputadores(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
     queryset=HojaDeVidaComputadores.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarHojasVidaComputadores]
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
@@ -83,7 +84,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
 class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
     queryset=HojaDeVidaVehiculos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarHojasVidaVehiculos]
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
@@ -149,7 +150,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
 class CreateHojaDeVidaOtros(generics.CreateAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
     queryset=HojaDeVidaOtrosActivos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarHojasVidaOtrosActivos]
     def post(self,request):
         data=request.data
         serializer = self.serializer_class(data=data)
@@ -190,6 +191,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
 class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaComputadores
     queryset=HojaDeVidaComputadores.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarHojasVidaComputadores]
     
     def delete(self, request, pk):
         hv_a_borrar = HojaDeVidaComputadores.objects.filter(id_hoja_de_vida=pk).first()
@@ -225,6 +227,7 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
 class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
     queryset=HojaDeVidaVehiculos.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarHojasVidaVehiculos]
     
     def delete(self, request, pk):
         hv_a_borrar = HojaDeVidaVehiculos.objects.filter(id_hoja_de_vida=pk).first()
@@ -258,6 +261,7 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
 class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
     queryset=HojaDeVidaOtrosActivos.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarHojasVidaOtrosActivos]
     
     def delete(self, request, pk):
         hv_a_borrar = HojaDeVidaOtrosActivos.objects.filter(id_hoja_de_vida=pk).first()
@@ -292,7 +296,7 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
 class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaComputadores
     queryset=HojaDeVidaComputadores.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoActualizarHojasVidaComputadores]
 
     def put(self,request,pk):
         data=request.data
@@ -350,7 +354,7 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
 class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaVehiculos
     queryset=HojaDeVidaVehiculos.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoActualizarHojasVidaVehiculos]
 
     def put(self,request,pk):
         data=request.data
@@ -410,7 +414,7 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
 class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaOtrosActivos
     queryset=HojaDeVidaOtrosActivos.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoActualizarHojasVidaOtrosActivos]
 
     def put(self,request,pk):
         data=request.data
