@@ -200,6 +200,7 @@ urlpatterns=[
     path('tablero-control-ejes/',views.TableroPGARByEje.as_view(),name='tableroControlEjes'),
     path('tablero-control-objetivo-ejes/',views.TableroPGARObjetivoEje.as_view(),name='tableroControlObjetivosEjes'),
     path('tablero-control-general-ejes/',views.TableroControlGeneral.as_view(),name='tableroControlGeneralEjes'),
+    path('tablero-control-general-objetivos/',views.TableroControlGeneralObjeivos.as_view(),name='tableroControlGeneralObjetivos'),
 
 
 ]
