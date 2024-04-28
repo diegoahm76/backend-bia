@@ -18,6 +18,7 @@ from gestion_documental.serializers.expedientes_serializers import EliminacionAn
 from gestion_documental.serializers.transferencias_documentales_serializers import CrearTransferenciaSerializer, ExpedienteSerializer, HistoricoTransferenciasSerializer, UnidadesOrganizacionalesSerializer, UpdateExpedienteSerializer
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 
+from seguridad.permissions.permissions_gestor import PermisoCrearTransferenciasDocumentales
 from seguridad.signals.roles_signals import IsAuthenticated
 
 from transversal.models.organigrama_models import NivelesOrganigrama, Organigramas, UnidadesOrganizacionales
@@ -281,7 +282,7 @@ class CreateTransferencia(generics.CreateAPIView):
     serializer_class = CrearTransferenciaSerializer
     serializer_expediente_class = UpdateExpedienteSerializer
     serializer_class_anexos = EliminacionAnexosSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTransferenciasDocumentales]
 
     @transaction.atomic
     def post(self, request):

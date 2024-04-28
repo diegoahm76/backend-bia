@@ -1,6 +1,7 @@
 from conservacion.utils import UtilConservacion
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoActualizarCierreSolicitudesViverosNoDisponibilidad, PermisoActualizarSolicitudesPlantasInsumosViveros, PermisoAnularSolicitudesPlantasInsumosViveros, PermisoCrearCierreSolicitudesViverosNoDisponibilidad, PermisoCrearSolicitudesPlantasInsumosViveros
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -176,7 +177,7 @@ class GetFuncionarioByFiltersView(generics.ListAPIView):
 class CreateSolicitudViverosView(generics.CreateAPIView):
     serializer_class = CreateSolicitudViverosSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudesPlantasInsumosViveros]
 
     def post(self, request):
         persona_logeada = request.user.persona
@@ -526,7 +527,7 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
     serializer_class = UpdateSolicitudesSerializer
     serializer_class_items = UpdateItemsSolicitudSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarSolicitudesPlantasInsumosViveros]
 
     def update_maestro(self, request, id_solicitud):
         data_solicitud = json.loads(request.data['data_solicitud'])
@@ -727,7 +728,7 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
 class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
     serializer_class = AnulacionSolicitudesSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularSolicitudesPlantasInsumosViveros]
 
     def put(self, request, solicitudsita):   
         #VALIDACIÓN QUE LA SOLICITUD SELECCIONADA EXISTA            
@@ -1002,7 +1003,7 @@ class AnulacionSolicitudesView(generics.RetrieveUpdateAPIView):
 class CerrarSolicitudNoDisponibilidadView(generics.RetrieveUpdateAPIView):
     serializer_class = CerrarSolicitudNoDisponibilidadSerializer
     queryset = SolicitudesViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearCierreSolicitudesViverosNoDisponibilidad|PermisoActualizarCierreSolicitudesViverosNoDisponibilidad)]
 
     def patch(self, request, id_solicitud):
         data = request.data

@@ -2,6 +2,7 @@ from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEn
 from almacen.serializers.despachos_serializers import  SerializersDespachoConsumo, SerializersDespachoConsumoConItems, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
+from seguridad.permissions.permissions_almacen import PermisoActualizarDespachoBienesConsumo, PermisoAnularDespachoBienesConsumo, PermisoCrearDespachoBienesConsumo
 from transversal.models.personas_models import Personas
 from seguridad.utils import Util
 from almacen.utils import UtilAlmacen
@@ -38,7 +39,7 @@ class CreateDespachoMaestro(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
     queryset = DespachoConsumo
     serializer_item_consumo = SerializersItemDespachoConsumo
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearDespachoBienesConsumo]
     
     def put(self, request):
         datos_ingresados = request.data
@@ -273,7 +274,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumoActualizar
     queryset=DespachoConsumo.objects.all()
     serializer_item_consumo = SerializersItemDespachoConsumo
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarDespachoBienesConsumo]
     
     def delete_items(self, items_despacho_data, items_despacho_instancia):
         ids_items_despacho_data = [item['id_item_despacho_consumo'] for item in items_despacho_data if item['id_item_despacho_consumo']!=None]
@@ -618,6 +619,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
 class AnularDespachoConsumo(generics.UpdateAPIView):
     serializer_class = SerializersDespachoConsumo
     queryset=DespachoConsumo.objects.all()
+    permission_classes = [IsAuthenticated, PermisoAnularDespachoBienesConsumo]
     
     def put(self, request, despacho_a_anular):
         # SE CAPTURAN LOS DATOS Y SE ADQUIERE EL DATO DE LA FECHA DE ANULACIÓN

@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoActualizarDespachoViveros, PermisoActualizarRecepcionDistribucionDespachosEntrantesVivero, PermisoAnularDespachoViveros, PermisoCrearDespachoViveros, PermisoCrearRecepcionDistribucionDespachosEntrantesVivero
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -107,7 +108,7 @@ class GetItemsDespachosEntrantes(generics.ListAPIView):
 class GuardarDistribucionBienes(generics.ListAPIView):
     serializer_class=DistribucionesItemDespachoEntranteSerializer
     queryset=DistribucionesItemDespachoEntrante.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearRecepcionDistribucionDespachosEntrantesVivero|PermisoActualizarRecepcionDistribucionDespachosEntrantesVivero)]
     
     def put(self,request,id_despacho_entrante):
         despacho_entrante=DespachoEntrantes.objects.filter(id_despacho_entrante=id_despacho_entrante).first()
@@ -143,7 +144,7 @@ class GuardarDistribucionBienes(generics.ListAPIView):
 class ConfirmarDistribucion(generics.UpdateAPIView):
     serializer_class=DistribucionesItemDespachoEntranteSerializer
     queryset=DistribucionesItemDespachoEntrante.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearRecepcionDistribucionDespachosEntrantesVivero|PermisoActualizarRecepcionDistribucionDespachosEntrantesVivero)]
     
     def put(self,request,id_despacho_entrante):
         
@@ -250,7 +251,7 @@ class GetItemsPredistribuidos(generics.ListAPIView):
 class CreateDespacho(generics.UpdateAPIView):
     serializer_class = DespachosViveroSerializer
     queryset = DespachoViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearDespachoViveros]
     serializer_items_vivero = ItemsDespachoViveroSerializer
     
     def put(self,request):
@@ -468,7 +469,7 @@ class CreateDespacho(generics.UpdateAPIView):
 class UpdatePreparacionMezclas(generics.UpdateAPIView):
     serializer_class = DespachosViveroSerializer
     queryset = DespachoViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarDespachoViveros]
     serializer_items_vivero = ItemsDespachoViveroSerializer
     
     def put(self, request):
@@ -1012,7 +1013,7 @@ class GetItemsDespacho(generics.ListAPIView):
 class AnularPreparacionMezclas(generics.UpdateAPIView):
     serializer_class = DespachosViveroSerializer
     queryset = DespachoViveros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularDespachoViveros]
     serializador_items_preparacion_mezclas = ItemsDespachoViveroSerializer
     
     def put(self, request, id_despacho_anular):

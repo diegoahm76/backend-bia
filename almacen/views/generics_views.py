@@ -21,22 +21,26 @@ from almacen.serializers.generics_serializers import (
     )   
 from almacen.models.generics_models import Marcas, PorcentajesIVA
 from almacen.models.bienes_models import EstadosArticulo
+from seguridad.permissions.permissions_almacen import PermisoActualizarBodegas, PermisoActualizarMarcas, PermisoActualizarPorcentajeIva, PermisoActualizarUnidadesMedida, PermisoBorrarBodegas, PermisoBorrarMarcas, PermisoBorrarPorcentajeIva, PermisoBorrarUnidadesMedida, PermisoCrearBodegas, PermisoCrearMarcas, PermisoCrearPorcentajeIva, PermisoCrearUnidadesMedida
 from transversal.models.personas_models import Personas
 from django.db.models import Q
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.choices.magnitudes_choices import magnitudes_CHOICES
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 
 
 #_______Marca
 class RegisterMarca(generics.CreateAPIView):
     serializer_class=SerializersPostMarca
     queryset=Marcas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCrearMarcas]
     
 class UpdateMarca(generics.UpdateAPIView):
     serializer_class=SerializersPutMarca
     queryset=Marcas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarMarcas]
     
     def put(self, request, pk):
         data = request.data
@@ -55,6 +59,7 @@ class UpdateMarca(generics.UpdateAPIView):
 class DeleteMarca(generics.DestroyAPIView):
     serializer_class=SerializersMarca
     queryset=Marcas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarMarcas]
     
     def delete(self, request, pk):
         marca = self.queryset.filter(id_marca=pk).first()
@@ -90,6 +95,7 @@ class GetEstadosArticuloList(generics.ListAPIView):
 class RegisterBodega(generics.CreateAPIView):
     serializer_class=SerializerPostBodegas
     queryset=Bodegas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCrearBodegas]
     
     def post(self, request):
         data = request.data
@@ -116,6 +122,7 @@ class RegisterBodega(generics.CreateAPIView):
 class UpdateBodega(generics.UpdateAPIView):
     serializer_class=SerializerPutBodegas
     queryset=Bodegas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarBodegas]
     
     def put(self, request, pk):
         data = request.data
@@ -145,6 +152,7 @@ class UpdateBodega(generics.UpdateAPIView):
 class DeleteBodega(generics.DestroyAPIView):
     serializer_class=SerializerBodegas
     queryset=Bodegas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarBodegas]
     
     def delete(self, request, pk):
         bodega = self.queryset.filter(id_bodega=pk).first()
@@ -179,10 +187,12 @@ class GetMagnitudesList(generics.ListAPIView):
 class RegisterPorcentaje(generics.CreateAPIView):
     serializer_class=SerializerPostPorcentajesIVA
     queryset=PorcentajesIVA.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCrearPorcentajeIva]
     
 class UpdatePorcentaje(generics.UpdateAPIView):
     serializer_class=SerializerPutPorcentajesIVA
     queryset=PorcentajesIVA.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarPorcentajeIva]
     
     def put(self, request, pk):
         data = request.data
@@ -201,6 +211,7 @@ class UpdatePorcentaje(generics.UpdateAPIView):
 class DeletePorcentaje(generics.DestroyAPIView):
     serializer_class=SerializerPorcentajesIVA
     queryset=PorcentajesIVA.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarPorcentajeIva]
     
     def delete(self, request, pk):
         porcentaje = PorcentajesIVA.objects.filter(id_porcentaje_iva=pk).first()
@@ -225,10 +236,12 @@ class GetPorcentajeList(generics.ListAPIView):
 class RegisterUnidadMedida(generics.CreateAPIView):
     serializer_class=SerializersPostUnidadesMedida
     queryset=UnidadesMedida.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCrearUnidadesMedida]
     
 class UpdateUnidadMedida(generics.UpdateAPIView):
     serializer_class=SerializersPutUnidadesMedida
     queryset=UnidadesMedida.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarUnidadesMedida]
     
     def put(self,request,pk):
         unidad_medida=self.queryset.filter(id_unidad_medida=pk).first()
@@ -247,6 +260,7 @@ class UpdateUnidadMedida(generics.UpdateAPIView):
 class DeleteUnidadMedida(generics.DestroyAPIView):
     serializer_class=SerializersUnidadesMedida
     queryset=UnidadesMedida.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarUnidadesMedida]
     
     def delete(self, request, pk):
         unidad_medida=self.queryset.filter(id_unidad_medida=pk).first()

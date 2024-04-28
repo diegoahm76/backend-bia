@@ -10,10 +10,12 @@ from conservacion.models.mezclas_models import Mezclas, ItemsPreparacionMezcla, 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
+from seguridad.permissions.permissions_conservacion import PermisoActualizarMezclas, PermisoBorrarMezclas, PermisoCrearMezclas
+
 class CrearMezcla(generics.CreateAPIView):
     serializer_class = MezclasSerializador
     queryset = Mezclas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearMezclas]
     
     def post(self,request):
         data = request.data
@@ -25,7 +27,7 @@ class CrearMezcla(generics.CreateAPIView):
 class ActualizarMezcla(generics.RetrieveUpdateAPIView):
     serializer_class = MezclasPutSerializador
     queryset = Mezclas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarMezclas]
 
     def put(self, request, id_mezcla):
         mezcla = self.queryset.all().filter(id_mezcla=id_mezcla).first()
@@ -44,7 +46,7 @@ class ActualizarMezcla(generics.RetrieveUpdateAPIView):
 class EliminarMezcla(generics.DestroyAPIView):
     serializer_class = MezclasSerializador
     queryset = Mezclas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarMezclas]
 
     def delete(self, request, id_mezcla):
         mezcla = self.queryset.all().filter(id_mezcla=id_mezcla).first()
