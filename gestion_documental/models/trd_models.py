@@ -111,7 +111,7 @@ class CatSeriesUnidadOrgCCDTRD(models.Model):
     tiempo_retencion_ac = models.SmallIntegerField(null=True, blank=True, db_column='T218tiempoRetencionAC')
     descripcion_procedimiento = models.CharField(max_length=1000, null=True, blank=True, db_column='T218descripcionProcedimiento')
     fecha_registro = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T218fechaRegistro')
-    justificacion_cambio = models.CharField(max_length=255, null=True, blank=True, db_column='T218JustificacionCambio')
+    justificacion_cambio = models.CharField(max_length=255, null=True, blank=True, db_column='T218justificacionCambio')
     ruta_archivo_cambio = models.FileField(max_length=255, upload_to='gestion_documental/catalogo_trd/', null=True, blank=True, db_column='T218RutaArchivoCambio')
     
     def __str__(self):
