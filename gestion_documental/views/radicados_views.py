@@ -15,6 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, ComplementosUsu_PQR, EstadosSolicitudes, MediosSolicitud, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, T262Radicados, TiposPQR, modulos_radican
 from gestion_documental.serializers.radicados_serializers import AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, MedioSolicitudSerializer, MediosSolicitudSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, OTROSPanelSerializer, OTROSSerializer, OtrosPostSerializer, OtrosSerializer, PersonasFilterSerializer, RadicadoPostSerializer, RadicadosGetHistoricoSerializer, RadicadosGetRadicadoIdSerializer, RadicadosImprimirSerializer ,PersonasSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarOtros, PermisoBorrarOtros, PermisoCrearOtros
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from transversal.models.base_models import ApoderadoPersona
@@ -447,7 +448,7 @@ class GetApoderadosByPoderdanteId(generics.ListAPIView):
 #CREAR_OTROS
 class OtrosCreate(generics.CreateAPIView):
     serializer_class = OtrosPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearOtros]
 
     @transaction.atomic
     def post(self, request):
@@ -540,7 +541,7 @@ class OtrosCreate(generics.CreateAPIView):
 class OTROSUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = OtrosPostSerializer
     queryset = Otros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarOtros]
 
     @transaction.atomic
     def put(self, request):
@@ -678,7 +679,7 @@ class OTROSDelete(generics.RetrieveDestroyAPIView):
     serializer_class = OTROSSerializer
     borrar_estados = Estados_OTROSDelete
     queryset = Otros.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarOtros]
 
     @transaction.atomic
     def delete(self, request):

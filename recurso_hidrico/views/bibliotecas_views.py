@@ -2,10 +2,12 @@ import copy
 import json
 from collections import Counter
 import os
+from django.db.models import Q
 from django.forms import model_to_dict
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework import generics
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -13,9 +15,12 @@ from datetime import datetime,date,timedelta
 from django.db.models import Max
 from django.db import transaction
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recurso_hidrico.models.bibliotecas_models import ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import AccionesCorrectivas, ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import TramiteSerializer, AccionesCorrectivasSerializer, ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarAdministracionInstrumentosBiblioteca, PermisoActualizarRegistroCuencas, PermisoActualizarRegistroParametrosLaboratorio, PermisoActualizarRegistroPozos, PermisoActualizarRegistroSeccionesBiblioteca, PermisoBorrarAdministracionInstrumentosBiblioteca, PermisoBorrarRegistroCuencas, PermisoBorrarRegistroParametrosLaboratorio, PermisoBorrarRegistroPozos, PermisoBorrarRegistroSeccionesBiblioteca, PermisoCrearAdministracionInstrumentosBiblioteca, PermisoCrearRegistroCuencas, PermisoCrearRegistroParametrosLaboratorio, PermisoCrearRegistroPozos, PermisoCrearRegistroSeccionesBiblioteca
 from seguridad.utils import Util
+from tramites.models.tramites_models import SolicitudesTramites
+from gestion_documental.models.radicados_models import AsignacionTramites
 
 
 class GetSecciones(generics.ListAPIView):
@@ -51,7 +56,7 @@ class GetSubseccionesPorSecciones(generics.ListAPIView):
 
 class RegistroSeccion(generics.CreateAPIView):
     serializer_class = RegistrarSeccionesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroSeccionesBiblioteca]
     queryset = Secciones.objects.all()
     
     def post(self,request):
@@ -68,7 +73,7 @@ class RegistroSeccion(generics.CreateAPIView):
     
 class RegistroSubSeccion(generics.CreateAPIView):
     serializer_class = RegistrarSubSeccionesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroSeccionesBiblioteca]
     queryset = Subsecciones.objects.all()
     
     def crear_subseccion(self,request,data):
@@ -150,7 +155,7 @@ class RegistroSeccionSubseccionx(generics.CreateAPIView):
 
 
 class RegistroSeccionSubseccion(generics.CreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroSeccionesBiblioteca]
     serializer_class = RegistrarSeccionesSerializer
     queryset = Secciones.objects.all()
 
@@ -229,7 +234,7 @@ class ActualizarSeccionSubseccion(generics.UpdateAPIView):
     
     serializer_class = ActualizarSeccionesSerializer
     queryset = Secciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroSeccionesBiblioteca]
 
     def obtener_repetido(self,lista_archivos):
         contador = Counter(lista_archivos)
@@ -344,7 +349,7 @@ class ActualizarSecciones(generics.UpdateAPIView):
     
     serializer_class = ActualizarSeccionesSerializer
     queryset = Secciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroSeccionesBiblioteca]
     
     def actualizar_seccion(self,data,seccion):
         
@@ -375,7 +380,7 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
     
     serializer_class = ActualizarSubseccionesSerializer
     queryset = Subsecciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroSeccionesBiblioteca]
     
     def actualizar_subseccion(self,data,pk):
         instancia_seccion = None
@@ -425,7 +430,7 @@ class ActualizarSubsecciones(generics.UpdateAPIView):
 class EliminarSubseccion(generics.DestroyAPIView):
     serializer_class = EliminarSubseccionSerializer
     queryset = Subsecciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroSeccionesBiblioteca]
     
     def delete(self,request,pk):
         
@@ -472,7 +477,7 @@ class GetSeccionSubseccion(generics.RetrieveAPIView):
 class EliminarSeccion(generics.DestroyAPIView):
     serializer_class = EliminarSeccionSerializer
     queryset = Secciones.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroSeccionesBiblioteca]
     
     def delete(self,request,pk):
         
@@ -648,7 +653,7 @@ class ArchivosInstrumentoGet(generics.ListAPIView):
 
 class CuencaCreate(generics.CreateAPIView):
     serializer_class = CuencasPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroCuencas]
     queryset = Cuencas.objects.all()
     
     def post(self,request):
@@ -672,7 +677,7 @@ class CuencaDelete(generics.DestroyAPIView):
 
     serializer_class = CuencasPostSerializer
     queryset = Cuencas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroCuencas]
     
     def delete(self,request,pk):
         
@@ -740,7 +745,7 @@ class CuencaUpdate(generics.UpdateAPIView):
 
     serializer_class = CuencasUpdateSerializer
     queryset = Cuencas.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroCuencas]
     
 
     def put(self, request, pk):
@@ -769,7 +774,7 @@ class CuencaUpdate(generics.UpdateAPIView):
 #POZOS
 class PozoCreate(generics.CreateAPIView):
     serializer_class = PozosPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroPozos]
     queryset = Pozos.objects.all()
     
     def post(self,request):
@@ -792,7 +797,7 @@ class PozoDelete(generics.DestroyAPIView):
 
     serializer_class = PozosPostSerializer
     queryset = Pozos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroPozos]
     
     def delete(self,request,pk):
         
@@ -816,7 +821,7 @@ class PozoUpdate(generics.UpdateAPIView):
 
     serializer_class = PozosUpdateSerializer
     queryset = Pozos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroPozos]
     
     def put(self,request,pk):
 
@@ -901,7 +906,7 @@ class PozoGetById(generics.ListAPIView):
 #Parametros de laboratorio
 class ParametrosLaboratorioCreate(generics.CreateAPIView):
     serializer_class = ParametrosLaboratorioPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroParametrosLaboratorio]
     queryset = ParametrosLaboratorio.objects.all()
     
     def post(self,request):
@@ -924,7 +929,7 @@ class ParametrosLaboratorioDelete(generics.DestroyAPIView):
 
     serializer_class = ParametrosLaboratorioPostSerializer
     queryset = ParametrosLaboratorio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRegistroParametrosLaboratorio]
     
     def delete(self,request,pk):
         
@@ -951,7 +956,7 @@ class ParametrosLaboratorioUpdate(generics.UpdateAPIView):
     
     serializer_class = ParametrosLaboratorioUpdateSerializer
     queryset = ParametrosLaboratorio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroParametrosLaboratorio]
     
     def put(self,request,pk):
 
@@ -1173,7 +1178,7 @@ class ArchivosInstrumentoGetByCarteraAforos(generics.ListAPIView):
 
 class InstrumentoCreate(generics.CreateAPIView):
     serializer_class = InstrumentosPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministracionInstrumentosBiblioteca]
     queryset = Instrumentos.objects.all()
     
 
@@ -1270,7 +1275,7 @@ class InstrumentoUpdate(generics.UpdateAPIView):
 
     serializer_class = InstrumentosUpdateSerializer
     queryset = Instrumentos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministracionInstrumentosBiblioteca]
 
     def obtener_repetido(self,lista_archivos):
         
@@ -1378,7 +1383,7 @@ class InstrumentoUpdate(generics.UpdateAPIView):
 class InstrumentoDelete(generics.DestroyAPIView):
     serializer_class = InstrumentosDeleteSerializer
     queryset = Instrumentos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarAdministracionInstrumentosBiblioteca]
     
     def delete(self, request, pk):
         
@@ -2758,3 +2763,110 @@ class DatosSesionPruebaBombeoGetBySesion(generics.ListAPIView):
             raise NotFound("La sesion de bombeo no cuenta con datos.")
         serializer = self.serializer_class(datos,many=True)
         return Response({'success':True,'detail':"Se encontron los siguientes  registros.",'data':serializer.data},status=status.HTTP_200_OK)
+
+
+class AccionesCorrectivasListByIdTramite(generics.ListAPIView):
+    serializer_class = AccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        acciones = AccionesCorrectivas.objects.filter(id_tramite=pk)
+        serializer = self.serializer_class(acciones, many=True)
+
+        return Response({'success': True, 'detail': 'Se encontraron las siguientes acciones correctivas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class AccionesCorrectivasCreate(generics.CreateAPIView):
+    serializer_class = AccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data.get('id_tramite')).first()
+        asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=data.get('id_tramite')).first()
+        if asignacion.id_und_org_oficina_asignada:
+            data['id_unidad_organizacional'] = asignacion.id_und_org_oficina_asignada.id_unidad_organizacional
+        else:
+            data['id_unidad_organizacional'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+        data['id_persona_titular'] = tramite.id_persona_titular.id_persona
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se registró la acción correctiva correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+ 
+class AccionesCorrectivasUpdate(generics.UpdateAPIView):
+    serializer_class = AccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data = request.data
+        accion = AccionesCorrectivas.objects.filter(id_accion=pk).first()
+
+        if not accion:
+            raise NotFound('No existe la acción correctiva especificada.')
+
+        serializer = self.serializer_class(accion, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó la acción correctiva correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+    def get_paginated_response(self, data):
+        return Response({
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'results': data
+        })
+    
+
+class BusquedaTramitesByExpediente(generics.ListAPIView):
+    serializer_class = TramiteSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = CustomPageNumberPagination
+
+    def get(self, request):
+        queryset = SolicitudesTramites.objects.all()
+        expediente = request.query_params.get('nro_expediente', None)
+        nombre_proyecto = request.query_params.get('nombre_proyecto', None)
+
+        queryset = queryset.exclude(id_expediente=None)
+        
+        if expediente:
+            if '-' in expediente:
+                try:
+                    serie_subserie, agno, consecutivo = expediente.split('-')
+                except ValueError:
+                    pass
+                else:
+                    queryset = queryset.filter(
+                        id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie,
+                        id_expediente__codigo_exp_Agno__icontains=agno,
+                        id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo
+                    )
+            else:
+                queryset = queryset.filter(
+                    Q(id_expediente__codigo_exp_und_serie_subserie__icontains=serie_subserie) |
+                    Q(id_expediente__codigo_exp_Agno__icontains=agno) |
+                    Q(id_expediente__codigo_exp_consec_por_agno__icontains=consecutivo)
+                )
+        if nombre_proyecto:
+            queryset = queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
+
+
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(queryset, request)
+        if page is not None:
+            serializer = self.serializer_class(page, many=True)
+            return paginator.get_paginated_response({'success': True, 'detail': 'Se encontraron los siguientes trámites.', 'data': serializer.data})
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes trámites.', 'data': serializer.data}, status=status.HTTP_200_OK)

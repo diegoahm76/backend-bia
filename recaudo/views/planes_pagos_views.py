@@ -20,6 +20,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import datetime, date, timedelta
+from seguridad.permissions.permissions_recaudo import PermisoCrearCreacionPlanPagos, PermisoCrearCreacionResolucionFacilidadPago
 from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertasProgramadasCreate
 
@@ -307,6 +308,7 @@ class PlanPagosCuotasCreateView(generics.CreateAPIView):
 
 class PlanPagosCreateView(generics.CreateAPIView):
     serializer_class = PlanPagosSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearCreacionPlanPagos]
 
     def crear_plan_pagos(self, data):
         id_facilidad = data['id_facilidad_pago']
@@ -466,6 +468,7 @@ class CuotaPlanPagoByIdView(generics.RetrieveAPIView):
 
 class ResolucionPlanPagosCreateView(generics.CreateAPIView):
     serializer_class = ResolucionesPlanPagoSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearCreacionResolucionFacilidadPago]
 
     def crear_resolucion(self, data):
         serializer = self.serializer_class(data=data)

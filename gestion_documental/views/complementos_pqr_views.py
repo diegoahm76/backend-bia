@@ -22,6 +22,7 @@ from gestion_documental.views.bandeja_tareas_views import MetadatosAnexosTmpCrea
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from gestion_documental.views.pqr_views import AnexosCreate, AnexosDelete, AnexosUpdate, RadicadoCreate, Util_PQR
 from gestion_documental.views.bandeja_tareas_views import AnexosCreate  as AnexosBandejaCreate
+from seguridad.permissions.permissions_gestor import PermisoActualizarComplementoSobrePQRSDF, PermisoActualizarRespuestaSolicitudEntidad, PermisoBorrarComplementoSobrePQRSDF, PermisoBorrarRespuestaSolicitudEntidad, PermisoCrearComplementoSobrePQRSDF, PermisoCrearRespuestaSolicitudEntidad
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
@@ -72,7 +73,7 @@ class ComplementosPQRSDFGet(generics.ListAPIView):
 
 class ComplementoPQRSDFCreate(generics.CreateAPIView):
     serializer_class = ComplementoPQRSDFPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearComplementoSobrePQRSDF]
 
     @transaction.atomic
     def post(self, request):
@@ -189,7 +190,7 @@ class ComplementoPQRSDFCreate(generics.CreateAPIView):
 class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = ComplementoPQRSDFPutSerializer
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarComplementoSobrePQRSDF]
 
     @transaction.atomic
     def put(self, request):
@@ -334,7 +335,7 @@ class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
 
 class ComplementoPQRSDFDelete(generics.RetrieveDestroyAPIView):
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarComplementoSobrePQRSDF]
 
     @transaction.atomic
     def delete(self, request):
@@ -552,7 +553,7 @@ class RespuestaSolicitudGet(generics.GenericAPIView):
     
 class RespuestaSolicitudCreate(generics.CreateAPIView):
     serializer_class = ComplementoPQRSDFPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRespuestaSolicitudEntidad]
 
     @transaction.atomic
     def post(self, request):
@@ -573,7 +574,7 @@ class RespuestaSolicitudCreate(generics.CreateAPIView):
 class RespuestaSolicitudUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = ComplementoPQRSDFPutSerializer
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRespuestaSolicitudEntidad]
 
     @transaction.atomic
     def put(self, request):
@@ -597,7 +598,7 @@ class RespuestaSolicitudUpdate(generics.RetrieveUpdateAPIView):
         
 class RespuestaSolicitudDelete(generics.RetrieveDestroyAPIView):
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRespuestaSolicitudEntidad]
 
     @transaction.atomic
     def delete(self, request):
@@ -830,17 +831,59 @@ class RespuestaRequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
 
 
 
+
+        solicitud = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud_al_usuario_sobre_pqrsdf=data_in['id_solicitud_usu_PQR']).first()
+
+        if not solicitud:
+            raise ValidationError("No existe la solicitud de al usuario sobre PQRSDF")
+        
+        respuestas = ComplementosUsu_PQR.objects.filter(id_solicitud_usu_PQR=solicitud)
+
+        if respuestas :
+            raise ValidationError("Ya existe una respuesta para esta solicitud")
+
+        estado_respondido = EstadosSolicitudes.objects.filter(nombre='RESPONDIDA').first()
+        solicitud.id_estado_actual_solicitud = estado_respondido
+        solicitud.fecha_ini_estado_actual = fecha_actual
+
+        solicitud.save()
+
+        #RADICAR
+        data_radicado = {}
+        data_radicado['fecha_actual'] = fecha_actual
+        data_radicado['id_persona'] = request.user.persona.id_persona
+        data_radicado['tipo_radicado'] = "E" #validar cual tipo de radicado
+        data_radicado['modulo_radica'] = 'Respuesta del Titular a Una Solicitud sobre PQRSDF'
+        if solicitud.id_radicado_salida:
+            data_radicado['id_radicado_asociado'] = solicitud.id_radicado_salida.id_radicado_salida
+
+        print(data_radicado)
+        radicadoCreate = RadicadoCreate()
+                
+        respuesta_radicado = radicadoCreate.post(data_radicado)
+        print(respuesta_radicado)
+
+        data_in['id_radicado'] = respuesta_radicado['id_radicado']
+        data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
+
+
+
+
+
         
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         intance =serializer.save()
          
+
+
         #CREA UN ESTADO NUEVO DE PQR T255
         data_estado = {}
-        data_estado['solicitud_usu_sobre_PQR'] = intance.id_solicitud_al_usuario_sobre_pqrsdf
-        data_estado['estado_solicitud'] = 1 # 254 Estado guardado
+        data_estado['estado_solicitud'] = 12 # 254 SOLICITUD AL USUARIO RESPONDIDA
         data_estado['persona_genera_estado'] = persona.id_persona
+        data_estado['id_PQRSDF'] = intance.id_PQRSDF
         data_estado['fecha_iniEstado'] = fecha_actual
+
         respuesta_estado = self.vista_estados.crear_estado(data_estado)
         data_respuesta_estado_asociado = respuesta_estado.data['data']
         ##CREAR LA RELACION ENTRE EL ANEXO Y EL COMPLEMENTO T259
@@ -848,13 +891,13 @@ class RespuestaRequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
         for anexo in data_anexos:
             data_relacion ={}
             data_relacion['id_anexo'] = anexo['id_anexo']
-            data_relacion['id_solicitud_usu_sobre_PQR'] = intance.id_solicitud_al_usuario_sobre_pqrsdf
+            data_relacion['id_complemento_usu_PQR'] = intance.idComplementoUsu_PQR
             serializer_relacion = self.serializer_class_anexo_pqr(data=data_relacion) 
             serializer_relacion.is_valid(raise_exception=True)
             intance_3 =serializer_relacion.save()  
             relacion_pqr.append(serializer_relacion.data)
         
-        descripcion = {"IdPqrsdf":intance.id_pqrsdf,"IdPersonaSolicita":intance.id_persona_solicita,"fecha_solicitud":intance.fecha_solicitud}
+        descripcion = {"IdPQRSDF":intance.id_PQRSDF,"IdSolicitudUsuPQR":intance.id_solicitud_usu_PQR,"IdPersonaSolicita":intance.id_persona_interpone}
         direccion=Util.get_client_ip(request)
         auditoria_data = {
             "id_usuario" : request.user.id_usuario,
@@ -867,5 +910,20 @@ class RespuestaRequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
             }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
+        persona=""
+           
+        nombre_completo_solicita = None
+        nombre_list = [request.user.persona.primer_nombre, request.user.persona.segundo_nombre,
+                        request.user.persona.primer_apellido, request.user.persona.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        persona = nombre_completo_solicita
+
+        data_modal ={}
+        data_modal['tipo_radicado'] = respuesta_radicado['prefijo_radicado']
+        data_modal['Numero_radicado'] = respuesta_radicado['radicado_nuevo']
+        data_modal['titular'] = persona
+        data_modal['fecha'] =  data_in['fecha_radicado']
+        data_modal['asunto']  = data_in['asunto']
         
-        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'modal':data_modal,'data':serializer.data,"estado":data_respuesta_estado_asociado,'anexos':data_anexos,'relacion_pqr':relacion_pqr}, status=status.HTTP_200_OK)

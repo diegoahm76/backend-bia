@@ -14,8 +14,10 @@ from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSer
 from gestion_documental.models.tca_models import CatSeriesUnidadOrgCCD_TRD_TCA
 from gestion_documental.models.transferencias_documentales_models import TransferenciasDocumentales
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD
+from gestion_documental.serializers.expedientes_serializers import EliminacionAnexosSerializer
 from gestion_documental.serializers.transferencias_documentales_serializers import CrearTransferenciaSerializer, ExpedienteSerializer, HistoricoTransferenciasSerializer, UnidadesOrganizacionalesSerializer, UpdateExpedienteSerializer
 
+from seguridad.permissions.permissions_gestor import PermisoCrearTransferenciasDocumentales
 from seguridad.signals.roles_signals import IsAuthenticated
 
 from transversal.models.organigrama_models import NivelesOrganigrama, Organigramas, UnidadesOrganizacionales
@@ -266,7 +268,8 @@ class GetPermisosUsuario(generics.RetrieveAPIView):
 class CreateTransferencia(generics.CreateAPIView):
     serializer_class = CrearTransferenciaSerializer
     serializer_expediente_class = UpdateExpedienteSerializer
-    permission_classes = [IsAuthenticated]
+    serializer_class_anexos = EliminacionAnexosSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearTransferenciasDocumentales]
 
     @transaction.atomic
     def post(self, request):

@@ -11,6 +11,7 @@ from django.db import transaction
 from rest_framework import generics
 from gestion_documental.models.metadatos_models import ListaValores_MetadatosPers, MetadatosPersonalizados
 from gestion_documental.serializers.metadatos_serializers import GetMetadatosPersonalizadosOrdenSerializer, MetadatosPersonalizadosDeleteSerializer, MetadatosPersonalizadosGetSerializer, MetadatosPersonalizadosSearchSerializer, MetadatosPersonalizadosSerializer, MetadatosPersonalizadosUpdateSerializer, MetadatosValoresCreateSerializer, MetadatosValoresGetOrdenSerializer, MetadatosValoresGetSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarMetadatosPersonalizados, PermisoBorrarMetadatosPersonalizados, PermisoCrearMetadatosPersonalizados
 
 ########################## CRUD DE METADATO ##########################
 
@@ -34,7 +35,7 @@ from gestion_documental.serializers.metadatos_serializers import GetMetadatosPer
 
 class MetadatosPersonalizadosCreate(generics.CreateAPIView):
     serializer_class = MetadatosPersonalizadosSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearMetadatosPersonalizados]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)  # Utiliza self.get_serializer para crear una instancia del serializador
@@ -116,6 +117,7 @@ class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
     serializer_class = MetadatosPersonalizadosDeleteSerializer
     queryset = MetadatosPersonalizados.objects.all()
     lookup_field = 'id_metadato_personalizado'
+    permission_classes = [IsAuthenticated, PermisoBorrarMetadatosPersonalizados]
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -159,7 +161,7 @@ class MetadatosPersonalizadosDelete(generics.DestroyAPIView):
 #EDITAR_METADATOS
 class MetadatosPersonalizadosUpdate(generics.UpdateAPIView):
     serializer_class = MetadatosPersonalizadosUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarMetadatosPersonalizados]
     queryset = MetadatosPersonalizados.objects.all()
     lookup_field = 'id_metadato_personalizado'  # Configura el campo de clave primaria
 

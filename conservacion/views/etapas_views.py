@@ -22,6 +22,8 @@ from conservacion.utils import UtilConservacion
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
+from seguridad.permissions.permissions_conservacion import PermisoActualizarCambioEtapaMaterialVegetal, PermisoAnularCambioEtapaMaterialVegetal, PermisoCrearCambioEtapaMaterialVegetal
+
 class FiltroMaterialVegetal(generics.ListAPIView):
     serializer_class=InventarioViverosSerializer
     queryset=InventarioViveros.objects.all()
@@ -58,7 +60,7 @@ class FiltroMaterialVegetal(generics.ListAPIView):
 class GuardarCambioEtapa(generics.CreateAPIView):
     serializer_class=GuardarCambioEtapaSerializer
     queryset=CambiosDeEtapa.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoCrearCambioEtapaMaterialVegetal]
     
     def post(self,request):
         data = request.data
@@ -248,7 +250,7 @@ class GuardarCambioEtapa(generics.CreateAPIView):
 class ActualizarCambioEtapa(generics.UpdateAPIView):
     serializer_class=ActualizarCambioEtapaSerializer
     queryset=CambiosDeEtapa.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoActualizarCambioEtapaMaterialVegetal]
     
     def put(self,request,pk):
         data = request.data
@@ -364,7 +366,7 @@ class FiltroCambioEtapa(generics.ListAPIView):
 class AnularCambioEtapa(generics.UpdateAPIView):
     serializer_class = AnularCambioEtapaSerializer
     queryset = CambiosDeEtapa.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularCambioEtapaMaterialVegetal]
     
     def put(self,request,pk):
         data = request.data

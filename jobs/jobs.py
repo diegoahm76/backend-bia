@@ -3,6 +3,7 @@ import requests
 import json
 import os
 from gestion_documental.views.configuracion_tipos_radicados_views import actualizar_conf_agno_sig
+from recaudo.models.base_models import ValoresVariables
 from recaudo.models.pagos_models import Pagos
 from tramites.models.tramites_models import Tramites
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
@@ -26,9 +27,13 @@ def ExtraccionBaseDatosPimisis():
      print("Extraccion Exitoda")
 
 
-def actualizar_estado_variable_recuado():
-	# print("Dato actualizado")
-	pass
+def actualizar_estado_variable_recaudo():
+	current_date = datetime.now().date()
+	valores_variables = ValoresVariables.objects.filter(fecha_fin__lt=current_date)
+	for valor in valores_variables:
+		valor.estado = False
+		valor.save()
+	print("SE ACTUALIZARON ESTADOS VARIABLES - RECAUDO")
 
 
 def update_tramites_bia(radicado):

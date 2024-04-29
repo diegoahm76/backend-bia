@@ -65,8 +65,17 @@ urlpatterns = [
 
 
         path('formularios_indicadores/',viwes.Vista_Formulario.as_view(), name='formularios_indicadores'),
-        path('formularios_indicadores/post/', viwes.Crear_Formularioerializer.as_view(), name='formularios_indicadores'),
-        path('formularios_indicadores/delete/<str:pk>/', viwes.Borrar_Formulario.as_view(), name='formularios_indicadores')
+        path('formularios_indicadores/post/', viwes.Crear_Formulario_Serializer.as_view(), name='formularios_indicadores'),
+        path('formularios_indicadores/delete/<str:pk>/', viwes.Borrar_Formulario.as_view(), name='formularios_indicadores'),
 
+
+
+        path('cronjop/', viwes.ProbarCronJop.as_view(), name='ProbarCronJop'),
+
+        path('sueldo_minimo/post/',viwes.Crear_ModeloBase_Sueldo_Minimo.as_view(), name='sueldo_minimo'),
+        path('sueldo_minimo/get/',viwes.Vista_ModeloBase_Sueldo_Minimo.as_view(),name='sueldo_minimo'),
+        path('sueldo_minimo/put/<str:pk>/', viwes.UpDate_ModeloBase_Sueldo_Minimo.as_view(), name='sueldo_minimo'),
+        path('sueldo_minimo/delete/<str:pk>/', viwes.Borrar_ModeloBase_Sueldo_Minimo.as_view(), name='sueldo_minimo'),
+     
     ]
 

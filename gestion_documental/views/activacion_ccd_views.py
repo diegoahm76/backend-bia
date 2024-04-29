@@ -5,6 +5,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import TablaRetencionDocumental
 from gestion_documental.models.ccd_models import CuadrosClasificacionDocumental, UnidadesSeccionResponsableTemporal
+from seguridad.permissions.permissions_gestor import PermisoEjecutarActivacionInstrumentoArchivisticos
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 from gestion_documental.serializers.activacion_ccd_serializers import (
     CCDSerializer, 
@@ -189,7 +190,7 @@ class TRDCambioActualPut(generics.UpdateAPIView):
 
 class CCDCambioActualPut(generics.UpdateAPIView):
     serializer_class = CCDCambioActualSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEjecutarActivacionInstrumentoArchivisticos]
 
     def activar_ccd(self, ccd_seleccionado, id_organigrama, data_desactivar, data_activar, data_auditoria):
 

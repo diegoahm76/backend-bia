@@ -11,13 +11,14 @@ import os
 from rest_framework.permissions import IsAuthenticated
 import json
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from seguridad.permissions.permissions_gestor import PermisoActualizarAdministradorPlantillasDocumentales, PermisoBorrarAdministradorPlantillasDocumentales, PermisoCrearAdministradorPlantillasDocumentales
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 
 class PlantillasDocCreate(generics.CreateAPIView):
     queryset = PlantillasDoc.objects.all()
     serializer_class = PlantillasDocCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministradorPlantillasDocumentales]
     def obtener_extension_archivo(self,archivo):
         _, extension = os.path.splitext(archivo.name)
         return extension
@@ -127,7 +128,7 @@ class PlantillasDocCreate(generics.CreateAPIView):
 class PlantillasDocDelete(generics.DestroyAPIView):
     queryset = PlantillasDoc.objects.all()
     serializer_class = PlantillasDocCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarAdministradorPlantillasDocumentales]
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
@@ -235,7 +236,7 @@ class AccesoUndsOrg_PlantillaDocDelete(generics.DestroyAPIView):
 class PlantillasDocUpdateUpdate(generics.UpdateAPIView):
     queryset = PlantillasDoc.objects.all()
     serializer_class = PlantillasDocUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministradorPlantillasDocumentales]
 
     def comparar_arreglos(self,base,json):
                 arregloBase = base

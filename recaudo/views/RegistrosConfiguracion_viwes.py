@@ -2,8 +2,9 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer
-from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta,Formulario, Variables,ValoresVariables
+from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer,ModeloBaseSueldoMinimoSerializer
+from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta,Formulario, Variables,ValoresVariables,ModeloBaseSueldoMinimo
+from seguridad.permissions.permissions_recaudo import PermisoActualizarConfiguracionVariablesRecaudo, PermisoActualizarIndicadoresGestionRecaudo, PermisoActualizarProfesionalesRecaudo, PermisoBorrarConfiguracionVariablesRecaudo, PermisoBorrarProfesionalesRecaudo, PermisoCrearConfiguracionVariablesRecaudo, PermisoCrearIndicadoresGestionRecaudo, PermisoCrearProfesionalesRecaudo
 
 # Vista get para las 4 tablas de zonas hidricas
 class Vista_RegistrosConfiguracion (generics.ListAPIView):
@@ -229,6 +230,7 @@ class Vista_Variables(generics.ListAPIView):
 class Crear_Variables(generics.CreateAPIView):
     queryset = Variables.objects.all()
     serializer_class = VariablesSerializer
+    permission_classes = [IsAuthenticated, ]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -251,6 +253,7 @@ class Crear_Variables(generics.CreateAPIView):
 class Borrar_Variables(generics.DestroyAPIView):
     queryset = Variables.objects.all()
     serializer_class = VariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarConfiguracionVariablesRecaudo]
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -266,6 +269,7 @@ class Borrar_Variables(generics.DestroyAPIView):
 class Actualizar_Variables(generics.UpdateAPIView):
     queryset = Variables.objects.all()
     serializer_class = VariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -300,6 +304,7 @@ class Vista_ValoresVariables(generics.ListAPIView):
 class Crear_ValoresVariables(generics.CreateAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearConfiguracionVariablesRecaudo]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -322,6 +327,7 @@ class Crear_ValoresVariables(generics.CreateAPIView):
 class Borrar_ValoresVariables(generics.DestroyAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarConfiguracionVariablesRecaudo]
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -337,6 +343,7 @@ class Borrar_ValoresVariables(generics.DestroyAPIView):
 class Actualizar_ValoresVariables(generics.UpdateAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -379,6 +386,7 @@ class CalculadoraDiasMeses(generics.CreateAPIView):
 class Crear_AdministraciondePersonal(generics.CreateAPIView):
     queryset = AdministraciondePersonal.objects.all()
     serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearProfesionalesRecaudo]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -447,6 +455,7 @@ class Vista_AdministraciondePersonal(generics.ListAPIView):
 class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
     queryset = AdministraciondePersonal.objects.all()
     serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarProfesionalesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -460,6 +469,7 @@ class Actualizar_AdministraciondePersonal(generics.UpdateAPIView):
 class Eliminar_AdministraciondePersonal(generics.DestroyAPIView):
     queryset = AdministraciondePersonal.objects.all()
     serializer_class = AdministraciondePersonalSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarProfesionalesRecaudo]
 
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
@@ -575,8 +585,15 @@ class Crear_ConfigaraicionInteres(generics.CreateAPIView):
      
     
 #__________________________________________________________________
-# from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
+from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
 
+
+class ProbarCronJop(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        # Llamar a la función desde la instancia creada
+        extraccion_pimisis_job()
+        return Response({'message': 'La función extraccion_pimisis_job ha sido activada correctamente.'})
+ 
 class Vista_IndicadoresSemestral(generics.ListAPIView):
     serializer_class = IndicadoresSemestralSerializer
     permission_classes = [IsAuthenticated]
@@ -614,6 +631,7 @@ class Vista_IndicadoresSemestral(generics.ListAPIView):
 class CrearIndicadoresSemestral(generics.CreateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearIndicadoresGestionRecaudo]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -666,6 +684,7 @@ class Borrar_IndicadoresSemestral(generics.DestroyAPIView):
 class Actualizar_IndicadoresSemestral(generics.UpdateAPIView):
     queryset = IndicadoresSemestral.objects.all()
     serializer_class = IndicadoresSemestralSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarIndicadoresGestionRecaudo]
 
     def put(self, request, *args, **kwargs):
         try:
@@ -709,7 +728,7 @@ class Vista_Formulario (generics.ListAPIView):
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
     
-class Crear_Formularioerializer(generics.CreateAPIView):
+class Crear_Formulario_Serializer(generics.CreateAPIView):
     queryset = Formulario.objects.all()
     serializer_class = Formularioerializer
 
@@ -741,3 +760,64 @@ class Borrar_Formulario(generics.DestroyAPIView):
             # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
             raise ValidationError({e.detail})
         
+
+
+class Crear_ModeloBase_Sueldo_Minimo(generics.CreateAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+    
+    def create(self, request, *args, **kwargs):
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado correctamente', 'data': serializer.data},
+                            status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+
+class Vista_ModeloBase_Sueldo_Minimo(generics.ListAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'succes': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data, },
+                        status=status.HTTP_200_OK)
+    
+class UpDate_ModeloBase_Sueldo_Minimo(generics.UpdateAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+
+    def put(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({'success': True, 'detail': 'Registro actualizado correctamente', 'data': serializer.data},
+                        status=status.HTTP_200_OK)
+
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({'error': 'Error al crear el registro', 'detail': e.detail})
+        
+class Borrar_ModeloBase_Sueldo_Minimo(generics.DestroyAPIView):
+    queryset = ModeloBaseSueldoMinimo.objects.all()
+    serializer_class = ModeloBaseSueldoMinimoSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
+                            status=status.HTTP_200_OK)
+        except ValidationError as e:
+            # Manejar la excepción de validación de manera adecuada, por ejemplo, devolver un mensaje específico
+            raise ValidationError({e.detail})

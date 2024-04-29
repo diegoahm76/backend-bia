@@ -3,9 +3,11 @@ from datetime import datetime, timedelta
 import json
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, NotFound
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
-
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
+from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
+from seguridad.permissions.permissions_gestor import PermisoActualizarCentralDigitalizacion, PermisoBorrarCentralDigitalizacion, PermisoCrearCentralDigitalizacion
+from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, SolicitudesTramites
 from django.db.models import Q
 from django.db import transaction
 from django.forms import model_to_dict
@@ -217,7 +219,7 @@ class DigitalizacionCreate(generics.CreateAPIView):
     serializer_class = MetadatosPostSerializer
     serializer_anexos_class = AnexosPostSerializer
     serializer_solicitud_class = SolicitudesPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCentralDigitalizacion]
 
     @transaction.atomic
     def post(self, request):
@@ -287,7 +289,7 @@ class DigitalizacionUpdate(generics.RetrieveUpdateAPIView):
     serializer_anexos_class = AnexosPostSerializer
     serializer_solicitud_class = SolicitudesPostSerializer
     queryset = MetadatosAnexosTmp.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCentralDigitalizacion]
 
     @transaction.atomic
     def put(self, request):
@@ -353,7 +355,7 @@ class DigitalizacionDelete(generics.RetrieveDestroyAPIView):
     serializer_anexos_class = AnexosPostSerializer
     serializer_solicitud_class = SolicitudesPostSerializer
     queryset = MetadatosAnexosTmp.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarCentralDigitalizacion]
 
     @transaction.atomic
     def delete(self, request):
@@ -405,7 +407,7 @@ class ResponderDigitalizacion(generics.RetrieveUpdateAPIView):
     serializer_solicitudesUsu_class = SolicitudesAlUsuarioPostSerializer
     serializer_pqrsdf_class = PQRSDFPutSerializer
     queryset = SolicitudDeDigitalizacion.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarCentralDigitalizacion]
 
     @transaction.atomic
     def put(self, request):

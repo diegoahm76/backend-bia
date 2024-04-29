@@ -5,8 +5,9 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
-from seguimiento_planes.models.planes_models import LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguridad.permissions.permissions_planes import PermisoActualizarActividades, PermisoActualizarActividadesPGAR, PermisoActualizarAdministracionPlanes, PermisoActualizarArmonizacionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarIndicadores, PermisoActualizarIndicadoresPGAR, PermisoActualizarLineasBasePGAR, PermisoActualizarMedicionIndicador, PermisoActualizarMetas, PermisoActualizarMetasPGAR, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarRubros, PermisoActualizarSeguimientoPGAR, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearActividades, PermisoCrearActividadesPGAR, PermisoCrearAdministracionPlanes, PermisoCrearArmonizacionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearIndicadores, PermisoCrearIndicadoresPGAR, PermisoCrearLineasBasePGAR, PermisoCrearMedicionIndicador, PermisoCrearMetas, PermisoCrearMetasPGAR, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearRubros, PermisoCrearSeguimientoPGAR, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -15,7 +16,7 @@ from seguimiento_planes.models.planes_models import LineasBasePGAR, MetasEjePGAR
 class ObjetivoDesarrolloSostenibleList(generics.ListCreateAPIView):
     queryset = ObjetivoDesarrolloSostenible.objects.all()
     serializer_class = ObjetivoDesarrolloSostenibleSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearObjetivosDesarrolloSostenible]
 
     def get(self, request):
         objetivos = ObjetivoDesarrolloSostenible.objects.all()
@@ -29,7 +30,7 @@ class ObjetivoDesarrolloSostenibleList(generics.ListCreateAPIView):
 class ObjetivoDesarrolloSostenibleCreate(generics.ListCreateAPIView):
     queryset = ObjetivoDesarrolloSostenible.objects.all()
     serializer_class = ObjetivoDesarrolloSostenibleSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self,request):
         data_in = request.data
@@ -49,7 +50,7 @@ class ObjetivoDesarrolloSostenibleCreate(generics.ListCreateAPIView):
 class ObjetivoDesarrolloSostenibleUpdate(generics.RetrieveUpdateAPIView):
     queryset = ObjetivoDesarrolloSostenible.objects.all()
     serializer_class = ObjetivoDesarrolloSostenibleSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarObjetivosDesarrolloSostenible]
 
     def put(self, request, pk):
         data = request.data
@@ -68,7 +69,7 @@ class ObjetivoDesarrolloSostenibleUpdate(generics.RetrieveUpdateAPIView):
 class ObjetivoDesarrolloSostenibleDelete(generics.RetrieveUpdateAPIView):
     queryset = ObjetivoDesarrolloSostenible.objects.all()
     serializer_class = ObjetivoDesarrolloSostenibleSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarObjetivosDesarrolloSostenible]
 
     def delete(self, request, pk):
         objetivo = self.queryset.all().filter(id_objetivo=pk).first()
@@ -86,7 +87,7 @@ class ObjetivoDesarrolloSostenibleDelete(generics.RetrieveUpdateAPIView):
 class ObjetivoDesarrolloSostenibleDetail(generics.RetrieveAPIView):
     queryset = ObjetivoDesarrolloSostenible.objects.all()
     serializer_class = ObjetivoDesarrolloSostenibleSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         objetivo = self.queryset.all().filter(id_objetivo=pk).first()
@@ -115,7 +116,7 @@ class ConsultarPlanes(generics.ListAPIView):
 class CrearPlanes(generics.CreateAPIView):
     serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministracionPlanes]
 
     def post(self, request):
         data = request.data
@@ -128,7 +129,7 @@ class CrearPlanes(generics.CreateAPIView):
 class ActualizarPlanes(generics.UpdateAPIView):
     serializer_class = PlanesSerializer
     queryset = Planes.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministracionPlanes]
 
     def put(self, request, pk):
         data = request.data
@@ -197,13 +198,12 @@ class BusquedaAvanzadaPlanes(generics.ListAPIView):
 
 # Listar todos los Ejes Estratégicos
 
-class EjeEstractegicoList(generics.ListCreateAPIView):
-    queryset = EjeEstractegico.objects.all()
+class EjeEstractegicoPAIList(generics.ListCreateAPIView):
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        ejes = EjeEstractegico.objects.all()
+        ejes = EjeEstractegico.objects.filter(id_plan__tipo_plan = 'PAI')
         serializer = EjeEstractegicoSerializer(ejes, many=True)
         if not ejes:
             raise NotFound('No se encontraron resultados.')
@@ -218,15 +218,13 @@ class BusquedaAvanzadaEjes(generics.ListAPIView):
     def get(self, request, *args, **kwargs):
         queryset = EjeEstractegico.objects.all()
         nombre_plan = request.query_params.get('nombre_plan', '')
-        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
         nombre_eje = request.query_params.get('nombre_eje', '')
+
+        queryset = EjeEstractegico.objects.filter(id_plan__tipo_plan = 'PAI')
 
         # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
         if nombre_plan != '':
             queryset = EjeEstractegico.objects.filter(id_plan__nombre_plan__icontains=nombre_plan)
-        
-        if nombre_objetivo != '':
-            queryset = EjeEstractegico.objects.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
 
         if nombre_eje != '':
             queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje)
@@ -242,7 +240,7 @@ class BusquedaAvanzadaEjes(generics.ListAPIView):
 class EjeEstractegicoCreate(generics.ListCreateAPIView):
     queryset = EjeEstractegico.objects.all()
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearEjesEstrategicos]
 
     def post(self,request):
         data = request.data
@@ -256,7 +254,7 @@ class EjeEstractegicoCreate(generics.ListCreateAPIView):
 class EjeEstractegicoUpdate(generics.RetrieveUpdateAPIView):
     queryset = EjeEstractegico.objects.all()
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarEjesEstrategicos]
 
     def put(self, request, pk):
         data = request.data
@@ -273,7 +271,7 @@ class EjeEstractegicoUpdate(generics.RetrieveUpdateAPIView):
 class EjeEstractegicoDelete(generics.RetrieveUpdateAPIView):
     queryset = EjeEstractegico.objects.all()
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         eje = self.queryset.all().filter(id_eje_estrategico=pk).first()
@@ -287,7 +285,7 @@ class EjeEstractegicoDelete(generics.RetrieveUpdateAPIView):
 class EjeEstractegicoDetail(generics.RetrieveAPIView):
     queryset = EjeEstractegico.objects.all()
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         eje = self.queryset.all().filter(id_eje_estrategico=pk).first()        
@@ -301,7 +299,7 @@ class EjeEstractegicoDetail(generics.RetrieveAPIView):
 class EjeEstractegicoListIdPlanes(generics.ListAPIView):
     queryset = EjeEstractegico.objects.all()
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         eje = self.queryset.all().filter(id_plan=pk)
@@ -313,7 +311,7 @@ class EjeEstractegicoListIdPlanes(generics.ListAPIView):
 
 class EjeEstractegicoListIdObjetivo(generics.ListAPIView):
     serializer_class = EjeEstractegicoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         queryset = EjeEstractegico.objects.all()
@@ -331,7 +329,7 @@ class EjeEstractegicoListIdObjetivo(generics.ListAPIView):
 class ObjetivoList(generics.ListCreateAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         objetivos = Objetivo.objects.all()
@@ -369,7 +367,7 @@ class BusquedaAvanzadaObjetivos(generics.ListAPIView):
 class ObjetivoCreate(generics.ListCreateAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearObjetivos]
 
     def post(self,request):
         data = request.data
@@ -383,7 +381,7 @@ class ObjetivoCreate(generics.ListCreateAPIView):
 class ObjetivoUpdate(generics.RetrieveUpdateAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarObjetivos]
 
     def put(self, request, pk):
         data = request.data
@@ -400,7 +398,7 @@ class ObjetivoUpdate(generics.RetrieveUpdateAPIView):
 class ObjetivoDelete(generics.RetrieveUpdateAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         objetivo = self.queryset.all().filter(id_objetivo=pk).first()
@@ -414,7 +412,7 @@ class ObjetivoDelete(generics.RetrieveUpdateAPIView):
 class ObjetivoDetail(generics.RetrieveAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         objetivo = self.queryset.all().filter(id_objetivo=pk).first()
@@ -428,7 +426,7 @@ class ObjetivoDetail(generics.RetrieveAPIView):
 class ObjetivoListIdEjeEstrategico(generics.ListAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         objetivo = self.queryset.all().filter(id_eje=pk)
@@ -442,7 +440,7 @@ class ObjetivoListIdEjeEstrategico(generics.ListAPIView):
 class ObjetivoListIdPlanes(generics.ListAPIView):
     queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         objetivo = self.queryset.all().filter(id_plan=pk)
@@ -459,7 +457,7 @@ class ObjetivoListIdPlanes(generics.ListAPIView):
 class ProgramaList(generics.ListCreateAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         programas = Programa.objects.all()
@@ -473,7 +471,7 @@ class ProgramaList(generics.ListCreateAPIView):
 class ProgramaListPeriodoTiempo(generics.ListAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -487,7 +485,7 @@ class ProgramaListPeriodoTiempo(generics.ListAPIView):
 class ProgramaCreate(generics.ListCreateAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearProgramas]
 
     def post(self,request):
         data = request.data
@@ -501,7 +499,7 @@ class ProgramaCreate(generics.ListCreateAPIView):
 class ProgramaUpdate(generics.RetrieveUpdateAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarProgramas]
 
     def put(self, request, pk):
         data = request.data
@@ -518,7 +516,7 @@ class ProgramaUpdate(generics.RetrieveUpdateAPIView):
 class ProgramaDelete(generics.RetrieveUpdateAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         programa = self.queryset.all().filter(id_programa=pk).first()
@@ -532,7 +530,7 @@ class ProgramaDelete(generics.RetrieveUpdateAPIView):
 class ProgramaDetail(generics.RetrieveAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         programa = self.queryset.all().filter(id_programa=pk).first()
@@ -546,7 +544,7 @@ class ProgramaDetail(generics.RetrieveAPIView):
 class ProgramaListIdEjeEstrategico(generics.ListAPIView):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         programa = self.queryset.all().filter(id_eje_estrategico=pk)
@@ -587,7 +585,7 @@ class BusquedaAvanzadaProgramas(generics.ListAPIView):
 class ProyectoList(generics.ListCreateAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         proyectos = Proyecto.objects.all()
@@ -601,7 +599,7 @@ class ProyectoList(generics.ListCreateAPIView):
 class ProyectoListPeriodoTiempo(generics.ListAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -617,7 +615,7 @@ class ProyectoListPeriodoTiempo(generics.ListAPIView):
 class ProyectoCreate(generics.ListCreateAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearProyectos]
 
     def post(self,request):
         data = request.data
@@ -631,7 +629,7 @@ class ProyectoCreate(generics.ListCreateAPIView):
 class ProyectoUpdate(generics.RetrieveUpdateAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarProyectos]
 
     def put(self, request, pk):
         data = request.data
@@ -648,7 +646,7 @@ class ProyectoUpdate(generics.RetrieveUpdateAPIView):
 class ProyectoDelete(generics.RetrieveUpdateAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         proyecto = self.queryset.all().filter(id_proyecto=pk).first()
@@ -662,7 +660,7 @@ class ProyectoDelete(generics.RetrieveUpdateAPIView):
 class ProyectoDetail(generics.RetrieveAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         proyecto = self.queryset.all().filter(id_proyecto=pk).first()
@@ -676,7 +674,7 @@ class ProyectoDetail(generics.RetrieveAPIView):
 class ProyectoListIdProgramas(generics.ListAPIView):
     queryset = Proyecto.objects.all()
     serializer_class = ProyectoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         proyecto = self.queryset.all().filter(id_programa=pk)
@@ -714,7 +712,7 @@ class BusquedaAvanzadaProyectos(generics.ListAPIView):
 class ProductosList(generics.ListCreateAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         productos = Productos.objects.all()
@@ -728,7 +726,7 @@ class ProductosList(generics.ListCreateAPIView):
 class ProductosListPeriodoTiempo(generics.ListAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -743,7 +741,7 @@ class ProductosListPeriodoTiempo(generics.ListAPIView):
 class ProductosCreate(generics.ListCreateAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearProductos]
 
     def post(self,request):
         data = request.data
@@ -757,7 +755,7 @@ class ProductosCreate(generics.ListCreateAPIView):
 class ProductosUpdate(generics.RetrieveUpdateAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarProductos]
 
     def put(self, request, pk):
         data = request.data
@@ -774,7 +772,7 @@ class ProductosUpdate(generics.RetrieveUpdateAPIView):
 class ProductosDelete(generics.RetrieveUpdateAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         producto = self.queryset.all().filter(id_producto=pk).first()
@@ -788,7 +786,7 @@ class ProductosDelete(generics.RetrieveUpdateAPIView):
 class ProductosDetail(generics.RetrieveAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         producto = self.queryset.all().filter(id_producto=pk).first()
@@ -802,7 +800,7 @@ class ProductosDetail(generics.RetrieveAPIView):
 class ProductosListIdProyectos(generics.ListAPIView):
     queryset = Productos.objects.all()
     serializer_class = ProductosSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         producto = self.queryset.all().filter(id_proyecto=pk)
@@ -840,7 +838,7 @@ class BusquedaAvanzadaProductos(generics.ListAPIView):
 class ActividadList(generics.ListCreateAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         actividades = Actividad.objects.all()
@@ -854,7 +852,7 @@ class ActividadList(generics.ListCreateAPIView):
 class ActividadListPeriodoTiempo(generics.ListAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -869,7 +867,7 @@ class ActividadListPeriodoTiempo(generics.ListAPIView):
 class ActividadCreate(generics.ListCreateAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearActividades]
 
     def post(self,request):
         data = request.data
@@ -883,7 +881,7 @@ class ActividadCreate(generics.ListCreateAPIView):
 class ActividadUpdate(generics.RetrieveUpdateAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarActividades]
 
     def put(self, request, pk):
         data = request.data
@@ -900,7 +898,7 @@ class ActividadUpdate(generics.RetrieveUpdateAPIView):
 class ActividadDelete(generics.RetrieveUpdateAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         actividad = self.queryset.all().filter(id_actividad=pk).first()
@@ -914,7 +912,7 @@ class ActividadDelete(generics.RetrieveUpdateAPIView):
 class ActividadDetail(generics.RetrieveAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         actividad = self.queryset.all().filter(id_actividad=pk).first()
@@ -928,7 +926,7 @@ class ActividadDetail(generics.RetrieveAPIView):
 class ActividadListIdProductos(generics.ListAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         actividad = self.queryset.all().filter(id_producto=pk)
@@ -942,7 +940,7 @@ class ActividadListIdProductos(generics.ListAPIView):
 class ActividadListIdPlanes(generics.ListAPIView):
     queryset = Actividad.objects.all()
     serializer_class = ActividadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         actividad = self.queryset.all().filter(id_plan=pk)
@@ -965,8 +963,23 @@ class BusquedaAvanzadaActividades(generics.ListAPIView):
         nombre_producto = request.query_params.get('nombre_producto', '')
         nombre_actividad = request.query_params.get('nombre_actividad', '')
 
+        queryset = Actividad.objects.filter(id_plan__tipo_plan = 'PAI')
+
         # Realiza la búsqueda utilizando el campo 'nombre_actividad' en el modelo
-        queryset = Actividad.objects.filter(nombre_actividad__icontains=nombre_actividad, id_producto__nombre_producto__icontains=nombre_producto, id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto, id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa, id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+        if nombre_actividad != '':
+            queryset = Actividad.objects.filter(nombre_actividad__icontains=nombre_actividad)
+        
+        if nombre_producto != '':
+            queryset = Actividad.objects.filter(id_producto__nombre_producto__icontains=nombre_producto)
+
+        if nombre_proyecto != '':
+            queryset = Actividad.objects.filter(id_producto__id_proyecto__nombre_proyecto__icontains=nombre_proyecto)
+
+        if nombre_plan != '':
+            queryset = Actividad.objects.filter(id_producto__id_proyecto__id_plan__nombre_plan__icontains=nombre_plan)
+        
+        if nombre_programa != '':
+            queryset = Actividad.objects.filter(id_producto__id_proyecto__id_programa__nombre_programa__icontains=nombre_programa)
 
         if not queryset.exists():
             raise NotFound('No se encontraron resultados.')
@@ -981,7 +994,7 @@ class BusquedaAvanzadaActividades(generics.ListAPIView):
 class EntidadList(generics.ListCreateAPIView):
     queryset = Entidad.objects.all()
     serializer_class = EntidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         entidades = Entidad.objects.all()
@@ -995,7 +1008,7 @@ class EntidadList(generics.ListCreateAPIView):
 class EntidadCreate(generics.ListCreateAPIView):
     queryset = Entidad.objects.all()
     serializer_class = EntidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearEntidades]
 
     def post(self,request):
         data_in = request.data
@@ -1015,7 +1028,7 @@ class EntidadCreate(generics.ListCreateAPIView):
 class EntidadUpdate(generics.RetrieveUpdateAPIView):
     queryset = Entidad.objects.all()
     serializer_class = EntidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarEntidades]
 
     def put(self, request, pk):
         data = request.data
@@ -1034,7 +1047,7 @@ class EntidadUpdate(generics.RetrieveUpdateAPIView):
 class EntidadDelete(generics.RetrieveUpdateAPIView):
     queryset = Entidad.objects.all()
     serializer_class = EntidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarEntidades]
 
     def delete(self, request, pk):
         entidad = self.queryset.all().filter(id_entidad=pk).first()
@@ -1052,7 +1065,7 @@ class EntidadDelete(generics.RetrieveUpdateAPIView):
 class EntidadDetail(generics.RetrieveAPIView):
     queryset = Entidad.objects.all()
     serializer_class = EntidadSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         entidad = self.queryset.all().filter(id_entidad=pk).first()
@@ -1068,7 +1081,7 @@ class EntidadDetail(generics.RetrieveAPIView):
 class MedicionList(generics.ListCreateAPIView):
     queryset = Medicion.objects.all()
     serializer_class = MedicionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         mediciones = Medicion.objects.all()
@@ -1082,7 +1095,7 @@ class MedicionList(generics.ListCreateAPIView):
 class MedicionCreate(generics.ListCreateAPIView):
     queryset = Medicion.objects.all()
     serializer_class = MedicionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearMedicionIndicador]
 
     def post(self,request):
         data_in = request.data
@@ -1102,7 +1115,7 @@ class MedicionCreate(generics.ListCreateAPIView):
 class MedicionUpdate(generics.RetrieveUpdateAPIView):
     queryset = Medicion.objects.all()
     serializer_class = MedicionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarMedicionIndicador]
 
     def put(self, request, pk):
         data = request.data
@@ -1121,7 +1134,7 @@ class MedicionUpdate(generics.RetrieveUpdateAPIView):
 class MedicionDelete(generics.RetrieveUpdateAPIView):
     queryset = Medicion.objects.all()
     serializer_class = MedicionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarMedicionIndicador]
 
     def delete(self, request, pk):
         medicion = self.queryset.all().filter(id_medicion=pk).first()
@@ -1139,7 +1152,7 @@ class MedicionDelete(generics.RetrieveUpdateAPIView):
 class MedicionDetail(generics.RetrieveAPIView):
     queryset = Medicion.objects.all()
     serializer_class = MedicionSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         medicion = self.queryset.all().filter(id_medicion=pk).first()
@@ -1155,7 +1168,7 @@ class MedicionDetail(generics.RetrieveAPIView):
 class TipoList(generics.ListCreateAPIView):
     queryset = Tipo.objects.all()
     serializer_class = TipoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tipos = Tipo.objects.all()
@@ -1169,7 +1182,7 @@ class TipoList(generics.ListCreateAPIView):
 class TipoCreate(generics.ListCreateAPIView):
     queryset = Tipo.objects.all()
     serializer_class = TipoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearTipoIndicador]
 
     def post(self,request):
         data_in = request.data
@@ -1189,7 +1202,7 @@ class TipoCreate(generics.ListCreateAPIView):
 class TipoUpdate(generics.RetrieveUpdateAPIView):
     queryset = Tipo.objects.all()
     serializer_class = TipoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarTipoIndicador]
 
     def put(self, request, pk):
         data = request.data
@@ -1208,7 +1221,7 @@ class TipoUpdate(generics.RetrieveUpdateAPIView):
 class TipoDelete(generics.RetrieveUpdateAPIView):
     queryset = Tipo.objects.all()
     serializer_class = TipoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoBorrarTipoIndicador]
 
     def delete(self, request, pk):
         tipo = self.queryset.all().filter(id_tipo=pk).first()
@@ -1226,7 +1239,7 @@ class TipoDelete(generics.RetrieveUpdateAPIView):
 class TipoDetail(generics.RetrieveAPIView):
     queryset = Tipo.objects.all()
     serializer_class = TipoSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         tipo = self.queryset.all().filter(id_tipo=pk).first()
@@ -1242,7 +1255,7 @@ class TipoDetail(generics.RetrieveAPIView):
 class RubroList(generics.ListCreateAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         rubros = Rubro.objects.all()
@@ -1256,7 +1269,7 @@ class RubroList(generics.ListCreateAPIView):
 class RubroCreate(generics.ListCreateAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearRubros]
 
     def post(self,request):
         data = request.data
@@ -1270,7 +1283,7 @@ class RubroCreate(generics.ListCreateAPIView):
 class RubroUpdate(generics.RetrieveUpdateAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarRubros]
 
     def put(self, request, pk):
         data = request.data
@@ -1287,7 +1300,7 @@ class RubroUpdate(generics.RetrieveUpdateAPIView):
 class RubroDelete(generics.RetrieveUpdateAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         rubro = self.queryset.all().filter(id_rubro=pk).first()
@@ -1301,7 +1314,7 @@ class RubroDelete(generics.RetrieveUpdateAPIView):
 class RubroDetail(generics.RetrieveAPIView):
     queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         rubro = self.queryset.all().filter(id_rubro=pk).first()
@@ -1343,7 +1356,7 @@ class BusquedaAvanzadaRubros(generics.ListAPIView):
 class IndicadorList(generics.ListCreateAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         indicadores = Indicador.objects.all()
@@ -1357,7 +1370,7 @@ class IndicadorList(generics.ListCreateAPIView):
 class IndicadorListPeriodoTiempo(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -1372,7 +1385,7 @@ class IndicadorListPeriodoTiempo(generics.ListAPIView):
 class IndicadorCreate(generics.ListCreateAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearIndicadores]
 
     def post(self,request):
         data = request.data
@@ -1386,7 +1399,7 @@ class IndicadorCreate(generics.ListCreateAPIView):
 class IndicadorUpdate(generics.RetrieveUpdateAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarIndicadores]
 
     def put(self, request, pk):
         data = request.data
@@ -1403,7 +1416,7 @@ class IndicadorUpdate(generics.RetrieveUpdateAPIView):
 class IndicadorDelete(generics.RetrieveUpdateAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         indicador = self.queryset.all().filter(id_indicador=pk).first()
@@ -1417,7 +1430,7 @@ class IndicadorDelete(generics.RetrieveUpdateAPIView):
 class IndicadorDetail(generics.RetrieveAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicador = self.queryset.all().filter(id_indicador=pk).first()
@@ -1431,7 +1444,7 @@ class IndicadorDetail(generics.RetrieveAPIView):
 class IndicadorListIdPlanes(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicador = self.queryset.all().filter(id_plan=pk)
@@ -1445,7 +1458,7 @@ class IndicadorListIdPlanes(generics.ListAPIView):
 class IndicadorListIdActividad(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicador = self.queryset.all().filter(id_actividad=pk)
@@ -1459,7 +1472,7 @@ class IndicadorListIdActividad(generics.ListAPIView):
 class IndicadorListIdProducto(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicador = self.queryset.all().filter(id_producto=pk)
@@ -1473,7 +1486,7 @@ class IndicadorListIdProducto(generics.ListAPIView):
 class IndicadorListIdRubro(generics.ListAPIView):
     queryset = Indicador.objects.all()
     serializer_class = IndicadorSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicador = self.queryset.all().filter(id_rubro=pk)
@@ -1513,7 +1526,7 @@ class BusquedaAvanzadaIndicadores(generics.ListAPIView):
 class MetaList(generics.ListCreateAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         metas = Metas.objects.all()
@@ -1527,7 +1540,7 @@ class MetaList(generics.ListCreateAPIView):
 class MetaListPeriodoTiempo(generics.ListAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -1542,7 +1555,7 @@ class MetaListPeriodoTiempo(generics.ListAPIView):
 class MetaListPeriodoTiempoPorIndicador(generics.ListAPIView):
         queryset = Metas.objects.all()
         serializer_class = MetasSerializer
-        permission_classes = (IsAuthenticated,)
+        permission_classes = [IsAuthenticated]
 
         def get(self, request):
             data = request.query_params
@@ -1557,7 +1570,7 @@ class MetaListPeriodoTiempoPorIndicador(generics.ListAPIView):
 class MetaListPeriodoTiempoPorPlan(generics.ListAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         data = request.query_params
@@ -1572,7 +1585,7 @@ class MetaListPeriodoTiempoPorPlan(generics.ListAPIView):
 class MetaCreate(generics.ListCreateAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearMetas]
 
     def post(self,request):
         data = request.data
@@ -1586,7 +1599,7 @@ class MetaCreate(generics.ListCreateAPIView):
 class MetaUpdate(generics.RetrieveUpdateAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarMetas]
 
     def put(self, request, pk):
         data = request.data
@@ -1603,7 +1616,7 @@ class MetaUpdate(generics.RetrieveUpdateAPIView):
 class MetaDelete(generics.RetrieveUpdateAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         meta = self.queryset.all().filter(id_meta=pk).first()
@@ -1617,7 +1630,7 @@ class MetaDelete(generics.RetrieveUpdateAPIView):
 class MetaDetail(generics.RetrieveAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         meta = self.queryset.all().filter(id_meta=pk).first()
@@ -1631,7 +1644,7 @@ class MetaDetail(generics.RetrieveAPIView):
 class MetaListIdIndicador(generics.ListAPIView):
     queryset = Metas.objects.all()
     serializer_class = MetasSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         meta = self.queryset.all().filter(id_indicador=pk)
@@ -1673,7 +1686,7 @@ class BusquedaAvanzadaMetas(generics.ListAPIView):
 class TipoEjeList(generics.ListCreateAPIView):
     queryset = TipoEje.objects.all()
     serializer_class = TipoEjeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         tipos_eje = TipoEje.objects.all()
@@ -1687,7 +1700,7 @@ class TipoEjeList(generics.ListCreateAPIView):
 class TipoEjeCreate(generics.ListCreateAPIView):
     queryset = TipoEje.objects.all()
     serializer_class = TipoEjeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def post(self,request):
         data_in = request.data
@@ -1707,7 +1720,7 @@ class TipoEjeCreate(generics.ListCreateAPIView):
 class TipoEjeUpdate(generics.RetrieveUpdateAPIView):
     queryset = TipoEje.objects.all()
     serializer_class = TipoEjeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, pk):
         data = request.data
@@ -1726,7 +1739,7 @@ class TipoEjeUpdate(generics.RetrieveUpdateAPIView):
 class TipoEjeDelete(generics.RetrieveUpdateAPIView):
     queryset = TipoEje.objects.all()
     serializer_class = TipoEjeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
@@ -1744,7 +1757,7 @@ class TipoEjeDelete(generics.RetrieveUpdateAPIView):
 class TipoEjeDetail(generics.RetrieveAPIView):
     queryset = TipoEje.objects.all()
     serializer_class = TipoEjeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         tipo_eje = self.queryset.all().filter(id_tipo_eje=pk).first()
@@ -1760,7 +1773,7 @@ class TipoEjeDetail(generics.RetrieveAPIView):
 class SubprogramaList(generics.ListCreateAPIView):
     queryset = Subprograma.objects.all()
     serializer_class = SubprogramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         subprogramas = Subprograma.objects.all()
@@ -1774,7 +1787,7 @@ class SubprogramaList(generics.ListCreateAPIView):
 class SubprogramaCreate(generics.ListCreateAPIView):
     queryset = Subprograma.objects.all()
     serializer_class = SubprogramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearSubprogramas]
 
     def post(self,request):
         data = request.data
@@ -1788,7 +1801,7 @@ class SubprogramaCreate(generics.ListCreateAPIView):
 class SubprogramaUpdate(generics.RetrieveUpdateAPIView):
     queryset = Subprograma.objects.all()
     serializer_class = SubprogramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarSubprogramas]
 
     def put(self, request, pk):
         data = request.data
@@ -1805,7 +1818,7 @@ class SubprogramaUpdate(generics.RetrieveUpdateAPIView):
 class SubprogramaDelete(generics.RetrieveUpdateAPIView):
     queryset = Subprograma.objects.all()
     serializer_class = SubprogramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, pk):
         subprograma = self.queryset.all().filter(id_subprograma=pk).first()
@@ -1819,7 +1832,7 @@ class SubprogramaDelete(generics.RetrieveUpdateAPIView):
 class SubprogramaDetail(generics.RetrieveAPIView):
     queryset = Subprograma.objects.all()
     serializer_class = SubprogramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         subprograma = self.queryset.all().filter(id_subprograma=pk).first()
@@ -1833,7 +1846,7 @@ class SubprogramaDetail(generics.RetrieveAPIView):
 class SubprogramaListIdPrograma(generics.ListAPIView):
     queryset = Subprograma.objects.all()
     serializer_class = SubprogramaSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         subprograma = self.queryset.all().filter(id_programa=pk)
@@ -1866,7 +1879,7 @@ class BusquedaAvanzadaSubprogramas(generics.ListAPIView):
 class PlanesGetAll(generics.ListAPIView):
     serializer_class = PlanesSerializerGet
     queryset = Planes.objects.all()
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
 
@@ -1881,7 +1894,7 @@ class PlanesGetAll(generics.ListAPIView):
 class PlanesGetId(generics.ListAPIView):
     serializer_class = PlanesSerializerGet
     queryset = Planes.objects.all()
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         planes = Planes.objects.all().filter(id_plan=pk)
@@ -1893,9 +1906,46 @@ class PlanesGetId(generics.ListAPIView):
 
 #PGAR
 #Metas PGAR
+class EjeEstractegicoPGARList(generics.ListCreateAPIView):
+    serializer_class = EjeEstractegicoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        ejes = EjeEstractegico.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
+        serializer = EjeEstractegicoSerializer(ejes, many=True)
+        if not ejes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Ejes Estratégicos.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class BusquedaAvanzadaEjesPGAR(generics.ListAPIView):
+    serializer_class = EjeEstractegicoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        queryset = EjeEstractegico.objects.all()
+        nombre_objetivo = request.query_params.get('nombre_objetivo', '')
+        nombre_eje = request.query_params.get('nombre_eje', '')
+
+        queryset = EjeEstractegico.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
+
+        # Realiza la búsqueda utilizando el campo 'nombre_eje' en el modelo
+        if nombre_objetivo != '':
+            queryset = EjeEstractegico.objects.filter(id_objetivo__nombre_objetivo__icontains=nombre_objetivo)
+
+        if nombre_eje != '':
+            queryset = EjeEstractegico.objects.filter(nombre__icontains=nombre_eje)
+
+        if not queryset.exists():
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'success': True, 'detail': 'Resultados de la búsqueda', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
 class MetasPGARListByIdEjeEstrategico(generics.ListAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         metas = MetasEjePGAR.objects.filter(id_eje_estrategico=pk)
@@ -1906,7 +1956,7 @@ class MetasPGARListByIdEjeEstrategico(generics.ListAPIView):
     
 class MetasPGARList(generics.ListAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         metas = MetasEjePGAR.objects.all()
@@ -1914,7 +1964,7 @@ class MetasPGARList(generics.ListAPIView):
         nombre_eje_estrategico = request.query_params.get('nombre_eje_estrategico', '')
         nombre_objetivo = request.query_params.get('nombre_objetivo', '')
         if nombre_meta != '':
-            metas = metas.filter(nombre_meta__icontains=nombre_meta)
+            metas = metas.filter(nombre_meta_eje__icontains=nombre_meta)
         if nombre_eje_estrategico != '':
             metas = metas.filter(id_eje_estrategico__nombre__icontains=nombre_eje_estrategico)
         if nombre_objetivo != '':
@@ -1928,7 +1978,7 @@ class MetasPGARList(generics.ListAPIView):
     
 class MetasPGARCreate(generics.CreateAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearMetasPGAR]
 
     def post(self, request):
         data = request.data
@@ -1939,7 +1989,7 @@ class MetasPGARCreate(generics.CreateAPIView):
     
 class MetasPGARUpdate(generics.UpdateAPIView):
     serializer_class = MetasPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarMetasPGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -1955,7 +2005,7 @@ class MetasPGARUpdate(generics.UpdateAPIView):
 #Linea Base
 class LineaBaseListByIdMeta(generics.ListAPIView):
     serializer_class = LineasBasePGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         lineas_base = LineasBasePGAR.objects.filter(id_meta_eje=pk)
@@ -1967,7 +2017,7 @@ class LineaBaseListByIdMeta(generics.ListAPIView):
     
 class LineaBaseCreate(generics.CreateAPIView):
     serializer_class = LineasBasePGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearLineasBasePGAR]
 
     def post(self, request):
         data = request.data
@@ -1978,7 +2028,7 @@ class LineaBaseCreate(generics.CreateAPIView):
     
 class LineaBaseUpdate(generics.UpdateAPIView):
     serializer_class = LineasBasePGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarLineasBasePGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -1991,11 +2041,11 @@ class LineaBaseUpdate(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Linea Base actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class BusquedaAvnzadaLineaBase(generics.ListAPIView):
-    queryset = LineasBasePGAR.objects.all()
     serializer_class = LineasBasePGARSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
+        queryset = LineasBasePGAR.objects.all()
         nombre_meta = request.query_params.get('nombre_meta', '')
         nombre_linea_base = request.query_params.get('nombre_linea_base', '')
 
@@ -2015,7 +2065,7 @@ class BusquedaAvnzadaLineaBase(generics.ListAPIView):
 
 class ActividadesListByIdLineaBase(generics.ListAPIView):
     serializer_class = ActividadesPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):        
         actividades = Actividad.objects.filter(id_linea_base=pk)
@@ -2028,7 +2078,7 @@ class ActividadesListByIdLineaBase(generics.ListAPIView):
     
 class ActividadesCreate(generics.CreateAPIView):
     serializer_class = ActividadesPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoCrearActividadesPGAR]
 
     def post(self, request):
         data = request.data
@@ -2039,7 +2089,7 @@ class ActividadesCreate(generics.CreateAPIView):
     
 class ActividadesUpdate(generics.UpdateAPIView):
     serializer_class = ActividadesPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, PermisoActualizarActividadesPGAR]
 
     def put(self, request, pk):
         data = request.data
@@ -2052,7 +2102,7 @@ class ActividadesUpdate(generics.UpdateAPIView):
         return Response({'success': True, 'detail': 'Actividad actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-class BusquedaAvanzadaActividades(generics.ListAPIView):
+class BusquedaAvanzadaActividadesPGAR(generics.ListAPIView):
     serializer_class = ActividadesPGARSerializer
     permission_classes = [IsAuthenticated]
 
@@ -2062,6 +2112,8 @@ class BusquedaAvanzadaActividades(generics.ListAPIView):
         nombre_linea_base = request.query_params.get('nombre_linea_base', '')
         nombre_actividad = request.query_params.get('nombre_actividad', '')
         nombre_eje_estrategico = request.query_params.get('nombre_eje_estrategico', '')
+
+        queryset = Actividad.objects.filter(id_objetivo__id_plan__tipo_plan = 'PGR')
 
         # Realiza la búsqueda utilizando el campo 'nombre_actividad' en el modelo
         if nombre_eje_estrategico != '':
@@ -2086,7 +2138,7 @@ class BusquedaAvanzadaActividades(generics.ListAPIView):
 #Indicadores
 class IndicadoresByIdActividad(generics.ListAPIView):
     serializer_class = IndicadoresPGARSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         indicadores = Indicador.objects.filter(id_actividad=pk)
@@ -2095,3 +2147,319 @@ class IndicadoresByIdActividad(generics.ListAPIView):
         
         serializer = self.serializer_class(indicadores, many=True)
         return Response({'success': True, 'detail': 'Listado de Indicadores.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class IndicaresCreate(generics.CreateAPIView):
+    serializer_class = IndicadoresPGARSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearIndicadoresPGAR]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Indicador creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+class IndicadoresUpdate(generics.UpdateAPIView):
+    serializer_class = IndicadoresPGARSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarIndicadoresPGAR]
+
+    def put(self, request, pk):
+        data = request.data
+        indicador = Indicador.objects.filter(id_indicador=pk).first()
+        if not indicador:
+            return Response({'success': False, 'detail': 'El Indicador ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = IndicadoresPGARSerializer(indicador, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Indicador actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+#Armonización PGAR
+class PlanesPAIList(generics.ListAPIView):
+    serializer_class = PlanesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        nombre_plan = request.query_params.get('nombre_plan', '')
+        sigla_plan = request.query_params.get('nombre_sigla_plan', '')
+        planes = Planes.objects.filter(tipo_plan = 'PAI')
+
+        if nombre_plan != '':
+            planes = planes.filter(nombre_plan__icontains=nombre_plan)
+
+        if sigla_plan != '':
+            planes = planes.filter(sigla_plan__icontains=sigla_plan)
+        serializer = self.serializer_class(planes, many=True)
+        if not planes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Planes PAI.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class PlanesPGARList(generics.ListAPIView):
+    serializer_class = PlanesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        planes = Planes.objects.filter(tipo_plan = 'PGR')
+        serializer = self.serializer_class(planes, many=True)
+        if not planes:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Planes PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class ArmonizacionPGARCreate(generics.CreateAPIView):
+    serializer_class = ArmonizarPAIPGARSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearArmonizacionPlanes]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Armonización PGAR creada correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+
+class ArmonizacionPGARList(generics.ListAPIView):
+    serializer_class = ArmonizarPAIPGARSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        armonizacion = ArmonizarPAIPGAR.objects.all()
+        if not armonizacion:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(armonizacion, many=True)
+        return Response({'success': True, 'detail': 'Listado de Armonización PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+    
+class ArmonizacionPGARUpdate(generics.UpdateAPIView):
+    serializer_class = ArmonizarPAIPGARSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarArmonizacionPlanes]
+
+    def put(self, request, pk):
+        data = request.data
+        armonizacion = ArmonizarPAIPGAR.objects.filter(id_armonizar=pk).first()
+        if not armonizacion:
+            return Response({'success': False, 'detail': 'La Armonización PGAR ingresada no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = ArmonizarPAIPGARSerializer(armonizacion, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Armonización PGAR actualizada correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class SeguiemientoPGARCreate(generics.CreateAPIView):
+    serializer_class = SeguiemientoPGARSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSeguimientoPGAR]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Seguimiento PGAR creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+class SeguimientoPGARList(generics.ListAPIView):
+    serializer_class = SeguiemientoPGARSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        seguimiento = SeguimientoPGAR.objects.all()
+        if not seguimiento:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = self.serializer_class(seguimiento, many=True)
+        return Response({'success': True, 'detail': 'Listado de Seguimiento PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class SeguimientoPGARUpdate(generics.UpdateAPIView):
+    serializer_class = SeguiemientoPGARSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarSeguimientoPGAR]
+
+    def put(self, request, pk):
+        data = request.data
+        seguimiento = SeguimientoPGAR.objects.filter(id_PGAR=pk).first()
+        if not seguimiento:
+            return Response({'success': False, 'detail': 'El Seguimiento PGAR ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = SeguiemientoPGARSerializer(seguimiento, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Seguimiento PGAR actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+#Tableros de Control PGAR
+class TableroPGARByObjetivo(generics.ListAPIView):
+
+    def get(self, request, pk):
+        agno = request.query_params.get('agno', '')
+
+        if agno == '':
+            raise ValidationError('El año es requerido.')
+        #pavance_fisico = 0
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo=pk)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+
+        serializer = TableroPGARByObjetivoSerializer(ejes_estrategicos, many=True, context={'agno': agno})
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class TableroPGARByEje(generics.ListAPIView):
+
+    def get(self, request):
+        planPAI = request.query_params.get('planPAI', '')
+        planPGAR = request.query_params.get('planPGAR', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        objetivos = Objetivo.objects.filter(id_plan = planPGAR)
+        if not objetivos:
+            raise NotFound('No se encontraron resultados.')
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo__in = objetivos)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+        
+        serializer = TableroPGARByEjeSerializer(ejes_estrategicos, many=True, context = context)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class TableroPGARObjetivoEje(generics.ListAPIView):
+
+    def get(self, request):
+        eje_estrategico = request.query_params.get('eje_estrategico', '')
+        planPAI = request.query_params.get('planPAI', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        if eje_estrategico == '':
+            raise ValidationError('El eje estrategico es requerido.')
+        
+        eje_estrategicoo = EjeEstractegico.objects.filter(id_eje_estrategico = eje_estrategico)
+        if not eje_estrategicoo:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+
+        serializer = TableroPGARObjetivoEjeSerializer(eje_estrategicoo, many=True, context=context)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class TableroControlGeneral(generics.ListAPIView):
+    def get(self, request):
+        planPAI = request.query_params.get('planPAI', '')
+        planPGAR = request.query_params.get('planPGAR', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        objetivos = Objetivo.objects.filter(id_plan = planPGAR)
+        if not objetivos:
+            raise NotFound('No se encontraron resultados.')
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo__in = objetivos)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+        
+        serializer = TableroPGARGeneralEjeSerializer(ejes_estrategicos, many=True, context = context)
+        cantidad_ejes = len(ejes_estrategicos)
+        porcenjates_generales = {
+                "pvance_fisico": 0,
+                "pavance_fisico_acomulado": 0,
+                "pavance_financiero": 0,
+                "pavance_recursos_obligados": 0
+        }
+        for porcentaje in serializer.data:
+            porcenjates_generales['pvance_fisico'] += porcentaje['porcentajes']['pvance_fisico']
+            porcenjates_generales['pavance_fisico_acomulado'] += porcentaje['porcentajes']['pavance_fisico_acomulado']
+            porcenjates_generales['pavance_financiero'] += porcentaje['porcentajes']['pavance_financiero']
+            porcenjates_generales['pavance_recursos_obligados'] += porcentaje['porcentajes']['pavance_recursos_obligados']
+
+        porcenjates_generales['pvance_fisico'] = porcenjates_generales['pvance_fisico'] / cantidad_ejes
+        porcenjates_generales['pavance_fisico_acomulado'] = porcenjates_generales['pavance_fisico_acomulado'] / cantidad_ejes
+        porcenjates_generales['pavance_financiero'] = porcenjates_generales['pavance_financiero'] / cantidad_ejes
+        porcenjates_generales['pavance_recursos_obligados'] = porcenjates_generales['pavance_recursos_obligados'] / cantidad_ejes
+
+        serializer.data.append(porcenjates_generales)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': porcenjates_generales}, status=status.HTTP_200_OK)
+
+
+
+class TableroControlGeneralObjeivos(generics.ListAPIView):
+    def get(self, request):
+        planPAI = request.query_params.get('planPAI', '')
+        planPGAR = request.query_params.get('planPGAR', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        objetivos = Objetivo.objects.filter(id_plan = planPGAR)
+        if not objetivos:
+            raise NotFound('No se encontraron resultados.')
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo__in = objetivos)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+        
+        serializer = TableroPGARObjetivoGeneralSerializer(ejes_estrategicos, many=True, context = context)
+        response = []
+        
+        for objetivo in objetivos:
+            porcenjates_generales = {
+                "id_objetivo": objetivo.id_objetivo,
+                "nombre_objetivo": objetivo.nombre_objetivo,
+                "años": []
+            }
+        
+            for i in range(0,4):
+                iterator = 0
+                año = {
+                    "año": i+1,
+                    "pvance_fisico": 0,
+                    "pavance_fisico_acomulado": 0,
+                    "pavance_financiero": 0,
+                    "pavance_recursos_obligados": 0
+                }
+                for eje_estrategico in serializer.data:
+                    if eje_estrategico['id_objetivo'] == objetivo.id_objetivo:
+                        año['pvance_fisico'] += eje_estrategico['porcentajes'][i]['pvance_fisico']
+                        año['pavance_fisico_acomulado'] += eje_estrategico['porcentajes'][i]['pavance_fisico_acomulado']
+                        año['pavance_financiero'] += eje_estrategico['porcentajes'][i]['pavance_financiero']
+                        año['pavance_recursos_obligados'] += eje_estrategico['porcentajes'][i]['pavance_recursos_obligados']
+                        iterator += 1
+
+                año['pvance_fisico'] = año['pvance_fisico'] / iterator
+                año['pavance_fisico_acomulado'] = año['pavance_fisico_acomulado'] / iterator
+                año['pavance_financiero'] = año['pavance_financiero'] / iterator
+                año['pavance_recursos_obligados'] = año['pavance_recursos_obligados'] / iterator
+                porcenjates_generales['años'].append(año)
+            response.append(porcenjates_generales)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': response}, status=status.HTTP_200_OK)

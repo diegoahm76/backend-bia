@@ -4,10 +4,14 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
+from django.db.models import Q
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
+from almacen.models.hoja_de_vida_models import HojaDeVidaVehiculos
 from almacen.models.mantenimientos_models import RegistroMantenimientos
-from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, MantenimientosRealizadosGetSerializer, MovimientosIncautadosGetSerializer
+from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, HojaDeVidaVehiculosSerializer, InventarioSerializer, MantenimientosRealizadosGetSerializer, MovimientosIncautadosGetSerializer, ViajesAgendadosSerializer
+from almacen.models.inventario_models import Inventario
+from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, PersonasSolicitudViaje, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
 
 class EntradasInventarioGetView(generics.ListAPIView):
     serializer_class=EntradasInventarioGetSerializer
@@ -138,3 +142,155 @@ class MantenimientosRealizadosGetView(generics.ListAPIView):
         serializer_data = serializer.data
 
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer_data},status=status.HTTP_200_OK)
+
+
+class BusquedaGeneralInventario(generics.ListAPIView):
+    serializer_class = InventarioSerializer
+
+    def get_queryset(self):
+        queryset = Inventario.objects.all()
+
+        # Obtener parámetros de consulta
+        tipo_movimiento = self.request.query_params.get('tipo_movimiento')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+
+        # Filtrar por tipo de movimiento
+        if tipo_movimiento:
+            queryset = queryset.filter(tipo_doc_ultimo_movimiento=tipo_movimiento)
+        
+        # Filtrar por rango de fechas
+        if fecha_desde:
+            queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
+            
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        data = {
+            'success': True,
+            'detail': 'Búsqueda realizada exitosamente.',
+            'data': serializer.data
+        }
+        return Response(data)
+    
+
+class BusquedaVehiculos(generics.ListAPIView):
+    serializer_class = HojaDeVidaVehiculosSerializer
+
+    def get_queryset(self):
+        tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
+        marca = self.request.query_params.get('marca')
+        placa = self.request.query_params.get('placa')
+        contratista = self.request.query_params.get('contratista')
+        nombre = self.request.query_params.get('nombre')
+
+        queryset = HojaDeVidaVehiculos.objects.all()
+
+        # Aplicar filtros adicionales si se proporcionan
+        if tipo_vehiculo:
+            queryset = queryset.filter(cod_tipo_vehiculo=tipo_vehiculo)
+
+        if marca:
+            queryset = queryset.filter(Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) |
+                                       Q(id_articulo__id_marca__nombre__icontains=marca))
+
+        if placa:
+            # Validar si es_arrendado es None
+            queryset = queryset.filter(Q(es_arrendado=None) & Q(id_articulo__doc_identificador_nro__icontains=placa) |
+                                    Q(es_arrendado=False, id_articulo__doc_identificador_nro__icontains=placa) |
+                                    Q(es_arrendado=True, id_vehiculo_arrendado__placa__icontains=placa))
+
+        if contratista:
+            queryset = queryset.filter(id_vehiculo_arrendado__empresa_contratista__icontains=contratista)
+
+        if nombre:
+            queryset = queryset.filter(
+                Q(es_arrendado=None, id_articulo__nombre__icontains=nombre) |
+                Q(es_arrendado=False, id_articulo__nombre__icontains=nombre) |
+                Q(es_arrendado=True, id_vehiculo_arrendado__nombre__icontains=nombre)
+            )
+
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Vehículos obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class BusquedaViajesAgendados(generics.ListAPIView):
+    serializer_class = ViajesAgendadosSerializer
+
+    def get_queryset(self):
+        # Obtener el parámetro id_hoja_vida_vehiculo de la URL
+        id_hoja_vida_vehiculo = self.kwargs.get('id_hoja_vida_vehiculo')
+
+        # Filtrar las asignaciones de conductor para el vehículo específico
+        asignaciones_conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo=id_hoja_vida_vehiculo)
+
+        # Filtrar los viajes agendados autorizados asociados a las asignaciones de conductor
+        queryset = []
+        for asignacion in asignaciones_conductor:
+            viajes_agendados = asignacion.viajesagendados_set.filter(viaje_autorizado=True)
+            queryset.extend(viajes_agendados)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Viajes obtenidos exitosamente', 'data': serializer.data})
+    
+
+
+class HistoricoTodosViajesAgendados(generics.ListAPIView):
+    serializer_class = ViajesAgendadosSerializer
+
+    def get_queryset(self):
+        # Obtener los parámetros de los filtros adicionales
+        tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
+        marca = self.request.query_params.get('marca')
+        placa = self.request.query_params.get('placa')
+        es_arrendado = self.request.query_params.get('es_arrendado')
+
+        queryset_vehiculos = HojaDeVidaVehiculos.objects.all()
+
+        if tipo_vehiculo:
+            queryset_vehiculos = queryset_vehiculos.filter(cod_tipo_vehiculo=tipo_vehiculo)
+
+
+        if es_arrendado:
+            queryset_vehiculos = queryset_vehiculos.filter(es_arrendado=es_arrendado)
+
+        if marca:
+            queryset_vehiculos = queryset_vehiculos.filter(Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) |
+                                                           Q(id_articulo__id_marca__nombre__icontains=marca))
+
+        if placa:
+            queryset_vehiculos = queryset_vehiculos.filter(Q(es_arrendado=None, id_articulo__doc_identificador_nro__icontains=placa) |
+                                                           Q(es_arrendado=False, id_articulo__doc_identificador_nro__icontains=placa) |
+                                                           Q(es_arrendado=True, id_vehiculo_arrendado__placa__icontains=placa))
+
+        # Filtrar las asignaciones de conductor para los vehículos filtrados
+        asignaciones_conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo__in=queryset_vehiculos.values('pk'))
+
+        # Filtrar los viajes agendados autorizados asociados a las asignaciones de conductor
+        queryset_viajes = []
+        for asignacion in asignaciones_conductor:
+            viajes_agendados = asignacion.viajesagendados_set.filter(viaje_autorizado=True)
+            queryset_viajes.extend(viajes_agendados)
+
+        return queryset_viajes
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Viajes obtenidos exitosamente', 'data': serializer.data})

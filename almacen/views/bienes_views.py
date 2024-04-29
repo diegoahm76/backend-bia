@@ -39,6 +39,7 @@ from almacen.models.inventario_models import (
 )
 from almacen.utils import UtilAlmacen
 from gestion_documental.models.expedientes_models import ArchivosDigitales
+from seguridad.permissions.permissions_almacen import PermisoActualizarCatalogoBienes, PermisoActualizarEntradaAlmacen, PermisoAnularEntradaAlmacen, PermisoBorrarCatalogoBienes, PermisoCrearCatalogoBienes, PermisoCrearEntradaAlmacen
 from transversal.models.personas_models import (
     Personas
 )
@@ -154,7 +155,7 @@ class GeneradorCodigoCatalogo(generics.RetrieveAPIView):
 
 class CatalogoBienesCreate(generics.CreateAPIView):
     serializer_class = CatalagoBienesYSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearCatalogoBienes]
 
     def create_catalogo_bienes(self, data):
         nivel_jerarquico = data['nivel_jerarquico']
@@ -269,7 +270,7 @@ class CatalogoBienesCreate(generics.CreateAPIView):
 
 class CatalogoBienesCreateUpdate(generics.UpdateAPIView):
     serializer_class = CatalagoBienesYSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearCatalogoBienes|PermisoActualizarCatalogoBienes)]
 
     def put(self, request):
         data = request.data
@@ -559,7 +560,7 @@ class ValidacionCodigoBien(generics.ListAPIView):
 
 class CreateCatalogoDeBienes(generics.UpdateAPIView):
     serializer_class = CatalogoBienesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearCatalogoBienes|PermisoActualizarCatalogoBienes)]
 
     def put(self, request):
         data = request.data
@@ -983,7 +984,7 @@ class DeleteNodos(generics.RetrieveDestroyAPIView):
     serializer_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
     lookup_field = 'id_bien'
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarCatalogoBienes]
 
     def delete(self, request, id_bien):
         nodo = CatalogoBienes.objects.filter(id_bien=id_bien).first()
@@ -1348,7 +1349,7 @@ class GetNumeroEntrada(generics.ListAPIView):
 class CreateEntradaandItemsEntrada(generics.CreateAPIView):
     serializer_class = EntradaCreateSerializer
     queryset = EntradasAlmacen.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearEntradaAlmacen]
 
     def post(self, request):
         data = request.data
@@ -1764,7 +1765,7 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 class UpdateEntrada(generics.RetrieveUpdateAPIView):
     serializer_class = EntradaUpdateSerializer
     queryset = EntradasAlmacen.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEntradaAlmacen]
 
     def update_maestro(self, request, id_entrada):
         data = request.data.get('info_entrada')
@@ -2742,7 +2743,7 @@ class UpdateItemsEntrada(generics.UpdateAPIView):
 class AnularEntrada(generics.UpdateAPIView):
     serializer_class = EntradaSerializer
     queryset = EntradasAlmacen.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularEntradaAlmacen]
 
     def put(self, request, id_entrada):
         datos_ingresados = request.data

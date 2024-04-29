@@ -29,6 +29,7 @@ from conservacion.serializers.mortalidad_serializers import (
     GetHistorialMortalidadSerializer
 )
 from conservacion.utils import UtilConservacion
+from seguridad.permissions.permissions_conservacion import PermisoActualizarMortalidadPlantasPlantulas, PermisoAnularMortalidadPlantasPlantulas, PermisoCrearMortalidadPlantasPlantulas
 from seguridad.utils import Util
 import json
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -183,7 +184,7 @@ class GetHistorialMortalidad(generics.ListAPIView):
 class RegistrarMortalidad(generics.CreateAPIView):
     serializer_class=RegistrarMortalidadSerializer
     queryset=InventarioViveros.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoCrearMortalidadPlantasPlantulas]
     
     def post(self,request):
         data = request.data
@@ -371,7 +372,7 @@ class RegistrarMortalidad(generics.CreateAPIView):
 class ActualizarMortalidad(generics.UpdateAPIView):
     serializer_class=ActualizarMortalidadSerializer
     queryset=BajasVivero.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoActualizarMortalidadPlantasPlantulas]
     
     def put(self,request,id_baja):
         data = request.data
@@ -746,7 +747,7 @@ class ActualizarMortalidad(generics.UpdateAPIView):
 class AnularMortalidad(generics.UpdateAPIView):
     serializer_class=AnularMortalidadSerializer
     queryset=BajasVivero.objects.all()
-    permission_classes=[IsAuthenticated]
+    permission_classes=[IsAuthenticated, PermisoAnularMortalidadPlantasPlantulas]
     
     def put(self,request,id_baja):
         data = request.data

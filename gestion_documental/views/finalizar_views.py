@@ -4,6 +4,7 @@ import copy
 from datetime import datetime
 from rest_framework import generics
 from rest_framework.response import Response
+from seguridad.permissions.permissions_gestor import PermisoEjecutarActivacionInstrumentoArchivisticos
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -111,7 +112,7 @@ class GetTCATerminadoByCCD(generics.ListAPIView):
 class Activar(generics.UpdateAPIView):
     serializer_class =TRDSerializer
     queryset=TablaRetencionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoEjecutarActivacionInstrumentoArchivisticos]
     
     def put(self,request):
         data = request.data

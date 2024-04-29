@@ -15,6 +15,9 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from rest_framework import status
 from django.db.models import F
 from django.template.loader import render_to_string
+from datetime import timedelta
+import holidays
+
 
 class UtilsGestor:
 
@@ -451,3 +454,26 @@ class UtilsGestor:
             return True
         
         return False
+    
+    @staticmethod
+    def get_dias_habiles(fecha_inicio, fecha_fin):
+        dias_habiles = 0
+        festivos = holidays.country_holidays(years=fecha_inicio.year, country='CO', subdiv='')
+        festivos = [festivo for festivo in festivos.keys()]
+        fecha_actual = fecha_inicio + timedelta(days=1)
+        while fecha_actual <= fecha_fin:
+            if fecha_actual.weekday() < 5 and fecha_actual not in festivos:
+                dias_habiles += 1
+            fecha_actual += timedelta(days=1)
+        return dias_habiles
+    
+    @staticmethod
+    def get_fecha_habil(fecha_inicio, dias_habiles):
+        festivos = holidays.country_holidays(years=fecha_inicio.year, country='CO', subdiv='')
+        festivos = [festivo for festivo in festivos.keys()]
+        fecha_actual = fecha_inicio
+        while dias_habiles > 0:
+            fecha_actual += timedelta(days=1)
+            if fecha_actual.weekday() < 5 and fecha_actual not in festivos:
+                dias_habiles -= 1
+        return fecha_actual

@@ -33,6 +33,8 @@ class VehiculosAgendables_Conductor(models.Model):
     fecha_final_asignacion = models.DateField(db_column="T072fechaFinalizaAsignacion")
     id_persona_que_asigna = models.ForeignKey("transversal.Personas", on_delete=models.CASCADE, db_column="T072Id_PersonaQueAsigna", related_name='T072id_persona_que_asigna')
     fecha_registro = models.DateTimeField(auto_now_add=True, db_column="T072fechaRegistro")
+    activo = models.BooleanField(db_column="T072activo")
+
     
     def __str__(self):
         return str(self.id_vehiculo_conductor)
@@ -121,7 +123,7 @@ class SolicitudesViajes(models.Model):
     tiene_expediente_asociado = models.BooleanField(default=False, db_column="T075tieneExpedienteAsociado")
     id_expediente_asociado = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, db_column='T075Id_ExpedienteAsociado',null=True, blank=True)
     motivo_viaje = models.CharField(max_length=255, db_column="T075motivoViajeSolicitado")
-    direccion = models.CharField(max_length=255, db_column="T075direccion")
+    direccion = models.CharField(max_length=255,null=True, blank=True, db_column="T075direccion")
     cod_municipio = models.ForeignKey("transversal.Municipio", on_delete=models.CASCADE, db_column="T075Cod_MunicipioDestino")
     indicaciones_destino = models.CharField(max_length=255, db_column="T075indicacionesDestino")
     nro_pasajeros = models.SmallIntegerField(db_column="T075nroPasajeros")
@@ -197,6 +199,7 @@ class ViajesAgendados(models.Model):
     ya_llego = models.BooleanField(default=True, db_column="T077yaLlego")
     multiples_asignaciones = models.BooleanField(default=True, db_column="T077multiplesAsignaciones")
     estado = models.CharField(max_length=2, choices=estado_aprobacion_CHOICES, db_column="T077estado")
+    realizo_inspeccion =  models.BooleanField(default=False, db_column="T077realizoInspeccion")
 
     def __str__(self):
         return str(self.id_viaje_agendado)
@@ -258,7 +261,7 @@ class PersonasSolicitudViaje(models.Model):
     id_persona_solcitud_viaje = models.AutoField(primary_key=True, editable=False, db_column="T080IdPersonaSolicitudViaje")
     id_persona_viaja = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column="T080IdPersonaViaja")
     id_solicitud_viaje = models.ForeignKey(SolicitudesViajes, on_delete=models.CASCADE, db_column="T080IdSolicitudViaje")
-    id_inspeccion_vehiculo = models.ForeignKey(InspeccionesVehiculosDia, on_delete=models.CASCADE, db_column="T080IdInspeccionVehiculo")
+    id_inspeccion_vehiculo = models.ForeignKey(InspeccionesVehiculosDia, on_delete=models.SET_NULL, null=True, blank=True, db_column="T080IdInspeccionVehiculo")
     persona_confirma_viaje = models.BooleanField(null=True, blank=True, db_column="T080personaConfirmaViaje")
     persona_agregada_inspeccion = models.BooleanField(null=True, blank=True, db_column="T080personaAgregadaInspeccion")
     observacion = models.CharField(max_length=255, null=True, blank=True, db_column="T080observacion")

@@ -115,7 +115,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
             MetadatosAnexosTmp.objects.create(
                 id_anexo = anexo_creado,
                 nombre_original_archivo = nombre_sin_extension,
-                fecha_creacion_doc = current_date.date(),
+                fecha_creacion_doc = current_date,
                 id_archivo_sistema = archivo_digital_instance
             )
             
@@ -442,7 +442,7 @@ class AnexosUpdateView(generics.UpdateAPIView):
             MetadatosAnexosTmp.objects.create(
                 id_anexo = anexo_creado,
                 nombre_original_archivo = nombre_sin_extension,
-                fecha_creacion_doc = current_date.date(),
+                fecha_creacion_doc = current_date,
                 descripcion = data['descripcion'],
                 id_archivo_sistema = archivo_digital_instance
             )
@@ -885,7 +885,7 @@ class AnexosMetadatosUpdateView(generics.UpdateAPIView):
             # CREAR ANEXO EN T260
             data['id_anexo'] = anexo_creado.id_anexo
             data['nombre_original_archivo'] = nombre_sin_extension
-            data['fecha_creacion_doc'] = current_date.date()
+            data['fecha_creacion_doc'] = current_date
             data['id_archivo_sistema'] = archivo_digital_instance.id_archivo_digital
             
             serializer_anexo = self.serializer_metadatos_class(data=data)

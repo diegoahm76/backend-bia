@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.db.models import Q
 import copy, pytz
 from datetime import datetime
+from seguridad.permissions.permissions_gestor import PermisoActualizarTCA, PermisoCrearTCA
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
@@ -91,7 +92,7 @@ class GetListTca(generics.ListAPIView):
 class PostTablaControlAcceso(generics.CreateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTCA]
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -123,7 +124,7 @@ class PostTablaControlAcceso(generics.CreateAPIView):
 class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
     serializer_class = TCAPutSerializer
     queryset = TablasControlAcceso.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTCA]
 
     def patch(self, request, pk):
         tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
@@ -167,7 +168,7 @@ class UpdateTablaControlAcceso(generics.RetrieveUpdateAPIView):
 class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCASerializer
     queryset = CatSeriesUnidadOrgCCD_TRD_TCA.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTCA]
 
     def post(self, request, id_tca):
         data = request.data
@@ -223,7 +224,7 @@ class ClasifSerieSubserieUnidadTCA(generics.CreateAPIView):
 class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
     serializer_class = ClasifSerieSubserieUnidadTCAPutSerializer
     queryset = CatSeriesUnidadOrgCCD_TRD_TCA.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTCA]
     serializer_class_2=ClasifSerieSubseriUnidadTCA_activoSerializer
     def put(self, request, pk):
     
@@ -312,7 +313,7 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
 class ReanudarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTCA]
 
     def put(self, request, id_tca):
         tca = TablasControlAcceso.objects.filter(id_tca=id_tca).first()
@@ -350,7 +351,7 @@ class EliminarRelaciones(generics.DestroyAPIView):
 class FinalizarTablaControlAcceso(generics.UpdateAPIView):
     serializer_class = TCAPostSerializer
     queryset = TablasControlAcceso
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearTCA|PermisoActualizarTCA)]
 
     def put(self, request, pk):
         tca = TablasControlAcceso.objects.filter(id_tca=pk).first()
