@@ -6,6 +6,7 @@ from rest_framework.exceptions import NotFound, ValidationError, PermissionDenie
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from datetime import datetime
+from seguridad.permissions.permissions_transversal import PermisoActualizarLideresUnidadOrganizacional, PermisoCrearLideresUnidadOrganizacional
 from transversal.models.personas_models import Personas
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util
@@ -140,7 +141,7 @@ class GetPersonaLiderFiltro(generics.ListAPIView):
 class CreateAsignacionView(generics.CreateAPIView):
     serializer_class = CreateAsignacionSerializer
     queryset = LideresUnidadesOrg.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearLideresUnidadOrganizacional]
     
     def post(self,request):
         persona_logueada = request.user.persona.id_persona
@@ -170,7 +171,7 @@ class CreateAsignacionView(generics.CreateAPIView):
 class UpdateAsignacionView(generics.UpdateAPIView):
     serializer_class = UpdateAsignacionSerializer
     queryset = LideresUnidadesOrg.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarLideresUnidadOrganizacional]
     
     def put(self,request,id_lider_unidad_org):
         persona_logueada = request.user.persona.id_persona

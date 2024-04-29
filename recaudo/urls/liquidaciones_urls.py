@@ -10,6 +10,8 @@ urlpatterns = [
     path('deudores/', views.DeudoresView.as_view(), name='deudores-todos'),
     path('deudores/<str:identificacion>', views.DeudoresIdentificacionView.as_view(), name='deudores-busqueda-identificacion'),
 
+    path('liquidacion-masivo/', views.LiquidacionesBasePostMasivovista.as_view(), name='liquidacion-base-todoffs'),
+
     path('liquidacion-base/', views.LiquidacionBaseView.as_view(), name='liquidacion-base-todos'),
     path('liquidacion-base/<int:pk>/', views.ObtenerLiquidacionBaseView.as_view(), name='liquidacion-base-detalle'),
     path('liquidacion-base-por-expediente/<int:pk>/', views.ObtenerLiquidacionPorIdExpedienteBaseView.as_view(), name='liquidacion-base-detalle-por-expediente'),

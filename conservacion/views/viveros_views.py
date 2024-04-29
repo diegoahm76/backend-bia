@@ -2,6 +2,7 @@ from conservacion.serializers.viveros_serializers import ViveristaActualSerializ
 from conservacion.models.viveros_models import HistoricoResponsableVivero
 from conservacion.serializers.viveros_serializers import HistorialViveristaByViveroSerializers
 from rest_framework import generics, status
+from seguridad.permissions.permissions_conservacion import PermisoActualizarAdministrarViveros, PermisoAperturaCierreVivero, PermisoBorrarAdministrarViveros, PermisoCrearAdministrarViveros, PermisoCrearResponsablesViveros, PermisoIngresoRetiroCuarentena, PermisoActualizarTipificaciónBienesConsumoViveros
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util  
 from django.db.models import Q
@@ -41,7 +42,7 @@ from conservacion.serializers.viveros_serializers import (
 class DeleteVivero(generics.DestroyAPIView):
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarAdministrarViveros]
 
     def delete(self, request, id_vivero):
         
@@ -75,7 +76,7 @@ class DeleteVivero(generics.DestroyAPIView):
 class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
     serializer_class = AbrirViveroSerializer
     queryset = Vivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAperturaCierreVivero]
 
     def put(self, request, id_vivero):
         data = request.data
@@ -189,7 +190,7 @@ class AbrirCerrarVivero(generics.RetrieveUpdateAPIView):
 class CreateViveros(generics.CreateAPIView):
     serializer_class = ViveroPostSerializer
     queryset = Vivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministrarViveros]
     
     def post(self, request):
         data = request.data.copy()
@@ -223,7 +224,7 @@ class GetViveroByPk(generics.RetrieveAPIView):
 class UpdateViveroCuarentena(generics.ListAPIView):
     serializer_class=ViveroSerializer
     queryset=Vivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoIngresoRetiroCuarentena]
     
     def put(self,request,id_vivero):
         vivero=Vivero.objects.filter(id_vivero=id_vivero).first()
@@ -356,7 +357,7 @@ class FilterViverosByNombreAndMunicipio(generics.ListAPIView):
 class UpdateViveros(generics.UpdateAPIView):
     serializer_class = ViveroPutSerializer
     queryset = Vivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministrarViveros]
     
     def put(self, request, id_vivero_ingresado):
         request.data._mutable=True
@@ -448,7 +449,7 @@ class DesactivarActivarViveroView(generics.RetrieveUpdateAPIView):
 class TipificacionBienConsumoVivero(generics.UpdateAPIView):
     serializer_class = TipificacionBienViveroSerializer
     queryset = CatalogoBienes.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTipificaciónBienesConsumoViveros]
     
     def put(self, request, id_bien):
         data = request.data
@@ -597,6 +598,7 @@ class GetPersonaByNumeroDocumento(generics.ListAPIView):
 class GuardarAsignacionViverista(generics.CreateAPIView):
     serializer_class = ViveroSerializer
     queryset = Vivero.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCrearResponsablesViveros]
 
     def post(self, request, id_vivero):
         data = request.data

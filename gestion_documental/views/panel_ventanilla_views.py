@@ -6,14 +6,16 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, TareasAsignadas
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad,CatalogosSeriesUnidad,SeriesDoc,SubseriesDoc,CuadrosClasificacionDocumental
+from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
-from gestion_documental.models.trd_models import TipologiasDoc
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TipologiasDoc
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, RespuestasRequerimientosOpaGetSerializer, RespuestasRequerimientosPutGetSerializer, RespuestasRequerimientosPutSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer,CatalogosSeriesUnidadGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
+from seguridad.permissions.permissions_gestor import PermisoActualizarResponderRequerimientoOPA, PermisoCrearAsignacionSubseccion, PermisoCrearResponderRequerimientoOPA, PermisoCrearSolicitudComplementoPQRSDF
 from seguridad.utils import Util
 from gestion_documental.utils import UtilsGestor
 from datetime import date, datetime
@@ -258,7 +260,7 @@ class SolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_complemento = ComplementosUsu_PQRPutSerializer
     queryset =SolicitudDeDigitalizacion.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudComplementoPQRSDF]
     #creador_estados = Estados_PQRCreate
     def post(self, request):
         data_in = request.data
@@ -590,7 +592,7 @@ class AsignacionPQRUpdate(generics.UpdateAPIView):
 class AsignacionPQRCreate(generics.CreateAPIView):
     serializer_class = AsignacionPQRPostSerializer
     queryset =AsignacionPQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAsignacionSubseccion]
     creador_estados = Estados_PQRCreate
     def post(self, request):
         #CODIGO DE SERIE DOCUMENTAL DE PQRSDF
@@ -1206,7 +1208,7 @@ class RequerimientoOpaPut(generics.UpdateAPIView):#Continuar con asignacion a gr
     serializer_class = RespuestasRequerimientosPutGetSerializer
     serializer_adicion_tarea= AdicionalesDeTareasCreateSerializer
     queryset = RespuestasRequerimientos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarResponderRequerimientoOPA]
     def put(self, request,pk):
         instance = self.get_queryset().filter(id_respuesta_requerimiento=pk).first()
 
@@ -1248,7 +1250,7 @@ class SolicitudDeDigitalizacionRequerimientoOpaCreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_complemento = RespuestasRequerimientosPutSerializer
     queryset =SolicitudDeDigitalizacion.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearResponderRequerimientoOPA]
     #creador_estados = Estados_PQRCreate
     def post(self, request):
         data_in = request.data
@@ -1487,10 +1489,29 @@ class AsignacionOPACreate(generics.CreateAPIView):
 
     def post(self, request):
         data_in = request.data
-
+        agno_actual = datetime.now().year
         # Verificar si se envió el ID de solicitud de OPA
         if 'id_solicitud_tramite' not in data_in:
             raise ValidationError("No se envió la solicitud de OPA")
+        
+        if 'id_catalogo_serie_subserie' not in data_in:
+            raise ValidationError("No se envió el ID de la Subserie")
+        
+
+        #id_catalogo_serie_subserie
+        catalogo = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_catalogo_serie_subserie']).first()
+        if not catalogo:
+            raise ValidationError("No se encontró la Subserie")
+        tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data_in['id_catalogo_serie_subserie']).first()
+        
+        if not tripleta_trd:
+            raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+        #BUSCAR EL AÑO
+
+        configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg,agno_expediente=agno_actual).first()
+        if not configuracion_expediente:
+            raise ValidationError("Este catalogo de de series-suberie no cuenta con configuracion para este año.")
+
 
         # Verificar si la solicitud ya fue aceptada
         instance = AsignacionTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'])
@@ -2354,6 +2375,31 @@ class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
                     raise ValidationError("La solicitud ya fue aceptada.")
                 if not asignacion.cod_estado_asignacion:
                     raise ValidationError("La solicitud está pendiente por respuesta.")
+
+
+            agno_actual = datetime.now().year
+            # Verificar si se envió el ID de solicitud de OPA
+
+            if 'id_catalogo_serie_subserie' not in data_in:
+                raise ValidationError("No se envió el ID de la Subserie")
+            
+
+            #id_catalogo_serie_subserie
+            catalogo = CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_catalogo_serie_subserie']).first()
+            if not catalogo:
+                raise ValidationError("No se encontró la Subserie")
+            tripleta_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_cat_serie_und=data_in['id_catalogo_serie_subserie']).first()
+            
+            if not tripleta_trd:
+                raise ValidationError('Debe enviar el id de la tripleta de TRD seleccionada')
+            #BUSCAR EL AÑO
+
+            configuracion_expediente = ConfiguracionTipoExpedienteAgno.objects.filter(id_cat_serie_undorg_ccd = tripleta_trd.id_catserie_unidadorg,agno_expediente=agno_actual).first()
+            if not configuracion_expediente:
+                raise ValidationError("Este catalogo de de series-suberie no cuenta con configuracion para este año.")
+
+
+
 
             # Obtener el líder de la Subsección planeacion
             lider_subseccion = self.obtener_lider_subseccion(subseccion_id)

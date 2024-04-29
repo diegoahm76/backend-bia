@@ -2,6 +2,7 @@ import json
 import logging
 
 from django.http import JsonResponse
+from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -78,7 +79,7 @@ from gestion_documental.models.trd_models import (
 class CrearTipologiaDocumental(generics.CreateAPIView):
     serializer_class = CrearTipologiaDocumentalSerializer
     queryset = TipologiasDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTipologiasDocumentales]
     
     def post(self,request):
         data = request.data
@@ -132,7 +133,7 @@ class CrearTipologiaDocumental(generics.CreateAPIView):
 class ModificarTipologiaDocumental(generics.UpdateAPIView):
     serializer_class = ModificarTipologiaDocumentalSerializer
     queryset = TipologiasDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTipologiasDocumentales]
     
     def put(self,request,pk):
         data = request.data
@@ -223,7 +224,7 @@ class ModificarTipologiaDocumental(generics.UpdateAPIView):
 class EliminarTipologiaDocumental(generics.DestroyAPIView):
     serializer_class = CrearTipologiaDocumentalSerializer
     queryset = TipologiasDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarTipologiasDocumentales]
     
     def delete(self,request,pk):
         
@@ -301,7 +302,7 @@ class GetHistoricoTRD(generics.ListAPIView):
 class ModificarNombreVersionTRD(generics.UpdateAPIView):
     serializer_class = ModificarTRDNombreVersionSerializer
     queryset = TablaRetencionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTRD]
     
     def put(self,request,id_trd):
         data = request.data
@@ -363,7 +364,7 @@ class GetFormatosTipologiasDocumentales(generics.ListAPIView):
 class CreateSerieSubSeriesUnidadesOrgTRD(generics.CreateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDSerializer
     queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTRD]
 
     def post(self, request, id_trd):
         data_entrante = request.data
@@ -469,7 +470,7 @@ def uploadDocument(request, id_serie_subserie_uniorg_trd):
 class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
     serializer_class = SeriesSubSeriesUnidadesOrgTRDPutSerializer
     queryset = CatSeriesUnidadOrgCCDTRD.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTRD]
 
     def put(self, request, id_serie_subs_unidadorg_trd):
         data_entrante = request.data
@@ -695,6 +696,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 class ReanudarTRD(generics.RetrieveUpdateAPIView):
     serializer_class = ReanudarTrdSerializer
     queryset = TablaRetencionDocumental.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarTRD]
     
     def put(self,request,id_trd):
         
@@ -825,7 +827,7 @@ class GetTablaRetencionDocumentalTerminados(generics.ListAPIView):
 class PostTablaRetencionDocumental(generics.CreateAPIView):
     serializer_class = TRDPostSerializer
     queryset = TablaRetencionDocumental
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearTRD]
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -862,7 +864,7 @@ class PostTablaRetencionDocumental(generics.CreateAPIView):
 class UpdateTablaRetencionDocumental(generics.RetrieveUpdateAPIView):
     serializer_class = TRDPutSerializer
     queryset = TablaRetencionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTRD]
 
     def patch(self, request, pk):
         try:
@@ -957,7 +959,7 @@ class GetFormatosTiposMedioByCodTipoMedio(generics.ListAPIView):
 class RegisterFormatosTiposMedio(generics.CreateAPIView):
     serializer_class =  FormatosTiposMedioPostSerializer
     queryset = FormatosTiposMedio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearFormatosArchivos]
 
     def post(self, request):
         
@@ -983,7 +985,7 @@ class RegisterFormatosTiposMedio(generics.CreateAPIView):
 class UpdateFormatosTiposMedio(generics.RetrieveUpdateAPIView):
     serializer_class = FormatosTiposMedioPostSerializer
     queryset = FormatosTiposMedio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarFormatosArchivos]
 
     def put(self, request, pk):
         data=request.data
@@ -1013,7 +1015,7 @@ class UpdateFormatosTiposMedio(generics.RetrieveUpdateAPIView):
 class DeleteFormatosTiposMedio(generics.DestroyAPIView):
     serializer_class = FormatosTiposMedioPostSerializer
     queryset = FormatosTiposMedio.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarFormatosArchivos]
 
     def delete(self, request, pk):
         formato_tipo_medio = FormatosTiposMedio.objects.filter(id_formato_tipo_medio=pk).first()
@@ -1128,7 +1130,7 @@ class GetTipologiasSeriesSubSUnidadOrgTRD(generics.ListAPIView):
 class DesactivarTipologiaActual(generics.UpdateAPIView):
     serializer_class = TipologiasDocumentalesPutSerializer
     queryset = TipologiasDoc.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarTipologiasDocumentales]
 
     def put(self, request, id_tipologia):
         persona = request.user.persona
@@ -1156,7 +1158,7 @@ class DesactivarTipologiaActual(generics.UpdateAPIView):
 class FinalizarTRD(generics.RetrieveUpdateAPIView):
     serializer_class = TRDFinalizarSerializer
     queryset = TablaRetencionDocumental.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearTRD|PermisoActualizarTRD)]
     
     def put(self, request, pk):
         trd = self.queryset.filter(id_trd=pk).first()
@@ -1268,7 +1270,7 @@ class GetConfiguracionesPorTipologiaAnioAnterior(generics.ListAPIView):
 #CONFIGURACION_TIPOLOGIA_EM
 class CrearConfigurarTipologiaEmpresa(generics.CreateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearConfiguracionTipologiasDocumentalesActual]
 
     def post(self, request):
         data = request.data
@@ -1426,6 +1428,7 @@ class CrearConfigurarTipologiaEmpresa(generics.CreateAPIView):
 #CONFIGURACION_TIPOLOGIA_SS
 class ConfigurarTipologiaSS(generics.CreateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearConfiguracionTipologiasDocumentalesActual]
 
     def post(self, request):
         data = request.data
@@ -1638,7 +1641,7 @@ class ConfigurarTipologiaSS(generics.CreateAPIView):
 #CONFIGURACION_NO_MANEJA_CONSECUTIVO
 class CrearConfigurarTipologia(generics.CreateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearConfiguracionTipologiasDocumentalesActual]
 
     def post(self, request):
         # Obtener los datos enviados por el usuario
@@ -2155,7 +2158,7 @@ class AsignarNuevoConsecutivo(generics.CreateAPIView):
 # Actualizar o cambiar el valor ¿Maneja Consecutivo? de NO a EM
 class ActualizarConfiguracionEM(generics.UpdateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         # id_tipologia_doc es el ID de la tipología que se quiere actualizar
@@ -2256,6 +2259,7 @@ class ActualizarConfiguracionEM(generics.UpdateAPIView):
 # Actualizar o cambiar el valor ¿Maneja Consecutivo? de NO a ss
 class ActualizarConfiguracionSS(generics.UpdateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2393,6 +2397,7 @@ class ActualizarConfiguracionSS(generics.UpdateAPIView):
 # Actualizar o cambiar el valor ¿Maneja Consecutivo? de SI a NO
 class ActualizarConfiguracionNoConsecutivoEm(generics.UpdateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2441,6 +2446,7 @@ class ActualizarConfiguracionNoConsecutivoEm(generics.UpdateAPIView):
         
 class ActualizarConfiguracionNoConsecutivoSS(generics.UpdateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2500,6 +2506,7 @@ class ActualizarConfiguracionNoConsecutivoSS(generics.UpdateAPIView):
 #Actualizar Nivel de Consecutivo de EM a SS: 
 class ActualizarConfiguracionEMaSS(generics.UpdateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2636,6 +2643,7 @@ class ActualizarConfiguracionEMaSS(generics.UpdateAPIView):
 # Actualizar Nível de Consecutivo de SS a EM: 
 class ActualizarConfiguracionSStoEM(generics.UpdateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2723,6 +2731,7 @@ class ActualizarConfiguracionSStoEM(generics.UpdateAPIView):
 #Actualizar valores configuración dentro de una configuración existente tipo EMPRESA (EM)
 class ActualizarConfiguracionTipoEM(generics.UpdateAPIView):
     serializer_class = ConsecPorNivelesTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2806,6 +2815,7 @@ class ActualizarConfiguracionTipoEM(generics.UpdateAPIView):
 #Actualizar valores configuración dentro de una configuración existente tipo SECCIÓN/SUBSECCIÓN (SS)
 class ActualizarConfiguracionSeccionSubseccion(generics.UpdateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionTipologiasDocumentalesActual]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -2974,6 +2984,7 @@ class ActualizarConfiguracionSeccionSubseccion(generics.UpdateAPIView):
 #1.No maneja Consecutivo
 class ConfiguracionAnioSiguienteNoConsecutivo(generics.UpdateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, (PermisoCrearRegistrarCambiosTipologiasProximoAnio|PermisoActualizarRegistrarCambiosTipologiasProximoAnio)]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -3033,6 +3044,7 @@ class ConfiguracionAnioSiguienteNoConsecutivo(generics.UpdateAPIView):
 #2.Consecutivo por Empresa
 class ConfiguracionAnioSiguienteEmpresa(generics.UpdateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, (PermisoCrearRegistrarCambiosTipologiasProximoAnio|PermisoActualizarRegistrarCambiosTipologiasProximoAnio)]
 
     def put(self, request, id_tipologia_doc):
         try:
@@ -3110,6 +3122,7 @@ class ConfiguracionAnioSiguienteEmpresa(generics.UpdateAPIView):
 
 class ConfiguracionAnioSiguienteSeccionSubseccion(generics.UpdateAPIView):
     serializer_class = ConfigTipologiasDocAgnoSerializer
+    permission_classes = [IsAuthenticated, (PermisoCrearRegistrarCambiosTipologiasProximoAnio|PermisoActualizarRegistrarCambiosTipologiasProximoAnio)]
 
     def put(self, request, id_tipologia_doc):
         try:

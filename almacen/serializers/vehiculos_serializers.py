@@ -4,7 +4,7 @@ from wsgiref.validate import validator
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVidaOtrosActivos, HojaDeVidaVehiculos, DocumentosVehiculo
 from transversal.models.base_models import Municipio, ApoderadoPersona, ClasesTerceroPersona, Personas
-from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
+from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, PersonasSolicitudViaje, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
 
 
 
@@ -47,7 +47,9 @@ class VehiculosAgendablesConductorSerializer(serializers.ModelSerializer):
         fields = '__all__'
         # Excluir el campo id_persona_que_asigna de la lista de campos requeridos
         extra_kwargs = {
-            'id_persona_que_asigna': {'required': False}
+            'id_persona_que_asigna': {'required': False},
+            'activo': {'required': False, 'default': True}  
+            
         }
 
 class PeriodoVehiculoArrendadoSerializer(serializers.ModelSerializer):
@@ -67,15 +69,40 @@ class UpdateArrendarVehiculoSerializer(serializers.ModelSerializer):
 
 class SolicitudViajeSerializer(serializers.ModelSerializer):
     cod_departamento = serializers.ReadOnlyField(source='cod_municipio.cod_departamento.cod_departamento')
+    nombre_persona_solicita = serializers.SerializerMethodField()
+    nombre_persona_responsable = serializers.SerializerMethodField()
 
     class Meta:
         model = SolicitudesViajes
         fields = '__all__'
 
+
+    def get_nombre_persona_solicita(self, obj):
+        nombre_persona_solicita = None
+        if obj.id_persona_solicita:
+            nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                            obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+            nombre_persona_solicita = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_solicita = nombre_persona_solicita if nombre_persona_solicita != "" else None
+        return nombre_persona_solicita
+    
+    def get_nombre_persona_responsable(self, obj):
+        nombre_persona_responsable = None
+        if obj.id_persona_responsable:
+            nombre_list = [obj.id_persona_responsable.primer_nombre, obj.id_persona_responsable.segundo_nombre,
+                            obj.id_persona_responsable.primer_apellido, obj.id_persona_responsable.segundo_apellido]
+            nombre_persona_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_responsable = nombre_persona_responsable if nombre_persona_responsable != "" else None
+        return nombre_persona_responsable
+
 class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
     placa = serializers.SerializerMethodField()
     marca = serializers.SerializerMethodField()
     nombre = serializers.SerializerMethodField()
+    asignable = serializers.SerializerMethodField()
+    tipo_vehiculo = serializers.CharField(source='get_cod_tipo_vehiculo_display', default= None)
+
+
     class Meta:
         model = HojaDeVidaVehiculos
         fields = '__all__'
@@ -106,20 +133,45 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
             nombre = obj.id_articulo.nombre
         
         return nombre
+    
+    def get_asignable(self, obj):
+        asignable = True
+        vehiculos_asignables = obj.vehiculosagendables_conductor_set.all()
+        if vehiculos_asignables:
+            asignable = False if vehiculos_asignables.filter(activo=True).first() else True 
+        return asignable
 
 
 class ClaseTerceroPersonaSerializer(serializers.ModelSerializer):
-    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.nombre', default=None)
-    email = serializers.ReadOnlyField(source='id_persona.tipo_documento.email', default=None)
-    email_empresarial = serializers.ReadOnlyField(source='id_persona.tipo_documento.email_empresarial', default=None)
+    tipo_documento = serializers.ReadOnlyField(source='id_persona.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento = serializers.ReadOnlyField(source='id_persona.numero_documento', default=None)
+    email = serializers.ReadOnlyField(source='id_persona.email', default=None)
+    email_empresarial = serializers.ReadOnlyField(source='id_persona.email_empresarial', default=None)
     telefono_empresa = serializers.ReadOnlyField(source='id_persona.telefono_empresa', default=None)
     telefono_celular = serializers.ReadOnlyField(source='id_persona.telefono_celular', default=None)
     fecha_nacimiento = serializers.ReadOnlyField(source='id_persona.fecha_nacimiento', default=None)
-    
-    
+    asignable = serializers.SerializerMethodField()
+    nombre_clase_tercero = serializers.ReadOnlyField(source='id_clase_tercero.nombre', default=None)
+    nombre_persona = serializers.SerializerMethodField()
     class Meta:
         model = ClasesTerceroPersona
         fields = '__all__'
+
+    def get_asignable(self, obj):
+        asignable = True
+        conductores_asignables = obj.id_persona.T072id_persona_conductor.all()
+        if conductores_asignables:
+            asignable = False if conductores_asignables.filter(activo=True).first() else True 
+        return asignable
+    
+    def get_nombre_persona(self, obj):
+        nombre_persona = None
+        if obj.id_persona:
+            nombre_list = [obj.id_persona.primer_nombre, obj.id_persona.segundo_nombre,
+                            obj.id_persona.primer_apellido, obj.id_persona.segundo_apellido]
+            nombre_persona = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona = nombre_persona if nombre_persona != "" else None
+        return nombre_persona
 
 class AsignacionVehiculoSerializer(serializers.ModelSerializer):
     tipo_vehiculo = serializers.CharField(source='id_hoja_vida_vehiculo.cod_tipo_vehiculo')
@@ -128,11 +180,11 @@ class AsignacionVehiculoSerializer(serializers.ModelSerializer):
     tipo_conductor = serializers.SerializerMethodField()
     nombre_conductor = serializers.SerializerMethodField()
     nro_documento_conductor = serializers.CharField(source='id_persona_conductor.numero_documento')
-    id_asignacion = serializers.IntegerField(source='id_vehiculo_conductor')  # Aquí incluimos el ID de la asignación
+    id_asignacion = serializers.IntegerField(source='id_vehiculo_conductor')  
 
     class Meta:
         model = VehiculosAgendables_Conductor
-        fields = ['id_asignacion', 'tipo_vehiculo', 'marca', 'placa', 'tipo_conductor', 'nombre_conductor', 'nro_documento_conductor', 'fecha_inicio_asignacion', 'fecha_final_asignacion']
+        fields = '__all__'
 
     def get_tipo_conductor(self, obj):
         # Verificar si el conductor es interno o externo
@@ -310,7 +362,6 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
     nombre_conductor = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_nombre', default=None)
     apellido_conductor = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_apellido', default=None)
 
-
     class Meta:
         model = ViajesAgendados
         fields = '__all__'
@@ -331,6 +382,8 @@ class ViajesAgendadosSolcitudSerializer(serializers.ModelSerializer):
     placa = serializers.SerializerMethodField()
     marca = serializers.SerializerMethodField()
     nombre = serializers.SerializerMethodField()
+    nombre_persona_autoriza = serializers.SerializerMethodField()
+
     class Meta:
         model = ViajesAgendados
         fields = '__all__'
@@ -377,6 +430,15 @@ class ViajesAgendadosSolcitudSerializer(serializers.ModelSerializer):
             nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.nombre
         
         return nombre
+    
+    def get_nombre_persona_autoriza(self, obj):
+        nombre_persona_autoriza = None
+        if obj.id_persona_autoriza:
+            nombre_list = [obj.id_persona_autoriza.primer_nombre, obj.id_persona_autoriza.segundo_nombre,
+                            obj.id_persona_autoriza.primer_apellido, obj.id_persona_autoriza.segundo_apellido]
+            nombre_persona_autoriza = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_autoriza = nombre_persona_autoriza if nombre_persona_autoriza != "" else None
+        return nombre_persona_autoriza
     
     
     
@@ -693,6 +755,27 @@ class BusquedaSolicitudViajeIdSerializer(serializers.ModelSerializer):
     nombre_estado_solicitud = serializers.CharField(source='get_estado_solicitud_display',read_only=True,default=None)
     class Meta:
         model = SolicitudesViajes
-        fields = ['id_solicitud_viaje','estado_solicitud']
+        fields = ['id_solicitud_viaje','estado_solicitud', 'nombre_estado_solicitud']
+
+class PersonasSolicitudViajeSerializer(serializers.ModelSerializer):
+    nombre_persona_viaja = serializers.SerializerMethodField()
+    tipo_documento_persona_viaja = serializers.ReadOnlyField(source='id_persona_viaja.tipo_documento.cod_tipo_documento', default=None)
+    numero_documento_persona_viaja = serializers.ReadOnlyField(source='id_persona_viaja.numero_documento', default=None)
+    celular_documento_persona_viaja = serializers.ReadOnlyField(source='id_persona_viaja.telefono_celular', default=None)
+    email_persona_viaja = serializers.ReadOnlyField(source='id_persona_viaja.email', default=None)
+
+
+    class Meta:
+        model = PersonasSolicitudViaje
+        fields = '__all__'
+
+    def get_nombre_persona_viaja(self, obj):
+        nombre_persona_viaja = None
+        if obj.id_persona_viaja:
+            nombre_list = [obj.id_persona_viaja.primer_nombre, obj.id_persona_viaja.segundo_nombre,
+                            obj.id_persona_viaja.primer_apellido, obj.id_persona_viaja.segundo_apellido]
+            nombre_persona_viaja = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_viaja = nombre_persona_viaja if nombre_persona_viaja != "" else None
+        return nombre_persona_viaja
 
     

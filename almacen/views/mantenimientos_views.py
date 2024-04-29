@@ -1,6 +1,7 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_almacen import PermisoActualizarEjecucionMantenimientoComputadores, PermisoActualizarEjecucionMantenimientoOtrosActivos, PermisoActualizarEjecucionMantenimientoVehiculos, PermisoActualizarProgramacionMantenimientoComputadores, PermisoActualizarProgramacionMantenimientoOtrosActivos, PermisoActualizarProgramacionMantenimientoVehiculos, PermisoAnularProgramacionMantenimientoComputadores, PermisoAnularProgramacionMantenimientoOtrosActivos, PermisoAnularProgramacionMantenimientoVehiculos, PermisoBorrarEjecucionMantenimientoComputadores, PermisoBorrarEjecucionMantenimientoOtrosActivos, PermisoBorrarEjecucionMantenimientoVehiculos, PermisoCrearEjecucionMantenimientoComputadores, PermisoCrearEjecucionMantenimientoOtrosActivos, PermisoCrearEjecucionMantenimientoVehiculos, PermisoCrearProgramacionMantenimientoComputadores, PermisoCrearProgramacionMantenimientoOtrosActivos, PermisoCrearProgramacionMantenimientoVehiculos
 from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
     ControlMantenimientosProgramadosGetListSerializer,
@@ -25,6 +26,7 @@ from almacen.models.bienes_models import (
 from almacen.models.hoja_de_vida_models import (
     HojaDeVidaVehiculos
 )
+from transversal.models.alertas_models import ConfiguracionClaseAlerta
 from transversal.models.personas_models import (
     Personas
 )
@@ -39,6 +41,8 @@ from datetime import datetime, date, timedelta
 import pytz
 import copy
 from holidays_co import get_colombia_holidays_by_year
+
+from transversal.views.alertas_views import AlertasProgramadasCreate
 
 class GetMantenimientosProgramadosById(generics.RetrieveAPIView):
     serializer_class=SerializerProgramacionMantenimientos
@@ -84,7 +88,7 @@ class GetMantenimientosProgramadosList(generics.ListAPIView):
 class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
     serializer_class = AnularMantenimientoProgramadoSerializer
     queryset = ProgramacionMantenimientos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoAnularProgramacionMantenimientoComputadores|PermisoAnularProgramacionMantenimientoVehiculos|PermisoAnularProgramacionMantenimientoOtrosActivos)]
     lookup_field = 'id_programacion_mtto'
 
     def patch(self, request, id_programacion_mtto):
@@ -138,6 +142,7 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
 class UpdateMantenimientoProgramado(generics.RetrieveUpdateAPIView):
     serializer_class = UpdateMantenimientoProgramadoSerializer
     queryset = ProgramacionMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoActualizarProgramacionMantenimientoComputadores|PermisoActualizarProgramacionMantenimientoVehiculos|PermisoActualizarProgramacionMantenimientoOtrosActivos)]
 
     def put(self, request, id_mantenimiento):
         mantenimiento = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_mantenimiento).first()
@@ -237,7 +242,7 @@ class GetMantenimientosEjecutadosById(generics.ListAPIView):
 class DeleteRegistroMantenimiento(generics.DestroyAPIView):
     serializer_class = SerializerRegistroMantenimientos
     queryset = RegistroMantenimientos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoBorrarEjecucionMantenimientoComputadores|PermisoBorrarEjecucionMantenimientoVehiculos|PermisoBorrarEjecucionMantenimientoOtrosActivos)]
 
     def delete(self, request, pk):
         registro_mantenimiento = RegistroMantenimientos.objects.filter(id_registro_mtto=pk).first()
@@ -287,7 +292,7 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
             raise NotFound('No se encontró ningún mantenimiento con el parámetro ingresado')
 class UpdateRegistroMantenimiento(generics.UpdateAPIView):
     serializer_class=SerializerUpdateRegistroMantenimientos
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarEjecucionMantenimientoComputadores|PermisoActualizarEjecucionMantenimientoVehiculos|PermisoActualizarEjecucionMantenimientoOtrosActivos)]
     queryset=RegistroMantenimientos.objects.all()
     
     def put (self,request,pk):
@@ -537,6 +542,7 @@ class ValidarFechasProgramacion(generics.CreateAPIView):
 class CreateProgramacionMantenimiento(generics.CreateAPIView):
     serializer_class = SerializerProgramacionMantenimientosPost
     queryset = ProgramacionMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoCrearProgramacionMantenimientoComputadores|PermisoCrearProgramacionMantenimientoVehiculos|PermisoCrearProgramacionMantenimientoOtrosActivos)]
     
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
@@ -631,10 +637,43 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                     raise ValidationError('La fecha de programación y la fecha de solicitud no pueden ser menores a la fecha de hoy')
                 
             i['fecha_generada'] = datetime.now()
-            
+            #raise ValidationError("SIUUU") 
             serializer = self.get_serializer(data=i)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            instance = serializer.save()
+            #GENERACION DE ALERTA
+            #VALIDACION DE TIPO DE ACTIVO
+            cod_alerta = ''
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'Veh':
+                cod_alerta = 'Alm_MtoVeh'
+                print("CAROOO")
+      
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'OAc':
+                cod_alerta = 'Alm_MtoAct'
+                print("OTROOO")
+      
+            if instance.id_articulo.cod_tipo_activo.cod_tipo_activo == 'Com':
+                cod_alerta = 'Alm_MtoCom'
+         
+
+            conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=cod_alerta).first()
+            if conf :
+                crear_alerta=AlertasProgramadasCreate()
+
+                data_alerta = {
+                'cod_clase_alerta':cod_alerta,
+                'dia_cumplimiento':instance.fecha_programada.day,
+                'mes_cumplimiento':instance.fecha_programada.month,
+                'age_cumplimiento':instance.fecha_programada.year,
+                'id_elemento_implicado':instance.id_programacion_mtto,
+                "tiene_implicado":False
+                }
+
+                response_alerta=crear_alerta.crear_alerta_programada(data_alerta)
+                if response_alerta.status_code!=status.HTTP_201_CREATED:
+                    return response_alerta
+
+
             # AUDITORIA CREACIÓN DE MANTENIMIENTO
             user_logeado = request.user.id_usuario
             dirip = Util.get_client_ip(request)
@@ -650,6 +689,8 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
                 'valores_actualizados': valores_actualizados
             }
             Util.save_auditoria(auditoria_data)
+
+            
         
         return Response({'success':True, 'detail':'Mantenimiento programado con éxtio'}, status=status.HTTP_200_OK)
    
@@ -657,6 +698,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
 class CreateRegistroMantenimiento(generics.CreateAPIView):
     serializer_class = SerializerRegistroMantenimientosPost
     queryset = RegistroMantenimientos.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoCrearEjecucionMantenimientoComputadores|PermisoCrearEjecucionMantenimientoVehiculos|PermisoCrearEjecucionMantenimientoOtrosActivos)]
     
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data

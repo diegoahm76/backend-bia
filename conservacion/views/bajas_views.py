@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoActualizarBajasHerramientasInsumosSemillas, PermisoAnularBajasHerramientasInsumosSemillas, PermisoCrearBajasHerramientasInsumosSemillas
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -40,7 +41,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 class CreateBajasVivero(generics.UpdateAPIView):
     serializer_class = BajasViveroPostSerializer
     queryset = BajasVivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearBajasHerramientasInsumosSemillas]
     serializador_items_bajas = ItemsBajasViveroPostSerializer
     
     def put(self, request):
@@ -168,7 +169,7 @@ class CreateBajasVivero(generics.UpdateAPIView):
 class ActualizarBajasVivero(generics.UpdateAPIView):
     serializer_class = BajasViveroPostSerializer
     queryset = BajasVivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarBajasHerramientasInsumosSemillas]
     serializador_items_bajas = ItemsBajasViveroPostSerializer
     serializador_actualizar_items_bajas = ItemsBajasActualizarViveroPostSerializer
     
@@ -344,7 +345,7 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
 class AnularBajasVivero(generics.UpdateAPIView):
     serializer_class = BajasViveroPostSerializer
     queryset = BajasVivero.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularBajasHerramientasInsumosSemillas]
     serializador_items_bajas = ItemsBajasViveroPostSerializer
     
     def put(self, request, id_baja_anular):

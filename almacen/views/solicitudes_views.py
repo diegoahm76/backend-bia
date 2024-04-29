@@ -1,5 +1,6 @@
 from almacen.models.bienes_models import CatalogoBienes
 from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
+from seguridad.permissions.permissions_almacen import PermisoActualizarAprobacionSolicitudesBienes, PermisoActualizarRechazoSolicitudesBienesAlmacen, PermisoActualizarSolicitudConsumo, PermisoAnularSolicitudConsumo, PermisoAnularSolicitudConsumoViveros, PermisoCrearAprobacionSolicitudesBienes, PermisoCrearRechazoSolicitudesBienesAlmacen, PermisoCrearSolicitudConsumo
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
@@ -261,6 +262,7 @@ def get_orgchart_tree(request,pk):
 class CreateSolicitud(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoCrearSolicitudConsumo|PermisoActualizarSolicitudConsumo)]
     
     serializer_item_solicitud = CrearItemsSolicitudConsumiblePostSerializer
     
@@ -573,11 +575,13 @@ class GetNroDocumentoSolicitudesBienesConsumo(generics.ListAPIView):
     
     def get(self, request):
         nro_solicitud = SolicitudesConsumibles.objects.filter(es_solicitud_de_conservacion=False).order_by('nro_solicitud_por_tipo').last()
-        return Response({'success':True,'Número de solicitud':nro_solicitud.nro_solicitud_por_tipo + 1, },status=status.HTTP_200_OK)
+        nro_solicitud_value = nro_solicitud.nro_solicitud_por_tipo + 1 if nro_solicitud else 1
+        return Response({'success':True,'Número de solicitud':nro_solicitud_value, },status=status.HTTP_200_OK)
     
 class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoCrearAprobacionSolicitudesBienes|PermisoActualizarAprobacionSolicitudesBienes)]
     
     def put(self, request, id_solicitud,*args, **kwargs):
         datos_ingresados = request.data
@@ -619,6 +623,7 @@ class SolicitudesPendientesDespachar(generics.ListAPIView):
 class RechazoSolicitudesBienesAlmacen(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoCrearRechazoSolicitudesBienesAlmacen|PermisoActualizarRechazoSolicitudesBienesAlmacen)]
     
     def put(self, request, id_solicitud,*args, **kwargs):
         datos_ingresados = request.data
@@ -653,6 +658,7 @@ class RechazoSolicitudesBienesAlmacen(generics.UpdateAPIView):
 class AnularSolicitudesBienesConsumo(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
     queryset=SolicitudesConsumibles.objects.all()
+    permission_classes = [IsAuthenticated, (PermisoAnularSolicitudConsumo|PermisoAnularSolicitudConsumoViveros)]
     
     def put(self, request, id_solicitud,*args, **kwargs):
         datos_ingresados = request.data

@@ -10,6 +10,7 @@ from datetime import datetime,date,timedelta
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recurso_hidrico.models.bibliotecas_models import Instrumentos
+from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarContenidoProgramaticoPORH, PermisoActualizarRegistroAvancesProyectos, PermisoBorrarContenidoProgramaticoPORH, PermisoCrearContenidoProgramaticoPORH, PermisoCrearRegistroAvancesProyectos
 from seguridad.utils import Util
 
 from recurso_hidrico.models.programas_models import ActividadesProyectos, AvancesProyecto, EvidenciasAvance, ProgramasPORH, ProyectosPORH
@@ -18,7 +19,7 @@ from django.db.models import Q
 
 class RegistroProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearContenidoProgramaticoPORH]
     queryset = ProgramasPORH.objects.all()
     
     def obtener_repetido(self,lista_archivos):
@@ -188,7 +189,7 @@ class RegistroProgramaPORH(generics.CreateAPIView):
 class CreateProgramaPORH(generics.CreateAPIView):
     serializer_class = RegistroProgramaPORHSerializer
     queryset = ProgramasPORH.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearContenidoProgramaticoPORH]
     def post(self, request, *args, **kwargs):
         
         # data = request.data
@@ -211,7 +212,8 @@ class CreateProgramaPORH(generics.CreateAPIView):
 class CreateProyectosPORH(generics.CreateAPIView):
     serializer_class = ProyectosPORHSerializer
     queryset = ProyectosPORH.objects.all()
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRegistroAvancesProyectos]
+
     def post(self, request, *args, **kwargs):
         
         data = request.data
@@ -315,7 +317,7 @@ class BusquedaAvanzada(generics.ListAPIView):
 class ActualizarPrograma(generics.UpdateAPIView):  
         serializer_class = ProgramasporPORHUpdateSerializers
         queryset = ProgramasPORH.objects.all()
-        permission_classes = [IsAuthenticated]
+        permission_classes = [IsAuthenticated, PermisoActualizarContenidoProgramaticoPORH]
         
         def put(self,request,pk):
             data = request.data
@@ -384,7 +386,7 @@ class ActualizarPrograma(generics.UpdateAPIView):
 class EliminarPrograma(generics.DestroyAPIView):
     serializer_class = RegistroProgramaPORHSerializer
     queryset = ProgramasPORH.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarContenidoProgramaticoPORH]
     
     def delete(self,request,pk):
         
@@ -424,7 +426,7 @@ class EliminarPrograma(generics.DestroyAPIView):
 class ActualizarProyectos(generics.UpdateAPIView):
     serializer_class = ActualizarProyectosSerializers
     queryset = ProyectosPORH.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRegistroAvancesProyectos]
     
     def put(self,request,pk):
         

@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.db.models import Q, F
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
+from seguridad.permissions.permissions_gestor import PermisoActualizarPermisosSeriesDocumentales, PermisoCrearPermisosSeriesDocumentales
 from seguridad.utils import Util
 from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
@@ -259,7 +260,7 @@ class UnidadesPermisosPutView(generics.UpdateAPIView):
     serializer_class_post_denegacion = PermisosPostDenegacionSerializer
     serializer_class_put_denegacion = PermisosPutDenegacionSerializer
     queryset = PermisosUndsOrgActualesSerieExpCCD.objects.filter()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearPermisosSeriesDocumentales|PermisoActualizarPermisosSeriesDocumentales)]
     
     def put_restricciones(self, request, id_cat_serie_und):
         data = request.data['restricciones']

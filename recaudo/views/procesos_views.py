@@ -32,10 +32,19 @@ import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework.generics import get_object_or_404
 
+from seguridad.permissions.permissions_recaudo import PermisoActualizarEtapasProcesoRentas, PermisoCrearFlujoProcesoRecaudo
+
 class EtapasProcesoView(generics.ListAPIView):
     queryset = EtapasProceso.objects.all()
     serializer_class = EtapasProcesoSerializer
     #permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
+        method = self.request.method
+        if method == 'POST':
+            permissions.append(PermisoActualizarEtapasProcesoRentas())
+        return permissions
 
     def get(self, request):
         queryset = self.get_queryset()
@@ -155,6 +164,13 @@ class FlujoProcesoView(generics.ListAPIView):
     serializer_class = FlujoProcesoSerializer
     #permission_classes = [IsAuthenticated]
 
+    def get_permissions(self):
+        permissions = [IsAuthenticated()]
+        method = self.request.method
+        if method == 'POST':
+            permissions.append(PermisoCrearFlujoProcesoRecaudo())
+        return permissions
+
     def get(self, request):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
@@ -216,7 +232,7 @@ class ValoresProcesoView(generics.ListAPIView):
 
 class ActualizarEtapaProceso(generics.ListAPIView):
     serializer_class = ProcesosSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEtapasProcesoRentas]
 
     def get(self, request, proceso):
         procesoFilter = Procesos.objects.filter(pk=proceso).filter(fin__isnull=True)
@@ -486,7 +502,7 @@ class CategoriasEtapasFiltradoView(generics.ListAPIView):
 class DeleteEtapaView(generics.ListAPIView):
     queryset = EtapasProceso.objects.all()
     serializer_class = EtapasProcesoSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEtapasProcesoRentas]
 
     def get(self, request, etapa):
         queryset = EtapasProceso.objects.filter(id=etapa)

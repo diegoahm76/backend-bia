@@ -21,6 +21,8 @@ class InventarioSerializer(serializers.ModelSerializer):
     estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
+    cantidad = serializers.SerializerMethodField()
+    ubicacion = serializers.SerializerMethodField()
 
     def get_valor_unitario(self, obj):
         id_bien = obj.id_bien
@@ -34,10 +36,22 @@ class InventarioSerializer(serializers.ModelSerializer):
         id_item_entrada_almacen = item_entrada.id_item_entrada_almacen if item_entrada else None
         return id_item_entrada_almacen
 
+    def get_cantidad(self, obj):
+        return 1  
+
+    def get_ubicacion(self, obj):
+        if obj.ubicacion_en_bodega:
+            return 'En Bodega'
+        elif obj.ubicacion_asignado:
+            return 'Asignado a Funcionario'
+        elif obj.ubicacion_prestado:
+            return 'Prestado a Funcionario'
+        else:
+            return 'Ubicación desconocida'
+
     class Meta:
         model = Inventario
         fields = '__all__'
-
 
 
 
@@ -75,8 +89,7 @@ class AnexosOpcionalesDocsAlmaSerializer(serializers.ModelSerializer):
 class ArchivosDigitalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = ArchivosDigitales
-        fields = '__all__'  # Agrega aquí los campos que necesites para los archivos digitales
-
+        fields = '__all__'  
 class BajaActivosSerializer(serializers.ModelSerializer):
     class Meta:
         model = BajaActivos
@@ -86,7 +99,7 @@ class BajaActivosSerializer(serializers.ModelSerializer):
 
 class AnexosDocsAlmaSerializer(serializers.ModelSerializer):
     id_baja_activo = BajaActivosSerializer()
-    id_archivo_digital = ArchivosDigitalesSerializer()  # Agrega el serializador para los archivos digitales
+    id_archivo_digital = ArchivosDigitalesSerializer()  
 
     class Meta:
         model = AnexosDocsAlma
@@ -163,19 +176,7 @@ class BusquedaSolicitudActivoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SolicitudesActivos
-        fields = (
-            'id_solicitud_activo',
-            'fecha_solicitud',
-            'motivo',
-            'estado_solicitud',
-            'id_persona_solicita',
-            'primer_nombre_persona_solicita',
-            'primer_apellido_persona_solicita',
-            'id_funcionario_resp_unidad',
-            'primer_nombre_funcionario_resp_unidad',
-            'primer_apellido_funcionario_resp_unidad',
-            'numero_activos',  # Campo adicional para el cálculo del número de activos
-        )
+        fields = '__all__'
 
     def get_numero_activos(self, instance):
         # Obtener el número de activos relacionados con esta solicitud
@@ -253,8 +254,15 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
     tipo_solicitud = serializers.SerializerMethodField()
     numero_activos = serializers.SerializerMethodField()
     id_funcionario_resp_asignado = serializers.SerializerMethodField()
+    primer_nombre_funcionario_resp_asignado = serializers.SerializerMethodField()
+    primer_apellido_funcionario_resp_asignado = serializers.SerializerMethodField()
     tipo_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
     numero_documento_funcionario_resp_asignado = serializers.SerializerMethodField()
+    id_persona_operario_asignado = serializers.SerializerMethodField()
+    primer_nombre_persona_operario_asignado = serializers.SerializerMethodField()
+    primer_apellido_persona_operario_asignado = serializers.SerializerMethodField()
+    tipo_documento_persona_operario_asignado = serializers.SerializerMethodField()
+    numero_documento_persona_operario_asignado = serializers.SerializerMethodField()
     class Meta:
         model = DespachoActivos
         fields = '__all__'
@@ -289,10 +297,23 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         # Obtener el número de activos relacionados con esta solicitud
         return ItemsDespachoActivos.objects.filter(id_despacho_activo=instance).count()
     
+    #Persona_Responsable
     def get_id_funcionario_resp_asignado(self, obj):
         asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
         if asignacion:
             return asignacion.id_funcionario_resp_asignado.id_persona
+        return None
+    
+    def get_primer_nombre_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.primer_nombre
+        return None
+    
+    def get_primer_apellido_funcionario_resp_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_funcionario_resp_asignado.primer_apellido
         return None
     
     def get_tipo_documento_funcionario_resp_asignado(self, obj):
@@ -306,7 +327,37 @@ class DespachoActivosSerializer(serializers.ModelSerializer):
         if asignacion:
             return asignacion.id_funcionario_resp_asignado.numero_documento
         return None
-        
+    
+    #Persona_Operario
+    def get_id_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.id_persona
+        return None
+    
+    def get_primer_nombre_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.primer_nombre
+        return None
+    
+    def get_primer_apellido_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.primer_apellido
+        return None
+    
+    def get_tipo_documento_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.tipo_documento.cod_tipo_documento
+        return None
+    
+    def get_numero_documento_persona_operario_asignado(self, obj):
+        asignacion = AsignacionActivos.objects.filter(id_despacho_asignado=obj.id_despacho_activo).first()
+        if asignacion:
+            return asignacion.id_persona_operario_asignado.numero_documento
+        return None    
 
     
 
@@ -370,6 +421,8 @@ class DevolucionActivosSerializer(serializers.ModelSerializer):
             nombre_persona_anulacion = ' '.join(item for item in nombre_list if item is not None)
             nombre_persona_anulacion = nombre_persona_anulacion if nombre_persona_anulacion != "" else None
         return nombre_persona_anulacion
+    
+    
 
 class EntradaAlmacenPersonaTerceroSerializer(serializers.ModelSerializer):
     nombre_proveedor = serializers.SerializerMethodField()

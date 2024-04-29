@@ -2,6 +2,9 @@ from django.db import models
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 #from django.contrib.gis.db import models
 from transversal.models.personas_models import Personas
+from transversal.models.organigrama_models import UnidadesOrganizacionales
+from gestion_documental.models.expedientes_models import ExpedientesDocumentales
+from tramites.models.tramites_models import SolicitudesTramites
 
 class Secciones(models.Model):
     id_seccion = models.AutoField(primary_key=True, editable=False, db_column="T605IdSeccion")
@@ -275,3 +278,22 @@ class ArchivosInstrumento(models.Model):
         verbose_name = 'archivo instrumento'
         verbose_name_plural = 'archivos instrumento'
         unique_together = ('id_instrumento', 'nombre_archivo',)
+
+class AccionesCorrectivas(models.Model):
+    id_accion = models.AutoField(primary_key=True, db_column='T626IdAccion')
+    nombre_accion = models.CharField(max_length=255, db_column='T626nombreAccion')
+    descripcion = models.CharField(max_length=255, db_column='T626descripcion')
+    observacion_accion = models.CharField(max_length=255, db_column='T626observacionAccion')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T626Id_Expediente')
+    id_tramite = models.ForeignKey(SolicitudesTramites, on_delete=models.CASCADE, db_column='T626Id_Tramite')
+    id_persona_titular = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T626Id_PersonaTitular')
+    cedula_catastral = models.CharField(max_length=255, null=True, blank=True, db_column='T626cedulaCatastral')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T626Id_UnidadOrganizacional')
+    fecha_creacion = models.DateTimeField(db_column='T626fechaCreacion')
+    cumplida = models.BooleanField(default=False, db_column='T626cumplida')
+    fecha_cumplimiento = models.DateField(null=True, blank=True, db_column='T626fechaCumplimiento')
+
+    class Meta:
+        db_table = 'T626AccionesCorrectivas'
+        verbose_name = 'accion correctiva'
+        verbose_name_plural = 'acciones correctivas'

@@ -6,6 +6,7 @@ from gestion_documental.views import bandeja_tareas_views as views
 from gestion_documental.views import bandeja_tareas_otros_views as views_otros
 from gestion_documental.views import bandeja_tareas_tramites_views as views_tramites
 from gestion_documental.views import bandeja_tareas_opas_views as views_opas
+from pathlib import Path
 
 urlpatterns = [
 
@@ -84,7 +85,8 @@ urlpatterns = [
     path('opa/requerimiento/get/<str:tra>/', views_opas.RequerimientosPQRSDFGetByTramiteOPA.as_view(), name='get-requerimiento-opa'),
     path('opa/requerimiento/tramite/get/<str:tra>/', views_opas.RequerimientosTramiteGetByTramiteOPA.as_view(), name='get-requerimiento-opa-tramite'),
     path('opa/requerimiento/anexo/get/<str:re>/', views_opas.AnexosRequerimientoGetByRequerimiento.as_view(), name='get-anexos-requerimiento'),
-
+    
+    path('opa/expediente/create/', views_opas.CrearExpedienteOPA.as_view(), name='crear-expediente-opa'),
 
     path('opa/respuesta/create/', views_opas.RespuestaOpaTramiteCreate.as_view(), name='crear-respuesta-opa-tramite'),
     path('opa/respuesta/get/<str:tra>/', views_opas.RespuestaOpaGet.as_view(), name='get-respuesta-opa-tramite'),
@@ -96,5 +98,10 @@ urlpatterns = [
     #Archivar Otros
 
     path('archivar/otros/create/', views.ArchiarSolicitudOtros.as_view(), name='crear-archivar-otros'),
+
+
+    #acta_inicio
+    path('4 ', views_opas.ActaInicioCreate.as_view(), name='crear-acta-inicio'),
+
     
 ]

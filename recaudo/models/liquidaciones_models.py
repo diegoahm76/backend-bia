@@ -41,6 +41,8 @@ class OpcionesLiquidacionBase(models.Model):
     funcion = models.TextField(db_column='T402funcion')
     variables = models.JSONField(db_column='T402variables')
     bloques = models.TextField(db_column='T402bloques')
+    tipo_renta=models.CharField(max_length=255, db_column='T402tipoRenta',null=True,default=True)
+    tipo_cobro=models.CharField(max_length=255, db_column='T402tipoCobro', null=True, default=True)
 
     class Meta:
         db_table = "T402OpcionesLiquidacionBase"

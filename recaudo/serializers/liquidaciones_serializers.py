@@ -10,6 +10,15 @@ from recaudo.models.liquidaciones_models import (
 
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
+    usada = serializers.SerializerMethodField()
+
+    def get_usada(self, obj):
+        detalles_liquidacion = DetalleLiquidacionBase.objects.filter(id_opcion_liq=obj.id)
+        if detalles_liquidacion.exists():
+            return True
+        else:
+            return False
+
     class Meta:
         model = OpcionesLiquidacionBase
         fields = '__all__'
@@ -18,7 +27,7 @@ class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
 class OpcionesLiquidacionBasePutSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpcionesLiquidacionBase
-        fields = ('nombre', 'estado', 'version', 'funcion', 'variables', 'bloques')
+        fields = ('nombre', 'estado', 'version', 'funcion', 'variables', 'bloques','tipo_cobro','tipo_renta')
 
 
 class DeudoresSerializer(serializers.ModelSerializer):
@@ -55,6 +64,25 @@ class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
     class Meta:
         model = LiquidacionesBase
         fields = '__all__'
+
+class LiquidacionesBasePostMasivoSerializer(serializers.ModelSerializer):
+    id_expediente = serializers.ListField(child=serializers.IntegerField(), write_only=True)  
+
+    class Meta:
+        model = LiquidacionesBase
+        fields = ( 'id_expediente','id', 'id_deudor', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'estado', 'ciclo_liquidacion', 'valor')
+
+    def create(self, validated_data):
+        id_expedientes = validated_data.pop('id_expediente', [])
+        instances = []
+        for id_expediente in id_expedientes:
+            expediente_instance = Expedientes.objects.get(pk=id_expediente)
+            validated_data['id_expediente'] = expediente_instance  # Reemplazamos la lista de IDs con la instancia del expediente
+            instance = LiquidacionesBase.objects.create(**validated_data)
+            expediente_instance.estado = 'guardado'
+            expediente_instance.save()
+            instances.append(instance)
+        return instances
 
 
 class DetallesLiquidacionBasePostSerializer(serializers.ModelSerializer):

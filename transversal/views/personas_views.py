@@ -13,6 +13,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from gestion_documental.serializers.ventanilla_serializers import AutorizacionNotificacionesSerializer
 from gestion_documental.views.bandeja_tareas_views import BandejaTareasPersonaCreate
 
+from seguridad.permissions.permissions_seguridad import PermisoActualizarAutorizacionNotificacionesCuentaPropia
+from seguridad.permissions.permissions_transversal import PermisoActualizarAdministracionPersonas, PermisoActualizarCargos, PermisoActualizarDatosPersonalesModificacionRestringida, PermisoBorrarCargos, PermisoCrearAdministracionPersonas, PermisoCrearCargos
 from seguridad.serializers.user_serializers import RegisterExternoSerializer
 from django.shortcuts import render
 from rest_framework import generics
@@ -27,20 +29,14 @@ from rest_framework import status
 from django.db.models import Q
 from datetime import datetime
 #from dateutil.parser import parse
-from seguridad.permissions.permissions_user import PermisoActualizarExterno, PermisoActualizarInterno
 from seguridad.views.user_views import RegisterExternoView
-from seguridad.permissions.permissions_user_over_person import (
-    PermisoActualizarPersona, 
-    PermisoActualizarTipoDocumento, 
+from seguridad.permissions.permissions_transversal import (
+    PermisoActualizarTiposDocumentosID, 
     PermisoBorrarEstadoCivil,
-    PermisoBorrarTipoDocumento,
-    PermisoConsultarEstadoCivil, 
-    PermisoConsultarPersona,
-    PermisoConsultarTipoDocumento,
-    PermisoCrearEstadoCivil, 
-    PermisoCrearPersona, 
+    PermisoBorrarTiposDocumentosID,
+    PermisoCrearEstadoCivil,
     PermisoActualizarEstadoCivil,
-    PermisoCrearTipoDocumento
+    PermisoCrearTiposDocumentosID
     )
 from transversal.models.base_models import (
     Cargos,
@@ -188,7 +184,7 @@ class GetTipoDocumentoById(generics.RetrieveAPIView):
 
 class DeleteTipoDocumento(generics.RetrieveDestroyAPIView):
     serializer_class = TipoDocumentoSerializer
-    permission_classes = [IsAuthenticated, PermisoBorrarTipoDocumento]
+    permission_classes = [IsAuthenticated, PermisoBorrarTiposDocumentosID]
     queryset = TipoDocumento.objects.all()
     
     def delete(self, request, pk):
@@ -208,14 +204,14 @@ class DeleteTipoDocumento(generics.RetrieveDestroyAPIView):
 
 class RegisterTipoDocumento(generics.CreateAPIView):
     serializer_class = TipoDocumentoPostSerializer
-    permission_classes = [IsAuthenticated, PermisoCrearTipoDocumento]
+    permission_classes = [IsAuthenticated, PermisoCrearTiposDocumentosID]
     queryset = TipoDocumento.objects.all()
 
 
 class UpdateTipoDocumento(generics.RetrieveUpdateAPIView):
     serializer_class = TipoDocumentoPutSerializer
     queryset = TipoDocumento.objects.all()
-    permission_classes = [IsAuthenticated, PermisoActualizarTipoDocumento]
+    permission_classes = [IsAuthenticated, PermisoActualizarTiposDocumentosID]
 
     def put(self, request, pk):
         tipo_documento = TipoDocumento.objects.filter(cod_tipo_documento=pk).first()
@@ -344,7 +340,7 @@ class UpdatePersonaNaturalByself(generics.RetrieveUpdateAPIView):
     
 class UpdatePersonaNaturalAdminPersonas(generics.UpdateAPIView):
     serializer_class = PersonaNaturalUpdateAdminSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministracionPersonas]
     queryset = Personas.objects.all()
     
     def put(self,request,id_persona):
@@ -560,7 +556,7 @@ class RegisterPersonaJuridicaAdmin(generics.CreateAPIView):
 
 class RegisterPersonaNaturalAdmin(generics.CreateAPIView):
     serializer_class = PersonaNaturalPostAdminSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministracionPersonas]
 
     def post(self, request):
         
@@ -877,6 +873,7 @@ class GetCargosList(generics.ListAPIView):
 class RegisterCargos(generics.CreateAPIView):
     serializer_class =  CargosSerializer
     queryset = Cargos.objects.all()
+    permission_classes = [IsAuthenticated, PermisoCrearCargos]
 
     def post(self, request):
         data = request.data
@@ -888,6 +885,7 @@ class RegisterCargos(generics.CreateAPIView):
 class UpdateCargos(generics.UpdateAPIView):
     serializer_class = CargosSerializer
     queryset = Cargos.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarCargos]
 
     def put(self, request, pk):
         cargo = Cargos.objects.filter(id_cargo=pk).first()
@@ -906,6 +904,7 @@ class UpdateCargos(generics.UpdateAPIView):
 class DeleteCargo(generics.DestroyAPIView):
     serializer_class = CargosSerializer
     queryset = Cargos.objects.all()
+    permission_classes = [IsAuthenticated, PermisoBorrarCargos]
 
     def delete(self, request, pk):
         cargo = Cargos.objects.filter(id_cargo=pk).first()
@@ -1043,7 +1042,7 @@ class BusquedaHistoricoCambios(generics.ListAPIView):
 
 class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
     serializer_class = UpdatePersonasNaturalesSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarDatosPersonalesModificacionRestringida]
     queryset = Personas.objects.filter(tipo_persona='N')
 
     def put(self, request, id_persona):
@@ -1115,7 +1114,7 @@ class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
 
 class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
     serializer_class = UpdatePersonasJuridicasSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarDatosPersonalesModificacionRestringida]
     queryset = Personas.objects.filter(tipo_persona='J')
 
     def put(self, request, id_persona):
@@ -1216,6 +1215,7 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         
         #USUARIO
         data['creado_por_portal'] = True
+        data['is_active'] = True
         data['persona'] = serializador.id_persona
         
         serializer = self.serializer_class_usuario(data=data)
@@ -1273,18 +1273,18 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         Util.save_auditoria(auditoria_data)
 
 
-        token = RefreshToken.for_user(serializer_response)
+        # token = RefreshToken.for_user(serializer_response)
 
-        current_site=get_current_site(request).domain
+        # current_site=get_current_site(request).domain
 
-        relativeLink= reverse('verify')
-        absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+        # relativeLink= reverse('verify')
+        # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
 
-        subject = "Verifica tu usuario"
-        template = "activación-de-usuario.html"
+        subject = "Usuario registrado exitosamente"
+        template = "email-verified.html"
 
-        Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
+        Util.notificacion(serializador,subject,template)
         #CREACION DE BANDEJA DE ALERTAS
         crear_bandeja=BandejaAlertaPersonaCreate()
 
@@ -1349,6 +1349,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             serializador.save()
             
             data['creado_por_portal'] = True
+            data['is_active'] = True
             data['persona'] = serializador.id_persona
             
             serializer = self.serializer_class_usuario(data=data)
@@ -1394,14 +1395,14 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
                 'descripcion': descripcion,
                 'valores_creados_detalles': valores_creados_detalles
             }
-            Util.save_auditoria_maestro_detalle(auditoria_data)
+            # Util.save_auditoria_maestro_detalle(auditoria_data)
             
-            token = RefreshToken.for_user(serializer_response)
+            # token = RefreshToken.for_user(serializer_response)
 
-            current_site=get_current_site(request).domain
+            # current_site=get_current_site(request).domain
 
-            relativeLink= reverse('verify')
-            absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+            # relativeLink= reverse('verify')
+            # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
             
             subject = "Verifica tu usuario"
             template = "activación-de-usuario.html"
@@ -1421,7 +1422,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
                 return respuesta_bandeja
 
             #FIN CREACION DE BANDEJA DE TAREAS
-            Util.notificacion(serializador,subject,template,absurl=absurl,email=serializador.email)
+            Util.notificacion(serializador,subject,template)
         
             return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
     
@@ -1434,6 +1435,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
 class AutorizacionNotificacionesPersonas(generics.RetrieveUpdateAPIView):
     serializer_class = AutorizacionNotificacionesSerializer
     queryset = Personas.objects.all()
+    permission_classes = [IsAuthenticated, PermisoActualizarAutorizacionNotificacionesCuentaPropia]
 
     def put(self, request):
         persona_ = self.request.user.id_usuario

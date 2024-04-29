@@ -33,6 +33,7 @@ from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQ
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.serializers.expedientes_serializers import ArchivoSoporteSerializer, DocsIndiceElectronicoSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from seguridad.permissions.permissions_gestor import PermisoCrearBandejaTareas, PermisoCrearRequerimientoPQRSDF
 from seguridad.utils import Util
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -43,7 +44,7 @@ from rest_framework.exceptions import ValidationError,NotFound
 
 class BandejaTareasPersonaCreate(generics.CreateAPIView):
     serializer_class = BandejaTareasPersonaCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearBandejaTareas]
     queryset = BandejaTareasPersona.objects.all()
 
 
@@ -658,7 +659,7 @@ class RequerimientoSobrePQRSDFCreate(generics.CreateAPIView):
     vista_anexos = AnexosCreate()
     vista_archivos = ArchivosDgitalesCreate()
     vista_meta_dato = MetadatosAnexosTmpCreate()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRequerimientoPQRSDF]
     @transaction.atomic
     def post(self, request):
         fecha_actual =datetime.now()

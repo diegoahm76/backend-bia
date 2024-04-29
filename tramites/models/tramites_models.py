@@ -371,7 +371,7 @@ class ActosAdministrativos(models.Model):
     id_acto_administrativo = models.AutoField(primary_key=True, db_column='T294IdActoAdministrativo')
     id_solicitud_tramite = models.ForeignKey(SolicitudesTramites, on_delete=models.CASCADE, db_column='T294Id_SolicitudTramite')
     id_tipo_acto_administrativo = models.ForeignKey('TiposActosAdministrativos', on_delete=models.CASCADE, db_column='T294Id_TipoActoAdministrativo')
-    #numero_acto_administrativo = models.CharField(null=True, blank=True, max_length=50, db_column='T294numeroActoAdministrativo')
+    numero_acto_administrativo = models.CharField(null=True, blank=True, max_length=50, db_column='T294numeroActoAdministrativo')
     fecha_acto_administrativo = models.DateTimeField(null=True, blank=True, db_column='T294fechaActoAdministrativo')
     id_consec_por_nivel_tipologias_doc_agno = models.ForeignKey(ConsecPorNivelesTipologiasDocAgno, on_delete=models.CASCADE, db_column='T294Id_ConsecPorNivel_TipologiasDocAgno')
     id_notificacion = models.IntegerField(db_column='T294Id_Notificacion')

@@ -487,6 +487,41 @@ class CausasOAnomaliasSerializer(serializers.ModelSerializer):
         fields = ('id_causa_o_anomalia', 'nombre')
 
 
+class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentosDeArchivoExpediente
+        fields = '__all__'
+
+class ConstanciaNotificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificacionesCorrespondencia
+        fields = ('id_notificacion_correspondencia', 
+                  'fecha_notificacion',
+                  'hora_notificacion',
+                  'id_persona_notificada',
+                  'id_persona_notifica',
+                  'id_registro_notificacion_correspondencia',
+                  'id_tipo_notificacion_correspondencia',
+                  'nombre_tipo_notificacion',
+                  'id_causa_o_anomalia',
+                  'observaciones',
+                  'id_estado_actual_notificacion_correspondencia')
+        
+
+class GeneradorDocumentosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificacionesCorrespondencia
+        fields = ('id_notificacion_correspondencia', 
+                  'fecha_notificacion',
+                  'hora_notificacion',
+                  'id_persona_notificada',
+                  'id_persona_notifica',
+                  'id_registro_notificacion_correspondencia',
+                  'id_tipo_notificacion_correspondencia',
+                  'id_causa_o_anomalia',
+                  'observaciones',
+                  'id_estado_actual_notificacion_correspondencia')
+
 # class Algo(serializers.ModelSerializer):
 #     class Meta:
 #         model = TiposDocumentos
@@ -541,3 +576,6 @@ class CausasOAnomaliasSerializer(serializers.ModelSerializer):
 #                   }
 #             ]
 #         }
+
+
+

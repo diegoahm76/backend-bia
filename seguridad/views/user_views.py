@@ -10,8 +10,8 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.trd_serializers import FormatosTiposMedioGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from seguridad.permissions.permissions_user import PermisoCrearUsuarios, PermisoActualizarUsuarios, PermisoActualizarInterno, PermisoActualizarExterno
-from seguridad.permissions.permissions_roles import PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario
+from seguridad.permissions.permissions_seguridad import PermisoCrearAdministracionUsuarios, PermisoActualizarAdministracionUsuarios, PermisoActualizarAdministracionDatosCuentaPropiaUsuarioInterno, PermisoActualizarAdministracionDatosCuentaPropiaUsuarioExterno
+from seguridad.permissions.permissions_seguridad import PermisoDelegarRolSuperUsuario, PermisoConsultarDelegacionSuperUsuario
 from rest_framework.response import Response
 from seguridad.renderers.user_renderers import UserRender
 from seguridad.models import *
@@ -65,7 +65,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 class UpdateUserProfile(generics.UpdateAPIView):
     serializer_class = UserPutSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoActualizarAdministracionDatosCuentaPropiaUsuarioInterno|PermisoActualizarAdministracionDatosCuentaPropiaUsuarioExterno)]
 
     def get_object(self):
         return self.request.user
@@ -180,7 +180,7 @@ class UpdateUserProfile(generics.UpdateAPIView):
 class UpdateUser(generics.RetrieveUpdateAPIView):
     serializer_class = UserPutAdminSerializer
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarAdministracionUsuarios]
 
     def patch(self, request, pk):
         data = request.data
@@ -554,7 +554,7 @@ def updateUserAdmin(request, pk):
 class AsignarRolSuperUsuario(generics.CreateAPIView):
     serializer_class = UsuarioRolesSerializers
     queryset = UsuariosRol.objects.all()
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdminUser, PermisoDelegarRolSuperUsuario]
 
     def post(self, request, id_persona):
         user_logeado = request.user.id_usuario
@@ -691,7 +691,7 @@ class UnBlockUserPassword(generics.GenericAPIView):
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAdministracionUsuarios]
 
     def post(self, request):
         data = request.data
@@ -848,6 +848,7 @@ class RegisterExternoView(generics.CreateAPIView):
             raise PermissionDenied('No puede contener espacios en el nombre de usuario')
         
         user['creado_por_portal'] = True
+        user['is_active'] = True
         
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
@@ -891,19 +892,19 @@ class RegisterExternoView(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        token = RefreshToken.for_user(serializer_response)
+        # token = RefreshToken.for_user(serializer_response)
 
-        current_site=get_current_site(request).domain
+        # current_site=get_current_site(request).domain
 
-        relativeLink= reverse('verify')
-        absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
+        # relativeLink= reverse('verify')
+        # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
         
-        subject = "Verifica tu usuario"
-        template = "activación-de-usuario.html"
+        subject = "Usuario registrado exitosamente"
+        template = "email-verified.html"
 
-        Util.notificacion(persona,subject,template,absurl=absurl,email=persona.email)
+        Util.notificacion(persona,subject,template)
     
-        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo a '+persona.email+', con la información para la activación del usuario en el sistema', 'data':user_data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo', 'data':user_data}, status=status.HTTP_201_CREATED)
 
 class Verify(views.APIView):
 

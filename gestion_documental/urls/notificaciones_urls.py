@@ -16,6 +16,9 @@ urlpatterns = [
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
     path('update-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-tarea'),
 
+    path('cancelar-asignacion-notificacion/<int:pk>/', views.CancelarAsignacionNotificacion.as_view(),name='cancelar-asignacion-notificacion'),
+    path('cancelar-asignacion-tarea/<int:pk>/', views.CancelarAsignacionTarea.as_view(),name='cancelar-asignacion-tarea'),
+
     # Tipos de Notificaciones
     path('create-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaCreate.as_view(),name='create-tipos-notificaciones'),
     path('get-tipos-notificaciones/', views.TiposNotificacionesCorrespondenciaGet.as_view(),name='get-tipos-notificaciones'),
@@ -65,6 +68,18 @@ urlpatterns = [
     path('create-soportes-anexos-edictos/', views.AnexosSoporteEdictosCreate.as_view(),name='create-soportes-anexos-edictos'),
     path('update-registro-notificacion-edictos/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaEdictosUpdate.as_view(),name='update-registro-notificacion-edictos'),
 
+    # Pagina Avisos
+    path('get-datos-notificacion-avisos/<int:id_registro_notificacion>/', views.DatosNotificacionAvisosGet.as_view(),name='get-datos-notificacion-avisos'),
+    path('get-datos-notificacion-anexos-avisos/<int:id_registro_notificacion>/', views.AnexosNotificacionAvisosGet.as_view(),name='get-datos-notificacion-anexos-avisos'),
+    path('create-soportes-anexos-avisos/', views.AnexosSoporteAvisosCreate.as_view(),name='create-soportes-anexos-avisos'),
+    path('update-registro-notificacion-avisos/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaAvisosUpdate.as_view(),name='update-registro-notificacion-avisos'),
+
+    # Pagina Personal
+    path('get-datos-notificacion-personal/<int:id_registro_notificacion>/', views.DatosNotificacionPersonalGet.as_view(),name='get-datos-notificacion-personal'),
+    path('get-datos-notificacion-anexos-personal/<int:id_registro_notificacion>/', views.AnexosNotificacionPersonalGet.as_view(),name='get-datos-notificacion-anexos-personal'),
+    path('create-soportes-anexos-personal/', views.AnexosSoportePersonalCreate.as_view(),name='create-soportes-anexos-personal'),
+    path('update-registro-notificacion-personal/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaPersonalUpdate.as_view(),name='update-registro-notificacion-personal'),
+
     # Correo electronico
     path('get-datos-notificacion-correo/<int:id_registro_notificacion>/', views.DatosNotificacionCorreoGet.as_view(),name='get-datos-notificacion-correo'),
     path('get-datos-titular-correo/<int:id_registro_notificacion>/', views.DatosTitularesCorreoGet.as_view(),name='get-datos-titular-correo'),
@@ -79,7 +94,13 @@ urlpatterns = [
     path('create-soportes-anexos-correspondencia/', views.AnexosSoporteCorrespondenciaCreate.as_view(),name='create-soportes-anexos-correspondencia'),
     path('update-registro-notificacion-correspondencia/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-registro-notificacion-correspondencia'),
 
- 
+    # Generar constancias de notificaciones
+    #path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.ConstanciasNotificacionGet.as_view(),name='get-constancias-notificacion'),
+    path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
+    path('generador-documentos/', views.GeneradorDocumentos.as_view(),name='generador-documentos'),
+    path('notificaciones-automaticas-create/', views.NotificacionesAutomaticasCreate.as_view(),name='notificaciones-automaticas-create'),
+    path('notificaciones-automaticas-bia-create/', views.NotificacionesAutomaticasBiaCreate.as_view(),name='notificaciones-automaticas-bia-create'),
+    
 
     
 
