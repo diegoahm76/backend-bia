@@ -1,3 +1,4 @@
+import datetime
 import operator, itertools
 from almacen.models.bienes_models import ItemEntradaAlmacen
 from rest_framework import generics, status
@@ -9,9 +10,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
 from almacen.models.hoja_de_vida_models import HojaDeVidaVehiculos
 from almacen.models.mantenimientos_models import RegistroMantenimientos
-from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, HojaDeVidaVehiculosSerializer, InventarioSerializer, MantenimientosRealizadosGetSerializer, MovimientosIncautadosGetSerializer, ViajesAgendadosSerializer
+from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, HojaDeVidaVehiculosSerializer, InventarioReporteSerializer, InventarioSerializer, ItemDespachoConsumoSerializer, MantenimientosRealizadosGetSerializer, MovimientosIncautadosGetSerializer, ViajesAgendadosSerializer
 from almacen.models.inventario_models import Inventario
 from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, PersonasSolicitudViaje, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
+from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible
 
 class EntradasInventarioGetView(generics.ListAPIView):
     serializer_class=EntradasInventarioGetSerializer
@@ -72,37 +74,40 @@ class EntradasInventarioGetView(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
 
 class MovimientosIncautadosGetView(generics.ListAPIView):
-    serializer_class=MovimientosIncautadosGetSerializer
-    queryset=ItemEntradaAlmacen.objects.all()
+    serializer_class = MovimientosIncautadosGetSerializer
+    queryset = ItemEntradaAlmacen.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        filter={}
-        
-        for key,value in request.query_params.items():
-            if key in ['fecha_desde','fecha_hasta']:
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key in ['fecha_desde', 'fecha_hasta']:
                 if key == 'fecha_desde':
                     if value != '':
-                        filter['id_entrada_almacen__fecha_entrada__gte']=value
+                        filter['id_entrada_almacen__fecha_entrada__gte'] = value
                 elif key == 'fecha_hasta':
                     if value != '':
-                        filter['id_entrada_almacen__fecha_entrada__lte']=value
-                else:
-                    if value != '':
-                        filter[key]=value
-        
+                        filter['id_entrada_almacen__fecha_entrada__lte'] = value
+            elif key == 'categoria':
+                if value != '':
+                    filter['id_bien__cod_tipo_bien__cod_tipo_activo'] = value
+            else:
+                if value != '':
+                    filter[key] = value
+
         items_entradas = self.queryset.filter(**filter).filter(id_entrada_almacen__id_tipo_entrada=8, id_bien__nivel_jerarquico=5)
         serializer = self.serializer_class(items_entradas, many=True)
         serializer_data = serializer.data
-        
+
         data_output = []
-        
+
         if items_entradas:
             items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo"))
-                
+
             for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo")):
                 items_list = list(items)
-                
+
                 items_data = {
                     "id_bodega": entrada[0],
                     "nombre_bodega": entrada[1],
@@ -112,10 +117,10 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     "tipo_activo": entrada[5],
                     "cantidad_ingresada": sum(item['cantidad'] for item in items_list)
                 }
-                
+
                 data_output.append(items_data)
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
 
 class MantenimientosRealizadosGetView(generics.ListAPIView):
     serializer_class=MantenimientosRealizadosGetSerializer
@@ -294,3 +299,62 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail': 'Viajes obtenidos exitosamente', 'data': serializer.data})
+    
+
+
+class BusquedaGeneralInventarioActivos(generics.ListAPIView):
+    serializer_class = InventarioReporteSerializer
+
+    def get_queryset(self):
+        queryset = Inventario.objects.filter(ubicacion_prestado=True)
+
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
+
+        # Filtrar por código de tipo de activo
+        if cod_tipo_activo:
+            queryset = queryset.filter(id_bien__cod_tipo_activo=cod_tipo_activo)
+
+        # Filtrar por fecha de último movimiento
+        if fecha_desde:
+            queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
+        
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        
+        return Response({'success': True, 'detail': 'Búsqueda realizada exitosamente.', 'data': serializer.data})
+
+
+
+class BusquedaGeneralDespachosConsumo(generics.ListAPIView):
+    serializer_class = ItemDespachoConsumoSerializer
+
+    def get_queryset(self):
+        queryset = ItemDespachoConsumo.objects.all()
+
+        # Obtener parámetros de consulta
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+
+        # Filtrar por rango de fechas de despacho
+        if fecha_desde:
+            queryset = queryset.filter(id_despacho_consumo__fecha_despacho__gte=fecha_desde)
+        
+        if fecha_hasta:
+            queryset = queryset.filter(id_despacho_consumo__fecha_despacho__lte=fecha_hasta)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Búsqueda realizada exitosamente.', 'data': serializer.data})
