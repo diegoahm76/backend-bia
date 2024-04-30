@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from seguridad.permissions.permissions_conservacion import PermisoActualizarIngresoCuarentenaMaterialVegetal, PermisoAnularIngresoCuarentenaMaterialVegetal, PermisoCrearIngresoCuarentenaMaterialVegetal
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
 from rest_framework.response import Response
@@ -144,7 +145,7 @@ class GetLotesEtapaLupaView(generics.ListAPIView):
 class CreateIngresoCuarentenaView(generics.CreateAPIView):
     serializer_class = CreateIngresoCuarentenaSerializer
     queryset = CuarentenaMatVegetal.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearIngresoCuarentenaMaterialVegetal]
 
     def post(self, request):
         data_cuarentena = json.loads(request.data['data_ingreso_cuarentena'])
@@ -264,7 +265,7 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
 class AnularIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
     serializer_class = AnularIngresoCuarentenaSerializer
     queryset = CuarentenaMatVegetal.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularIngresoCuarentenaMaterialVegetal]
 
     def put(self, request, id_ingreso_cuarentena):
         data = request.data
@@ -328,7 +329,7 @@ class AnularIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
 class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
     serializer_class = UpdateIngresoCuarentenaSerializer
     queryset = CuarentenaMatVegetal.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarIngresoCuarentenaMaterialVegetal]
 
 
     def put(self, request, id_ingreso_cuarentena):

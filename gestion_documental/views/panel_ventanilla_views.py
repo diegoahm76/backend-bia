@@ -15,6 +15,7 @@ from gestion_documental.serializers.permisos_serializers import DenegacionPermis
 from gestion_documental.serializers.ventanilla_pqrs_serializers import AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, RespuestasRequerimientosOpaGetSerializer, RespuestasRequerimientosPutGetSerializer, RespuestasRequerimientosPutSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer,CatalogosSeriesUnidadGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
+from seguridad.permissions.permissions_gestor import PermisoActualizarResponderRequerimientoOPA, PermisoCrearAsignacionSubseccion, PermisoCrearResponderRequerimientoOPA, PermisoCrearSolicitudComplementoPQRSDF
 from seguridad.utils import Util
 from gestion_documental.utils import UtilsGestor
 from datetime import date, datetime
@@ -259,7 +260,7 @@ class SolicitudDeDigitalizacionComplementoCreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_complemento = ComplementosUsu_PQRPutSerializer
     queryset =SolicitudDeDigitalizacion.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudComplementoPQRSDF]
     #creador_estados = Estados_PQRCreate
     def post(self, request):
         data_in = request.data
@@ -591,7 +592,7 @@ class AsignacionPQRUpdate(generics.UpdateAPIView):
 class AsignacionPQRCreate(generics.CreateAPIView):
     serializer_class = AsignacionPQRPostSerializer
     queryset =AsignacionPQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearAsignacionSubseccion]
     creador_estados = Estados_PQRCreate
     def post(self, request):
         #CODIGO DE SERIE DOCUMENTAL DE PQRSDF
@@ -1207,7 +1208,7 @@ class RequerimientoOpaPut(generics.UpdateAPIView):#Continuar con asignacion a gr
     serializer_class = RespuestasRequerimientosPutGetSerializer
     serializer_adicion_tarea= AdicionalesDeTareasCreateSerializer
     queryset = RespuestasRequerimientos.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarResponderRequerimientoOPA]
     def put(self, request,pk):
         instance = self.get_queryset().filter(id_respuesta_requerimiento=pk).first()
 
@@ -1249,7 +1250,7 @@ class SolicitudDeDigitalizacionRequerimientoOpaCreate(generics.CreateAPIView):
     serializer_class = SolicitudDeDigitalizacionPostSerializer
     serializer_complemento = RespuestasRequerimientosPutSerializer
     queryset =SolicitudDeDigitalizacion.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearResponderRequerimientoOPA]
     #creador_estados = Estados_PQRCreate
     def post(self, request):
         data_in = request.data

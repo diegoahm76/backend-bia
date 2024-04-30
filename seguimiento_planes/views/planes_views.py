@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
 from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 from seguridad.permissions.permissions_planes import PermisoActualizarActividades, PermisoActualizarActividadesPGAR, PermisoActualizarAdministracionPlanes, PermisoActualizarArmonizacionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarIndicadores, PermisoActualizarIndicadoresPGAR, PermisoActualizarLineasBasePGAR, PermisoActualizarMedicionIndicador, PermisoActualizarMetas, PermisoActualizarMetasPGAR, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarRubros, PermisoActualizarSeguimientoPGAR, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearActividades, PermisoCrearActividadesPGAR, PermisoCrearAdministracionPlanes, PermisoCrearArmonizacionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearIndicadores, PermisoCrearIndicadoresPGAR, PermisoCrearLineasBasePGAR, PermisoCrearMedicionIndicador, PermisoCrearMetas, PermisoCrearMetasPGAR, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearRubros, PermisoCrearSeguimientoPGAR, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
 
@@ -2356,3 +2356,110 @@ class TableroPGARObjetivoEje(generics.ListAPIView):
 
         serializer = TableroPGARObjetivoEjeSerializer(eje_estrategicoo, many=True, context=context)
         return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class TableroControlGeneral(generics.ListAPIView):
+    def get(self, request):
+        planPAI = request.query_params.get('planPAI', '')
+        planPGAR = request.query_params.get('planPGAR', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        objetivos = Objetivo.objects.filter(id_plan = planPGAR)
+        if not objetivos:
+            raise NotFound('No se encontraron resultados.')
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo__in = objetivos)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+        
+        serializer = TableroPGARGeneralEjeSerializer(ejes_estrategicos, many=True, context = context)
+        cantidad_ejes = len(ejes_estrategicos)
+        porcenjates_generales = {
+                "pvance_fisico": 0,
+                "pavance_fisico_acomulado": 0,
+                "pavance_financiero": 0,
+                "pavance_recursos_obligados": 0
+        }
+        for porcentaje in serializer.data:
+            porcenjates_generales['pvance_fisico'] += porcentaje['porcentajes']['pvance_fisico']
+            porcenjates_generales['pavance_fisico_acomulado'] += porcentaje['porcentajes']['pavance_fisico_acomulado']
+            porcenjates_generales['pavance_financiero'] += porcentaje['porcentajes']['pavance_financiero']
+            porcenjates_generales['pavance_recursos_obligados'] += porcentaje['porcentajes']['pavance_recursos_obligados']
+
+        porcenjates_generales['pvance_fisico'] = porcenjates_generales['pvance_fisico'] / cantidad_ejes
+        porcenjates_generales['pavance_fisico_acomulado'] = porcenjates_generales['pavance_fisico_acomulado'] / cantidad_ejes
+        porcenjates_generales['pavance_financiero'] = porcenjates_generales['pavance_financiero'] / cantidad_ejes
+        porcenjates_generales['pavance_recursos_obligados'] = porcenjates_generales['pavance_recursos_obligados'] / cantidad_ejes
+
+        serializer.data.append(porcenjates_generales)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': porcenjates_generales}, status=status.HTTP_200_OK)
+
+
+
+class TableroControlGeneralObjeivos(generics.ListAPIView):
+    def get(self, request):
+        planPAI = request.query_params.get('planPAI', '')
+        planPGAR = request.query_params.get('planPGAR', '')
+
+        planPAI = Planes.objects.filter(id_plan = planPAI).first()
+        if not planPAI:
+            raise NotFound('No se encontraron resultados.')
+        
+        agno_inicio = planPAI.agno_inicio
+        agno_fin = planPAI.agno_fin
+
+        objetivos = Objetivo.objects.filter(id_plan = planPGAR)
+        if not objetivos:
+            raise NotFound('No se encontraron resultados.')
+        ejes_estrategicos = EjeEstractegico.objects.filter(id_objetivo__in = objetivos)
+        if not ejes_estrategicos:
+            raise NotFound('No se encontraron resultados.')
+        
+        context={
+            'agno_inicio': agno_inicio, 
+            'agno_fin': agno_fin 
+        }
+        
+        serializer = TableroPGARObjetivoGeneralSerializer(ejes_estrategicos, many=True, context = context)
+        response = []
+        
+        for objetivo in objetivos:
+            porcenjates_generales = {
+                "id_objetivo": objetivo.id_objetivo,
+                "nombre_objetivo": objetivo.nombre_objetivo,
+                "años": []
+            }
+        
+            for i in range(0,4):
+                iterator = 0
+                año = {
+                    "año": i+1,
+                    "pvance_fisico": 0,
+                    "pavance_fisico_acomulado": 0,
+                    "pavance_financiero": 0,
+                    "pavance_recursos_obligados": 0
+                }
+                for eje_estrategico in serializer.data:
+                    if eje_estrategico['id_objetivo'] == objetivo.id_objetivo:
+                        año['pvance_fisico'] += eje_estrategico['porcentajes'][i]['pvance_fisico']
+                        año['pavance_fisico_acomulado'] += eje_estrategico['porcentajes'][i]['pavance_fisico_acomulado']
+                        año['pavance_financiero'] += eje_estrategico['porcentajes'][i]['pavance_financiero']
+                        año['pavance_recursos_obligados'] += eje_estrategico['porcentajes'][i]['pavance_recursos_obligados']
+                        iterator += 1
+
+                año['pvance_fisico'] = año['pvance_fisico'] / iterator
+                año['pavance_fisico_acomulado'] = año['pavance_fisico_acomulado'] / iterator
+                año['pavance_financiero'] = año['pavance_financiero'] / iterator
+                año['pavance_recursos_obligados'] = año['pavance_recursos_obligados'] / iterator
+                porcenjates_generales['años'].append(año)
+            response.append(porcenjates_generales)
+        return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': response}, status=status.HTTP_200_OK)

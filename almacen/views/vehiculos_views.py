@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from datetime import datetime, date, timedelta, timezone
 from almacen.models.hoja_de_vida_models import HojaDeVidaVehiculos
+from seguridad.permissions.permissions_almacen import PermisoActualizarAgendamientoVehiculos, PermisoActualizarInspeccionVehiculos, PermisoActualizarSolicitudesViajes, PermisoActualizarVehiculosArrendados, PermisoBorrarAgendamientoVehiculos, PermisoBorrarSolicitudesViajes, PermisoBorrarVehiculosArrendados, PermisoCrearAgendamientoVehiculos, PermisoCrearAsignacionVehiculo, PermisoCrearBitacoraViajes, PermisoCrearInspeccionVehiculos, PermisoCrearRevisionInspeccionVehiculos, PermisoCrearSolicitudesViajes, PermisoCrearVehiculosArrendados
 from transversal.models.base_models import Municipio, ApoderadoPersona, ClasesTerceroPersona, Personas
 from django.utils import timezone
 from almacen.models.hoja_de_vida_models import HojaDeVidaComputadores, HojaDeVidaOtrosActivos, HojaDeVidaVehiculos, DocumentosVehiculo
@@ -112,7 +113,7 @@ def crear_arriendo_vehiculo(data):
 
 class RegistrarVehiculoArrendado(generics.CreateAPIView):
     serializer_class = RegistrarVehiculoArrendadoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearVehiculosArrendados]
     queryset = VehiculosArrendados.objects.all()
     
     def post(self, request):
@@ -169,7 +170,7 @@ class RegistrarVehiculoArrendado(generics.CreateAPIView):
 class ActualizarVehiculoArrendado(generics.UpdateAPIView):
     serializer_class = ActualizarVehiculoArrendadoSerializer
     queryset = VehiculosArrendados.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarVehiculosArrendados]
     
     def put(self,request,pk):
         data = request.data
@@ -307,7 +308,7 @@ def eliminar_registro_arrendamiento(pk):
 class DeleteRegistroVehiculoArriendo(generics.DestroyAPIView):
     serializer_class = RegistrarVehiculoArrendadoSerializer
     queryset = VehiculosArrendados.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarVehiculosArrendados]
 
     def delete(self, request, pk):
         try:
@@ -518,6 +519,7 @@ class BusquedaFechasArrendamientoVehiculo(generics.ListAPIView):
 
 class CrearSolicitudViaje(generics.CreateAPIView):
     serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSolicitudesViajes]
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -673,6 +675,7 @@ class ListaSolicitudesViaje(generics.ListAPIView):
 class EliminarSolicitudViaje(generics.DestroyAPIView):
     queryset = SolicitudesViajes.objects.all()
     serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarSolicitudesViajes]
 
     def destroy(self, request, *args, **kwargs):
         try:
@@ -695,6 +698,7 @@ class EliminarSolicitudViaje(generics.DestroyAPIView):
 class EditarSolicitudViaje(generics.UpdateAPIView):
     queryset = SolicitudesViajes.objects.all()
     serializer_class = PutSolicitudViajeSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarSolicitudesViajes]
 
     def update(self, request, *args, **kwargs):
         try:
@@ -909,6 +913,7 @@ class BusquedaConductores(generics.ListAPIView):
 
 class AsignarVehiculo(generics.CreateAPIView):
     serializer_class = VehiculosAgendablesConductorSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearAsignacionVehiculo]
 
     def post(self, request, *args, **kwargs):
         asignaciones = request.data  # Obtener la lista de asignaciones desde el cuerpo de la solicitud
@@ -1285,6 +1290,7 @@ class VehiculosAsociadosPersona(generics.ListAPIView):
 class CrearInspeccionVehiculo(generics.CreateAPIView):
     queryset = InspeccionesVehiculosDia.objects.all()
     serializer_class = InspeccionesVehiculosDiaCreateSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearInspeccionVehiculos]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -1592,6 +1598,7 @@ class NovedadesVehiculosList(generics.ListAPIView):
 class InspeccionVehiculoDetail(generics.RetrieveAPIView, generics.UpdateAPIView):
     queryset = InspeccionesVehiculosDia.objects.all()
     serializer_class = InspeccionVehiculoSerializer
+    permission_classes = [IsAuthenticated, (PermisoActualizarInspeccionVehiculos|PermisoCrearRevisionInspeccionVehiculos)]
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1748,7 +1755,7 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
 #RECHAZAR_SOLICITUD
 class CrearReprobacion(generics.CreateAPIView):
     serializer_class = ViajesAgendadosSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearAgendamientoVehiculos|PermisoActualizarAgendamientoVehiculos)]
 
     
     def create(self, request, *args, **kwargs):
@@ -1891,7 +1898,7 @@ class CrearReprobacion(generics.CreateAPIView):
 #APROBACION_SOLICITUD
 class CrearAprobacion(generics.CreateAPIView):
     serializer_class = ViajesAgendadosSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, (PermisoCrearAgendamientoVehiculos|PermisoActualizarAgendamientoVehiculos)]
 
 
     def create(self, request, *args, **kwargs):
@@ -2238,6 +2245,7 @@ class EditarAprobacion(generics.UpdateAPIView):
 class EliminarViajeAgendado(generics.DestroyAPIView):
     queryset = ViajesAgendados.objects.all()
     serializer_class = ViajesAgendadosDeleteSerializer
+    permission_classes = [IsAuthenticated, PermisoBorrarAgendamientoVehiculos]
 
     def delete(self, instance, pk):
         # Obtener el ID de la solicitud de viaje asociada al viaje agendado
@@ -2297,6 +2305,7 @@ class ListarAgendamientos(generics.ListAPIView):
 
 class CrearBitacoraSalida(generics.CreateAPIView):
     serializer_class = BitacoraViajeSerializer
+    permission_classes = [IsAuthenticated, PermisoCrearBitacoraViajes]
 
     def create(self, request, *args, **kwargs):
         # Obtener datos del cuerpo de la solicitud

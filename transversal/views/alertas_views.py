@@ -12,6 +12,7 @@ from datetime import datetime,date,timedelta
 from gestion_documental.views.configuracion_tipos_radicados_views import actualizar_conf_agno_sig
 from recurso_hidrico.models.programas_models import ProyectosPORH
 from recurso_hidrico.serializers.programas_serializers import GenerardorMensajeProyectosPORHGetSerializer, ProyectosPORHSerializer
+from seguridad.permissions.permissions_conservacion import PermisoActualizarConfiguracionAlertasConservacion
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionAlertasGestionDocumental
 from seguridad.permissions.permissions_recaudo import PermisoActualizarConfiguracionAlertasRecaudo
 from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarConfiguracionAlertasRecursoHidrico
@@ -31,7 +32,7 @@ from seguridad.utils import Util
 class ConfiguracionClaseAlertaUpdate(generics.UpdateAPIView):
     serializer_class = ConfiguracionClaseAlertaUpdateSerializer
     queryset = ConfiguracionClaseAlerta.objects.all()
-    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionAlertasRecursoHidrico, PermisoActualizarConfiguracionAlertasRecaudo, PermisoActualizarConfiguracionAlertasGestionDocumental)]
+    permission_classes = [IsAuthenticated, (PermisoActualizarConfiguracionAlertasRecursoHidrico|PermisoActualizarConfiguracionAlertasRecaudo|PermisoActualizarConfiguracionAlertasGestionDocumental|PermisoActualizarConfiguracionAlertasConservacion)]
 
     def put(self, request, *args, **kwargs):
         pk = kwargs.get('pk')

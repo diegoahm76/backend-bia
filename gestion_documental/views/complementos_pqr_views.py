@@ -22,6 +22,7 @@ from gestion_documental.views.bandeja_tareas_views import MetadatosAnexosTmpCrea
 from gestion_documental.views.panel_ventanilla_views import Estados_PQRCreate
 from gestion_documental.views.pqr_views import AnexosCreate, AnexosDelete, AnexosUpdate, RadicadoCreate, Util_PQR
 from gestion_documental.views.bandeja_tareas_views import AnexosCreate  as AnexosBandejaCreate
+from seguridad.permissions.permissions_gestor import PermisoActualizarComplementoSobrePQRSDF, PermisoActualizarRespuestaSolicitudEntidad, PermisoBorrarComplementoSobrePQRSDF, PermisoBorrarRespuestaSolicitudEntidad, PermisoCrearComplementoSobrePQRSDF, PermisoCrearRespuestaSolicitudEntidad
 from seguridad.signals.roles_signals import IsAuthenticated
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
@@ -72,7 +73,7 @@ class ComplementosPQRSDFGet(generics.ListAPIView):
 
 class ComplementoPQRSDFCreate(generics.CreateAPIView):
     serializer_class = ComplementoPQRSDFPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearComplementoSobrePQRSDF]
 
     @transaction.atomic
     def post(self, request):
@@ -189,7 +190,7 @@ class ComplementoPQRSDFCreate(generics.CreateAPIView):
 class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = ComplementoPQRSDFPutSerializer
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarComplementoSobrePQRSDF]
 
     @transaction.atomic
     def put(self, request):
@@ -334,7 +335,7 @@ class ComplementoPQRSDFUpdate(generics.RetrieveUpdateAPIView):
 
 class ComplementoPQRSDFDelete(generics.RetrieveDestroyAPIView):
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarComplementoSobrePQRSDF]
 
     @transaction.atomic
     def delete(self, request):
@@ -552,7 +553,7 @@ class RespuestaSolicitudGet(generics.GenericAPIView):
     
 class RespuestaSolicitudCreate(generics.CreateAPIView):
     serializer_class = ComplementoPQRSDFPostSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearRespuestaSolicitudEntidad]
 
     @transaction.atomic
     def post(self, request):
@@ -573,7 +574,7 @@ class RespuestaSolicitudCreate(generics.CreateAPIView):
 class RespuestaSolicitudUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = ComplementoPQRSDFPutSerializer
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarRespuestaSolicitudEntidad]
 
     @transaction.atomic
     def put(self, request):
@@ -597,7 +598,7 @@ class RespuestaSolicitudUpdate(generics.RetrieveUpdateAPIView):
         
 class RespuestaSolicitudDelete(generics.RetrieveDestroyAPIView):
     queryset = ComplementosUsu_PQR.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoBorrarRespuestaSolicitudEntidad]
 
     @transaction.atomic
     def delete(self, request):

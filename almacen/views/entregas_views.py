@@ -1,5 +1,6 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
+from seguridad.permissions.permissions_almacen import PermisoActualizarEntregaDonacionesResarcimientosCompensacionesViveros, PermisoAnularEntregaDonacionesResarcimientosCompensacionesViveros, PermisoCrearEntregaDonacionesResarcimientosCompensacionesViveros
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from rest_framework.permissions import IsAuthenticated
@@ -90,7 +91,7 @@ class GetItemsEntregaView(generics.ListAPIView):
 class CrearEntregaView(generics.CreateAPIView):
     serializer_class = CreateEntregaSerializer
     queryset = DespachoConsumo.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoCrearEntregaDonacionesResarcimientosCompensacionesViveros]
 
     def post(self, request):
         data_entrega = json.loads(request.data['data_entrega'])
@@ -316,7 +317,7 @@ class CrearEntregaView(generics.CreateAPIView):
 class AnularEntregaView(generics.RetrieveUpdateAPIView):
     serializer_class = AnularEntregaSerializer
     queryset = DespachoConsumo.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoAnularEntregaDonacionesResarcimientosCompensacionesViveros]
 
     def patch(self, request, id_entrega):
         data = request.data
@@ -424,7 +425,7 @@ class GetEntradasEntregasView(generics.ListAPIView):
 class ActualizarEntregaView(generics.RetrieveUpdateAPIView):
     serializer_class = ActualizarEntregaSerializer
     queryset = DespachoConsumo.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermisoActualizarEntregaDonacionesResarcimientosCompensacionesViveros]
     
     def delete_items(self, items_entrega, id_entrega):
         #VALIDACIÓN QUE LA ENTREGA ENVIADA EN LA URL EXISTA
