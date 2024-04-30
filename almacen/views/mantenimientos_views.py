@@ -1,6 +1,8 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_almacen import PermisoActualizarEjecucionMantenimientoComputadores, PermisoActualizarEjecucionMantenimientoOtrosActivos, PermisoActualizarEjecucionMantenimientoVehiculos, PermisoActualizarProgramacionMantenimientoComputadores, PermisoActualizarProgramacionMantenimientoOtrosActivos, PermisoActualizarProgramacionMantenimientoVehiculos, PermisoAnularProgramacionMantenimientoComputadores, PermisoAnularProgramacionMantenimientoOtrosActivos, PermisoAnularProgramacionMantenimientoVehiculos, PermisoBorrarEjecucionMantenimientoComputadores, PermisoBorrarEjecucionMantenimientoOtrosActivos, PermisoBorrarEjecucionMantenimientoVehiculos, PermisoCrearEjecucionMantenimientoComputadores, PermisoCrearEjecucionMantenimientoOtrosActivos, PermisoCrearEjecucionMantenimientoVehiculos, PermisoCrearProgramacionMantenimientoComputadores, PermisoCrearProgramacionMantenimientoOtrosActivos, PermisoCrearProgramacionMantenimientoVehiculos
 from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
@@ -259,6 +261,11 @@ class DeleteRegistroMantenimiento(generics.DestroyAPIView):
                     registro_mantenimiento.id_programacion_mtto.ejecutado = False
                     registro_mantenimiento.id_programacion_mtto.save()
                 
+                # ELIMINAR ARCHIVO
+                if registro_mantenimiento.ruta_documentos_soporte:
+                    registro_mantenimiento.ruta_documentos_soporte.ruta_archivo.delete()
+                    registro_mantenimiento.ruta_documentos_soporte.delete()
+
                 registro_mantenimiento.delete()
                 
                 # Auditoria
@@ -296,10 +303,25 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
     queryset=RegistroMantenimientos.objects.all()
     
     def put (self,request,pk):
-        
+        archivo_soporte = request.FILES.get('ruta_documentos_soporte')
         registro_mantenimiento=RegistroMantenimientos.objects.filter(id_registro_mtto=pk).first()
         persona = request.user.persona.id_persona
         request.data['id_persona_diligencia']=persona
+
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if registro_mantenimiento.ruta_documentos_soporte:
+                registro_mantenimiento.ruta_documentos_soporte.ruta_archivo.delete()
+                registro_mantenimiento.ruta_documentos_soporte.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "RegistroMantenimientos")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            request.data['ruta_documentos_soporte'] = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and registro_mantenimiento.ruta_documentos_soporte:
+        #     registro_mantenimiento.ruta_documentos_soporte.ruta_archivo.delete()
+        #     registro_mantenimiento.ruta_documentos_soporte.delete()
+
         serializador=self.serializer_class(registro_mantenimiento,data=request.data)
         if registro_mantenimiento:
             inventario_bien = Inventario.objects.filter(id_bien=registro_mantenimiento.id_articulo.id_bien).first()
@@ -702,6 +724,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
     
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
+        archivo_soporte = request.FILES.get('ruta_documentos_soporte')
         #VALIDACION FORMATE DE FECHAS ENTRANTES
         try:
             aux_v_f_p = datos_ingresados['fecha_ejecutado'].split("-")
@@ -806,6 +829,13 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         
         inventario.fecha_ultimo_movimiento = datos_ingresados['fecha_registrado']
         inventario.cod_estado_activo = cod_estado_final.first()
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "RegistroMantenimientos")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            datos_ingresados['ruta_documentos_soporte'] = archivo_creado_instance.id_archivo_digital
         
         serializer = self.get_serializer(data=datos_ingresados)
         serializer.is_valid(raise_exception=True)

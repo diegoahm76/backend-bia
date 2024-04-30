@@ -31,11 +31,13 @@ class UpdateMantenimientoProgramadoSerializer(serializers.ModelSerializer):
 class SerializerRegistroMantenimientos(serializers.ModelSerializer):
     id_persona_realiza = PersonasSerializer(read_only=True)
     id_persona_diligencia = PersonasSerializer(read_only=True)
+    ruta_documentos_soporte = serializers.ReadOnlyField(source='ruta_documentos_soporte.ruta_archivo.url', default=None)
     class Meta:
         model=RegistroMantenimientos
         fields=('__all__')
         
 class SerializerUpdateRegistroMantenimientos(serializers.ModelSerializer):
+    # ruta_documentos_soporte = serializers.ReadOnlyField(source='ruta_documentos_soporte.url', default=None)
     # id_persona_diligencia = PersonasSerializer(read_only=True)
     class Meta:
         model=RegistroMantenimientos

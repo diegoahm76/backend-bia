@@ -8,6 +8,7 @@ from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEn
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 class SerializersDespachoConsumo(serializers.ModelSerializer):
+    ruta_archivo_doc_con_recibido = serializers.ReadOnlyField(source='ruta_archivo_doc_con_recibido.ruta_archivo.url', default=None)
     class Meta:
         model=DespachoConsumo
         fields=('__all__')
@@ -122,6 +123,7 @@ class GetItemOtrosOrigenesSerializers(serializers.ModelSerializer):
 
 class SerializersDespachoConsumoConItems(serializers.ModelSerializer):
     items_despacho_consumo = serializers.SerializerMethodField()
+    ruta_archivo_doc_con_recibido = serializers.ReadOnlyField(source='ruta_archivo_doc_con_recibido.url', default=None)
     
     def get_items_despacho_consumo(self, obj):
         items = obj.itemdespachoconsumo_set.all()
