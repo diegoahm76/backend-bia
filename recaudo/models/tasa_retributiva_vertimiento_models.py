@@ -246,25 +246,3 @@ class CarteraPrincipal(models.Model):
         verbose_name_plural = 'Carteras Principales'
 
 
-    # T457id_cartera 
-    # T457fecha
-    # T457t908_cod_cia
-    # T457tipo_renta
-    # T457cuenta_contable 
-    # T457nit 
-    # T457nombre_deudor
-    # T457fecha_fact 
-    # T457fecha_notificacion 
-    # T457fecha_en_firme
-    # T457corte_desde
-    # T457corte_hasta 
-    # T457num_factura
-    # T457num_liquidacion 
-    # T457agno 
-    # T457expediente 
-    # T457num_resolucion
-    # T457recurso 
-    # T457doc_auto 
-    # T457saldo_capital 
-    # T457saldo_interes
-    # T457dias_mora
