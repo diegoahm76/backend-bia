@@ -2,7 +2,7 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer,ModeloBaseSueldoMinimoSerializer
+from recaudo.serializers.registrosconfiguracion_serializer import  AdministraciondePersonalSerializer,ValoresVariablesUpDateEstadoSerializer, ConfigaraicionInteresSerializer, IndicadoresSemestralSerializer, RegistrosConfiguracionSerializer,TipoCobroSerializer,Formularioerializer,TipoRentaSerializer, VariablesSerializer,ValoresVariablesSerializer,ModeloBaseSueldoMinimoSerializer
 from recaudo.models.base_models import  AdministraciondePersonal, ConfigaraicionInteres, IndicadoresSemestral,FRECUENCIA_CHOICES,MONTH_CHOICES, RegistrosConfiguracion, TipoCobro,TipoRenta,Formulario, Variables,ValoresVariables,ModeloBaseSueldoMinimo
 from seguridad.permissions.permissions_recaudo import PermisoActualizarConfiguracionVariablesRecaudo, PermisoActualizarIndicadoresGestionRecaudo, PermisoActualizarProfesionalesRecaudo, PermisoBorrarConfiguracionVariablesRecaudo, PermisoBorrarProfesionalesRecaudo, PermisoCrearConfiguracionVariablesRecaudo, PermisoCrearIndicadoresGestionRecaudo, PermisoCrearProfesionalesRecaudo
 
@@ -343,6 +343,19 @@ class Borrar_ValoresVariables(generics.DestroyAPIView):
 class Actualizar_ValoresVariables(generics.UpdateAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
+
+    def put(self, request, *args, **kwargs):
+        instance = self.get_object()  # Obtiene la instancia existente
+        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
+        serializer.is_valid(raise_exception=True)  # Valida los datos
+        serializer.save()  # Guarda la instancia con los datos actualizados
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class Actualizar_Estado_ValoresVariables(generics.UpdateAPIView):
+    queryset = ValoresVariables.objects.all()
+    serializer_class = ValoresVariablesUpDateEstadoSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
     def put(self, request, *args, **kwargs):
