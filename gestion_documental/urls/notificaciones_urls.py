@@ -95,11 +95,13 @@ urlpatterns = [
     path('update-registro-notificacion-correspondencia/<int:id_registro_notificacion>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-registro-notificacion-correspondencia'),
 
     # Generar constancias de notificaciones
-    #path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.ConstanciasNotificacionGet.as_view(),name='get-constancias-notificacion'),
     path('get-constancias-notificacion/<int:id_registro_notificacion>/', views.GenerarConstanciaNotificacion.as_view(),name='get-constancias-notificacion'),
-    path('generador-documentos/', views.GeneradorDocumentos.as_view(),name='generador-documentos'),
+    path('get-datos-documentos/<int:id_registro_notificacion>/', views.DatosDocumentosNotificacion.as_view(),name='get-datos-documentos'),
+    path('create-documento-generado/', views.DocumentosGeneradosCreate.as_view(),name='create-documento-generado'),
     path('notificaciones-automaticas-create/', views.NotificacionesAutomaticasCreate.as_view(),name='notificaciones-automaticas-create'),
     path('notificaciones-automaticas-bia-create/', views.NotificacionesAutomaticasBiaCreate.as_view(),name='notificaciones-automaticas-bia-create'),
+    path('notificaciones-opas-create/', views.NotificacionesOPASCreate.as_view(),name='notificaciones-opas-create'),
+    path('notificaciones-otros-create/', views.NotificacionesOtrosCreate.as_view(),name='notificaciones-otros-create'),
     
 
     
