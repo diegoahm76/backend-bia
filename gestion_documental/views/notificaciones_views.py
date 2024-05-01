@@ -1510,57 +1510,9 @@ class AnexosSoporteGacetaCreate(generics.CreateAPIView):
         return Response({'succes': True, 'detail':'Se creo el anexo correctamente', 'data':anexo}, status=status.HTTP_201_CREATED)
     
 
-# class RegistrosNotificacionesCorrespondenciaGacetaCreate(generics.CreateAPIView):
-#     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def create_registro(self, data):
-#         try:
-#             notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=data.get('id_notificacion_correspondencia'))
-#         except NotificacionesCorrespondencia.DoesNotExist:
-#             raise ValidationError('La notificación no existe.')
-        
-#         try:
-#             tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data.get('id_tipo_documento'))
-#         except TiposDocumentos.DoesNotExist:
-#             raise ValidationError('El tipo de documento no existe.')
-        
-#         serializer = self.serializer_class(data=data)
-#         serializer.is_valid(raise_exception=True)
-#         instance = serializer.save()
-#         return serializer.data
-
-#     def post(self, request):
-#         data = request.data
-#         registro = self.create_registro(data)
-#         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
-
-
 class RegistrosNotificacionesCorrespondenciaGacetaUpdate(generics.UpdateAPIView):
     serializer_class = Registros_NotificacionesCorrespondeciaSerializer
     permission_classes = [IsAuthenticated]
-
-    # @transaction.atomic
-    # def update_registro_notificacion(self, id_registro_notificacion, data):
-    #     registro_notificacion = Registros_NotificacionesCorrespondecia.objects.filter(id_registro_notificacion_correspondencia=id_registro_notificacion).first()
-    #     if not registro_notificacion:
-    #         raise ValidationError(f'El registro de la notificación con id {id_registro_notificacion} no existe.')
-    #     else:
-    #         data_anexos = data.pop('anexos')
-    #         for anexo in data_anexos:
-    #             try:
-    #                 anexo_notificacion = Anexos_NotificacionesCorrespondencia.objects.get(id_anexo_notificacion_correspondencia=anexo.get('id_anexo_notificacion_correspondencia'))
-    #             except Anexos_NotificacionesCorrespondencia.DoesNotExist:
-    #                 raise ValidationError('El anexo no existe.')
-    #             instancia_anexos = AnexosSoporteGacetaCreate()
-    #             anexos_response = instancia_anexos.create_anexo(anexo)
-    #             if not anexos_response:
-    #                 raise ValidationError('No se pudo crear el anexo.')
-
-    #         serializer = self.serializer_class(registro_notificacion, data=data, partial=True)
-    #         serializer.is_valid(raise_exception=True)
-    #         instance = serializer.save()
-    #         return serializer.data
 
     @transaction.atomic
     def update_registro_notificacion(self, id_registro_notificacion, request):
@@ -1927,24 +1879,24 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Creat
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 
-class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.UpdateAPIView):
-    serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
-    permission_classes = [IsAuthenticated, PermisoActualizarAsignacionTareasNotificaciones]
+# class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.UpdateAPIView):
+#     serializer_class = Registros_NotificacionesCorrespondeciaCreateSerializer
+#     permission_classes = [IsAuthenticated]
 
-    def put(self, request, pk):
-        data = request.data
-        estado = EstadosNotificacionesCorrespondencia.objects.filter(id_estado_notificacion_correspondencia=data.get('id_estado_actual_registro')).first()
-        if not estado:
-            raise ValidationError(f'El estado de la notificación con id {data.get("id_estado_actual_registro")} no existe.')
-        registro_notificacion = get_object_or_404(Registros_NotificacionesCorrespondecia, id_registro_notificacion_correspondencia=pk)
-        if not registro_notificacion:
-            raise ValidationError(f'El registro de la notificación con id {pk} no existe.')
-        else:
-            registro_notificacion.id_estado_actual_registro = estado
-            registro_notificacion.save()
-            serializer = self.get_serializer(registro_notificacion)
+#     def put(self, request, pk):
+#         data = request.data
+#         estado = EstadosNotificacionesCorrespondencia.objects.filter(id_estado_notificacion_correspondencia=data.get('id_estado_actual_registro')).first()
+#         if not estado:
+#             raise ValidationError(f'El estado de la notificación con id {data.get("id_estado_actual_registro")} no existe.')
+#         registro_notificacion = get_object_or_404(Registros_NotificacionesCorrespondecia, id_registro_notificacion_correspondencia=pk)
+#         if not registro_notificacion:
+#             raise ValidationError(f'El registro de la notificación con id {pk} no existe.')
+#         else:
+#             registro_notificacion.id_estado_actual_registro = estado
+#             registro_notificacion.save()
+#             serializer = self.get_serializer(registro_notificacion)
 
-        return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
+#         return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
     
 ## Generador de Constancias
 
@@ -2198,6 +2150,78 @@ class GeneradorDocumentos(generics.CreateAPIView):
     def post(self, request):
         data = request.data
         documento = self.generador_documentos(data)
+
+        return Response({'succes': True, 'detail':'Se creo el documento correctamente', 'data':documento}, status=status.HTTP_201_CREATED)
+
+
+class DatosDocumentosNotificacion(generics.ListAPIView):
+    serializer_class = DocumentosDeArchivoExpedienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Registros_NotificacionesCorrespondecia.objects.all()
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+
+class DocumentosGeneradosCreate(generics.CreateAPIView):
+    serializer_class = DocumentosDeArchivoExpedienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create_documento(self, data):
+        try:
+            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data.get('id_tipo_documento'))
+        except TiposDocumentos.DoesNotExist:
+            raise ValidationError('El tipo de documento no existe.')
+        
+        try:
+            notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=data.get('id_notificacion_correspondencia'))
+        except NotificacionesCorrespondencia.DoesNotExist:
+            raise ValidationError('La notificación no existe.')
+        
+        try:
+            persona = Personas.objects.get(id_persona=data.get('id_persona'))
+        except Personas.DoesNotExist:
+            raise ValidationError('La persona no existe.')
+        
+        try:
+            expediente = ExpedientesDocumentales.objects.get(id_expediente=data.get('id_expediente'))
+        except ExpedientesDocumentales.DoesNotExist:
+            raise ValidationError('El expediente no existe.')
+        
+        try:
+            tipo_acto = TiposActosAdministrativos.objects.get(id_tipo_acto_administrativo=data.get('id_tipo_acto_administrativo'))
+        except TiposActosAdministrativos.DoesNotExist:
+            raise ValidationError('El tipo de acto administrativo no existe.')
+        
+        try:
+            acto_administrativo = ActosAdministrativos.objects.get(id_acto_administrativo=data.get('id_acto_administrativo'))
+        except ActosAdministrativos.DoesNotExist:
+            raise ValidationError('El acto administrativo no existe.')
+        
+        try:
+            causa = CausasOAnomalias.objects.get(id_causa_o_anomalia=data.get('id_causa_o_anomalia'))
+        except CausasOAnomalias.DoesNotExist:
+            raise ValidationError('La causa o anomalia no existe.')
+
+        
+        try:
+            persona_titular = Personas.objects.get(id_persona=data.get('id_persona_titular'))
+        except Personas.DoesNotExist:
+            raise ValidationError('La persona titular no existe.')
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+        return serializer.data
+    
+    def post(self, request):
+        data = request.data
+        documento = self.create_documento(data)
 
         return Response({'succes': True, 'detail':'Se creo el documento correctamente', 'data':documento}, status=status.HTTP_201_CREATED)
 
@@ -2571,5 +2595,26 @@ class AnexosSistemaCreate(generics.CreateAPIView):
         archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
         return archivo_creado
 
+
+class NotificacionesOPASCreate(generics.CreateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        instancia_notificacion = NotificacionesAutomaticasCreate()
+        sistema = 'BIA'
+        data = instancia_notificacion.create_notificacion_sistema(request, sistema)
+        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':data}, status=status.HTTP_201_CREATED)
+
+
+class NotificacionesOtrosCreate(generics.CreateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        instancia_notificacion = NotificacionesAutomaticasCreate()
+        sistema = 'BIA'
+        data = instancia_notificacion.create_notificacion_sistema(request, sistema)
+        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':data}, status=status.HTTP_201_CREATED)
 
 
