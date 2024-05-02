@@ -1,10 +1,21 @@
 
 from rest_framework import serializers
 
-from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno
+from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno, Referencia
 
 
 class ConfigTipoRefgnoCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConfigReferenciaPagoAgno
+        fields = '__all__'
+
+
+class ReferenciaCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Referencia
+        fields ='__all__'
+
+class ConfigTipoRefgnoPutSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfigReferenciaPagoAgno
         fields = '__all__'

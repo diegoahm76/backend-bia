@@ -4,7 +4,7 @@ from django.urls import path
 from gestion_documental.views import consecutivo_unidad_views as views
 
 
-urlpatterns = [#ConfiguracionTiemposRespuestaUpdate
+urlpatterns = [
     
     path('config_tipo_consec_agno/get/<str:agno>/<str:uni>/', views.ConfigTipoConsecAgnoGetView.as_view(), name='listar-consecutivos'),
     path('config_tipo_consec_agno/create/', views.ConfigTipoConsecAgnoCreateView.as_view(), name='crear-consecutivos'),
