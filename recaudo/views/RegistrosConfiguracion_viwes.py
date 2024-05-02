@@ -353,10 +353,13 @@ class Actualizar_ValoresVariables(generics.UpdateAPIView):
 
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+
+
+
 class Actualizar_Estado_ValoresVariables(generics.UpdateAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesUpDateEstadoSerializer
-    permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
