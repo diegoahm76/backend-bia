@@ -1,3 +1,6 @@
+from datetime import datetime
+from gestion_documental.models.trd_models import FormatosTiposMedio
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
@@ -10,6 +13,8 @@ from recaudo.models.liquidaciones_models import (
     CalculosLiquidacionBase
 )
 from recaudo.serializers.liquidaciones_serializers import (
+    HistEstadosLiqPostSerializer,
+    LiquidacionesTramitePostSerializer,
     OpcionesLiquidacionBaseSerializer,
     OpcionesLiquidacionBasePutSerializer,
     DeudoresSerializer,
@@ -25,10 +30,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from django.db.models.functions import Lower
 from django.shortcuts import render
 from docxtpl import DocxTemplate
 from django.conf import settings
 import calendar
+import json
+import hashlib
+import os
 
 from seguridad.permissions.permissions_recaudo import PermisoActualizarConstructorFormulas, PermisoActualizarGeneradorLiquidacionesRecaudo, PermisoBorrarConstructorFormulas, PermisoCrearConstructorFormulas, PermisoCrearGeneradorLiquidacionesRecaudo
 
@@ -243,6 +253,94 @@ class DetallesLiquidacionBaseView(generics.GenericAPIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class LiquidacionTramiteCreateView(generics.ListAPIView):
+    queryset = LiquidacionesBase.objects.all()
+    serializer_class = LiquidacionesTramitePostSerializer
+    serializer_detalles_class = DetallesLiquidacionBasePostSerializer
+    serializer_historico_class = HistEstadosLiqPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data_liquidacion = request.data.get('data_liquidacion')
+        data_detalles = request.data.get('data_detalles')
+        archivo_liquidacion = request.FILES.get('archivo_liquidacion')
+        current_date = datetime.now()
+
+        if not data_liquidacion:
+            raise ValidationError('Debe enviar la información de la liquidación')
+        
+        if not archivo_liquidacion:
+            raise ValidationError('Debe enviar el archivo generado para la liquidación')
+        
+        data_liquidacion = json.loads(data_liquidacion)
+        data_detalles = json.loads(data_detalles) if data_detalles else None
+
+        # Guardar archivo
+        # VALIDAR FORMATO ARCHIVO 
+        archivo_nombre = archivo_liquidacion.name 
+        nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        
+        formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+        
+        if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+            raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+        
+        # CREAR ARCHIVO EN T238
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = current_date.year
+        ruta = os.path.join("home", "BIA", "Otros", "LiquidacionesTramites", str(current_year))
+        
+        # Calcula el hash MD5 del archivo
+        md5_hash = hashlib.md5()
+        for chunk in archivo_liquidacion.chunks():
+            md5_hash.update(chunk)
+
+        # Obtiene el valor hash MD5
+        md5_value = md5_hash.hexdigest()
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value  
+        }
+        
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, archivo_liquidacion)
+
+        # Asociar archivo creado a liquidación
+        data_liquidacion['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
+        data_liquidacion['estado'] = 'PENDIENTE'
+
+        serializer = self.serializer_class(data=data_liquidacion)
+        serializer.is_valid(raise_exception=True)
+        liquidacion_creada = serializer.save()
+
+        data_output = serializer.data
+        data_output['id_archivo_ruta'] = liquidacion_creada.id_archivo.ruta_archivo.url
+        data_output['detalles'] = []
+
+        if data_detalles:
+            for detalle in data_detalles:
+                detalle['id_liquidacion'] = liquidacion_creada.id
+                serializer_detalle = self.serializer_detalles_class(data=detalle)
+                serializer_detalle.is_valid(raise_exception=True)
+                serializer_detalle.save()
+
+                data_output['detalles'].append(serializer_detalle.data)
+
+        # Guardar historico
+        data_historico = {
+            'liquidacion_base': liquidacion_creada.id,
+            'estado_liq': 'PENDIENTE',
+            'fecha_estado': datetime.now()
+        }
+        serializer_historico = self.serializer_historico_class(data=data_historico)
+        serializer_historico.is_valid(raise_exception=True)
+        serializer_historico.save()
+
+        return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
 
 class ExpedientesView(generics.ListAPIView):
     queryset = Expedientes.objects.filter(id_deudor__isnull=False)

@@ -84,8 +84,10 @@ class RegistrosConfiguracion(models.Model):
 
 
 class TipoRenta(models.Model):
-    id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
-    nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta',unique=True)
+    id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')
+    cod_tipo_renta = models.CharField(max_length=5, blank=True, null=True, db_column='T442codTipoRenta')
+    nombre_tipo_renta = models.CharField(max_length=100, blank=True, null=True, db_column='T442Nombre')
+    descripcion = models.CharField(max_length=255, blank=True, null=True, db_column='T442Descripcion')
 
     # valor_tipo_renta = models.DecimalField(max_digits=10, decimal_places=2, db_column='T442valor_tipo_renta')
     class Meta:
