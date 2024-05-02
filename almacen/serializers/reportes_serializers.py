@@ -248,9 +248,16 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
 
     def get_placa(self, obj):
         if obj.es_arrendado:
-            return obj.id_vehiculo_arrendado.placa
+            vehiculo_arrendado = obj.id_vehiculo_arrendado
+            if vehiculo_arrendado:
+                return vehiculo_arrendado.placa
         else:
-            return obj.id_articulo.doc_identificador_nro
+            articulo = obj.id_articulo
+            if articulo:
+                return articulo.doc_identificador_nro
+        
+        return None
+
 
     def get_marca(self, obj):
         if obj.es_arrendado:
@@ -266,9 +273,16 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
 
     def get_nombre(self, obj):
         if obj.es_arrendado:
-            return obj.id_vehiculo_arrendado.nombre
+            vehiculo_arrendado = obj.id_vehiculo_arrendado
+            if vehiculo_arrendado:
+                return vehiculo_arrendado.nombre
         else:
-            return obj.id_articulo.nombre
+            articulo = obj.id_articulo
+            if articulo:
+                return articulo.nombre
+        
+        return None
+
 
 
 class ViajesAgendadosSerializer(serializers.ModelSerializer):
@@ -276,6 +290,9 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
     Municipio_desplazamiento = serializers.ReadOnlyField(source='cod_municipio_destino.nombre', default=None)
     cod_tipo_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_hoja_vida_vehiculo.cod_tipo_vehiculo', default=None)
     es_arrendado = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado', default=None)
+    id_responsable_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.id_persona', default=None)
+    primer_nombre_responsable_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_nombre', default=None)
+    primer_apellido_responsable_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_apellido', default=None)
     tipo_vehiculo = serializers.SerializerMethodField()
     funcionario_autorizo = serializers.SerializerMethodField()
     placa = serializers.SerializerMethodField()
@@ -285,6 +302,7 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
     class Meta:
         model = ViajesAgendados
         fields = '__all__'
+    
 
     def get_funcionario_autorizo(self, obj):
         nombre_persona_autoriza = None

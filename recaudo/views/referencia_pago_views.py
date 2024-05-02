@@ -40,16 +40,22 @@ class ConfigTipoConsecAgnoCreateView(generics.CreateAPIView):
 
         # print(catalogo)
 
-        # print(unidad_encargada.id_unidad_organizacional)
+
+        configuracion = ConfigReferenciaPagoAgno.objects.filter(agno_ref=data_in['agno_ref'] ).first()
+
         print(age)
         print(age+1)
-        #print(data_in['agno_radicado'])
+
         if 'agno_ref' in data_in:
             if data_in['agno_ref']!= age and  data_in['agno_ref']!= (age+1):
                 raise ValidationError("El año debe ser el actual o el siguiente")
         else:
             raise ValidationError("El año de referencia es requerido")
         
+        configuracion = ConfigReferenciaPagoAgno.objects.filter(agno_ref=data_in['agno_ref'] ).first()
+
+        if configuracion:
+            raise ValidationError("Ya existe una configuracion para este año.")
 
         if not data_in['id_catalogo_serie_unidad']:
              cof = ConfigReferenciaPagoAgno.objects.filter(agno_ref=data_in['agno_ref'],id_unidad= data_in['id_unidad'])
@@ -125,7 +131,7 @@ class ConfigRefPagoAgnoUpdate(generics.UpdateAPIView):
         hoy = date.today()
         age=hoy.year
         # Obtener la instancia existente para actualizar
-        instance =ConfigReferenciaPagoAgno.objects.filter(id_config_ref_agno=pk).first()
+        instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=pk).first()
 
         # Verificar si la instancia existe
         if not instance:
@@ -231,8 +237,8 @@ class ConfigTipoConsecAgnoGetView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     queryset = ConfigReferenciaPagoAgno.objects.all()
     
-    def get(self, request,agno,uni):
-        instance = self.get_queryset().filter(agno_ref=agno,id_unidad=uni)
+    def get(self, request,agno):
+        instance = self.get_queryset().filter(agno_ref=agno)
 
 
 
@@ -258,16 +264,12 @@ class GenerarRefAgnoGenerarN(generics.UpdateAPIView):
         age=hoy.year
         # # Obtener la instancia existente para actualizar
 
-        if 'id_cat_serie_und' in data_in:
-            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
-        else :
-            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age,id_unidad=data_in['id_unidad']).first()
+        instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age).first()
 
         if not instance:
            
 
-            
-            auxiliar = ConfigReferenciaPagoAgno.objects.filter(id_unidad=data_in['id_unidad'],agno_ref=age, id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+            auxiliar = ConfigReferenciaPagoAgno.objects.filter(agno_ref=age).first()
             if not auxiliar:
                 conf_agno_anterior = ConfigReferenciaPagoAgno.objects.filter(agno_ref=age-1).first()
                 if not conf_agno_anterior:
@@ -287,7 +289,7 @@ class GenerarRefAgnoGenerarN(generics.UpdateAPIView):
                 if respuesta.status_code != status.HTTP_201_CREATED:
                     return respuesta
 
-            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age).first()
 
         if not instance.implementar:
             raise ValidationError("La configuracion se encuentra pendiente")
@@ -304,8 +306,8 @@ class GenerarRefAgnoGenerarN(generics.UpdateAPIView):
 
         ##buscamos los catalogos de serie subserie de la unidad 
         cod_se_sub = ""
-        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und']:
-            catalogos_unidad=CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_cat_serie_und']).first()
+        if instance.id_catalogo_serie_unidad:
+            catalogos_unidad=CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=instance.id_catalogo_serie_unidad).first()
             cod_serie = catalogos_unidad.id_catalogo_serie.id_serie_doc.codigo
             cod_se_sub = cod_serie
             if catalogos_unidad.id_catalogo_serie.id_subserie_doc:
@@ -351,10 +353,7 @@ class RefCreateView(generics.CreateAPIView):
     def post(self, request):
         data_in = request.data
         usuario = request.user.persona.id_persona
-        if not 'id_unidad' in data_in:
-            raise ValidationError("Debe ingresar la unidad a la cual se le asignara el consecutivo.")
-        # if not 'id_cat_serie_und' in data_in:
-        #     raise ValidationError("Debe ingresar el catalogo al cual se le va a crear el consecutivo.")
+
         
         respuesta = self.vista_generadora_numero.generar_n_radicado(data_in)
 
@@ -368,8 +367,8 @@ class RefCreateView(generics.CreateAPIView):
         data_consecutivo = {}
         data_consecutivo['id_unidad'] = data_respuesta['id_unidad']
 
-        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und'] :
-            data_consecutivo['id_catalogo'] = data_in['id_cat_serie_und']
+   
+        data_consecutivo['id_catalogo'] = data_respuesta['id_catalogo_serie_unidad']
         data_consecutivo['agno_referencia'] = data_respuesta['agno_ref']
         data_consecutivo['nro_consecutivo'] = data_respuesta['referencia_actual']
         data_consecutivo['fecha_consecutivo'] = data_respuesta['fecha_consecutivo_actual']
