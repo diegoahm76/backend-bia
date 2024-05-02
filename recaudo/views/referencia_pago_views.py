@@ -9,6 +9,7 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.utils import timezone
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno
 from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCreateSerializer, ConfigTipoRefgnoGetSerializer, ConfigTipoRefgnoPutSerializer, ReferenciaCreateSerializer
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -325,7 +326,7 @@ class GenerarRefAgnoGenerarN(generics.UpdateAPIView):
         else:
             conseg_nuevo = instance.id_unidad.codigo+str(instance.agno_ref)[-2:]+numero_con_ceros
         
-        #raise ValidationError("siu generando radicado")
+        
         
         return Response({
             'success': True,
@@ -349,6 +350,7 @@ class RefCreateView(generics.CreateAPIView):
     serializer_class = ReferenciaCreateSerializer
     permission_classes = [IsAuthenticated]
     vista_generadora_numero = GenerarRefAgnoGenerarN()
+    vista_archivos = ArchivosDgitalesCreate()
 
     def post(self, request):
         data_in = request.data
@@ -374,7 +376,68 @@ class RefCreateView(generics.CreateAPIView):
         data_consecutivo['fecha_consecutivo'] = data_respuesta['fecha_consecutivo_actual']
         data_consecutivo['id_persona_solicita'] = data_respuesta['id_persona_referencia_actual']
 
+
+
+        archivos =request.FILES.getlist('archivo')
+        data_archivo ={}
+        for archivo in archivos:
+
+            
+                ruta = "home,BIA,Recaudo,referencia"
+                respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo)
+                data_archivo = respuesta_archivo.data['data']
+                if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+                    return respuesta_archivo
+                #print(respuesta_archivo.data['data'])
+                data_archivo = respuesta_archivo.data['data']
+        data_consecutivo['id_archivo'] = data_archivo['id_archivo_digital']
         serializer = self.serializer_class(data=data_consecutivo)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data,'consecutivo':data_respuesta['conseg_nuevo']}}, status=status.HTTP_201_CREATED)
+
+
+
+
+
+
+class RefEjemGetView(generics.ListAPIView):
+    serializer_class = ConfigTipoRefgnoGetSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = ConfigReferenciaPagoAgno.objects.all()
+    
+    def get(self, request):
+        hoy = date.today()
+        age = hoy.year
+        instance = ConfigReferenciaPagoAgno.objects.filter(agno_ref=age).first()
+
+
+        
+
+        cod_se_sub = ""
+        if instance.id_catalogo_serie_unidad:
+            catalogos_unidad=CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=instance.id_catalogo_serie_unidad).first()
+            cod_serie = catalogos_unidad.id_catalogo_serie.id_serie_doc.codigo
+            cod_se_sub = cod_serie
+            if catalogos_unidad.id_catalogo_serie.id_subserie_doc:
+                cod_subserie =catalogos_unidad.id_catalogo_serie.id_subserie_doc.codigo
+                cod_se_sub = cod_serie+cod_subserie
+
+
+        
+        numero_con_ceros = str(instance.referencia_actual+1).zfill(instance.cantidad_digitos)
+        if cod_se_sub != "":
+
+            conseg_nuevo = instance.id_unidad.codigo+cod_se_sub+str(instance.agno_ref)[-2:]+numero_con_ceros
+        else:
+            conseg_nuevo = instance.id_unidad.codigo+str(instance.agno_ref)[-2:]+numero_con_ceros
+        
+        
+        
+        if not instance:
+            raise NotFound('No existe registro')
+        
+        serializer = self.serializer_class(instance)
+        
+        return Response({'success':True, 'detail':'se encontraron los siguientes registros', 'data': serializer.data,'ejemplo':conseg_nuevo}, status=status.HTTP_200_OK)
+

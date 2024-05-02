@@ -247,41 +247,27 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_placa(self, obj):
-        if obj.es_arrendado:
-            vehiculo_arrendado = obj.id_vehiculo_arrendado
-            if vehiculo_arrendado:
-                return vehiculo_arrendado.placa
-        else:
-            articulo = obj.id_articulo
-            if articulo:
-                return articulo.doc_identificador_nro
-        
+        if obj.es_arrendado and obj.id_vehiculo_arrendado:
+            return obj.id_vehiculo_arrendado.placa
+        elif obj.id_articulo:
+            return obj.id_articulo.doc_identificador_nro
         return None
-
 
     def get_marca(self, obj):
         if obj.es_arrendado:
-            if obj.id_vehiculo_arrendado.id_marca:
+            if obj.id_vehiculo_arrendado and obj.id_vehiculo_arrendado.id_marca:
                 return obj.id_vehiculo_arrendado.id_marca.nombre
-            else:
-                return None
-        else:
-            if obj.id_articulo.id_marca:
-                return obj.id_articulo.id_marca.nombre
-            else:
-                return None
+        elif obj.id_articulo and obj.id_articulo.id_marca:
+            return obj.id_articulo.id_marca.nombre
+        return None
 
     def get_nombre(self, obj):
-        if obj.es_arrendado:
-            vehiculo_arrendado = obj.id_vehiculo_arrendado
-            if vehiculo_arrendado:
-                return vehiculo_arrendado.nombre
-        else:
-            articulo = obj.id_articulo
-            if articulo:
-                return articulo.nombre
-        
+        if obj.es_arrendado and obj.id_vehiculo_arrendado:
+            return obj.id_vehiculo_arrendado.nombre
+        elif obj.id_articulo:
+            return obj.id_articulo.nombre
         return None
+
 
 
 
