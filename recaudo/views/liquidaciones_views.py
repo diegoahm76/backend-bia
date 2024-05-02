@@ -154,10 +154,7 @@ class LiquidacionBaseView(generics.ListAPIView):
         if serializer.is_valid():
             id_expediente = request.data['id_expediente']
             if id_expediente is not None:
-                expediente = Expedientes.objects.get(pk=id_expediente)
-                expediente.estado = 'guardado'
                 serializer.save()
-                expediente.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -174,9 +171,6 @@ class LiquidacionesBasePostMasivovista(generics.CreateAPIView):
                 try:
                     expediente = Expedientes.objects.get(pk=id_expediente)
                     print("Expediente encontrado:", expediente)
-                    expediente.estado = 'guardado'
-                    expediente.save()
-                    print("Estado del expediente actualizado:", expediente.estado)
                 except Expedientes.DoesNotExist:
                     print(f"Expediente con ID {id_expediente} no encontrado")
                     return Response({"error": f"Expediente con ID {id_expediente} no encontrado"}, status=status.HTTP_404_NOT_FOUND)
