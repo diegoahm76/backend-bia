@@ -45,8 +45,7 @@ class ValoresVariablesSerializer(serializers.ModelSerializer):
     id_tipo_cobro = serializers.ReadOnlyField(source='variables.tipo_cobro.id_tipo_cobro')
     nombre_tipo_renta = serializers.ReadOnlyField(source='variables.tipo_renta.nombre_tipo_renta')
     nombre_tipo_cobro = serializers.ReadOnlyField(source='variables.tipo_cobro.nombre_tipo_cobro')
-    estado = serializers.ReadOnlyField(source='descripccion')
-    descripccion = serializers.ReadOnlyField(source='descripccion')    
+ 
 
     class Meta:
         model = ValoresVariables

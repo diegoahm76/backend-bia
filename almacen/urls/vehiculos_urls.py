@@ -52,6 +52,7 @@ urlpatterns = [
     path('viajes-agendados/<int:pk>/', views.EditarAprobacion.as_view(), name='editar-aprobacion-viaje'),
     path('eliminar-viaje-agendado/<int:pk>/', views.EliminarViajeAgendado.as_view(), name='eliminar-viaje-agendado'),
     path('obtener-agendamiento-viajes/<int:id_solicitud_viaje>/', views.ObtenerInformacionAgendamiento.as_view(), name='obtener-informacion-agendamiento'),
+    path('obtener-informacion-viajes/get/', views.ObtenerInformacionViajesAll.as_view(), name='obtener-informacion-agendamiento'),
 
 
 
