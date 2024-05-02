@@ -10,7 +10,7 @@ from django.utils import timezone
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 
 from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno
-from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCreateSerializer, ConfigTipoRefgnoGetSerializer
+from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCreateSerializer, ConfigTipoRefgnoGetSerializer, ConfigTipoRefgnoPutSerializer, ReferenciaCreateSerializer
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from seguridad.models import Personas
 from seguridad.utils import Util
@@ -75,7 +75,7 @@ class ConfigTipoConsecAgnoCreateView(generics.CreateAPIView):
             
             data_in['id_persona_config_implementacion']=data_in['user']
             data_in['fecha_inicial_config_implementacion'] = timezone.now()
-            data_in['consecutivo_actual'] = consecutivo_inicial-1
+            data_in['referencia_actual'] = consecutivo_inicial-1
    
             if 'cantidad_digitos' in data_in and data_in['cantidad_digitos']:
                 if data_in['cantidad_digitos'] > 20:
@@ -114,7 +114,7 @@ class ConfigTipoConsecAgnoCreateView(generics.CreateAPIView):
 
 
 
-class ConfigTiposConsecutivoAgnoUpdate(generics.UpdateAPIView):
+class ConfigRefPagoAgnoUpdate(generics.UpdateAPIView):
     serializer_class = ConfigTipoRefgnoCreateSerializer
     queryset = ConfigReferenciaPagoAgno.objects.all()
     permission_classes = [IsAuthenticated]
@@ -132,9 +132,9 @@ class ConfigTiposConsecutivoAgnoUpdate(generics.UpdateAPIView):
             return Response({'detail': 'La configuracion no existe.'}, status=status.HTTP_404_NOT_FOUND)
         
         previous=copy.copy(instance)
-        if instance.implementar and instance.agno_consecutivo==age:
+        if instance.implementar and instance.agno_ref==age:
             raise ValidationError('No se puede modificar la configuracion de un consecutivo si se esta implementando actualmente.')
-        if instance.agno_consecutivo < age:
+        if instance.agno_ref < age:
             raise ValidationError('No se puede modificar la configuracion de un consecutivo si es de un año anterior.')
         if 'implementar' in data_in:
 
@@ -244,3 +244,138 @@ class ConfigTipoConsecAgnoGetView(generics.ListAPIView):
         return Response({'success':True, 'detail':'se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+
+class GenerarRefAgnoGenerarN(generics.UpdateAPIView):
+    serializer_class = ConfigTipoRefgnoPutSerializer
+    queryset = ConfigReferenciaPagoAgno.objects.all()
+    permission_classes = [IsAuthenticated]
+    vista_creacion_configuracion = ConfigTipoConsecAgnoCreateView()
+    def generar_n_radicado(self,data):
+        
+        data_in=data
+        print(data_in)
+        hoy = date.today()
+        age=hoy.year
+        # # Obtener la instancia existente para actualizar
+
+        if 'id_cat_serie_und' in data_in:
+            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+        else :
+            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age,id_unidad=data_in['id_unidad']).first()
+
+        if not instance:
+           
+
+            
+            auxiliar = ConfigReferenciaPagoAgno.objects.filter(id_unidad=data_in['id_unidad'],agno_ref=age, id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+            if not auxiliar:
+                conf_agno_anterior = ConfigReferenciaPagoAgno.objects.filter(agno_ref=age-1).first()
+                if not conf_agno_anterior:
+                    raise ValidationError("No se encontro la configuracion.")
+              
+                nueva_configuracion = {
+                                    'user':None,
+                                    'direccion' : data_in['direccion'],
+                                    'agno_ref':age,
+                                    'consecutivo_inicial':1,
+                                    'cantidad_digitos':conf_agno_anterior.cantidad_digitos,
+                                    'implementar':conf_agno_anterior.implementar,
+                                    'id_cat_serie_und': conf_agno_anterior.id_cat_serie_und,
+                                    'id_unidad':conf_agno_anterior.id_unidad
+                                    }
+                respuesta = self.vista_creacion_configuracion.crear_config_tipos_consecutivo_agno(nueva_configuracion)
+                if respuesta.status_code != status.HTTP_201_CREATED:
+                    return respuesta
+
+            instance =ConfigReferenciaPagoAgno.objects.filter(agno_ref=age,id_unidad=data_in['id_unidad'], id_catalogo_serie_unidad = data_in['id_cat_serie_und']).first()
+
+        if not instance.implementar:
+            raise ValidationError("La configuracion se encuentra pendiente")
+
+
+        new_data={}
+        new_data['referencia_actual'] = instance.referencia_actual+1
+        new_data['id_persona_referencia_actual'] = data_in['id_persona']
+        new_data['fecha_consecutivo_actual'] = data_in['fecha_actual']
+       ##new_data['id_catalogo'] = data_in['id_cat_serie_und']
+         
+        serializer =ConfigTipoRefgnoPutSerializer(instance, data=new_data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        ##buscamos los catalogos de serie subserie de la unidad 
+        cod_se_sub = ""
+        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und']:
+            catalogos_unidad=CatalogosSeriesUnidad.objects.filter(id_cat_serie_und=data_in['id_cat_serie_und']).first()
+            cod_serie = catalogos_unidad.id_catalogo_serie.id_serie_doc.codigo
+            cod_se_sub = cod_serie
+            if catalogos_unidad.id_catalogo_serie.id_subserie_doc:
+                cod_subserie =catalogos_unidad.id_catalogo_serie.id_subserie_doc.codigo
+                cod_se_sub = cod_serie+cod_subserie
+ 
+            
+            
+        instance = serializer.save()
+        print('Holaaaa'+str(instance.id_catalogo_serie_unidad))
+        numero_con_ceros = str(instance.referencia_actual).zfill(instance.cantidad_digitos)
+        if cod_se_sub != "":
+
+            conseg_nuevo = instance.id_unidad.codigo+cod_se_sub+str(instance.agno_ref)[-2:]+numero_con_ceros
+        else:
+            conseg_nuevo = instance.id_unidad.codigo+str(instance.agno_ref)[-2:]+numero_con_ceros
+        
+        #raise ValidationError("siu generando radicado")
+        
+        return Response({
+            'success': True,
+            'detail': 'Se actualizó la configuracion de los  consecutivos correctamente.',
+            'data': {**serializer.data,'conseg_nuevo':conseg_nuevo}
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request):
+        data_in = request.data
+        usuario = request.user.persona.id_persona
+        #direccion=#
+        data_in['user']=usuario#id_persona_config_implementacion
+        data_in['direccion']=Util.get_client_ip(request)
+        response= self.generar_n_radicado(data_in,)
+        return response
+
+
+
+
+class RefCreateView(generics.CreateAPIView):
+    serializer_class = ReferenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+    vista_generadora_numero = GenerarRefAgnoGenerarN()
+
+    def post(self, request):
+        data_in = request.data
+        usuario = request.user.persona.id_persona
+        if not 'id_unidad' in data_in:
+            raise ValidationError("Debe ingresar la unidad a la cual se le asignara el consecutivo.")
+        # if not 'id_cat_serie_und' in data_in:
+        #     raise ValidationError("Debe ingresar el catalogo al cual se le va a crear el consecutivo.")
+        
+        respuesta = self.vista_generadora_numero.generar_n_radicado(data_in)
+
+        if respuesta.status_code != status.HTTP_200_OK:
+            return respuesta
+        
+        print(respuesta.data['data'])
+        #raise ValidationError("AQUI VAMOS")
+        data_respuesta = respuesta.data['data']
+
+        data_consecutivo = {}
+        data_consecutivo['id_unidad'] = data_respuesta['id_unidad']
+
+        if 'id_cat_serie_und' in data_in and data_in['id_cat_serie_und'] :
+            data_consecutivo['id_catalogo'] = data_in['id_cat_serie_und']
+        data_consecutivo['agno_referencia'] = data_respuesta['agno_ref']
+        data_consecutivo['nro_consecutivo'] = data_respuesta['referencia_actual']
+        data_consecutivo['fecha_consecutivo'] = data_respuesta['fecha_consecutivo_actual']
+        data_consecutivo['id_persona_solicita'] = data_respuesta['id_persona_referencia_actual']
+
+        serializer = self.serializer_class(data=data_consecutivo)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data,'consecutivo':data_respuesta['conseg_nuevo']}}, status=status.HTTP_201_CREATED)
