@@ -33,16 +33,24 @@ class VariablesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ValoresVariablesUpDateEstadoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ValoresVariables
+        fields = ['usada']
+
 class ValoresVariablesSerializer(serializers.ModelSerializer):
     nombre_variable = serializers.ReadOnlyField(source='variables.nombre')
     id_tipo_renta = serializers.ReadOnlyField(source='variables.tipo_renta.id_tipo_renta')
     id_tipo_cobro = serializers.ReadOnlyField(source='variables.tipo_cobro.id_tipo_cobro')
     nombre_tipo_renta = serializers.ReadOnlyField(source='variables.tipo_renta.nombre_tipo_renta')
     nombre_tipo_cobro = serializers.ReadOnlyField(source='variables.tipo_cobro.nombre_tipo_cobro')
+ 
 
     class Meta:
         model = ValoresVariables
         fields = '__all__'
+
 
 
 
@@ -51,6 +59,8 @@ class AdministraciondePersonalSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdministraciondePersonal
         fields = '__all__'
+
+        
 class ConfigaraicionInteresSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConfigaraicionInteres

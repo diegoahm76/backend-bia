@@ -290,7 +290,6 @@ class InspeccionesVehiculosDiaCreateSerializer(serializers.ModelSerializer):
             'observaciones': {'required': False},
         }
 
-    
     def validate(self, data):
         # Realizamos las validaciones personalizadas
 
@@ -390,46 +389,59 @@ class ViajesAgendadosSolcitudSerializer(serializers.ModelSerializer):
 
     def get_tipo_documento(self, obj):
         tipo_documento_nombre = None
-        tipo_documento_obj = obj.id_vehiculo_conductor.id_persona_conductor.tipo_documento
-        if tipo_documento_obj:
-            tipo_documento_nombre = tipo_documento_obj.nombre
+        if obj.id_vehiculo_conductor:
+            tipo_documento_obj = obj.id_vehiculo_conductor.id_persona_conductor.tipo_documento
+            if tipo_documento_obj:
+                tipo_documento_nombre = tipo_documento_obj.nombre
         return tipo_documento_nombre
+
 
     
     def get_numero_documento(self, obj):
         numero_documento_nombre = None
-        numero_documento_obj = obj.id_vehiculo_conductor.id_persona_conductor.numero_documento
-        if numero_documento_obj:
-            numero_documento_nombre = numero_documento_obj
+        if obj.id_vehiculo_conductor and obj.id_vehiculo_conductor.id_persona_conductor:
+            numero_documento_obj = obj.id_vehiculo_conductor.id_persona_conductor.numero_documento
+            if numero_documento_obj:
+                numero_documento_nombre = numero_documento_obj
         return numero_documento_nombre
+
 
 
     def get_placa(self, obj):
         placa = None
-        if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
-            placa = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
-        else:
-            placa = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.doc_identificador_nro
-        
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo and obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                placa = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+            elif obj.id_vehiculo_conductor.id_hoja_vida_vehiculo and not obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                placa = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.doc_identificador_nro
         return placa
+
     
     def get_marca(self, obj):
         marca = None
-        if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
-            marca = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
-        else:
-            marca = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.id_marca.nombre
+        if obj.id_vehiculo_conductor and obj.id_vehiculo_conductor.id_hoja_vida_vehiculo:
+            hoja_vida_vehiculo = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo
+            if hoja_vida_vehiculo.es_arrendado:
+                vehiculo_arrendado = hoja_vida_vehiculo.id_vehiculo_arrendado
+                if vehiculo_arrendado and vehiculo_arrendado.id_marca:
+                    marca = vehiculo_arrendado.id_marca.nombre
+            else:
+                articulo = hoja_vida_vehiculo.id_articulo
+                if articulo and articulo.id_marca:
+                    marca = articulo.id_marca.nombre
+        return marca
 
-        return marca    
     
     def get_nombre(self, obj):
         nombre = None
-        if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
-            nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
-        else:
-            nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.nombre
-        
+        if obj.id_vehiculo_conductor:
+            if obj.id_vehiculo_conductor.id_hoja_vida_vehiculo and obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_vehiculo_arrendado.nombre
+            elif obj.id_vehiculo_conductor.id_hoja_vida_vehiculo and not obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.es_arrendado:
+                nombre = obj.id_vehiculo_conductor.id_hoja_vida_vehiculo.id_articulo.nombre
+            
         return nombre
+
     
     def get_nombre_persona_autoriza(self, obj):
         nombre_persona_autoriza = None

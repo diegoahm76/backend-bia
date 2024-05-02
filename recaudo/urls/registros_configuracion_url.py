@@ -37,7 +37,7 @@ urlpatterns = [
         path('valoresvariables/put/<str:pk>/', viwes.Actualizar_ValoresVariables.as_view(), name='registros-valoresvariables'),
         path('valoresvariables/delete/<str:pk>/', viwes.Borrar_ValoresVariables.as_view(), name='registros-valoresvariables'),
 
-
+        path('valoresvariables_estado/put/<str:pk>/', viwes.Actualizar_Estado_ValoresVariables.as_view(), name='registros-valoresvariables-estado'),
 
             #funcion para calcular los dias de el mes
         path('calculadoradiasmeses/', viwes.CalculadoraDiasMeses.as_view(), name='registros-calculadora-dias-meses'),
