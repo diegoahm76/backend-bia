@@ -269,7 +269,7 @@ class DigitalizacionCreate(generics.CreateAPIView):
             raise ValidationError("No se puede digitalizar anexos sin archivo adjunto")
         
     def set_data_metadato(self, data_metadatos, fecha_actual, id_archivo_digital):
-        data_metadatos['fecha_creacion_doc'] = fecha_actual.date()
+        data_metadatos['fecha_creacion_doc'] = fecha_actual
         data_metadatos['es_version_original'] = True
         data_metadatos['id_archivo_sistema'] = id_archivo_digital
         
@@ -685,7 +685,7 @@ class OtrosDigitalizacionCreate(generics.CreateAPIView):
             raise ValidationError("No se puede digitalizar anexos sin archivo adjunto")
         
     def set_data_metadato(self, data_metadatos, fecha_actual, id_archivo_digital):
-        data_metadatos['fecha_creacion_doc'] = fecha_actual.date()
+        data_metadatos['fecha_creacion_doc'] = fecha_actual
         data_metadatos['es_version_original'] = True
         data_metadatos['id_archivo_sistema'] = id_archivo_digital
         data_metadatos['nombre_original_archivo'] = None
@@ -1042,7 +1042,7 @@ class OpasDigitalizacionCreate(generics.CreateAPIView):
             raise ValidationError("No se puede digitalizar anexos sin archivo adjunto")
         
     def set_data_metadato(self, data_metadatos, fecha_actual, id_archivo_digital):
-        data_metadatos['fecha_creacion_doc'] = fecha_actual.date()
+        data_metadatos['fecha_creacion_doc'] = fecha_actual
         data_metadatos['es_version_original'] = True
         data_metadatos['id_archivo_sistema'] = id_archivo_digital
         data_metadatos['nombre_original_archivo'] = None
