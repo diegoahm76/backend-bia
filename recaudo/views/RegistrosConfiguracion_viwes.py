@@ -183,6 +183,9 @@ class Borrar_TipoRenta(generics.DestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
+            if instance.precargado:
+                raise ValidationError('No se puede eliminar un tipo de renta precargado')
+            
             self.perform_destroy(instance)
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
                             status=status.HTTP_200_OK)
@@ -197,6 +200,9 @@ class Actualizar_TipoRenta(generics.UpdateAPIView):
 
     def put(self, request, *args, **kwargs):
         instance = self.get_object()  # Obtiene la instancia existente
+        if instance.precargado:
+            raise ValidationError('No se puede actualizar un tipo de renta precargado')
+        
         serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
         serializer.is_valid(raise_exception=True)  # Valida los datos
         serializer.save()  # Guarda la instancia con los datos actualizados

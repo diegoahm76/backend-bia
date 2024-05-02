@@ -28,7 +28,6 @@ class Expedientes(models.Model):
     cod_recurso = models.CharField(max_length=255, db_column='T407codigoRecurso')
     liquidado = models.BooleanField(default=False, db_column='T407liquidado')
     id_expediente_doc = models.ForeignKey('gestion_documental.ExpedientesDocumentales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T407Id_ExpedienteDoc') # Definir. Según modelado debe ser obligatorio
-    estado = models.CharField(max_length=20, db_column='T407estado' , default='ACTIVO') # Según modelado no debería existir
 
     class Meta:
         db_table = 'T407Expedientes'
@@ -57,8 +56,8 @@ class LiquidacionesBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T403IdLiquidacionBase")
     fecha_liquidacion = models.DateTimeField(db_column="T403fechaLiquidacion")
     vencimiento = models.DateTimeField(db_column="T403vencimiento")
-    periodo_liquidacion = models.SmallIntegerField(db_column="T403periodoLiquidacion") # Definir. Según modelado es smallint, pero estaba como charfield antes
-    valor = models.DecimalField(max_digits=20, decimal_places=4, default=0, db_column="T403valor") # Definir. Según modelado es integer
+    periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
+    valor = models.DecimalField(max_digits=20, decimal_places=4, default=0, db_column="T403Valor")
     estado = models.CharField(choices=estados_liquidacion_CHOICES, max_length=10, db_column="T403estado")
     id_deudor = models.ForeignKey(Deudores, blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Deudor")
     id_expediente = models.ForeignKey(Expedientes, blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Expediente")
@@ -71,9 +70,9 @@ class LiquidacionesBase(models.Model):
     periodo = models.SmallIntegerField(null=True, default=True, db_column='T403Periodo')
     nit = models.CharField(max_length=15, blank=True, null=True, db_column="T403Nit")
     fecha = models.DateTimeField(null=True, default=True, db_column="t403Fecha")
-    valor_liq = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=True, db_column='T403ValorLiq') # Definir. Según modelado es tipo money, pero DRF no soporta ese tipo de campo
-    valor_pagado = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=True, db_column='T403ValorPagado') # Definir. Según modelado es tipo money, pero DRF no soporta ese tipo de campo
-    valor_prescripcion = models.DecimalField(max_digits=12, decimal_places=2, null=True, default=True, db_column='T403valorPrescripcion') # Definir. Según modelado es tipo money, pero DRF no soporta ese tipo de campo
+    valor_liq = models.DecimalField(max_digits=19, decimal_places=2, null=True, default=True, db_column='T403ValorLiq')
+    valor_pagado = models.DecimalField(max_digits=19, decimal_places=2, null=True, default=True, db_column='T403ValorPagado')
+    valor_prescripcion = models.DecimalField(max_digits=19, decimal_places=2, null=True, default=True, db_column='T403valorPrescripcion')
     anulado = models.CharField(max_length=1, blank=True, null=True, db_column="T403Anulado")
     num_resolucion = models.IntegerField(blank=True, null=True, db_column="T403numResolucion")
     agno_resolucion = models.SmallIntegerField(null=True, default=True, db_column='T403AgnoResolucion')
