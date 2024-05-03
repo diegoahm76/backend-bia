@@ -92,7 +92,7 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                         filter['id_entrada_almacen__fecha_entrada__lte'] = value
             elif key == 'categoria':
                 if value != '':
-                    filter['id_bien__cod_tipo_bien__cod_tipo_activo'] = value
+                    filter['id_bien__cod_tipo_activo__cod_tipo_activo'] = value
             else:
                 if value != '':
                     filter[key] = value
@@ -104,9 +104,9 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
         data_output = []
 
         if items_entradas:
-            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo"))
+            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo","codigo_activo_nombre",'codigo_activo'))
 
-            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo")):
+            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo","codigo_activo_nombre",'codigo_activo')):
                 items_list = list(items)
 
                 items_data = {
@@ -116,6 +116,8 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     "nombre_bien": entrada[3],
                     "codigo_bien": entrada[4],
                     "tipo_activo": entrada[5],
+                    "codigo_activo_nombre": entrada[6],
+                    "codigo_activo": entrada[7],
                     "cantidad_ingresada": sum(item['cantidad'] for item in items_list)
                 }
 

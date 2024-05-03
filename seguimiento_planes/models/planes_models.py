@@ -24,7 +24,7 @@ class ObjetivoDesarrolloSostenible(models.Model):
     id_objetivo = models.AutoField(
         primary_key=True, editable=False, db_column='T500IdObjetivo')
     nombre_objetivo = models.CharField(
-        max_length=30, db_column='T500nombreObjetivo')
+        max_length=400, db_column='T500nombreObjetivo')
     activo = models.BooleanField(default=True, db_column='T500activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T500itemYaUsado')
     registro_precargado = models.BooleanField(default=False, db_column='T500registroPrecargado')
@@ -41,7 +41,7 @@ class Planes(models.Model):
     id_plan = models.AutoField(
         primary_key=True, editable=False, db_column='T501IdPlan')
     nombre_plan = models.CharField(
-        max_length=30, db_column='T501nombrePlan')
+        max_length=255, db_column='T501nombrePlan')
     sigla_plan = models.CharField(
         max_length=30, db_column='T501siglaPlan')
     tipo_plan = models.CharField(
@@ -105,7 +105,7 @@ class EjeEstractegico(models.Model):
     id_eje_estrategico = models.AutoField(
         primary_key=True, editable=False, db_column='T502IdEjeEstrategico')
     nombre = models.CharField(
-        max_length=255, db_column='T502nombreEjeEstrategico')
+        max_length=400, db_column='T502nombreEjeEstrategico')
     id_tipo_eje = models.ForeignKey(
         TipoEje, on_delete=models.CASCADE, db_column='T502IdTipoEje')
     id_plan = models.ForeignKey(
