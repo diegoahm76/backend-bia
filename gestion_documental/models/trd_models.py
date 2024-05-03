@@ -151,7 +151,8 @@ class HistoricosCatSeriesUnidadOrgCCDTRD(models.Model):
     descripcion_procedimiento = models.CharField(max_length=1000, db_column='T219descripcionProcedimiento')
     fecha_registro_historico = models.DateTimeField(auto_now=True, db_column='T219fechaInicioDisposicion')
     justificacion = models.CharField(max_length=255, null=True, blank=True, db_column='T219justificacionDelCambio')
-    ruta_archivo = models.CharField(max_length=255, null=True, blank =True, db_column='T219rutaArchivoCambio')
+    # ruta_archivo = models.CharField(max_length=255, null=True, blank =True, db_column='T219rutaArchivoCambio')
+    ruta_archivo = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T219rutaArchivoCambio')
     id_persona_cambia = models.ForeignKey(Personas, null=True, blank=True, on_delete=models.SET_NULL, db_column='T219Id_PersonaCambia')
 
     def __str__(self):

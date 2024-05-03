@@ -5,6 +5,8 @@ from rest_framework.response import Response
 from django.db.models import Q
 import copy, pytz
 from datetime import datetime
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_gestor import PermisoActualizarTCA, PermisoCrearTCA
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
@@ -252,6 +254,22 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
                         raise ValidationError('Debe ingresar un código de clasificación que exista')
                      
                     if clasif_s_ss_unidad_tca.cod_clas_expediente != data['cod_clas_expediente']:
+                        archivo_soporte = request.FILES.get('ruta_archivo_cambio')
+
+                        # ACTUALIZAR ARCHIVO
+                        if archivo_soporte:
+                            extension = archivo_soporte.name.split('.')[-1]
+                            if extension.lower() != 'pdf':
+                                raise ValidationError('El archivo adjunto debe estar en formato PDF.')
+
+                            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CatalogoTCA")
+                            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                            
+                            data['ruta_archivo_cambio'] = archivo_creado_instance.id_archivo_digital
+                        # elif not archivo_soporte and clasif_s_ss_unidad_tca.ruta_archivo_cambio:
+                        #     clasif_s_ss_unidad_tca.ruta_archivo_cambio.ruta_archivo.delete()
+                        #     clasif_s_ss_unidad_tca.ruta_archivo_cambio.delete()
+
                         serializer= self.serializer_class_2(clasif_s_ss_unidad_tca, data=data)
                         serializer.is_valid(raise_exception=True)
                         serializer.save() 

@@ -57,9 +57,10 @@ class ClasifSerieSubserieUnidadTCASerializer(serializers.ModelSerializer):
     # cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
 
     def validate_ruta_soporte(self, value):
-        extension = value.name.split('.')[-1]
-        if extension != 'pdf':
-            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        if value:
+            extension = value.ruta_archivo.name.split('.')[-1]
+            if extension != 'pdf':
+                raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
         return value
     
     class Meta:
@@ -86,9 +87,10 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
     # cod_clas_expediente = serializers.ChoiceField(choices=tipo_clasificacion_CHOICES)
 
     def validate_ruta_soporte(self, value):
-        extension = value.name.split('.')[-1]
-        if extension != 'pdf':
-            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
+        if value:
+            extension = value.ruta_archivo.name.split('.')[-1]
+            if extension != 'pdf':
+                raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
         return value
     
     class Meta:
@@ -122,12 +124,6 @@ class ClasifSerieSubserieUnidadTCAPutSerializer(serializers.ModelSerializer):
         
 class ClasifSerieSubseriUnidadTCA_activoSerializer(serializers.ModelSerializer):
     justificacion_cambio = serializers.CharField(max_length=255,min_length=1)
-    
-    def validate_ruta_archivo_cambio(self, value):
-        extension = value.name.split('.')[-1]
-        if extension != 'pdf':
-            raise serializers.ValidationError('El archivo adjunto debe estar en formato PDF.')
-        return value
     
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
@@ -184,12 +180,14 @@ class GetClasifExpedientesSerializer(serializers.ModelSerializer):
     id_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.id_subserie_doc', default=None)
     nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
     cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und_ccd_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
+    ruta_archivo_cambio = serializers.ReadOnlyField(source='ruta_archivo_cambio.ruta_archivo.url', default=None)
     
     class Meta:
         model = CatSeriesUnidadOrgCCD_TRD_TCA
         fields = '__all__'
 
 class GetHistoricoTCASerializer(serializers.ModelSerializer):
+    ruta_archivo_cambio = serializers.ReadOnlyField(source='ruta_archivo_cambio.ruta_archivo.url', default=None)
     persona_cambia = serializers.SerializerMethodField()
     
     def get_persona_cambia(self, obj):
