@@ -15,6 +15,7 @@ from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCrea
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from seguridad.models import Personas
 from seguridad.utils import Util
+from django.core.files.base import ContentFile
 
 class ConfigTipoConsecAgnoCreateView(generics.CreateAPIView):
     serializer_class = ConfigTipoRefgnoCreateSerializer
@@ -381,10 +382,16 @@ class RefCreateView(generics.CreateAPIView):
         archivos =request.FILES.getlist('archivo')
         data_archivo ={}
         for archivo in archivos:
-
+                
+                print(archivo)
+                print(archivo.name)
+                contenido = archivo.read()
+                nombre_nuevo= "Archivo.pdf"
+                archivo_modificado = ContentFile(contenido, name=nombre_nuevo)
+                print(archivo_modificado)
             
                 ruta = "home,BIA,Recaudo,referencia"
-                respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo)
+                respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo_modificado)
                 data_archivo = respuesta_archivo.data['data']
                 if respuesta_archivo.status_code != status.HTTP_201_CREATED:
                     return respuesta_archivo
