@@ -85,7 +85,7 @@ class ActaInicioCreate(generics.CreateAPIView):
 
         context = data
 
-        pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/auto_plantilla.docx'
+        pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/AUTO_INICIO_AGUAS_SUPERFICIALES.docx'
         outputPath = str(settings.BASE_DIR) + '/gestion_documental/templates/output.docx'
 
         doc = DocxTemplate(pathToTemplate)
@@ -502,13 +502,14 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             crear = ActaInicioCreate()
 
             data_acto= {}
-            request.data['n_auto'] = 'Auto 1'
-            request.data['n_expediente'] = respuesta_expediente['codigo_exp_consec_por_agno']
+            request.data['dato1'] = 'Auto 1'
+            request.data['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']
            
             archivo_acto = crear.create(request)
 
             print(archivo_acto)
             raise ValidationError("HAAA")
+        
             tramite = asignacion.id_solicitud_tramite
             tramite.id_expediente = expediente
             tramite.fecha_expediente = respuesta_expediente['fecha_apertura_expediente']
