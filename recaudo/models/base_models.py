@@ -262,7 +262,7 @@ class ModeloBaseSueldoMinimo(models.Model):
     capacidad=models.CharField(max_length=255,db_column='T470Capacidad')
     valor=models.DecimalField(max_digits=15, decimal_places=0, db_column='T470Valor')
     editable=models.BooleanField(default=False, db_column='T470Editable')
-    formula=models.CharField(max_length=255, db_column='T470Formula', null=True, default=True)  # Cambiado a campo booleano
+    formula=models.CharField(max_length=255, db_column='T470Formula', null=True, default="")  # Cambiado a campo booleano
 
     class Meta:
         db_table = 'T470ModeloBaseSueldoMinimo'
