@@ -99,7 +99,9 @@ urlpatterns = [
      path('expedientes/eliminacion/publicados/get/<str:id_eliminacion_documental>/', views.EliminacionPublicadosGetView.as_view(), name='eliminacion-publicados-get'),
      path('expedientes/eliminacion/eliminados/get/<str:id_eliminacion_documental>/', views.EliminacionEliminadosGetView.as_view(), name='eliminacion-eliminados-get'),
      
-
+    
+    #Indexar Documentos Sasoftco
+    path('expedientes/indexar-documentos-sasoftco/create/',views.IndexacionDocsTramites.as_view(), name='indexar-documentos-sasoftco-create'),
 
 
 ]

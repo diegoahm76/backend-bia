@@ -20,6 +20,7 @@ from dotenv import load_dotenv
 
 from recaudo.models.liquidaciones_models import LiquidacionesBase
 from recaudo.models.pagos_models import Pagos
+from recaudo.serializers.liquidaciones_serializers import HistEstadosLiqPostSerializer
 from recaudo.serializers.pagos_serializers import ConsultarPagosSerializer, InicioPagoSerializer
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
@@ -31,6 +32,7 @@ class IniciarPagoView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         data = request.data
+        current_date = datetime.now()
         
         # VALIDACIONES DATA
         id_liquidacion = data.get('id_liquidacion')
@@ -44,6 +46,8 @@ class IniciarPagoView(generics.CreateAPIView):
         liquidacion = LiquidacionesBase.objects.filter(id=id_liquidacion).first()
         if not liquidacion:
             raise ValidationError('La liquidación asociada no existe en el sistema')
+        if liquidacion.vencimiento < current_date:
+            raise ValidationError('La liquidación asociada ya se encuentra vencida, no puede continuar con el pago')
         
         persona = Personas.objects.filter(id_persona=id_persona_pago).first()
         if not persona:
@@ -264,7 +268,7 @@ class NotificarPagoView(generics.CreateAPIView):
                     pago.notificacion = True
                     pago.save()
 
-                    # ACTUALIZAR T273 BOOL PAGO Y FOREIGN KEY PAGO CUANDO ESTADO == 1 (PRIMERA VEZ). ACTUALIZAR ESTADO LIQUIDACION EN T403 - CREAR COMPROBANTE DE PAGO Y GUARDAR EN T468
+                    # ACTUALIZAR T273 FOREIGN KEY PAGO.
                     if estado_pago == "1":
                         # GENERAR COMPROBANTE DE PAGO
                         client_ip = Util.get_client_ip(request)
@@ -302,6 +306,28 @@ class NotificarPagoView(generics.CreateAPIView):
 
                         pago.comprobante_pago = comprobante_instance
                         pago.save()
+
+                        # Actualizar info en tramite
+                        tramite = pago.id_liquidacion.id_solicitud_tramite
+                        if tramite:
+                            if not tramite.pago:
+                                tramite.pago = True
+                                tramite.id_pago_evaluacion = pago.id_pago
+                                tramite.save()
+
+                        # Actualizar estado en liquidacion
+                        pago.id_liquidacion.estado = 'PAGADO'
+                        pago.id_liquidacion.save()
+
+                        # Guardar historico liquidacion
+                        data_historico = {
+                            'liquidacion_base': pago.id_liquidacion.id,
+                            'estado_liq': 'PAGADO',
+                            'fecha_estado': datetime.now()
+                        }
+                        serializer_historico = HistEstadosLiqPostSerializer(data=data_historico)
+                        serializer_historico.is_valid(raise_exception=True)
+                        serializer_historico.save()
                 else:
                     url_get_pimisys = "http://cormacarenatest.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
                     params = {'id_pago': id_pago, 'id_comercio': id_comercio}

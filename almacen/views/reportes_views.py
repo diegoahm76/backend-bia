@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.db.models import Q
+from datetime import datetime
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
 from almacen.models.hoja_de_vida_models import HojaDeVidaVehiculos
@@ -91,7 +92,7 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                         filter['id_entrada_almacen__fecha_entrada__lte'] = value
             elif key == 'categoria':
                 if value != '':
-                    filter['id_bien__cod_tipo_bien__cod_tipo_activo'] = value
+                    filter['id_bien__cod_tipo_activo__cod_tipo_activo'] = value
             else:
                 if value != '':
                     filter[key] = value
@@ -103,9 +104,9 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
         data_output = []
 
         if items_entradas:
-            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo"))
+            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo","codigo_activo_nombre",'codigo_activo'))
 
-            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo")):
+            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo","codigo_activo_nombre",'codigo_activo')):
                 items_list = list(items)
 
                 items_data = {
@@ -115,6 +116,8 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     "nombre_bien": entrada[3],
                     "codigo_bien": entrada[4],
                     "tipo_activo": entrada[5],
+                    "codigo_activo_nombre": entrada[6],
+                    "codigo_activo": entrada[7],
                     "cantidad_ingresada": sum(item['cantidad'] for item in items_list)
                 }
 
@@ -265,12 +268,13 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         marca = self.request.query_params.get('marca')
         placa = self.request.query_params.get('placa')
         es_arrendado = self.request.query_params.get('es_arrendado')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
 
         queryset_vehiculos = HojaDeVidaVehiculos.objects.all()
 
         if tipo_vehiculo:
             queryset_vehiculos = queryset_vehiculos.filter(cod_tipo_vehiculo=tipo_vehiculo)
-
 
         if es_arrendado:
             queryset_vehiculos = queryset_vehiculos.filter(es_arrendado=es_arrendado)
@@ -291,6 +295,13 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         queryset_viajes = []
         for asignacion in asignaciones_conductor:
             viajes_agendados = asignacion.viajesagendados_set.filter(viaje_autorizado=True)
+
+            # Filtrar por fecha desde y fecha hasta
+            if fecha_desde:
+                viajes_agendados = viajes_agendados.filter(fecha_partida_asignada__gte=datetime.strptime(fecha_desde, '%Y-%m-%d'))
+            if fecha_hasta:
+                viajes_agendados = viajes_agendados.filter(fecha_retorno_asignada__lte=datetime.strptime(fecha_hasta, '%Y-%m-%d'))
+
             queryset_viajes.extend(viajes_agendados)
 
         return queryset_viajes

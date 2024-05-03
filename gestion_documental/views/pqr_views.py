@@ -27,7 +27,7 @@ from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoEx
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
 from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente, ConcesionesAccesoAExpsYDocs, ExpedientesDocumentales,IndicesElectronicosExp,Docs_IndiceElectronicoExp, InventarioDocumental
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.radicados_models import SolicitudAlUsuarioSobrePQRSDF, PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, MediosSolicitudSerializer, PersonaSerializer, SucursalesEmpresasSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
@@ -4046,26 +4046,26 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
         c.drawString(200, 820, "INFORMACIÓN DE LA SOLICITUD PQRSDF")
 
         c.rect(20, 720, 550, 80)
-        c.drawString(30, 770, nombre_titular)
-        c.drawString(30, 740, pqrsdf.id_persona_titular.numero_documento)
+        c.drawString(30, 770, f"Nombre Titular: {nombre_titular}")
+        c.drawString(30, 740, f"Número de Documento: {pqrsdf.id_persona_titular.numero_documento}")
 
         c.rect(20, 595, 550, 100)
-        c.drawString(30, 670, nombre_interpone)
-        c.drawString(30, 640, numero_documento_interpone)
-        c.drawString(30, 610, pqrsdf.cod_relacion_con_el_titular)
+        c.drawString(30, 670, f"Nombre Interpone: {nombre_interpone}")
+        c.drawString(30, 640, f"Número de Documento: {numero_documento_interpone}")
+        c.drawString(30, 610, f"Relación Con el Titular: {pqrsdf.cod_relacion_con_el_titular}")
 
         c.rect(20, 230, 550, 340)
-        c.drawString(30, 550, f"{pqrsdf.fecha_registro}")
-        c.drawString(30, 520, pqrsdf.id_medio_solicitud.nombre)
-        c.drawString(30, 490, pqrsdf.cod_forma_presentacion)
-        c.drawString(30, 460, pqrsdf.asunto)
-        c.drawString(30, 430, pqrsdf.descripcion)
-        c.drawString(30, 400, f"{pqrsdf.cantidad_anexos}")
-        c.drawString(30, 370, f"{pqrsdf.nro_folios_totales}")
-        c.drawString(30, 340, nombre_persona_recibe)
-        c.drawString(30, 310, recepcion_fisica)
-        c.drawString(30, 280, radicado)
-        c.drawString(30, 250, f"{pqrsdf.fecha_radicado}")
+        c.drawString(30, 550, f"Fecha de Solicitud: {pqrsdf.fecha_registro}")
+        c.drawString(30, 520, f"Medio de Solicitud: {pqrsdf.id_medio_solicitud.nombre}")
+        c.drawString(30, 490, f"Forma de Presentación: {pqrsdf.cod_forma_presentacion}")
+        c.drawString(30, 460, f"Asunto: {pqrsdf.asunto}")
+        c.drawString(30, 430, f"Descripción: {pqrsdf.descripcion}")
+        c.drawString(30, 400, f"Cantidad de Anexos: {pqrsdf.cantidad_anexos}")
+        c.drawString(30, 370, f"Número de Folios{pqrsdf.nro_folios_totales}")
+        c.drawString(30, 340, f"Nombre Recibe: {nombre_persona_recibe}")
+        c.drawString(30, 310, f"Sucursal: {recepcion_fisica}")
+        c.drawString(30, 280, f"Número de Radicado: {radicado}")
+        c.drawString(30, 250, f"Fecha de Radicado: {pqrsdf.fecha_radicado}")
 
 
         c.showPage()
@@ -4188,3 +4188,52 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
             info_anexo.save()
 
             info_metadatos.delete()
+
+
+    def crear_pdf_requerimientos(self, data):
+        solicitudes = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud=data.Id_PQRSDF)
+
+        for solicitud in solicitudes:
+            nombre_solicita = ""
+            radicado = f"{solicitud.id_radicado_salida.prefijo_radicado}-{solicitud.id_radicado_salida.agno_radicado}-{solicitud.id_radicado_salida.nro_radicado}" if solicitud.id_radicado_salida else ""
+
+            if solicitud.id_persona_solicita:
+                if solicitud.id_persona_solicita.tipo_persona == 'N':
+                    nombre_solicita = f"{solicitud.id_persona_solicita.primer_nombre} {solicitud.id_persona_solicita.segundo_nombre} {solicitud.id_persona_solicita.primer_apellido} {solicitud.id_persona_solicita.segundo_apellido}" if solicitud.id_persona_solicita else ""
+                else:
+                    nombre_solicita = f"{solicitud.id_persona_solicita.razon_social}" if solicitud.id_persona_solicita else ""
+            buffer = io.BytesIO()
+            c = canvas.Canvas(buffer)
+
+
+            c.drawString(200, 820, "INFORMACIÓN DE LA SOLICITUD O REQUERIMIENTO AL USUARIO")
+
+            c.rect(20, 720, 550, 100)
+            c.drawString(30, 770, f"Nombre Solicita: {nombre_solicita}")
+            c.drawString(30, 740, f"Número de Documento: {solicitud.id_persona_solicita.numero_documento}")
+            c.drawString(30, 710, f"Número de Documento: {solicitud.id_und_org_oficina_solicita.nombre}")
+
+            c.rect(20, 595, 550, 340)
+            c.drawString(30, 670, f"Fecha de Solicitud: {solicitud.fecha_solicitud}")
+            c.drawString(30, 640, f"Asunto: {solicitud.asunto}")
+            c.drawString(30, 610, f"Descripción: {solicitud.descripcion}")
+            c.drawString(30, 580, f"Cantidad de Anexos: {solicitud.cantidad_anexos}")
+            c.drawString(30, 550, f"Número de Folios{solicitud.nro_folios_totales}")
+            c.drawString(30, 520, f"Número de Radicado: {radicado}")
+            c.drawString(30, 490, f"Fecha de Radicado: {solicitud.fecha_radicado_salida}")
+
+
+            c.showPage()
+            c.save()
+
+            buffer.seek(0)
+
+            # Ahora puedes usar 'buffer' como una variable que contiene tu PDF.
+            # Por ejemplo, puedes guardarlo en una variable así:
+            pdf_en_variable = buffer.getvalue()
+            pdf_content_file = ContentFile(pdf_en_variable,name="solicitud.pdf")
+
+            # Recuerda cerrar el buffer cuando hayas terminado
+            buffer.close()
+
+        return pdf_content_file

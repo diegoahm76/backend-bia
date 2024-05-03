@@ -51,10 +51,10 @@ class BuscarBien(generics.ListAPIView):
         queryset = Inventario.objects.filter(
             id_bien__isnull=False,
             id_bodega__isnull=False,
-            realizo_baja=False,
-            realizo_salida=False,
-            
-        ).select_related('id_bodega')  # Realizar una sola consulta a la tabla de bodegas
+        ).select_related('id_bodega').filter(
+            Q(realizo_baja=False) | Q(realizo_baja__isnull=True),
+            Q(realizo_salida=False) | Q(realizo_salida__isnull=True)
+        )
 
         # Filtrar las bodegas activas
         queryset = queryset.filter(id_bodega__activo=True)

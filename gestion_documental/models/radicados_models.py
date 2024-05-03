@@ -15,7 +15,6 @@ from gestion_documental.choices.tipo_zonas_choices import TIPO_ZONAS_CHOICES
 
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DocumentosDeArchivoExpediente, ExpedientesDocumentales
 from gestion_documental.models.trd_models import TipologiasDoc
-from seguridad.models import Personas
 from gestion_documental.choices.tipo_radicado_choices import TIPOS_RADICADO_CHOICES
 # from tramites.models.tramites_models import SolicitudesTramites
 #from tramites.models.tramites_models import RespuestasRequerimientos
@@ -148,8 +147,8 @@ class PQRSDF(models.Model):
 
 class Otros(models.Model):
     id_otros = models.AutoField(primary_key=True, db_column='T301IdOtros')
-    id_persona_titular = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='id_persona_titular_otros', db_column='T301Id_PersonaTitular')
-    id_persona_interpone = models.ForeignKey(Personas, on_delete=models.CASCADE, related_name='id_persona_interpone_otros', db_column='T301Id_PersonaInterpone')
+    id_persona_titular = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='id_persona_titular_otros', db_column='T301Id_PersonaTitular')
+    id_persona_interpone = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='id_persona_interpone_otros', db_column='T301Id_PersonaInterpone')
     cod_relacion_titular = models.CharField(max_length=2,null=True,blank=True, choices=cod_relacion_persona_titular_CHOICES, db_column='T301codRelacionConElTitular')
     fecha_registro = models.DateTimeField(db_column='T301fechaRegistro')
     id_medio_solicitud = models.ForeignKey (MediosSolicitud, on_delete=models.CASCADE, db_column='T301Id_MedioSolicitud')
@@ -158,7 +157,7 @@ class Otros(models.Model):
     descripcion = models.CharField(max_length=150, db_column='T301descripcion')
     cantidad_anexos = models.SmallIntegerField(db_column='T301cantidadAnexos')
     nro_folios_totales = models.SmallIntegerField(db_column='T301nroFoliosTotales')
-    id_persona_recibe = models.ForeignKey(Personas, on_delete=models.SET_NULL, related_name='id_persona_recibe_otros', blank=True, null=True, db_column='T301Id_PersonaRecibe')
+    id_persona_recibe = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, related_name='id_persona_recibe_otros', blank=True, null=True, db_column='T301Id_PersonaRecibe')
     id_sucursal_recepciona_fisica = models.ForeignKey(SucursalesEmpresas, on_delete=models.SET_NULL, blank=True, null=True, db_column='T301Id_Sucursal_RecepcionFisica')
     id_radicados = models.ForeignKey(T262Radicados, on_delete=models.SET_NULL, blank=True, null=True, db_column='T301Id_Radicado')
     fecha_radicado = models.DateTimeField(blank=True, null=True,db_column='T301fechaRadicado')

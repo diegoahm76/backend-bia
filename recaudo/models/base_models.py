@@ -67,7 +67,6 @@ class TipoActuacion(models.Model):
         verbose_name_plural = 'Tipos actuación'
 
 
-#PARTE DE STIVEN PRACTICANTE 
 
 class RegistrosConfiguracion(models.Model):
     id = models.AutoField(primary_key=True, db_column='T440IdRegistroConfiguracion')
@@ -85,8 +84,11 @@ class RegistrosConfiguracion(models.Model):
 
 
 class TipoRenta(models.Model):
-    id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')  
-    nombre_tipo_renta = models.CharField(max_length=255, db_column='T442NombreTipoRenta',unique=True)
+    id_tipo_renta = models.AutoField(primary_key=True, db_column='T442IdTipoRenta')
+    cod_tipo_renta = models.CharField(max_length=5, blank=True, null=True, db_column='T442codTipoRenta')
+    nombre_tipo_renta = models.CharField(max_length=100, blank=True, null=True, db_column='T442Nombre')
+    descripcion = models.CharField(max_length=255, blank=True, null=True, db_column='T442Descripcion')
+    precargado = models.BooleanField(default=False, db_column='T442Precargado')
 
     # valor_tipo_renta = models.DecimalField(max_digits=10, decimal_places=2, db_column='T442valor_tipo_renta')
     class Meta:
@@ -125,7 +127,8 @@ class ValoresVariables(models.Model):
     fecha_fin = models.DateField(db_column='T444FechaFin')
     valor = models.DecimalField(max_digits=10, decimal_places=2, db_column='T444Valor')
     descripccion = models.CharField(max_length=255, db_column='T444Descripcion',unique=True)  # Corregir el nombre de la columna
-    estado=models.BooleanField(db_column='T444Estado',null=True,default=True)  # Cambiado a campo booleano
+    estado=models.BooleanField(default=False,db_column='T444Estado',null=True)  # Cambiado a campo booleano
+    usada=models.BooleanField(default=False, db_column='T444Usada', null=True)  # Cambiado a campo booleano
     class Meta:
         db_table = 'T444ValoresVariables'
         verbose_name = 'Valores Variables'
@@ -151,12 +154,13 @@ class AdministraciondePersonal(models.Model):
     nombre = models.CharField(max_length=255, db_column='T464Nombre')
     codigo_profesional = models.CharField(max_length=20, db_column='T464CodigoProfesional')
     descripcion = models.CharField(max_length=255, db_column='T464Descripcion')
+    año = models.IntegerField(null=True,default=True,db_column='T464Año')  # Nuevo campo para el año
 
     class Meta:
         db_table = 'T464AdministraciondePersonal'
         verbose_name = 'Administracion de Personal'
         verbose_name_plural = 'Administracion de Personal'
-        unique_together = [['nivel', 'nombre']]
+        unique_together = [['nivel', 'nombre','año']]
 
 
 
@@ -258,7 +262,7 @@ class ModeloBaseSueldoMinimo(models.Model):
     capacidad=models.CharField(max_length=255,db_column='T470Capacidad')
     valor=models.DecimalField(max_digits=15, decimal_places=0, db_column='T470Valor')
     editable=models.BooleanField(default=False, db_column='T470Editable')
-
+    formula=models.CharField(max_length=255, db_column='T470Formula', null=True, default="")  # Cambiado a campo booleano
 
     class Meta:
         db_table = 'T470ModeloBaseSueldoMinimo'

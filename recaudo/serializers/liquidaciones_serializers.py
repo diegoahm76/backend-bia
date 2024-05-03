@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from recaudo.models.liquidaciones_models import (
+    HistEstadosLiq,
     OpcionesLiquidacionBase,
     Deudores,
     LiquidacionesBase,
@@ -63,6 +64,24 @@ class LiquidacionesBaseSerializer(serializers.ModelSerializer):
 class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
     class Meta:
         model = LiquidacionesBase
+        fields = '__all__'
+
+class LiquidacionesTramitePostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LiquidacionesBase
+        fields = '__all__'
+        extra_kwargs = {
+            'fecha_liquidacion': {'required': True, 'allow_null': False},
+            'vencimiento': {'required': True, 'allow_null': False},
+            'periodo_liquidacion': {'required': True, 'allow_null': False},
+            'valor': {'required': True, 'allow_null': False},
+            'estado': {'required': True, 'allow_null': False},
+            'id_solicitud_tramite': {'required': True, 'allow_null': False}
+        }
+
+class HistEstadosLiqPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistEstadosLiq
         fields = '__all__'
 
 class LiquidacionesBasePostMasivoSerializer(serializers.ModelSerializer):
