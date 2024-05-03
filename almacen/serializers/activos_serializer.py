@@ -1,3 +1,4 @@
+from datetime import datetime
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, ItemEntradaAlmacen
 from almacen.models.inventario_models import Inventario, TiposEntradas
 from almacen.models.generics_models import Bodegas, Marcas, UnidadesMedida
@@ -20,21 +21,71 @@ class InventarioSerializer(serializers.ModelSerializer):
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
     estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
     valor_unitario = serializers.SerializerMethodField()
+    valor_total = serializers.SerializerMethodField()
+    valor_iva = serializers.SerializerMethodField()
+    valor_residual = serializers.SerializerMethodField()
+    id_item_entrada_almacen = serializers.SerializerMethodField()
+    depreciacion_valor  = serializers.SerializerMethodField()
     id_item_entrada_almacen = serializers.SerializerMethodField()
     cantidad = serializers.SerializerMethodField()
     ubicacion = serializers.SerializerMethodField()
-
-    def get_valor_unitario(self, obj):
-        id_bien = obj.id_bien
-        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
-        valor_unitario = item_entrada.valor_unitario if item_entrada else None
-        return valor_unitario
 
     def get_id_item_entrada_almacen(self, obj):
         id_bien = obj.id_bien
         item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
         id_item_entrada_almacen = item_entrada.id_item_entrada_almacen if item_entrada else None
         return id_item_entrada_almacen
+
+    def get_depreciacion_valor(self, obj):
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=obj.id_bien).first()
+        
+        if item_entrada and item_entrada.cantidad_vida_util:
+            valor_ingreso = obj.valor_ingreso
+            cantidad_vida_util = item_entrada.cantidad_vida_util
+                
+            fecha_actual = datetime.now().date()
+            dias_transcurridos = (fecha_actual - obj.fecha_ingreso).days
+                
+            valor_depreciado = valor_ingreso - ((valor_ingreso / cantidad_vida_util) * dias_transcurridos)
+            
+            # Validar si el valor depreciado es menor al valor residual
+            if valor_depreciado < item_entrada.valor_residual:
+                return item_entrada.valor_residual
+            else:
+                return valor_depreciado
+        else:
+            return None
+
+    
+    def get_valor_unitario(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_unitario = item_entrada.valor_unitario if item_entrada else None
+        return valor_unitario
+
+    def get_valor_total(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_iva = item_entrada.valor_iva if item_entrada else None
+        return valor_iva
+    
+    def get_valor_iva(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_total_item = item_entrada.valor_total_item if item_entrada else None
+        return valor_total_item
+
+    def get_id_item_entrada_almacen(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        id_item_entrada_almacen = item_entrada.id_item_entrada_almacen if item_entrada else None
+        return id_item_entrada_almacen
+    
+    def get_valor_residual(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_residual = item_entrada.valor_residual if item_entrada else None
+        return valor_residual
 
     def get_cantidad(self, obj):
         return 1  

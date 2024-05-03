@@ -173,6 +173,7 @@ urlpatterns = [
     path('api/recaudo/cobros/', include('recaudo.urls.cobros_urls')),
     path('api/recaudo/formulario/', include('recaudo.urls.tasa_retributiva_vertimiento_urls')),
     path('api/recaudo/configuracion_baisca/', include('recaudo.urls.registros_configuracion_url')),
+    path('api/recaudo/configuracion_referencia/',include('recaudo.urls.referencia_pago_urls')),
 
     #RECURSO HIDRICO
     path('api/hidrico/programas/',include('recurso_hidrico.urls.programas_urls')),

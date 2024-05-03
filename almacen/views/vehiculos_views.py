@@ -1914,7 +1914,7 @@ class CrearAprobacion(generics.CreateAPIView):
 
         # Validar que la solicitud de viaje esté en estado de espera
         if solicitud_viaje.estado_solicitud != 'AP':
-            return JsonResponse({'error': 'La solicitud de viaje no está en estado de espera.'}, status=status.HTTP_400_BAD_REQUEST)
+            return JsonResponse({'error': 'La solicitud de viaje no está en estado de Aprobado.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Validar si existe el conductor del vehículo asignado al viaje
         id_persona_conductor = data.get('id_persona_conductor')
@@ -2190,6 +2190,52 @@ class ObtenerInformacionAgendamiento(generics.RetrieveAPIView):
             return Response({'success': False, 'detail': 'La solicitud de viaje no existe o no tiene el estado adecuado.'}, status=status.HTTP_404_NOT_FOUND)
         
 
+class ObtenerInformacionViajesAll(generics.ListAPIView):
+    queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
+    viajes_serializer_class = ViajesAgendadosSolcitudSerializer  
+    solicitudes_serializer_class = SolicitudViajeSerializer  
+    personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  
+
+    def list(self, request):
+        # Obtener todos los viajes agendados
+        viajes_agendados = self.get_queryset()
+
+        # Serializar los datos de los viajes agendados
+        viajes_data = self.viajes_serializer_class(viajes_agendados, many=True).data
+
+        # Inicializar un diccionario para almacenar la data organizada por viaje agendado
+        viajes_organizados = {}
+
+        # Iterar sobre cada viaje agendado para organizar la data
+        for viaje_agendado in viajes_agendados:
+            # Serializar los datos del viaje agendado
+            viaje_agendado_data = self.viajes_serializer_class(viaje_agendado).data
+
+            # Obtener las solicitudes de viaje asociadas a este viaje agendado
+            solicitudes_viaje = SolicitudesViajes.objects.filter(viajesagendados=viaje_agendado)
+
+            # Serializar los datos de las solicitudes de viaje
+            solicitudes_viaje_data = self.solicitudes_serializer_class(solicitudes_viaje, many=True).data
+
+            # Obtener los registros asociados al modelo PersonasSolicitudViaje para todas las solicitudes de viaje
+            personas_solicitud_viaje = PersonasSolicitudViaje.objects.filter(id_solicitud_viaje__in=solicitudes_viaje)
+
+            # Serializar los datos de las personas asociadas a las solicitudes de viaje
+            personas_solicitud_data = self.personas_solicitud_serializer_class(personas_solicitud_viaje, many=True).data
+
+            # Combinar los datos serializados en un solo diccionario de respuesta para este viaje agendado
+            viaje_agendado_organizado = {
+                'viaje_agendado': viaje_agendado_data,
+                'solicitudes_viaje': solicitudes_viaje_data,
+                'personas_solicitud_viaje': personas_solicitud_data
+            }
+
+            # Almacenar los datos organizados por viaje agendado en el diccionario
+            viajes_organizados[f'Información del viaje agendado con el ID: {viaje_agendado.id_viaje_agendado}'] = viaje_agendado_organizado
+
+        return Response({'success': True, 'detail': 'Información de viajes obtenida exitosamente', 'data': viajes_organizados})
+
+        
 
 
 class DetallesViajeGet(generics.ListAPIView):
