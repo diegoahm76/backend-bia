@@ -476,6 +476,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 
     def put(self, request, id_serie_subs_unidadorg_trd):
         data_entrante = request.data
+        data_entrante._mutable=True
         persona_usuario_logeado = request.user.persona
         serie_subs_unidadorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_serie_subs_unidadorg_trd).first()
         previous = copy.copy(serie_subs_unidadorg_trd)

@@ -306,6 +306,7 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
         archivo_soporte = request.FILES.get('ruta_documentos_soporte')
         registro_mantenimiento=RegistroMantenimientos.objects.filter(id_registro_mtto=pk).first()
         persona = request.user.persona.id_persona
+        request.data._mutable=True
         request.data['id_persona_diligencia']=persona
 
         # ACTUALIZAR ARCHIVO
@@ -724,6 +725,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
     
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
+        datos_ingresados._mutable=True
         archivo_soporte = request.FILES.get('ruta_documentos_soporte')
         #VALIDACION FORMATE DE FECHAS ENTRANTES
         try:

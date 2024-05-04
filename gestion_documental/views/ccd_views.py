@@ -68,6 +68,7 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('ruta_soporte')
 
         # CREAR ARCHIVO EN T238
@@ -117,6 +118,7 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 
     def patch(self, request, pk):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('ruta_soporte')
 
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()

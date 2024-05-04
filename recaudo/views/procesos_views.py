@@ -218,6 +218,7 @@ class ValoresProcesoView(generics.ListAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('documento')
 
         # CREAR ARCHIVO EN T238
@@ -235,6 +236,7 @@ class ValoresProcesoView(generics.ListAPIView):
 
     def put(self, request, proceso):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('documento')
 
         valores = ValoresProceso.objects.filter(pk=proceso).get()

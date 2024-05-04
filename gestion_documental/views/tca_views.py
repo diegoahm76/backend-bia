@@ -231,6 +231,7 @@ class UpdateClasifSerieSubserieUnidadTCA(generics.UpdateAPIView):
     def put(self, request, pk):
     
         data = request.data
+        data._mutable=True
         clasif_s_ss_unidad_tca = CatSeriesUnidadOrgCCD_TRD_TCA.objects.filter(id_cat_serie_unidad_org_ccd_trd_tca=pk).first()
         clasif__previous=copy.copy(clasif_s_ss_unidad_tca)
         if clasif_s_ss_unidad_tca:

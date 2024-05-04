@@ -345,6 +345,8 @@ class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
 
         data = json.loads(request.data['data'])
         archivo_soporte = request.FILES.get('ruta_archivo_soporte')
+        data._mutable=True
+        
         data['fecha_actualizacion'] = datetime.now()
 
         #VALIDACIÓN SI EXISTE LA CUARENTENA SELECCIONADA

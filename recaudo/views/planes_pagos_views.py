@@ -481,6 +481,7 @@ class ResolucionPlanPagosCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('doc_asociado')
 
         # CREAR ARCHIVO EN T238

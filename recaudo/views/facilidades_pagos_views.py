@@ -333,6 +333,7 @@ class BienCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('documento_soporte')
 
         # CREAR ARCHIVO EN T238
@@ -403,6 +404,7 @@ class GarantiasFacilidadCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('documento_garantia')
 
         # CREAR ARCHIVO EN T238
@@ -442,6 +444,7 @@ class CumplimientoRequisitosCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('documento')
 
         # CREAR ARCHIVO EN T238
@@ -520,6 +523,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
     
     def post(self, request):
         data_in = request.data
+        data_in._mutable=True
         instancia_bien = BienCreateView()
         instancia_avaluo = AvaluoCreateView()
         instancia_det_bien_facilidad = DetallesBienFacilidadPagoCreateView()
@@ -957,6 +961,7 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('informe_dbme')
 
         # CREAR ARCHIVO EN T238

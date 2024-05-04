@@ -53,6 +53,7 @@ class CrearNotificacionView(generics.CreateAPIView):
     def post(self, request):
         funcionario = request.user.persona.id_persona
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('doc_asociado')
         
         # CREAR ARCHIVO EN T238
@@ -89,6 +90,7 @@ class CrearRespuestaNotificacionView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('doc_asociado')
         
         # CREAR ARCHIVO EN T238

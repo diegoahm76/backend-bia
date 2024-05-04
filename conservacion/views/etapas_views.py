@@ -264,6 +264,7 @@ class ActualizarCambioEtapa(generics.UpdateAPIView):
     
     def put(self,request,pk):
         data = request.data
+        data._mutable=True
         archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
         if cambio_etapa:
