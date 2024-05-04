@@ -27,7 +27,7 @@ from django.db.models import Q, Max
 from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen, EstadosArticulo
-from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, ActivosDevolucionadosSerializer, AlmacenistaLogueadoSerializer, AnexoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, AsignacionActivosSerializer, BajaActivosSerializer, BodegasSerializer, BusquedaArticuloSubSerializer, BusquedaSolicitudActivoSerializer, CatalogoBienesSerializer, ClasesTerceroPersonaSerializer, DespachoActivosCreateSerializer, DespachoActivosSerializer, DespachoSinSolicitudSerializer, DetalleSolicitudActivosSerializer, DevolucionActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemEntradaAlmacenSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsDespachoActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
+from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, ActivosDevolucionadosSerializer, AlmacenistaLogueadoSerializer, AnexoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, AsignacionActivosSerializer, BajaActivosSerializer, BodegasSerializer, BusquedaArticuloSubSerializer, BusquedaSolicitudActivoSerializer, CatalogoBienesSerializer, ClasesTerceroPersonaSerializer, CodigoBarrasSerializer, DespachoActivosCreateSerializer, DespachoActivosSerializer, DespachoSinSolicitudSerializer, DetalleSolicitudActivosSerializer, DevolucionActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemEntradaAlmacenSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsDespachoActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
 from almacen.models.inventario_models import Inventario
 from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
@@ -3474,23 +3474,30 @@ class BusquedaGeneralInventario(generics.ListAPIView):
     serializer_class = InventarioSerializer
 
     def get_queryset(self):
-        queryset = Inventario.objects.all()
+        queryset = Inventario.objects.filter(id_bien__doc_identificador_nro__isnull=False, id_bien__cod_tipo_bien='A')
 
         # Obtener parámetros de consulta
-        tipo_movimiento = self.request.query_params.get('tipo_movimiento')
+        nombre_bien = self.request.query_params.get('nombre_bien')
+        doc_identificador_nro = self.request.query_params.get('doc_identificador_nro')
+        codigo_bien = self.request.query_params.get('codigo_bien')
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
 
-        # Filtrar por tipo de movimiento
-        if tipo_movimiento:
-            queryset = queryset.filter(tipo_doc_ultimo_movimiento=tipo_movimiento)
+        if nombre_bien:
+            queryset = queryset.filter(id_bien__nombre=nombre_bien)
         
+        if doc_identificador_nro:
+            queryset = queryset.filter(id_bien__doc_identificador_nro=doc_identificador_nro)
+
+        if codigo_bien:
+            queryset = queryset.filter(id_bien__codigo_bien=codigo_bien)
+
         # Filtrar por rango de fechas
         if fecha_desde:
-            queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
+            queryset = queryset.filter(fecha_ingreso__gte=fecha_desde)
             
         if fecha_hasta:
-            queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+            queryset = queryset.filter(fecha_ingreso__lte=fecha_hasta)
 
         return queryset
 
@@ -3503,3 +3510,40 @@ class BusquedaGeneralInventario(generics.ListAPIView):
             'data': serializer.data
         }
         return Response(data)
+    
+
+
+class GenerarCodigoBarras(generics.ListAPIView):
+    serializer_class = CatalogoBienesSerializer
+
+    def get_queryset(self):
+        # Obtener el JSON del cuerpo de la solicitud
+        json_data = self.request.data
+
+        # Verificar si se proporcionaron IDs de bienes en el JSON
+        id_bienes = json_data.get('id_bienes')
+
+        if not id_bienes:
+            return CatalogoBienes.objects.none()
+
+        # Separar los IDs por coma y convertirlos a una lista de enteros
+        id_bienes_list = [int(id_bien) for id_bien in id_bienes]
+
+        # Filtrar los bienes por los IDs proporcionados
+        queryset = CatalogoBienes.objects.filter(id_bien__in=id_bienes_list)
+
+        return queryset
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Verificar si se encontraron bienes
+        if not queryset.exists():
+            return Response({'error': 'No se encontraron bienes con los IDs proporcionados'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = self.get_serializer(queryset, many=True)
+        
+        # Obtener la fecha actual
+        fecha_actual = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        return Response({'Success': True,'detail': 'Codigo generado exitosamente.', 'data': serializer.data, 'fecha_actual': fecha_actual})
