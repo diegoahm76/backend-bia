@@ -1552,7 +1552,7 @@ class ConsultaExpedientesDocumentosGetByIdSerializer(serializers.ModelSerializer
     origen_archivo = serializers.CharField(source='get_cod_origen_archivo_display', read_only=True, default=None)
     categoria_archivo = serializers.CharField(source='get_cod_categoria_archivo_display', read_only=True, default=None)
     nombre_tipologia = serializers.CharField(source='id_tipologia_documental.nombre', read_only=True, default=None)
-    ruta_archivo = serializers.FileField(source='id_archivo_sistema.ruta_archivo', default=None)
+    ruta_archivo = serializers.ReadOnlyField(source='id_archivo_sistema.ruta_archivo.url', default=None)
     
     def get_numero_anexos(self, obj):
         numero_anexos = 0
