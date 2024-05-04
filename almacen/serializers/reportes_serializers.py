@@ -49,6 +49,7 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    codigo_activo_nombre = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
     codigo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.cod_tipo_activo', default=None)
     tipo_activo = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
     
@@ -59,6 +60,7 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
             'id_bien',
             'nombre_bien',
             'codigo_bien',
+            'codigo_activo_nombre',
             'codigo_activo',
             'tipo_activo',
             'cantidad',
