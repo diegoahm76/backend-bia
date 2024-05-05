@@ -120,7 +120,7 @@ class CalculosLiquidacionBase(models.Model):
 
 class HistEstadosLiq(models.Model):
     id_hist_estado_liq = models.AutoField(primary_key=True, db_column='T470IdHistEstadoLiq')
-    liquidacion_base = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column='T470Id_LiquidacionBase')
+    id_liquidacion_base = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column='T470Id_LiquidacionBase')
     estado_liq = models.CharField(choices=estados_liquidacion_CHOICES, max_length=10, db_column='T470EstadoLiq')
     fecha_estado = models.DateTimeField(blank=True, null=True, db_column='T470fechaEstado')
 
