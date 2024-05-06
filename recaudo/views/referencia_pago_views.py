@@ -16,7 +16,7 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 from seguridad.models import Personas
 from seguridad.utils import Util
 from django.core.files.base import ContentFile
-
+from gestion_documental.views.pqr_views import RadicadoCreate 
 class ConfigTipoConsecAgnoCreateView(generics.CreateAPIView):
     serializer_class = ConfigTipoRefgnoCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -397,11 +397,31 @@ class RefCreateView(generics.CreateAPIView):
                     return respuesta_archivo
                 #print(respuesta_archivo.data['data'])
                 data_archivo = respuesta_archivo.data['data']
+
+
+        #RADICAR
+        fecha_actual =datetime.now()
+        data_radicado = {}
+        data_radicado['fecha_actual'] = fecha_actual
+        data_radicado['id_persona'] = request.user.persona.id_persona
+        data_radicado['tipo_radicado'] = "I" #validar cual tipo de radicado
+        data_radicado['modulo_radica'] = 'Respuesta del Titular a Una Solicitud sobre PQRSDF'
+
+
+        #print(data_radicado)
+        radicadoCreate = RadicadoCreate()
+                
+        respuesta_radicado = radicadoCreate.post(data_radicado)
+        respuesta_radicado_data = respuesta_radicado
+        print(respuesta_radicado_data['radicado_nuevo'])
+
+        data_in['id_radicado'] = respuesta_radicado['id_radicado']
+        data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
         data_consecutivo['id_archivo'] = data_archivo['id_archivo_digital']
         serializer = self.serializer_class(data=data_consecutivo)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data,'consecutivo':data_respuesta['conseg_nuevo']}}, status=status.HTTP_201_CREATED)
+        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data,'radicado_nuevo':respuesta_radicado_data['radicado_nuevo'],'consecutivo':data_respuesta['conseg_nuevo']}}, status=status.HTTP_201_CREATED)
 
 
 

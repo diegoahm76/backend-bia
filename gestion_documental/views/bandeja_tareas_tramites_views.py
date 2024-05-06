@@ -90,7 +90,7 @@ class ActaInicioCreate(generics.CreateAPIView):
 
         doc = DocxTemplate(pathToTemplate)
         doc.render(context)
-        #doc.save(outputPath)
+        doc.save(outputPath)
 
         return doc
 
