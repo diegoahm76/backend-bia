@@ -408,12 +408,11 @@ class RefCreateView(generics.CreateAPIView):
         data_radicado['modulo_radica'] = 'Respuesta del Titular a Una Solicitud sobre PQRSDF'
 
 
-        #print(data_radicado)
-        radicadoCreate = RadicadoCreate()
-                
+     
+        radicadoCreate = RadicadoCreate()       
         respuesta_radicado = radicadoCreate.post(data_radicado)
         respuesta_radicado_data = respuesta_radicado
-        print(respuesta_radicado_data['radicado_nuevo'])
+        #print(respuesta_radicado_data['radicado_nuevo'])
 
         data_in['id_radicado'] = respuesta_radicado['id_radicado']
         data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
