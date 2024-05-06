@@ -17,6 +17,7 @@ class InventarioSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     identificador_bien = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    cod_tipo_bien = serializers.ReadOnlyField(source='id_bien.cod_tipo_bien', default=None)
     id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
     estado = serializers.ReadOnlyField(source='cod_estado_activo.nombre', default=None)
@@ -578,3 +579,9 @@ class DespachoActivosCreateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+
+class CodigoBarrasSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CatalogoBienes
+        fields = '__all__'
