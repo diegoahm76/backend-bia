@@ -11,9 +11,21 @@ class ConfigTipoRefgnoCreateSerializer(serializers.ModelSerializer):
 
 
 class ReferenciaCreateSerializer(serializers.ModelSerializer):
+    nombre_completo = serializers.SerializerMethodField()
+    tipo_documento = serializers.ReadOnlyField(source='tipo_documento.nombre')
+    numero_documento = serializers.ReadOnlyField(source='id_persona_solicita.numero_documento')
+
     class Meta:
         model = Referencia
         fields ='__all__'
+
+    def get_nombre_completo(self, obj):
+            nombre_completo_solicitante = None
+            nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                            obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+            nombre_completo_solicitante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_solicitante = nombre_completo_solicitante if nombre_completo_solicitante != "" else None
+            return nombre_completo_solicitante
 
 class ConfigTipoRefgnoPutSerializer(serializers.ModelSerializer):
     class Meta:
