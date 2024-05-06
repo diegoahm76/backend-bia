@@ -1,8 +1,69 @@
 from rest_framework import serializers
 
+from gestion_documental.models.expedientes_models import ArchivosDigitales, DocumentosDeArchivoExpediente
 from gestion_documental.models.radicados_models import  AsignacionTramites, ConfigTiposRadicadoAgno, EstadosSolicitudes
 from tramites.models.tramites_models import  PermisosAmbSolicitudesTramite, SolicitudesTramites
 from datetime import datetime, timedelta
+
+
+
+
+class ArchivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
+
+
+class ConsultaExpedientesDocumentosGetListSerializer(serializers.ModelSerializer):
+    nombre_persona_titular = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+    
+    def get_nombre_persona_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_titular:
+            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    def get_label(self, obj):
+        label = [obj.identificacion_doc_en_expediente, obj.nombre_asignado_documento]
+        nombre_persona_titular = self.get_nombre_persona_titular(obj)
+        
+        if obj.codigo_tipologia_doc_prefijo:
+            label.append(str(obj.codigo_tipologia_doc_prefijo))
+        if obj.codigo_tipologia_doc_consecutivo:
+            label.append(str(obj.codigo_tipologia_doc_consecutivo))
+        if obj.codigo_tipologia_doc_agno:
+            label.append(str(obj.codigo_tipologia_doc_agno))
+        if nombre_persona_titular:
+            label.append(str(nombre_persona_titular))
+            
+        label = '-'.join(item for item in label if item is not None)
+        label = label if label != "" else None
+        
+        return label
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
+            'codigo_tipologia_doc_prefijo',
+            'codigo_tipologia_doc_consecutivo',
+            'codigo_tipologia_doc_agno',
+            'id_persona_titular',
+            'nombre_persona_titular',
+            'label',
+            'orden_en_expediente',
+            'es_un_archivo_anexo',
+            'id_doc_de_arch_del_cual_es_anexo',
+            'palabras_clave_documento'
+        ]
+
 
 class SolicitudesTramitesEstadoSolicitudGetSerializer(serializers.ModelSerializer):
     #nombre_cod_tipo_operacion_tramite = serializers.ReadOnlyField(source='get_cod_tipo_operacion_tramite_display',default=None)
@@ -22,8 +83,18 @@ class SolicitudesTramitesEstadoSolicitudGetSerializer(serializers.ModelSerialize
 
 
     def get_documento(self, obj):
-        #PENDIENTE VALIDACIONES O ENTREGAS DE MODELADO
-            return None
+            
+        expediente = obj.id_expediente
+        documentos = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente)
+        data =[]
+        for doc in documentos:
+            if doc.id_archivo_sistema:
+
+                serializer =ArchivosSerializer(data=doc.id_archivo_sistema)
+                data.append(serializer.data)
+            
+        # #PENDIENTE VALIDACIONES O ENTREGAS DE MODELADO
+        return data
 
     def get_ubicacion_corporacion(self, obj):
         #PENDIENTE VALIDACIONES O ENTREGAS DE MODELADO
@@ -108,3 +179,61 @@ class TramitesEstadosSolicitudesGetSerializer(serializers.ModelSerializer):
     class Meta:
         model = EstadosSolicitudes
         fields = ['id_estado_solicitud','nombre']
+
+
+
+
+
+class ArchivosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
+class ConsultaExpedientesDocumentosGetListSerializer(serializers.ModelSerializer):
+    nombre_persona_titular = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+    
+    def get_nombre_persona_titular(self, obj):
+        nombre_persona_titular = None
+        if obj.id_persona_titular:
+            nombre_list = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre,
+                            obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+        return nombre_persona_titular
+    
+    def get_label(self, obj):
+        label = [obj.identificacion_doc_en_expediente, obj.nombre_asignado_documento]
+        nombre_persona_titular = self.get_nombre_persona_titular(obj)
+        
+        if obj.codigo_tipologia_doc_prefijo:
+            label.append(str(obj.codigo_tipologia_doc_prefijo))
+        if obj.codigo_tipologia_doc_consecutivo:
+            label.append(str(obj.codigo_tipologia_doc_consecutivo))
+        if obj.codigo_tipologia_doc_agno:
+            label.append(str(obj.codigo_tipologia_doc_agno))
+        if nombre_persona_titular:
+            label.append(str(nombre_persona_titular))
+            
+        label = '-'.join(item for item in label if item is not None)
+        label = label if label != "" else None
+        
+        return label
+    
+    class Meta:
+        model =  DocumentosDeArchivoExpediente
+        fields = [
+            'id_documento_de_archivo_exped',
+            'id_expediente_documental',
+            'identificacion_doc_en_expediente',
+            'nombre_asignado_documento',
+            'codigo_tipologia_doc_prefijo',
+            'codigo_tipologia_doc_consecutivo',
+            'codigo_tipologia_doc_agno',
+            'id_persona_titular',
+            'nombre_persona_titular',
+            'label',
+            'orden_en_expediente',
+            'es_un_archivo_anexo',
+            'id_doc_de_arch_del_cual_es_anexo',
+            'palabras_clave_documento'
+        ]
