@@ -335,7 +335,7 @@ class LiquidacionTramiteCreateView(generics.CreateAPIView):
 
         # Guardar historico
         data_historico = {
-            'liquidacion_base': liquidacion_creada.id,
+            'id_liquidacion_base': liquidacion_creada.id,
             'estado_liq': 'PENDIENTE',
             'fecha_estado': datetime.now()
         }
