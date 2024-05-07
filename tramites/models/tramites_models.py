@@ -164,7 +164,7 @@ class PermisosAmbSolicitudesTramite(models.Model):
 
 class PermisosAmbientales(models.Model):
     id_permiso_ambiental = models.AutoField(primary_key=True, db_column='T281IdPermisoAmbiental')
-    cod_tipo_permiso_ambiental = models.CharField(max_length=1, choices=cod_tipo_permiso_ambiental_CHOICES, db_column='T281codTipoPermisoAmbiental')
+    cod_tipo_permiso_ambiental = models.CharField(max_length=2, choices=cod_tipo_permiso_ambiental_CHOICES, db_column='T281codTipoPermisoAmbiental')
     nombre = models.CharField(max_length=250, db_column='T281nombre')
     tiene_pago = models.BooleanField(default=True, db_column='T281tienePago')
     item_ya_usado = models.BooleanField(default=False, db_column='T281itemYaUsado')
