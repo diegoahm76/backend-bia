@@ -21,15 +21,13 @@ class EstadoSolicitudesTramitesGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get (self, request):
-        #tipo_busqueda = 'PQRSDF'
+    
         data_respuesta = []
         filter={}
         
         for key, value in request.query_params.items():
 
-            # if key == 'radicado':
-            #     if value !='':
-            #         filter['mezcla__icontains'] = value
+
             if key =='estado_actual_solicitud':
                 if value != '':
                     filter['id_estado_actual_solicitud__nombre__icontains'] = value    
@@ -50,11 +48,14 @@ class EstadoSolicitudesTramitesGet(generics.ListAPIView):
         instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
         radicado_value = request.query_params.get('radicado')
         print(radicado_value)
+        print('TODO BEIN?')
         if not instance:
             raise NotFound("No existen registros")
 
         serializador = self.serializer_class(instance,many=True)
+       
         data_respuesta = serializador.data
+        print(data_respuesta)
         data_validada =[]
         if radicado_value and radicado_value != '':
             data_validada = [item for item in serializador.data if radicado_value.lower() in item.get('radicado', '').lower()]
