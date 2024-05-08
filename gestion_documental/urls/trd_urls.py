@@ -64,6 +64,8 @@ urlpatterns = [
     path('configuracion-tipologia/mantener-configuracion-em/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteEmpresa.as_view(), name='actualizar-configuracion-año-proximo-em'),
     path('configuracion-tipologia/mantener-configuracion-ss/<int:id_tipologia_doc>/', views.ConfiguracionAnioSiguienteSeccionSubseccion.as_view(), name='actualizar-configuracion-año-proximo-ss'),
 
+    #Consecutivos Tipologias Documentales
+    path('consecutivo-tipologia-doc/', views.ConsecutivoTipologiaDoc.as_view(), name='consecutivo-tipologia-doc'),
     
 
 

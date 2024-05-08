@@ -13,7 +13,8 @@ from gestion_documental.models.trd_models import (
     FormatosTiposMedio,
     CatSeriesUnidadOrgCCDTRD,
     SeriesSubSUnidadOrgTRDTipologias,
-    FormatosTiposMedioTipoDoc
+    FormatosTiposMedioTipoDoc,
+    ConsecutivoTipologia
 )
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -392,3 +393,8 @@ class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
         model = ConsecPorNivelesTipologiasDocAgno
         fields = '__all__'
 
+
+class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConsecutivoTipologia
+        fields = '__all__'

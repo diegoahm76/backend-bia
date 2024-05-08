@@ -115,3 +115,16 @@ class  OtrasTipologiasSerializerGetSerializer(serializers.ModelSerializer):
     class Meta:
         model =  PlantillasDoc
         fields = ['otras_tipologias']
+
+class PlantillasDocSerializerGet(serializers.ModelSerializer):
+    accesos_unidades_organizacionales = serializers.SerializerMethodField()
+    archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    class Meta:
+        model = PlantillasDoc
+        fields = '__all__'
+
+    def get_accesos_unidades_organizacionales(self, obj):
+        unidades = AccesoUndsOrg_PlantillaDoc.objects.filter(id_plantilla_doc=obj.id_plantilla_doc)
+        unidad_organizacional = self.context.get('usuario').id_unidad_organizacional_actual
+        if unidad_organizacional in unidades:
+            return True
