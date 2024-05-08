@@ -4,6 +4,7 @@ import json
 import os
 from gestion_documental.views.configuracion_tipos_radicados_views import actualizar_conf_agno_sig
 from recaudo.models.base_models import ValoresVariables
+from recaudo.models.liquidaciones_models import LiquidacionesBase
 from recaudo.models.pagos_models import Pagos
 from tramites.models.tramites_models import Tramites
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
@@ -34,6 +35,15 @@ def actualizar_estado_variable_recaudo():
 		valor.estado = False
 		valor.save()
 	print("SE ACTUALIZARON ESTADOS VARIABLES - RECAUDO")
+
+
+def actualizar_estados_liquidaciones():
+	current_date = datetime.now()
+	liquidaciones_vencidas = LiquidacionesBase.objects.filter(vencimiento__lt=current_date)
+	for liquidacion in liquidaciones_vencidas:
+		liquidacion.estado = "NO PAGADO"
+		liquidacion.save()
+	print("SE ACTUALIZARON ESTADOS LIQUIDACIONES - RECAUDO")
 
 
 def update_tramites_bia(radicado):
