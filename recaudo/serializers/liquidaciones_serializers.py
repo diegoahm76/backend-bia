@@ -79,6 +79,12 @@ class LiquidacionesTramitePostSerializer(serializers.ModelSerializer):
             'id_solicitud_tramite': {'required': True, 'allow_null': False}
         }
 
+class LiquidacionesTramiteAnularSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LiquidacionesBase
+        fields = ['estado','anulado','observacion']
+
 class HistEstadosLiqPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = HistEstadosLiq
