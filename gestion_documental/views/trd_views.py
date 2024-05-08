@@ -45,7 +45,8 @@ from gestion_documental.serializers.trd_serializers import (
     SeriesSubSeriesUnidadesOrgTRDPutSerializer,
     TipologiasDocumentalesPutSerializer,
     GetSeriesSubSUnidadOrgTRDSerializer,
-    TipologiasSeriesSubSUnidadOrgTRDSerializer
+    TipologiasSeriesSubSUnidadOrgTRDSerializer,
+    ConsecutivoTipologiaDocSerializer
 )
 from gestion_documental.serializers.ccd_serializers import (
     CCDSerializer
@@ -71,6 +72,7 @@ from gestion_documental.models.trd_models import (
     FormatosTiposMedioTipoDoc,
     HistoricosCatSeriesUnidadOrgCCDTRD,
     TiposMediosDocumentos,
+    ConsecutivoTipologia,
     
 )
 
@@ -3204,4 +3206,150 @@ class ConfiguracionAnioSiguienteSeccionSubseccion(generics.UpdateAPIView):
             return JsonResponse({
                 'success': False,
                 'message': 'La configuración no existe o no cumple con los requisitos para la actualización.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+    
+class ConsecutivoTipologiaDoc(generics.CreateAPIView):
+    serializer_class = ConsecutivoTipologiaDocSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            # Obtener los datos enviados por el usuario
+            unidad_organizacional = request.data.get('unidad_organizacional')
+            if not unidad_organizacional:
+                raise ValidationError('Debe especificar la unidad organizacional.')
+            
+            unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=unidad_organizacional)
+            tipologias_doc = request.data.get('tipologias_doc')
+            
+            
+            plantilla = request.data.get('plantilla')
+            if not plantilla:
+                raise ValidationError('Debe especificar la plantilla.')
+            
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
+
+            
+            if not plantilla.id_tipologia_doc_trd.activo:
+                raise ValidationError('La tipología documental no está activa.')
+            
+            if tipologias_doc:
+                tipologia = tipologias_doc
+            else:
+                tipologia = plantilla.id_tipologia_doc_trd.id_tipologia_documental
+            
+            current_date = datetime.now()
+
+            #Validar si la tipologia docuemntal tiene una configuración de consecutivo
+            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=tipologia, agno_tipologia = current_date.year).first()
+            if not config_tipologia:
+                raise ValidationError('La tipología documental no tiene una configuración de consecutivo para el año actual.')
+            
+            if config_tipologia.maneja_consecutivo:
+                catalogo_x_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(
+                    id_tipologia_doc = plantilla.id_tipologia_doc_trd#,
+                    #id_catserie_unidadorg_ccd_trd__id_cat_serie_und__id_unidad_organizacional = unidad_organizacional.id_unidad_organizacional,
+                ).first()
+
+                if catalogo_x_tipologia:
+                    catalogo_x_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(id_catserie_unidadorg_ccd_trd__id_cat_serie_und__id_unidad_organizacional = unidad_organizacional.id_unidad_organizacional).first()
+                    if not catalogo_x_tipologia:
+                        raise ValidationError('No existe una configuración de catálogo por tipología para la unidad organizacional especificada.')
+
+                    cod_series = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_catalogo_serie.id_serie_doc.codigo
+                    cod_subseries = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo if catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_catalogo_serie.id_subserie_doc else ''
+
+                     # Obtener la configuración de consecutivo por unidad organizacional
+                    consecutivo = ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno=config_tipologia,
+                        id_unidad_organizacional=unidad_organizacional
+                    ).first()
+
+                    if not consecutivo:
+                        raise ValidationError('No existe una configuración de consecutivo para la unidad organizacional especificada.')
+                    
+                    # Formatear el consecutivo actual con ceros a la izquierda
+                    nro_consecutivo = str(consecutivo.consecutivo_actual + 1).zfill(consecutivo.cantidad_digitos)
+                    
+                    generar_consecutivo = ConsecutivoTipologia.objects.create(
+                        id_unidad_organizacional = unidad_organizacional,
+                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
+                        agno_consecutivo = current_date.year,
+                        nro_consecutivo = nro_consecutivo,
+                        prefijo_consecutivo = consecutivo.prefijo_consecutivo,
+                        fecha_consecutivo = current_date,
+                        id_persona_genera = request.user.persona,
+                        id_archivo_digital = None,
+                    )
+
+
+                    # Actualizar el consecutivo actual
+                    consecutivo.consecutivo_actual += 1
+                    consecutivo.fecha_consecutivo_actual = current_date
+                    consecutivo.id_persona_consecutivo_actual = request.user.persona
+                    if not consecutivo.item_ya_usado:
+                        consecutivo.item_ya_usado = True
+                    consecutivo.save()
+
+                    data = {
+                        "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{cod_series}.{cod_subseries}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
+                    }
+
+                    return Response({
+                        'success': True,
+                        'detail': 'Consecutivo creado exitosamente.',
+                        'data': data
+                    }, status=status.HTTP_201_CREATED)
+
+                else:
+
+
+                    # Obtener la configuración de consecutivo por unidad organizacional
+                    consecutivo = ConsecPorNivelesTipologiasDocAgno.objects.filter(
+                        id_config_tipologia_doc_agno=config_tipologia,
+                        id_unidad_organizacional=unidad_organizacional.id_unidad_organizacional
+                    ).first()
+
+                    if not consecutivo:
+                        raise ValidationError('No existe una configuración de consecutivo para la unidad organizacional especificada.')
+                    
+                    # Formatear el consecutivo actual con ceros a la izquierda
+                    nro_consecutivo = str(consecutivo.consecutivo_actual + 1).zfill(consecutivo.cantidad_digitos)
+                    
+                    generar_consecutivo = ConsecutivoTipologia.objects.create(
+                        id_unidad_organizacional = unidad_organizacional,
+                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        agno_consecutivo = current_date.year,
+                        nro_consecutivo = nro_consecutivo,
+                        prefijo_consecutivo = consecutivo.prefijo_consecutivo,
+                        fecha_consecutivo = current_date,
+                        id_persona_genera = request.user.persona,
+                        id_archivo_digital = None,
+                    )
+
+
+                    # Actualizar el consecutivo actual
+                    consecutivo.consecutivo_actual += 1
+                    consecutivo.fecha_consecutivo_actual = current_date
+                    consecutivo.id_persona_consecutivo_actual = request.user.persona
+                    if not consecutivo.item_ya_usado:
+                        consecutivo.item_ya_usado = True
+                    consecutivo.save()
+
+                    data = {
+                        "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
+                    }
+
+                    return Response({
+                        'success': True,
+                        'detail': 'Consecutivo creado exitosamente.',
+                        'data': data
+                    }, status=status.HTTP_201_CREATED)
+
+        except ValidationError as e:
+            return Response({
+                'success': False,
+                'detail': e.detail,
             }, status=status.HTTP_404_NOT_FOUND)

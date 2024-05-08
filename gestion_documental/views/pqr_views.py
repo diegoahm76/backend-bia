@@ -27,7 +27,7 @@ from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoEx
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, FormatosTiposMedio, TablaRetencionDocumental, TipologiasDoc
 from gestion_documental.models.expedientes_models import ArchivosDigitales , DocumentosDeArchivoExpediente, ConcesionesAccesoAExpsYDocs, ExpedientesDocumentales,IndicesElectronicosExp,Docs_IndiceElectronicoExp, InventarioDocumental
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas, ReasignacionesTareas
-from gestion_documental.models.radicados_models import SolicitudAlUsuarioSobrePQRSDF, PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
+from gestion_documental.models.radicados_models import ComplementosUsu_PQR, SolicitudAlUsuarioSobrePQRSDF, PQRSDF, Anexos, Anexos_PQR, AsignacionPQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MediosSolicitud, MetadatosAnexosTmp, RespuestaPQR, T262Radicados, TiposPQR, modulos_radican
 from rest_framework.response import Response
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.serializers.pqr_serializers import AnexoRespuestaPQRSerializer, MediosSolicitudSerializer, PersonaSerializer, SucursalesEmpresasSerializer,UnidadOrganizacionalSerializer, AnexoSerializer, AnexosPQRSDFPostSerializer, AnexosPQRSDFSerializer, AnexosPostSerializer, AnexosPutSerializer, AnexosSerializer, ArchivosSerializer, EstadosSolicitudesSerializer, InfoDenunciasPQRSDFPostSerializer, InfoDenunciasPQRSDFPutSerializer, InfoDenunciasPQRSDFSerializer, MediosSolicitudCreateSerializer, MediosSolicitudDeleteSerializer, MediosSolicitudSearchSerializer, MediosSolicitudUpdateSerializer, MetadatosPostSerializer, MetadatosPutSerializer, MetadatosSerializer, PQRSDFGetSerializer, PQRSDFPanelSerializer, PQRSDFPostSerializer, PQRSDFPutSerializer, PQRSDFSerializer, PersonasSerializer, RadicadoPostSerializer, RespuestaPQRSDFPanelSerializer, RespuestaPQRSDFPostSerializer, TiposPQRGetSerializer, TiposPQRUpdateSerializer
@@ -4095,7 +4095,11 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
         }
 
         #Archivar Anexos
-        anexos_archivado = self.archivar_anexos(solicitud_pqrsdf, data_anexos, instance, persona_logueada)
+        if solicitud_pqrsdf.cantidad_anexos > 0:
+            anexos_archivado = self.archivar_anexos(solicitud_pqrsdf, None, None, data_anexos, instance, persona_logueada)
+
+        #Archivar Solicitudes o Requerimientos con su respuesta
+        requerimientos = self.archivar_requerimientos(solicitud_pqrsdf, expediente, current_date, persona_logueada)
         
 
         return Response({'success': True, 'detail': 'Se archivó el soporte correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
@@ -4187,11 +4191,15 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
         else:
             raise ValidationError("El índice del expediente está cerrado")
 
-    def archivar_anexos(self, solicitud_pqrsdf, data_in, id_doc_de_arch_del_cual_es_anexo, persona_logueada):
-        if solicitud_pqrsdf.cantidad_anexos == 0:
-            ValidationError("No hay anexos para archivar")
+    def archivar_anexos(self, solicitud_pqrsdf, solicitud_usuario, respuesta_solicitud, data_in, id_doc_de_arch_del_cual_es_anexo, persona_logueada):
+        if solicitud_pqrsdf:
+            anexos_pqrsdf = Anexos_PQR.objects.filter(id_PQRSDF=solicitud_pqrsdf.id_PQRSDF)
+        elif solicitud_usuario:
+            anexos_pqrsdf = Anexos_PQR.objects.filter(id_solicitud_usu_sobre_PQR=solicitud_usuario.id_solicitud_al_usuario_sobre_pqrsdf)
+        elif respuesta_solicitud:
+            anexos_pqrsdf = Anexos_PQR.objects.filter(id_complemento_usu_PQR=respuesta_solicitud.idComplementoUsu_PQR)
 
-        anexos_pqrsdf = Anexos_PQR.objects.filter(id_PQRSDF=solicitud_pqrsdf.id_PQRSDF)
+        
         expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=data_in['id_expediente_documental']).first()
 
         for anexo in anexos_pqrsdf:
@@ -4205,15 +4213,15 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
                 "fecha_incorporacion_doc_a_Exp": data_in['fehca_registro'],
                 "descripcion": info_metadatos.descripcion,
                 "asunto": info_metadatos.asunto,
-                "cod_categoria_archivo": info_metadatos.cod_categoria_archivo,
-                "es_version_original": info_metadatos.es_version_original,
-                "tiene_replica_fisica": info_metadatos.tiene_replica_fisica,
-                "nro_folios_del_doc": info_metadatos.nro_folios_documento,
-                "cod_origen_archivo": info_metadatos.cod_origen_archivo,
-                "id_tipologia_documental": info_metadatos.id_tipologia_doc.id_tipologia_documental,
-                "codigo_tipologia_doc_prefijo": info_metadatos.cod_tipologia_doc_Prefijo,
-                "codigo_tipologia_doc_agno": info_metadatos.cod_tipologia_doc_agno,
-                "codigo_tipologia_doc_consecutivo": info_metadatos.cod_tipologia_doc_Consecutivo,
+                "cod_categoria_archivo": info_metadatos.cod_categoria_archivo if info_metadatos.cod_categoria_archivo else "TX",
+                "es_version_original": info_metadatos.es_version_original if info_metadatos.es_version_original else False,
+                "tiene_replica_fisica": info_metadatos.tiene_replica_fisica if info_metadatos.tiene_replica_fisica else False,
+                "nro_folios_del_doc": info_metadatos.nro_folios_documento if info_metadatos.nro_folios_documento else 0,
+                "cod_origen_archivo": info_metadatos.cod_origen_archivo if info_metadatos.cod_origen_archivo else "E",
+                "id_tipologia_documental": info_metadatos.id_tipologia_doc.id_tipologia_documental if info_metadatos.id_tipologia_doc else None,
+                "codigo_tipologia_doc_prefijo": info_metadatos.cod_tipologia_doc_Prefijo if info_metadatos.cod_tipologia_doc_Prefijo else None,
+                "codigo_tipologia_doc_agno": info_metadatos.cod_tipologia_doc_agno if info_metadatos.cod_tipologia_doc_agno else None,
+                "codigo_tipologia_doc_consecutivo": info_metadatos.cod_tipologia_doc_Consecutivo if info_metadatos.cod_tipologia_doc_Consecutivo else None,
                 "es_un_archivo_anexo": True,
                 "anexo_corresp_a_lista_chequeo": False,
                 "id_doc_de_arch_del_cual_es_anexo": id_doc_de_arch_del_cual_es_anexo.id_documento_de_archivo_exped,
@@ -4272,8 +4280,8 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
             info_metadatos.delete()
 
 
-    def crear_pdf_requerimientos(self, data):
-        solicitudes = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_solicitud=data.Id_PQRSDF)
+    def archivar_requerimientos(self, data, expediente, current_date, persona_logueada):
+        solicitudes = SolicitudAlUsuarioSobrePQRSDF.objects.filter(id_pqrsdf=data.id_PQRSDF)
 
         for solicitud in solicitudes:
             nombre_solicita = ""
@@ -4288,14 +4296,14 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
             c = canvas.Canvas(buffer)
 
 
-            c.drawString(200, 820, "INFORMACIÓN DE LA SOLICITUD O REQUERIMIENTO AL USUARIO")
+            c.drawString(120, 820, "INFORMACIÓN DE LA SOLICITUD O REQUERIMIENTO AL USUARIO")
 
-            c.rect(20, 720, 550, 100)
+            c.rect(20, 700, 550, 100)
             c.drawString(30, 770, f"Nombre Solicita: {nombre_solicita}")
             c.drawString(30, 740, f"Número de Documento: {solicitud.id_persona_solicita.numero_documento}")
-            c.drawString(30, 710, f"Número de Documento: {solicitud.id_und_org_oficina_solicita.nombre}")
+            c.drawString(30, 710, f"Unidad Orgsanizacional: {solicitud.id_und_org_oficina_solicita.nombre}")
 
-            c.rect(20, 595, 550, 340)
+            c.rect(20, 345, 550, 340)
             c.drawString(30, 670, f"Fecha de Solicitud: {solicitud.fecha_solicitud}")
             c.drawString(30, 640, f"Asunto: {solicitud.asunto}")
             c.drawString(30, 610, f"Descripción: {solicitud.descripcion}")
@@ -4318,4 +4326,223 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
             # Recuerda cerrar el buffer cuando hayas terminado
             buffer.close()
 
-        return pdf_content_file
+            #Crear el documento de archivo en el expediente
+            data_docarch = {
+                "nombre_asignado_documento": f"Documento de soporte para la solicitud PQRSDF {solicitud.id_solicitud_al_usuario_sobre_pqrsdf}",
+                "fecha_creacion_doc": current_date,
+                "fecha_incorporacion_doc_a_Exp": current_date,
+                "descripcion": solicitud.descripcion,
+                "asunto": solicitud.asunto,
+                "cod_categoria_archivo": "TX",
+                "es_version_original": True,
+                "tiene_replica_fisica": False,
+                "nro_folios_del_doc": solicitud.nro_folios_totales,
+                "cod_origen_archivo": "E",
+                "es_un_archivo_anexo": False,
+                "anexo_corresp_a_lista_chequeo": False,
+                "cantidad_anexos": solicitud.cantidad_anexos,
+                "palabras_clave_documento": f"requerimientos|solicitudes|PQRSDF|{solicitud.id_solicitud_al_usuario_sobre_pqrsdf}",
+                "sub_sistema_incorporacion": "GEST",
+                "documento_requiere_rta": False,
+                "creado_automaticamente": True,
+                "id_und_org_oficina_creadora": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+                "id_persona_que_crea": persona_logueada.id_persona,
+                "id_und_org_oficina_respon_actual": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+            }
+            data_docarch['id_expediente_documental'] = expediente.id_expediente_documental
+
+            
+            orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente.id_expediente_documental).order_by('orden_en_expediente').last()
+            if orden_expediente != None:
+                ultimo_orden = orden_expediente.orden_en_expediente
+                data_docarch['orden_en_expediente'] = ultimo_orden + 1
+            else:
+                data_docarch['orden_en_expediente'] = 1
+
+            if expediente.cod_tipo_expediente == "S":
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch['orden_en_expediente']).zfill(10)}"
+            else:
+                cantidad_digitos = 10 - len(str(expediente.codigo_exp_consec_por_agno))
+                data_docarch['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch['orden_en_expediente']).zfill(cantidad_digitos)}"
+                print(len(data_docarch['identificacion_doc_en_expediente']))
+
+            respuesta = self.guardar_archivo(expediente, pdf_content_file)
+
+            data_docarch['id_archivo_sistema'] = respuesta.data.get('data').get('id_archivo_digital')
+
+            serializer = self.serializer_class(data=data_docarch)
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+
+            #Crear el índice electrónico
+            data_indice = {
+                "id_doc_archivo_exp": serializer.data['id_documento_de_archivo_exped'],
+                "identificación_doc_exped": serializer.data['identificacion_doc_en_expediente'],
+                "nombre_documento": serializer.data['nombre_asignado_documento'],
+                "id_tipologia_documental": serializer.data['id_tipologia_documental'],
+                "fecha_creacion_doc": serializer.data['fecha_creacion_doc'],
+                "fecha_incorporacion_exp": serializer.data['fecha_incorporacion_doc_a_Exp'],
+                "valor_huella": respuesta.data.get('data').get('nombre_de_Guardado'),
+                "funcion_resumen": "MD5",
+                "orden_doc_expediente": serializer.data['orden_en_expediente'],
+                "formato": respuesta.data.get('data').get('formato'),
+                "tamagno_kb": respuesta.data.get('data').get('tamagno_kb'),
+                "cod_origen_archivo": serializer.data['cod_origen_archivo'],
+                "es_un_archivo_anexo": serializer.data['es_un_archivo_anexo'],
+                "id_expediente_documental": expediente.id_expediente_documental,
+                "nro_folios_del_doc": solicitud.nro_folios_totales,
+            }
+
+            doc_indice = self.crear_indice(data_indice)
+            solicitud.id_doc_de_archivo_exp = instance
+            solicitud.save()
+
+            data_anexos = {
+                "id_expediente_documental": expediente.id_expediente_documental,
+                "fehca_registro": current_date,
+            }
+
+            #Archivar Anexos
+            if solicitud.cantidad_anexos > 0:
+                anexos_archivado = self.archivar_anexos(None, solicitud, None, data_anexos, instance, persona_logueada)
+
+            respuesta = ComplementosUsu_PQR.objects.filter(id_solicitud_usu_PQR=solicitud.id_solicitud_al_usuario_sobre_pqrsdf).first()
+
+            if respuesta:
+                buffer = io.BytesIO()
+                c = canvas.Canvas(buffer)
+                radicado_respuesta = f"{respuesta.id_radicado.prefijo_radicado}-{respuesta.id_radicado.agno_radicado}-{respuesta.id_radicado.nro_radicado}" if respuesta.id_radicado else ""
+
+
+                c.drawString(120, 820, "INFORMACIÓN DE LA RESPUESTA A LA SOLICITUD O REQUERIMIENTO AL USUARIO")
+
+                c.rect(20, 700, 550, 100)
+                c.drawString(30, 770, f"Nombre Responde: {respuesta.id_persona_interpone.primer_nombre} {respuesta.id_persona_interpone.segundo_nombre} {respuesta.id_persona_interpone.primer_apellido} {respuesta.id_persona_interpone.segundo_apellido}")
+                c.drawString(30, 740, f"Número de Documento: {respuesta.id_persona_interpone.numero_documento}")
+                c.drawString(30, 710, f"Unidad Organizacional: {respuesta.cod_relacion_titular}")
+
+                c.rect(20, 345, 550, 340)
+                c.drawString(30, 670, f"Fecha de Respuesta: {respuesta.fecha_complemento}")
+                c.drawString(30, 640, f"Asunto: {respuesta.asunto}")
+                c.drawString(30, 610, f"Descripción: {respuesta.descripcion}")
+                c.drawString(30, 580, f"Cantidad de Anexos: {respuesta.cantidad_anexos}")
+                c.drawString(30, 550, f"Número de Folios{respuesta.nro_folios_totales}")
+                c.drawString(30, 520, f"Número de Radicado: {radicado_respuesta}")
+                c.drawString(30, 490, f"Fecha de Radicado: {respuesta.fecha_radicado}")
+
+                c.drawString(120, 820, "INFORMACIÓN DE LA SOLICITUD O REQUERIMIENTO AL USUARIO")
+
+
+                c.showPage()
+                c.save()
+
+                buffer.seek(0)
+
+                # Ahora puedes usar 'buffer' como una variable que contiene tu PDF.
+                # Por ejemplo, puedes guardarlo en una variable así:
+                pdf_en_variable = buffer.getvalue()
+                pdf_content_file_respuesta = ContentFile(pdf_en_variable,name="respuesta.pdf")
+
+                # Recuerda cerrar el buffer cuando hayas terminado
+                buffer.close()
+
+                data_docarch_respuesta = {
+                    "nombre_asignado_documento": f"Documento de soporte para la solicitud PQRSDF {respuesta.idComplementoUsu_PQR}",
+                    "fecha_creacion_doc": current_date,
+                    "fecha_incorporacion_doc_a_Exp": current_date,
+                    "descripcion": respuesta.descripcion,
+                    "asunto": respuesta.asunto,
+                    "cod_categoria_archivo": "TX",
+                    "es_version_original": True,
+                    "tiene_replica_fisica": False,
+                    "nro_folios_del_doc": respuesta.nro_folios_totales,
+                    "cod_origen_archivo": "E",
+                    "es_un_archivo_anexo": False,
+                    "anexo_corresp_a_lista_chequeo": False,
+                    "cantidad_anexos": respuesta.cantidad_anexos,
+                    "palabras_clave_documento": f"Documento|Soporte|PQRSDF|{respuesta.idComplementoUsu_PQR}",
+                    "sub_sistema_incorporacion": "GEST",
+                    "documento_requiere_rta": False,
+                    "creado_automaticamente": True,
+                    "id_und_org_oficina_creadora": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+                    "id_persona_que_crea": persona_logueada.id_persona,
+                    "id_und_org_oficina_respon_actual": persona_logueada.id_unidad_organizacional_actual.id_unidad_organizacional,
+                }
+                data_docarch_respuesta['id_expediente_documental'] = expediente.id_expediente_documental
+
+                
+                orden_expediente = DocumentosDeArchivoExpediente.objects.filter(id_expediente_documental=expediente.id_expediente_documental).order_by('orden_en_expediente').last()
+                if orden_expediente != None:
+                    ultimo_orden = orden_expediente.orden_en_expediente
+                    data_docarch_respuesta['orden_en_expediente'] = ultimo_orden + 1
+                else:
+                    data_docarch_respuesta['orden_en_expediente'] = 1
+
+                if expediente.cod_tipo_expediente == "S":
+                    data_docarch_respuesta['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{str(data_docarch_respuesta['orden_en_expediente']).zfill(10)}"
+                else:
+                    cantidad_digitos = 10 - len(str(expediente.codigo_exp_consec_por_agno))
+                    data_docarch_respuesta['identificacion_doc_en_expediente'] = f"{expediente.codigo_exp_Agno}{expediente.cod_tipo_expediente}{expediente.codigo_exp_consec_por_agno}{str(data_docarch_respuesta['orden_en_expediente']).zfill(cantidad_digitos)}"
+                    print(len(data_docarch_respuesta['identificacion_doc_en_expediente']))
+
+                respuesta_archivo = self.guardar_archivo(expediente, pdf_content_file_respuesta)
+
+                data_docarch_respuesta['id_archivo_sistema'] = respuesta_archivo.data.get('data').get('id_archivo_digital')
+
+                serializer = self.serializer_class(data=data_docarch_respuesta)
+                serializer.is_valid(raise_exception=True)
+                instance_respuesta = serializer.save()
+
+                 #Crear el índice electrónico
+                data_indice_respuesta = {
+                    "id_doc_archivo_exp": serializer.data['id_documento_de_archivo_exped'],
+                    "identificación_doc_exped": serializer.data['identificacion_doc_en_expediente'],
+                    "nombre_documento": serializer.data['nombre_asignado_documento'],
+                    "id_tipologia_documental": serializer.data['id_tipologia_documental'],
+                    "fecha_creacion_doc": serializer.data['fecha_creacion_doc'],
+                    "fecha_incorporacion_exp": serializer.data['fecha_incorporacion_doc_a_Exp'],
+                    "valor_huella": respuesta_archivo.data.get('data').get('nombre_de_Guardado'),
+                    "funcion_resumen": "MD5",
+                    "orden_doc_expediente": serializer.data['orden_en_expediente'],
+                    "formato": respuesta_archivo.data.get('data').get('formato'),
+                    "tamagno_kb": respuesta_archivo.data.get('data').get('tamagno_kb'),
+                    "cod_origen_archivo": serializer.data['cod_origen_archivo'],
+                    "es_un_archivo_anexo": serializer.data['es_un_archivo_anexo'],
+                    "id_expediente_documental": expediente.id_expediente_documental,
+                    "nro_folios_del_doc": respuesta.nro_folios_totales,
+                }
+
+                doc_indice = self.crear_indice(data_indice_respuesta)
+                respuesta.id_doc_arch_exp = instance_respuesta
+                respuesta.save()
+
+                data_anexos_respuesta = {
+                    "id_expediente_documental": expediente.id_expediente_documental,
+                    "fehca_registro": current_date,
+                }
+
+                #Archivar Anexos
+                if respuesta.cantidad_anexos > 0:
+                    anexos_archivado = self.archivar_anexos(respuesta, data_anexos_respuesta, instance_respuesta, persona_logueada)
+
+    
+    def guardar_archivo(self, expediente, anexo):
+
+        ruta = os.path.join("home", "BIA", "Gestor", "GDEA", "PQRSDF", str(expediente.codigo_exp_Agno))
+
+        md5_hash = hashlib.md5()
+        for chunk in anexo.chunks():
+            md5_hash.update(chunk)
+        
+        md5_value = md5_hash.hexdigest()
+
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value
+        }
+            
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, anexo)
+
+        return respuesta
