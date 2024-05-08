@@ -584,7 +584,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             #NUMERO DE RADICADO
             request.data['dato35'] = cadena_radicado
             #FECHA DE RADICADO
-            request.data['dato36'] = instance_radicado
+            request.data['dato36'] = instance_radicado.fecha_radicado
             #MUNICIPIO
             if 'Municipio' in detalle_tramite_data:
                 request.data['dato7'] = detalle_tramite_data['Municipio']
@@ -601,17 +601,18 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
                 request.data['dato9'] = fuente_captacion_json['Name_fuente_hidrica_value']
             else:
                 request.data['dato9'] = '[[DATO9]]'
-            archivo_acto = crear.create(request)
+            
             #DATO 11 NOMBRE DE PREDIO 
             if 'Npredio' in detalle_tramite_data:
                 request.data['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
             else:
                 request.data['dato11'] = '[[DATO11]]'
             #DATO 12 NUMERO DE MATRICULA DE PREDIO
-            if 'Npredio' in detalle_tramite_data:
-                request.data['dato12'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            if 'MatriInmobi' in detalle_tramite_data:
+                request.data['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
             else:
-                request.data['dato12'] = '[[DATO12]]'
+                request.data['dato12'] = '[[MatriInmobiDato12]]'
+            archivo_acto = crear.create(request)
             print(archivo_acto)
             raise ValidationError("HAAA")
         
