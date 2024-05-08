@@ -11,6 +11,7 @@ def start():
 	trigger_Actualizacion_variable_recaudo = CronTrigger(minute='*')
 	scheduler.add_job(generar_alerta, trigger=trigger)
 	scheduler.add_job(actualizar_estado_variable_recaudo, trigger=trigger)
+	scheduler.add_job(actualizar_estados_liquidaciones, trigger=trigger)
 	#scheduler.add_job(generar_conf_radicado_gest, 'interval', seconds=5)
 	scheduler.add_job(ExtraccionBaseDatosPimisis,trigger=trigger)
 			

@@ -34,6 +34,7 @@ class Referencia(models.Model):
     fecha_consecutivo = models.DateTimeField(db_column='T470fechaReferencia')
     id_persona_solicita = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T470Id_Persona')
     id_archivo = models.ForeignKey(ArchivosDigitales,on_delete=models.SET_NULL,db_column='T470Id_ArchivoDigital',blank=True,null=True)
+    id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites',on_delete=models.CASCADE,db_column='T470Id_SolicitudTramite')
     class Meta:
-        db_table = 'T470Consecutivo'
+        db_table = 'T470ReferenciasPago'
         #unique_together = [('agno_consecutivo','nro_consecutivo'),]
