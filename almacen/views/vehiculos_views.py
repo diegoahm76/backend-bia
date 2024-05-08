@@ -2170,7 +2170,7 @@ class ObtenerInformacionAgendamiento(generics.RetrieveAPIView):
             # Verificar si existe una solicitud de viaje con el id dado y estado 'Finalizada' o 'Respondida'
             solicitud_viaje = SolicitudesViajes.objects.get(
                 id_solicitud_viaje=id_solicitud_viaje,
-                estado_solicitud__in=['RE']  # Estado: 'Respondida'
+                estado_solicitud__in=['RE','FN','RC' ]  # Estado: 'Respondida'
             )
 
             # Obtener el viaje agendado asociado a la solicitud de viaje
