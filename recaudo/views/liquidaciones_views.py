@@ -16,6 +16,7 @@ from recaudo.models.liquidaciones_models import (
 from recaudo.serializers.liquidaciones_serializers import (
     HistEstadosLiqGetSerializer,
     HistEstadosLiqPostSerializer,
+    LiquidacionesTramiteAnularSerializer,
     LiquidacionesTramitePostSerializer,
     OpcionesLiquidacionBaseSerializer,
     OpcionesLiquidacionBasePutSerializer,
@@ -344,6 +345,45 @@ class LiquidacionTramiteCreateView(generics.CreateAPIView):
         serializer_historico.save()
 
         return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
+    serializer_class = LiquidacionesTramiteAnularSerializer
+    serializer_historico_class = HistEstadosLiqPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_liquidacion_base):
+        data = request.data
+        current_date = datetime.now()
+        liquidacion = LiquidacionesBase.objects.filter(id=id_liquidacion_base, anulado=None, estado='PENDIENTE').first()
+        if not liquidacion:
+            raise ValidationError('La liquidación elegida no existe o no se permite anular')
+
+        if liquidacion.vencimiento < current_date:
+            raise ValidationError('La liquidación asociada ya se encuentra vencida, no puede continuar con la anulación')
+        
+        observacion = data.get('observacion', '')
+        
+        if not observacion:
+            raise ValidationError('Debe ingresar una observación de la anulación que desea realizar')
+        
+        # Guardar anulación
+        data['estado'] ='ANULADO'
+        data['anulado'] ='S'
+        serializer_anulacion = self.serializer_class(liquidacion, data=data)
+        serializer_anulacion.is_valid(raise_exception=True)
+        serializer_anulacion.save()
+
+        # Guardar historico
+        data_historico = {
+            'id_liquidacion_base': liquidacion.id,
+            'estado_liq': 'ANULADO',
+            'fecha_estado': datetime.now()
+        }
+        serializer_historico = self.serializer_historico_class(data=data_historico)
+        serializer_historico.is_valid(raise_exception=True)
+        serializer_historico.save()
+
+        return Response({'success': True, 'detail': 'Se ha anulado la liquidación para el trámite correctamente'}, status=status.HTTP_201_CREATED)
 
 class HistLiquidacionTramiteGetView(generics.ListAPIView):
     queryset = HistEstadosLiq.objects.all()

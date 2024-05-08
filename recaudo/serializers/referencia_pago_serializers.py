@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno, Referencia
 from gestion_documental.serializers.pqr_serializers import ArchivosSerializer
 
@@ -18,9 +19,19 @@ class ReferenciaCreateSerializer(serializers.ModelSerializer):
     numero_documento = serializers.ReadOnlyField(source='id_persona_solicita.numero_documento')
     consecutivo = serializers.SerializerMethodField()
     ruta_archivo = serializers.SerializerMethodField()
+    radicado = serializers.SerializerMethodField()
     class Meta:
         model = Referencia
         fields ='__all__'
+
+    def get_radicado(self, obj):
+        cadena = "SIN RADICAR"
+        if obj.id_solicitud_tramite.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=obj.id_solicitud_tramite.id_radicado.agno_radicado,cod_tipo_radicado=obj.id_solicitud_tramite.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(obj.id_solicitud_tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= obj.id_solicitud_tramite.id_radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        return cadena
 
     def get_ruta_archivo(self, obj):
         if obj.id_archivo is None:
