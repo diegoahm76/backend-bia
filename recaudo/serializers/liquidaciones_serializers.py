@@ -79,7 +79,25 @@ class LiquidacionesTramitePostSerializer(serializers.ModelSerializer):
             'id_solicitud_tramite': {'required': True, 'allow_null': False}
         }
 
+class LiquidacionesTramiteAnularSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LiquidacionesBase
+        fields = ['estado','anulado','observacion']
+
 class HistEstadosLiqPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistEstadosLiq
+        fields = '__all__'
+
+class HistEstadosLiqGetSerializer(serializers.ModelSerializer):
+    num_liquidacion = serializers.ReadOnlyField(source='id_liquidacion_base.num_liquidacion', default=None)
+    valor_liquidacion = serializers.ReadOnlyField(source='id_liquidacion_base.valor', default=None)
+    fecha_liquidacion = serializers.ReadOnlyField(source='id_liquidacion_base.fecha_liquidacion', default=None)
+    fecha_vencimiento_liquidacion = serializers.ReadOnlyField(source='id_liquidacion_base.vencimiento', default=None)
+    id_solicitud_tramite = serializers.ReadOnlyField(source='id_liquidacion_base.id_solicitud_tramite.id_solicitud_tramite', default=None)
+    nombre_proyecto_tramite = serializers.ReadOnlyField(source='id_liquidacion_base.id_solicitud_tramite.nombre_proyecto', default=None)
+    
     class Meta:
         model = HistEstadosLiq
         fields = '__all__'
