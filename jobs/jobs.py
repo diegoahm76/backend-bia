@@ -6,6 +6,7 @@ from gestion_documental.views.configuracion_tipos_radicados_views import actuali
 from recaudo.models.base_models import ValoresVariables
 from recaudo.models.liquidaciones_models import LiquidacionesBase
 from recaudo.models.pagos_models import Pagos
+from recaudo.serializers.liquidaciones_serializers import HistEstadosLiqPostSerializer
 from tramites.models.tramites_models import Tramites
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas
@@ -41,8 +42,18 @@ def actualizar_estados_liquidaciones():
 	current_date = datetime.now()
 	liquidaciones_vencidas = LiquidacionesBase.objects.filter(vencimiento__lt=current_date)
 	for liquidacion in liquidaciones_vencidas:
-		liquidacion.estado = "NO PAGADO"
+		liquidacion.estado = 'NO PAGADO'
 		liquidacion.save()
+
+		# Guardar historico liquidacion
+		data_historico = {
+			'liquidacion_base': liquidacion.id,
+			'estado_liq': 'NO PAGADO',
+			'fecha_estado': current_date
+		}
+		serializer_historico = HistEstadosLiqPostSerializer(data=data_historico)
+		serializer_historico.is_valid(raise_exception=True)
+		serializer_historico.save()
 	print("SE ACTUALIZARON ESTADOS LIQUIDACIONES - RECAUDO")
 
 
