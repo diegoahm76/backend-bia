@@ -12,6 +12,7 @@ from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno, Referencia
 from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCreateSerializer, ConfigTipoRefgnoGetSerializer, ConfigTipoRefgnoPutSerializer, ReferenciaCreateSerializer
+from tramites.models.tramites_models import SolicitudesTramites
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from seguridad.models import Personas
 from seguridad.utils import Util
@@ -376,6 +377,7 @@ class RefCreateView(generics.CreateAPIView):
         data_consecutivo['nro_consecutivo'] = data_respuesta['referencia_actual']
         data_consecutivo['fecha_consecutivo'] = data_respuesta['fecha_consecutivo_actual']
         data_consecutivo['id_persona_solicita'] = data_respuesta['id_persona_referencia_actual']
+        data_consecutivo['id_solicitud_tramite'] = data_in['id_solicitud_tramite']
 
 
 
@@ -383,12 +385,12 @@ class RefCreateView(generics.CreateAPIView):
         data_archivo ={}
         for archivo in archivos:
                 
-                print(archivo)
-                print(archivo.name)
+                #print(archivo)
+                #print(archivo.name)
                 contenido = archivo.read()
                 nombre_nuevo= "Archivo.pdf"
                 archivo_modificado = ContentFile(contenido, name=nombre_nuevo)
-                print(archivo_modificado)
+                #print(archivo_modificado)
             
                 ruta = "home,BIA,Recaudo,referencia"
                 respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo_modificado)
@@ -399,28 +401,19 @@ class RefCreateView(generics.CreateAPIView):
                 data_archivo = respuesta_archivo.data['data']
 
 
-        #RADICAR
-        fecha_actual =datetime.now()
-        data_radicado = {}
-        data_radicado['fecha_actual'] = fecha_actual
-        data_radicado['id_persona'] = request.user.persona.id_persona
-        data_radicado['tipo_radicado'] = "I" #validar cual tipo de radicado
-        data_radicado['modulo_radica'] = 'Respuesta del Titular a Una Solicitud sobre PQRSDF'
+        #RADICADO
+        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        if not tramite:
+            raise  ValidationError("No se encontro tramite asociado")
+        
 
 
-     
-        radicadoCreate = RadicadoCreate()       
-        respuesta_radicado = radicadoCreate.post(data_radicado)
-        respuesta_radicado_data = respuesta_radicado
-        #print(respuesta_radicado_data['radicado_nuevo'])
-
-        data_in['id_radicado'] = respuesta_radicado['id_radicado']
-        data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
         data_consecutivo['id_archivo'] = data_archivo['id_archivo_digital']
         serializer = self.serializer_class(data=data_consecutivo)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data,'radicado_nuevo':respuesta_radicado_data['radicado_nuevo']}}, status=status.HTTP_201_CREATED)
+        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data
+        }}, status=status.HTTP_201_CREATED)
 
 
 
