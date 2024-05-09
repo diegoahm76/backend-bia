@@ -13,6 +13,7 @@ urlpatterns = [
     #RefCreateView
     path('referencia/crear/',views.RefCreateView.as_view(),name= 'crear-referencia'),
     #RefEjemGetView
-    path('referencia/ejemplo/',views.RefEjemGetView.as_view(),name='generar-ejemplo')
+    path('referencia/ejemplo/',views.RefEjemGetView.as_view(),name='generar-ejemplo'),
+    path('referencias/get/',views.ConsecutivoGetView.as_view(),name='historico de referencias')
 
 ]

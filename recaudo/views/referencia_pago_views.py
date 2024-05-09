@@ -10,13 +10,14 @@ from django.utils import timezone
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno
+from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno, Referencia
 from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCreateSerializer, ConfigTipoRefgnoGetSerializer, ConfigTipoRefgnoPutSerializer, ReferenciaCreateSerializer
+from tramites.models.tramites_models import SolicitudesTramites
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from seguridad.models import Personas
 from seguridad.utils import Util
 from django.core.files.base import ContentFile
-
+from gestion_documental.views.pqr_views import RadicadoCreate 
 class ConfigTipoConsecAgnoCreateView(generics.CreateAPIView):
     serializer_class = ConfigTipoRefgnoCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -376,6 +377,7 @@ class RefCreateView(generics.CreateAPIView):
         data_consecutivo['nro_consecutivo'] = data_respuesta['referencia_actual']
         data_consecutivo['fecha_consecutivo'] = data_respuesta['fecha_consecutivo_actual']
         data_consecutivo['id_persona_solicita'] = data_respuesta['id_persona_referencia_actual']
+        data_consecutivo['id_solicitud_tramite'] = data_in['id_solicitud_tramite']
 
 
 
@@ -383,12 +385,12 @@ class RefCreateView(generics.CreateAPIView):
         data_archivo ={}
         for archivo in archivos:
                 
-                print(archivo)
-                print(archivo.name)
+                #print(archivo)
+                #print(archivo.name)
                 contenido = archivo.read()
                 nombre_nuevo= "Archivo.pdf"
                 archivo_modificado = ContentFile(contenido, name=nombre_nuevo)
-                print(archivo_modificado)
+                #print(archivo_modificado)
             
                 ruta = "home,BIA,Recaudo,referencia"
                 respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo_modificado)
@@ -397,11 +399,21 @@ class RefCreateView(generics.CreateAPIView):
                     return respuesta_archivo
                 #print(respuesta_archivo.data['data'])
                 data_archivo = respuesta_archivo.data['data']
+
+
+        #RADICADO
+        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        if not tramite:
+            raise  ValidationError("No se encontro tramite asociado")
+        
+
+
         data_consecutivo['id_archivo'] = data_archivo['id_archivo_digital']
         serializer = self.serializer_class(data=data_consecutivo)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data,'consecutivo':data_respuesta['conseg_nuevo']}}, status=status.HTTP_201_CREATED)
+        return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data
+        }}, status=status.HTTP_201_CREATED)
 
 
 
@@ -448,3 +460,65 @@ class RefEjemGetView(generics.ListAPIView):
         
         return Response({'success':True, 'detail':'se encontraron los siguientes registros', 'data': serializer.data,'ejemplo':conseg_nuevo}, status=status.HTTP_200_OK)
 
+
+
+
+
+class ConsecutivoGetView(generics.ListAPIView):
+    serializer_class = ReferenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Referencia.objects.all()
+    
+    def get (self, request):
+
+        filter={}
+                
+        for key, value in request.query_params.items():
+
+            # if key == 'radicado':
+            #     if value !='':
+            #         filter['mezcla__icontains'] = value
+            if key =='unidad':
+                if value != '':
+                    filter['id_unidad__nombre__icontains'] = value    
+            if key == 'agno':
+                if value != '':
+                     filter['agno_referencia__icontains'] = value   
+
+            if key == 'fecha_inicio':
+                if value != '':
+                    
+                    filter['fecha_consecutivo__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            if key == 'fecha_fin':
+                if value != '':
+                    filter['fecha_consecutivo__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+            # if key == 'modulo':
+            #     if value != '':
+            #         filter['id_modulo_que_radica__nombre__icontains'] = value
+
+
+            if key == 'id_persona':
+                if value != '':
+                    filter['id_id_persona_solicita'] = value
+        instance = self.get_queryset().filter(**filter).order_by('fecha_consecutivo')
+        
+        consecutivo_value = request.query_params.get('consecutivo')
+        print(consecutivo_value)
+        if not instance:
+            raise NotFound("No existen registros")
+
+        serializador = self.serializer_class(instance,many=True)
+        data_respuesta = serializador.data
+        data_validada =[]
+        if consecutivo_value and consecutivo_value != '':
+            data_validada = [item for item in serializador.data if consecutivo_value in item.get('consecutivo', '')]
+        else :
+            data_validada = data_respuesta
+
+
+        if not instance:
+            raise NotFound("No existen registros asociados.")
+        
+    
+        serializador=self.serializer_class(instance,many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada}, status=status.HTTP_200_OK)

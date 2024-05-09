@@ -11,9 +11,10 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas,
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales, IndicesElectronicosExp
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TipologiasDoc
 from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, ComplementosUsu_TramiteGetByIdSerializer, DetalleTramitesComplementosUsu_PQRGetSerializer, MetadatosAnexosTramitesTmpSerializerGet, ReasignacionesTareasTramitesCreateSerializer, ReasignacionesTareasgetTramitesByIdSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasGetTramiteJustificacionSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
+import json
 
 from gestion_documental.serializers.expedientes_serializers import AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
@@ -22,9 +23,10 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPersonaCreate, TareaBandejaTareasPersonaUpdate, TareasAsignadasCreate
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
 from seguridad.utils import Util
+from tramites.views.tramites_views import TramitesPivotGetView
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-from tramites.models.tramites_models import SolicitudesTramites
+from tramites.models.tramites_models import SolicitudesTramites, Tramites
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
@@ -32,6 +34,7 @@ from rest_framework.exceptions import ValidationError,NotFound
 from docxtpl import DocxTemplate
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from rest_framework.request import Request
 
 
 
@@ -84,13 +87,13 @@ class ActaInicioCreate(generics.CreateAPIView):
 
 
         context = data
-
+        print(context)
         pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/AUTO_INICIO_AGUAS_SUPERFICIALES.docx'
         outputPath = str(settings.BASE_DIR) + '/gestion_documental/templates/output.docx'
 
         doc = DocxTemplate(pathToTemplate)
         doc.render(context)
-        #doc.save(outputPath)
+        doc.save(outputPath)
 
         return doc
 
@@ -403,6 +406,58 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
+
+    def nombre_persona(self,persona):
+           
+        nombre_completo_responsable = None
+        if persona:
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                            persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+
+    def radicado_completo(self,radicado):
+            
+        cadena = ""
+        if radicado:
+            #radicado = obj.id_solicitud_tramite.id_radicado
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+            return cadena
+        return ""
+    
+
+    def detalle_tramite(self, radicado):
+        filter = {}
+
+
+        filter['radicate_bia__icontains'] = radicado
+
+        
+        tramites_values = Tramites.objects.filter(**filter).values()
+        
+        if tramites_values:
+            organized_data = {
+                'procedure_id': tramites_values[0]['procedure_id'],
+                'radicate_bia': tramites_values[0]['radicate_bia'],
+                'proceeding_id': tramites_values[0]['proceeding_id'],
+            }
+            
+            for item in tramites_values:
+                field_name = item['name_key']
+                if item['type_key'] == 'json':
+                    value = json.loads(item['value_key'])
+                else:
+                    value = item['value_key']
+                organized_data[field_name] = value
+        else:
+            raise NotFound('No se encontró el detalle del trámite elegido')
+        
+        return organized_data
+
     @transaction.atomic
     def put(self,request,pk):
         
@@ -466,17 +521,18 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
         else:
             print(id_asignacion)
             asignacion = AsignacionTramites.objects.filter(id_asignacion_tramite=id_asignacion,cod_estado_asignacion__isnull=True).first()
-            #asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=id_asignacion,cod_estado_asignacion__isnull=True).first()
-            #asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
         
-    
             if not asignacion:
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Ac'
             asignacion.save()
 
+            #Identificar tipo de tramite
+            vista_detalle_tramite = TramitesPivotGetView()
 
-             #APERTURA DEL EXPEDIENTE
+            #tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=asignacion.id_solicitud_tramite).first()
+            tramite = asignacion.id_solicitud_tramite
+            #APERTURA DEL EXPEDIENTE
 
             vista_creadora_expediente = CrearExpedienteTramite()
             request.data['id_cat_serie_und_org_ccd_trd_prop'] = asignacion.id_catalogo_serie_subserie
@@ -485,8 +541,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
             respuesta = vista_creadora_expediente.create(request)
 
-            print(respuesta.data)
-            #raise ValidationError("HAAA")
+
             respuesta_expediente = respuesta.data['data']
 
             id_expediente = respuesta_expediente['id_expediente_documental']
@@ -495,18 +550,69 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
                 raise NotFound("No se encontro el expediente")
            
             data_auto = {}
-
+            #PENDIENTE VALIDACION DE TIPO DE TRAMITE
+            #Solicitud de Concesión de Aguas Superficiales
             data_auto['n_auto'] = 1
-
-
             crear = ActaInicioCreate()
-
             data_acto= {}
-            request.data['dato1'] = 'Auto 1'
-            request.data['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']
-           
-            archivo_acto = crear.create(request)
+            request.data['dato1'] = 'Auto 1'#NUMERO DE AUTO
+            request.data['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']#NUMERO DE EXPEDIENTE
+            #NOMBRE DEL USUARIO
+            titular = tramite.id_persona_titular
+            nombre_usuario = self.nombre_persona(titular)
+            request.data['dato3'] = nombre_usuario
+            #TIPO DE DOCUMENTO
+            request.data['dato4'] = titular.tipo_documento.nombre
+            request.data['dato5'] = titular.numero_documento
 
+            #DETALLE DEL TRAMITE DATOS DE SASOFT
+            #SE ASOCIA POR EL RADICADO
+            #MONTAJE DE RADICADO
+            instance_radicado = tramite.id_radicado
+            cadena_radicado = self.radicado_completo(instance_radicado)
+           
+            
+            print("DETALLEEEE DEL TRAMITE SASOFT")
+
+            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+
+            #UBICACION /DIRECCION 
+            if 'Direecion' in detalle_tramite_data:
+                request.data['dato6'] = detalle_tramite_data['Direccion']
+            else:
+                request.data['dato6'] = 'SIN IDENTIFICAR'
+            #NUMERO DE RADICADO
+            request.data['dato35'] = cadena_radicado
+            #FECHA DE RADICADO
+            request.data['dato36'] = instance_radicado.fecha_radicado
+            #MUNICIPIO
+            if 'Municipio' in detalle_tramite_data:
+                request.data['dato7'] = detalle_tramite_data['Municipio']
+            else:
+                request.data['dato7'] ='[[DATO7]]'
+
+            ##DATO 8 FECHA DE VISITA NO NECESARIO
+            request.data['dato8'] = '[[DATO8]]'
+            #DATO 9 NOMBRE DE FUENTE DE CAPTACION
+            if 'fuente_captacion' in detalle_tramite_data:
+                fuente_captacion_json= detalle_tramite_data['fuente_captacion'][0]
+                # print(fuente_captacion_json)
+                # #raise ValidationError('pere')
+                request.data['dato9'] = fuente_captacion_json['Name_fuente_hidrica_value']
+            else:
+                request.data['dato9'] = '[[DATO9]]'
+            
+            #DATO 11 NOMBRE DE PREDIO 
+            if 'Npredio' in detalle_tramite_data:
+                request.data['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                request.data['dato11'] = '[[DATO11]]'
+            #DATO 12 NUMERO DE MATRICULA DE PREDIO
+            if 'MatriInmobi' in detalle_tramite_data:
+                request.data['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                request.data['dato12'] = '[[MatriInmobiDato12]]'
+            archivo_acto = crear.create(request)
             print(archivo_acto)
             raise ValidationError("HAAA")
         

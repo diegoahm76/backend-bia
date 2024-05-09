@@ -5,6 +5,7 @@ from recaudo.models.base_models import (
     LeyesLiquidacion
 )
 from recaudo.models.liquidaciones_models import (
+    HistEstadosLiq,
     OpcionesLiquidacionBase,
     Deudores,
     LiquidacionesBase,
@@ -13,7 +14,9 @@ from recaudo.models.liquidaciones_models import (
     CalculosLiquidacionBase
 )
 from recaudo.serializers.liquidaciones_serializers import (
+    HistEstadosLiqGetSerializer,
     HistEstadosLiqPostSerializer,
+    LiquidacionesTramiteAnularSerializer,
     LiquidacionesTramitePostSerializer,
     OpcionesLiquidacionBaseSerializer,
     OpcionesLiquidacionBasePutSerializer,
@@ -247,7 +250,7 @@ class DetallesLiquidacionBaseView(generics.GenericAPIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LiquidacionTramiteCreateView(generics.ListAPIView):
+class LiquidacionTramiteCreateView(generics.CreateAPIView):
     queryset = LiquidacionesBase.objects.all()
     serializer_class = LiquidacionesTramitePostSerializer
     serializer_detalles_class = DetallesLiquidacionBasePostSerializer
@@ -303,7 +306,14 @@ class LiquidacionTramiteCreateView(generics.ListAPIView):
         archivo_class = ArchivosDgitalesCreate()
         respuesta = archivo_class.crear_archivo(data_archivo, archivo_liquidacion)
 
+        # Validar que la fecha de vencimiento sea 
+        fecha_vencimiento = datetime.strptime(data_liquidacion['vencimiento'], "%Y-%m-%d")
+        fecha_actual = datetime.now()
+        if fecha_vencimiento.date() < fecha_actual.date():
+            raise ValidationError('La fecha de vencimiento no puede ser menor a la fecha actual')
+
         # Asociar archivo creado a liquidación
+        data_liquidacion['id_persona_liquida'] = request.user.persona.id_persona
         data_liquidacion['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
         data_liquidacion['estado'] = 'PENDIENTE'
 
@@ -326,7 +336,7 @@ class LiquidacionTramiteCreateView(generics.ListAPIView):
 
         # Guardar historico
         data_historico = {
-            'liquidacion_base': liquidacion_creada.id,
+            'id_liquidacion_base': liquidacion_creada.id,
             'estado_liq': 'PENDIENTE',
             'fecha_estado': datetime.now()
         }
@@ -335,6 +345,72 @@ class LiquidacionTramiteCreateView(generics.ListAPIView):
         serializer_historico.save()
 
         return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
+    serializer_class = LiquidacionesTramiteAnularSerializer
+    serializer_historico_class = HistEstadosLiqPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_liquidacion_base):
+        data = request.data
+        current_date = datetime.now()
+        liquidacion = LiquidacionesBase.objects.filter(id=id_liquidacion_base, anulado=None, estado='PENDIENTE').first()
+        if not liquidacion:
+            raise ValidationError('La liquidación elegida no existe o no se permite anular')
+
+        if liquidacion.vencimiento < current_date:
+            raise ValidationError('La liquidación asociada ya se encuentra vencida, no puede continuar con la anulación')
+        
+        observacion = data.get('observacion', '')
+        
+        if not observacion:
+            raise ValidationError('Debe ingresar una observación de la anulación que desea realizar')
+        
+        # Guardar anulación
+        data['estado'] ='ANULADO'
+        data['anulado'] ='S'
+        serializer_anulacion = self.serializer_class(liquidacion, data=data)
+        serializer_anulacion.is_valid(raise_exception=True)
+        serializer_anulacion.save()
+
+        # Guardar historico
+        data_historico = {
+            'id_liquidacion_base': liquidacion.id,
+            'estado_liq': 'ANULADO',
+            'fecha_estado': datetime.now()
+        }
+        serializer_historico = self.serializer_historico_class(data=data_historico)
+        serializer_historico.is_valid(raise_exception=True)
+        serializer_historico.save()
+
+        return Response({'success': True, 'detail': 'Se ha anulado la liquidación para el trámite correctamente'}, status=status.HTTP_201_CREATED)
+
+class HistLiquidacionTramiteGetView(generics.ListAPIView):
+    queryset = HistEstadosLiq.objects.all()
+    serializer_class = HistEstadosLiqGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        filter = {}
+        
+        for key, value in request.query_params.items():
+            if key in ['num_liquidacion', 'id_solicitud_tramite', 'id_liquidacion_base', 'nombre_proyecto_tramite', 'fecha_inicio', 'fecha_fin', 'estado_liq'] and value != '':
+                if key == 'num_liquidacion':
+                    filter['id_liquidacion_base__'+key+'__icontains'] = value
+                elif key == 'id_solicitud_tramite':
+                    filter['id_liquidacion_base__'+key] = value
+                elif key == 'nombre_proyecto_tramite':
+                    filter['id_liquidacion_base__id_solicitud_tramite__nombre_proyecto__icontains'] = value
+                elif key == 'fecha_inicio':
+                    filter['fecha_estado__date__gte'] = value
+                elif key == 'fecha_fin':
+                    filter['fecha_estado__date__lte'] = value
+                else:
+                    filter[key] = value
+
+        queryset = self.queryset.filter(**filter)
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'message': 'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class ExpedientesView(generics.ListAPIView):
     queryset = Expedientes.objects.filter(id_deudor__isnull=False)

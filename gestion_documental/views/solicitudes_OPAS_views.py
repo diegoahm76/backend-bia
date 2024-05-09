@@ -18,7 +18,7 @@ class TramiteListOpasGetView(generics.ListAPIView):
 
         filter={}
         filter['id_solicitud_tramite__id_medio_solicitud'] = 2
-        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
+        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'OP'
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
         filter['id_solicitud_tramite__id_persona_titular'] = id
         instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')

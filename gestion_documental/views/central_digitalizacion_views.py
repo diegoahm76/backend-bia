@@ -958,7 +958,7 @@ class OpasSolicitudesPendientesGet(generics.ListAPIView):
 
             #Filtra las solicitudes que no este completada
             solicitudes_opas = self.queryset.filter(digitalizacion_completada=False, devuelta_sin_completar=False).exclude(id_tramite=None).order_by('fecha_solicitud')
-            opas = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+            opas = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'OP')
             opas_id_list = [opa.id_solicitud_tramite.id_solicitud_tramite for opa in opas]
             solicitudes_opas = solicitudes_opas.filter(id_tramite__in = opas_id_list)
 

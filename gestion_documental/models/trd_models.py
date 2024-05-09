@@ -5,6 +5,7 @@ from gestion_documental.choices.disposicion_final_series_choices import disposic
 from gestion_documental.choices.tipos_medios_doc_choices import tipos_medios_doc_CHOICES
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 from gestion_documental.choices.cod_nivel_consecutivo_choices import cod_nivel_consecutivo_CHOICES
+#from gestion_documental.models.expedientes_models import ArchivosDigitales
 from transversal.models.personas_models import Personas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -61,7 +62,7 @@ class FormatosTiposMedio(models.Model):
 
 class TipologiasDoc(models.Model):
     id_tipologia_documental = models.AutoField(editable=False, primary_key=True, db_column='T208IdTipologiaDoc')
-    nombre = models.CharField(max_length=50, unique=True, db_column='T208nombre')
+    nombre = models.CharField(max_length=255, unique=True, db_column='T208nombre')
     cod_tipo_medio_doc = models.ForeignKey(TiposMediosDocumentos, on_delete=models.CASCADE, db_column='T208Cod_TipoMedioDoc')
     activo = models.BooleanField(default=True, db_column='T208activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T208ItemYaUsado')
@@ -197,6 +198,27 @@ class ConsecPorNivelesTipologiasDocAgno(models.Model):
         verbose_name = 'Consecutivo por nivel de tipologia documental'
         verbose_name_plural = 'Consecutivos por niveles de tipologias documentales'
         unique_together = [('id_config_tipologia_doc_agno'),( 'id_unidad_organizacional')]
+
+
+class ConsecutivoTipologia(models.Model):
+    id_consecutivo_tipologia = models.AutoField(primary_key=True, db_column='T319IdConsecutivoTipologia')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T319Id_UnidadOrganizacional')
+    id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T319Id_TipologiaDoc')
+    CatalogosSeriesUnidad = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T329Id_CatalogoSeriesUnidad',related_name='T319Id_CatalogoSeriesUnidad')
+    agno_consecutivo = models.SmallIntegerField(db_column='T319agnoConsecutivo')
+    nro_consecutivo = models.CharField(max_length=20, db_column='T319nroConsecutivo')
+    prefijo_consecutivo = models.CharField(max_length=10, db_column='T319prefijoConsecutivo')
+    fecha_consecutivo = models.DateTimeField(db_column='T319fechaConsecutivo')
+    id_persona_genera = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T319Id_PersonaGenera')
+    id_radicado_interno = models.ForeignKey('gestion_documental.T262Radicados', on_delete=models.SET_NULL, db_column='T319Id_RadicadoInterno', related_name='T319Id_RadicadoInterno', blank=True, null=True)
+    fecha_radicado_interno = models.DateTimeField(db_column='T319fechaRadicadoInterno', blank=True, null=True)
+    id_radicado_salida = models.ForeignKey('gestion_documental.T262Radicados', on_delete=models.SET_NULL, db_column='T319Id_RadicadoSalida', related_name='T319Id_RadicadoSalida', blank=True, null=True)
+    fecha_radicado_salida = models.DateTimeField(db_column='T319fechaRadicadoSalida', blank=True, null=True)
+    id_archivo_digital = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, db_column='T319Id_ArchivoDigital', blank=True, null=True)
+    class Meta:
+        db_table = 'T319ConsecutivoTipologia'
+        #unique_together = [('agno_consecutivo','nro_consecutivo'),]    ble = 'T308Consecutivo'
+
 
 
 
