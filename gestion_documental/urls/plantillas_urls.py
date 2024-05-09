@@ -19,4 +19,7 @@ urlpatterns = [
     path('acceso/create/',views.AccesoUndsOrg_PlantillaDocCreate.as_view(),name='crear-acceso'),
     path('acceso/delete/<str:pk>/', views.AccesoUndsOrg_PlantillaDocDelete.as_view(),name='eliminar-acceso'),
     path('acceso/get/<str:pk>/',views.AccesoUndsOrg_PlantillaDocGetByPlantilla.as_view(),name='listar-acceso'),
+
+    path('plantillas_documentos/get/', views.PlantillasDocGet.as_view(),name='plantillas-documentos'),
+    
 ]

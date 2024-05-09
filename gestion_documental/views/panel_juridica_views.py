@@ -36,7 +36,7 @@ class SolicitudesJuridicaGet(generics.ListAPIView):
                     filter['id_solicitud_tramite__id_estado_actual_solicitud'] = value
         
         solicitudes_juridica_opas = self.queryset.filter(**filter)
-        opas = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+        opas = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'OP')
         opas_id_list = [opa.id_solicitud_tramite.id_solicitud_tramite for opa in opas]
         solicitudes_juridica_opas = solicitudes_juridica_opas.filter(id_solicitud_tramite__in = opas_id_list)
 
@@ -54,7 +54,7 @@ class SolicitudesJuridicaInformacionOPAGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_solicitud_tramite):
-        opa = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite, id_permiso_ambiental__cod_tipo_permiso_ambiental='O').first()
+        opa = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite, id_permiso_ambiental__cod_tipo_permiso_ambiental='OP').first()
         if not opa:
             raise NotFound('No existe el OPA ingresado')
         

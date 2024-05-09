@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
+from docxtpl import DocxTemplate
+
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
 from gestion_documental.models.trd_models import TipologiasDoc
 
@@ -115,3 +117,22 @@ class  OtrasTipologiasSerializerGetSerializer(serializers.ModelSerializer):
     class Meta:
         model =  PlantillasDoc
         fields = ['otras_tipologias']
+
+class PlantillasDocSerializerGet(serializers.ModelSerializer):
+    accesos_unidades_organizacionales = serializers.SerializerMethodField()
+    archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    variables = serializers.SerializerMethodField()
+    class Meta:
+        model = PlantillasDoc
+        fields = '__all__'
+
+    def get_accesos_unidades_organizacionales(self, obj):
+        unidades = AccesoUndsOrg_PlantillaDoc.objects.filter(id_plantilla_doc=obj.id_plantilla_doc).values_list('id_unidad_organizacional', flat=True)
+        unidad_organizacional = self.context.get('usuario').id_unidad_organizacional_actual.id_unidad_organizacional
+        if unidad_organizacional in unidades:
+            return True
+        
+    def get_variables(self, obj):
+        doc = DocxTemplate(obj.id_archivo_digital.ruta_archivo)
+        variables = doc.get_undeclared_template_variables()
+        return variables
