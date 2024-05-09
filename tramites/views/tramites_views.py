@@ -249,13 +249,6 @@ class InicioTramiteCreateView(generics.CreateAPIView):
         if not permiso_ambiental:
             raise ValidationError('No se encontró el trámite elegido')
         
-        id_persona_titular = data.get('id_persona_titular')
-        id_persona_interpone = data.get('id_persona_interpone')
-        
-        if id_persona_titular == id_persona_interpone:
-            data['cod_relacion_con_el_titular'] = 'MP'
-        else:
-            data['cod_relacion_con_el_titular'] = 'RL' # VALIDAR PARA CASO DE APODERADOS
         
         data['cod_tipo_operacion_tramite'] = 'N'
         data['requiere_digitalizacion'] = True
@@ -493,7 +486,7 @@ class AnexosUpdatePMView(generics.UpdateAPIView):
         
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud_tramite:
-            raise NotFound('No se encontró el trámite del PM elegido')
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         if solicitud_tramite.id_radicado:
             raise ValidationError('No puede actualizar un trámite que ya ha sido radicado')
@@ -535,7 +528,7 @@ class AnexosUpdatePMView(generics.UpdateAPIView):
             # CREAR ARCHIVO EN T238
             # Obtiene el año actual para determinar la carpeta de destino
             current_year = datetime.now().year
-            ruta = os.path.join("home", "BIA", "Otros", "OPAS", str(current_year))
+            ruta = os.path.join("home", "BIA", "Otros", "PermisoMenor", str(current_year))
 
             # Calcula el hash MD5 del archivo
             md5_hash = hashlib.md5()
@@ -618,7 +611,7 @@ class AnexosGetPMView(generics.ListAPIView):
     def get(self, request, id_solicitud_tramite):
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud_tramite:
-            raise NotFound('No se encontró el trámite del PM elegido')
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
         serializer_get = self.serializer_class(anexos_instances, many=True, context={'request': request})
@@ -690,7 +683,7 @@ class RadicarCreatePMView(generics.CreateAPIView):
         
         solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud:
-            raise NotFound('No se encontró el trámite del OPA elegido')
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         if solicitud.id_radicado:
             raise ValidationError('El trámite ya ha sido radicado')
@@ -764,7 +757,7 @@ class RadicarGetPMView(generics.ListAPIView):
     def get(self, request, id_solicitud_tramite):
         solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud:
-            raise NotFound('No se encontró el trámite del PM elegido')
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         if not solicitud.id_radicado:
             raise ValidationError('El trámite aún no ha sido radicado')
@@ -813,7 +806,7 @@ class RadicarVolverEnviarGetPMView(generics.ListAPIView):
     def get(self, request, id_solicitud_tramite):
         solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud:
-            raise NotFound('No se encontró el trámite del PM elegido')
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         if not solicitud.id_radicado:
             raise ValidationError('El trámite aún no ha sido radicado')
@@ -840,7 +833,7 @@ class ConsultaEstadoOPAS(generics.ListAPIView):
 
     def get_queryset(self):
         opas = PermisosAmbSolicitudesTramite.objects.filter(
-            id_permiso_ambiental__cod_tipo_permiso_ambiental='O'
+            id_permiso_ambiental__cod_tipo_permiso_ambiental='OP'
         )
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
@@ -1174,7 +1167,7 @@ class AnexosMetadatosUpdatePMView(generics.UpdateAPIView):
         
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud_tramite:
-            raise NotFound('No se encontró el trámite del PM elegido')
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         if solicitud_tramite.id_radicado:
             raise ValidationError('No puede actualizar un trámite que ya ha sido radicado')
