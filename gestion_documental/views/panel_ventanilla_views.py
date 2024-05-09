@@ -1132,7 +1132,7 @@ class TramiteListOpasGetView(generics.ListAPIView):
 
         filter={}
         filter['id_solicitud_tramite__id_medio_solicitud'] = 2
-        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
+        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'OP'
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
         #nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
         #nombre_opa = serializers.ReadOnlyField(source='id_permiso_ambiental.nombre', default=None)
@@ -1160,7 +1160,7 @@ class TramiteListOpasGetView(generics.ListAPIView):
             if key == 'nombre_proyecto':
                 if value != '':
                     filter['id_solicitud_tramite__nombre_proyecto__icontains']= value
-        #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+        #tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2,id_solicitud_tramite__id_radicado__isnull=False ,id_permiso_ambiental__cod_tipo_permiso_ambiental = 'OP')
         instance = self.get_queryset().filter(**filter).order_by('id_solicitud_tramite__fecha_radicado')
         serializer = self.serializer_class(instance, many=True)
 
@@ -1446,7 +1446,7 @@ class OPAFGetHitorico(generics.ListAPIView):
       
         filter={}
         filter['id_solicitud_tramite__id_medio_solicitud'] = 2
-        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'O'
+        filter['id_permiso_ambiental__cod_tipo_permiso_ambiental'] = 'OP'
         filter['id_solicitud_tramite__id_radicado__isnull'] = False
         radicado = None
         for key, value in request.query_params.items():
@@ -2187,7 +2187,7 @@ class SolicitudesTramitesGet(generics.ListAPIView):
 
         filter['id_radicado__isnull'] = False
         instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
-        permisos_ambientales_solicitudes = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental='O').values_list('id_solicitud_tramite', flat=True).distinct()
+        permisos_ambientales_solicitudes = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental='OP').values_list('id_solicitud_tramite', flat=True).distinct()
         instance = instance.exclude(id_solicitud_tramite__in=list(permisos_ambientales_solicitudes))
         
         radicado_value = request.query_params.get('radicado')
@@ -2221,7 +2221,7 @@ class SolicitudDeDigitalizacionTramitesCreate(generics.CreateAPIView):
       
         data_in = request.data
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
-        permisos_ambientales_solicitud = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'], id_permiso_ambiental__cod_tipo_permiso_ambiental='O')
+        permisos_ambientales_solicitud = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'], id_permiso_ambiental__cod_tipo_permiso_ambiental='OP')
         
         if not solicitud_tramite:
             raise NotFound("No existe el tramite seleccionado.")
@@ -2319,7 +2319,7 @@ class TramitesGetHitorico(generics.ListAPIView):
            
     
         instance = self.get_queryset().filter(**filter).order_by('fecha_radicado')
-        permisos_ambientales_solicitudes = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental='O').values_list('id_solicitud_tramite', flat=True).distinct()
+        permisos_ambientales_solicitudes = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__cod_tipo_permiso_ambiental='OP').values_list('id_solicitud_tramite', flat=True).distinct()
         instance = instance.exclude(id_solicitud_tramite__in=list(permisos_ambientales_solicitudes))
         
         instance_complementos = self.queryset_complementos.all().filter(**filter).order_by('fecha_radicado')

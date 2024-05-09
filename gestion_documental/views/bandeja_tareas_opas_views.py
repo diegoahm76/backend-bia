@@ -114,7 +114,7 @@ class DetalleOpaGetbyId(generics.ListAPIView):
 
     
     def get(self, request,id):
-        instance =self.queryset.filter(id_solicitud_tramite=id,id_permiso_ambiental__cod_tipo_permiso_ambiental='O').first()
+        instance =self.queryset.filter(id_solicitud_tramite=id,id_permiso_ambiental__cod_tipo_permiso_ambiental='OP').first()
 
         if not instance:
             raise NotFound("No existen Opa asociada a esta id.")
