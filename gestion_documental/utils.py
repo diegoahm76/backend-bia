@@ -457,7 +457,7 @@ class UtilsGestor:
         
         return False
     
-    def create_archivo_digital(self, archivo, ruta_final):
+    def create_archivo_digital(archivo, ruta_final):
         # Obtiene el año actual para determinar la carpeta de destino
         current_year = datetime.now().year
         ruta = os.path.join("home", "BIA", "Otros", ruta_final, str(current_year)) # VALIDAR RUTA
