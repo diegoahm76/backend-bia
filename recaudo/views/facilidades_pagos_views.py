@@ -66,7 +66,11 @@ class CarteraDeudorListViews(generics.ListAPIView):
         return monto_total, intereses_total, monto_total_con_intereses
     
     def obligaciones_deudor(self, numero_identificacion):
-        deudor = Deudores.objects.filter(identificacion=numero_identificacion).first()
+        try: 
+            deudor = Deudores.objects.get(identificacion=numero_identificacion)
+        except Deudores.DoesNotExist: 
+            #raise ValidationError('No se encontraron deudas asociadas para este usuario.')        
+            return False
         estado = Expedientes.objects.filter(id_deudor=deudor.id).first()
         print(estado)
         if deudor:     
@@ -108,13 +112,13 @@ class ListadoCarteraViews(generics.ListAPIView):
     def get(self, request):
         user = request.user
         numero_identificacion = user.persona.numero_documento
+        print("cedula :",numero_identificacion)
         instancia_obligaciones = CarteraDeudorListViews()
         response_data = instancia_obligaciones.obligaciones_deudor(numero_identificacion)
-
         if response_data:
             return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)
         else:
-            raise ValidationError('El dato ingresado no es valido')  
+            raise ValidationError('No se encontraron deudas asociadas para este usuario.')  
 
 
 class ConsultaCarteraDeudoresViews(generics.ListAPIView):
