@@ -23,6 +23,7 @@ class GetSolicitudByNumeroSolicitudSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
     persona_responsable = serializers.SerializerMethodField()
     nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    ruta_archivo_info_tecnico = serializers.ReadOnlyField(source='ruta_archivo_info_tecnico.ruta_archivo.url', default=None)
     
     def get_persona_solicita(self, obj):
         nombre_completo_solicita = None
@@ -54,6 +55,7 @@ class GetSolicitudesViverosSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
     persona_responsable = serializers.SerializerMethodField()
     nombre_unidad_organizacional_destino = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+    ruta_archivo_info_tecnico = serializers.ReadOnlyField(source='ruta_archivo_info_tecnico.ruta_archivo.url', default=None)
     
     def get_persona_solicita(self, obj):
         nombre_completo_solicita = None

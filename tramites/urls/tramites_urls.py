@@ -41,5 +41,6 @@ urlpatterns = [
     path('tipos/filter/get/', views.GetTiposTramitesByFilterView.as_view(), name='tipos-tramites-get-by-filter'),
     path('tipos/create/', views.CreateTiposTramitesView.as_view(), name='tipos-tramites-create'),
     path('tipos/update/<str:pk>/', views.UpdateTiposTramitesView.as_view(), name='tipos-tramites-update'),
-    path('tipos/delete/<str:pk>/', views.DeleteTiposTramitesView.as_view(), name='tipos-ramites-delete'),
+    path('tipos/delete/<str:pk>/', views.DeleteTiposTramitesView.as_view(), name='tipos-tramites-delete'),
+    path('tipos/sasoftco/get/', views.GetTiposTramitesSasoftcoGetView.as_view(), name='tipos-tramites-sasoftco-get'),
 ]

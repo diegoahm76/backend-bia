@@ -1,3 +1,5 @@
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from recaudo.models.procesos_models import (
     EtapasProceso,
     TiposAtributos,
@@ -215,15 +217,45 @@ class ValoresProcesoView(generics.ListAPIView):
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = ValoresProcesoPostSerializer(data=request.data)
+        data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('documento')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "ValoresProcesoRecaudo")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['documento'] = archivo_creado_instance.id_archivo_digital
+        
+        serializer = ValoresProcesoPostSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, proceso):
+        data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('documento')
+
         valores = ValoresProceso.objects.filter(pk=proceso).get()
-        serializer = ValoresProcesoPutSerializer(valores, data=request.data)
+
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if valores.documento:
+                valores.documento.ruta_archivo.delete()
+                valores.documento.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "ValoresProcesoRecaudo")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['documento'] = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and valores.documento:
+        #     valores.documento.ruta_archivo.delete()
+        #     valores.documento.delete()
+
+        serializer = ValoresProcesoPutSerializer(valores, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)

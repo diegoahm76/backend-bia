@@ -61,6 +61,7 @@ class GetBajaByNumeroSerializer(serializers.ModelSerializer):
     nombre_vivero = serializers.ReadOnlyField(source='id_vivero.nombre', default=None)
     nombre_persona_anula = serializers.SerializerMethodField()
     nombre_persona_baja = serializers.SerializerMethodField()
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
     
     def get_nombre_persona_anula(self, obj):
         nombre_persona_anula = None

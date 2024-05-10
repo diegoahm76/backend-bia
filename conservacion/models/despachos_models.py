@@ -92,7 +92,7 @@ class DespachoViveros(models.Model):
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column='T175justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(blank=True, null=True, db_column='T175fechaAnulacion')
     id_persona_anula = models.ForeignKey(Personas, blank=True, null=True, on_delete=models.SET_NULL, db_column='T175Id_PersonaAnula', related_name='persona_anula_vivero')
-    ruta_archivo_con_recibido = models.FileField(db_column='T175rutaArchivoConRecibido', upload_to='conservacion/despachos/', max_length=255, blank=True, null=True)
+    ruta_archivo_con_recibido = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T175rutaArchivoConRecibido')
     
     def __str__(self):
         return str(self.id_despacho_viveros)

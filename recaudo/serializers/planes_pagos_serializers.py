@@ -30,6 +30,14 @@ class ResolucionesPlanPagoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ResolucionesPlanPagoGetSerializer(serializers.ModelSerializer):
+    doc_asociado = serializers.ReadOnlyField(source='doc_asociado.ruta_archivo.url', default=None)
+
+    class Meta:
+        model = ResolucionesPlanPago
+        fields = '__all__'
+
+
 class FacilidadPagoDatosPlanSerializer(serializers.ModelSerializer):
     porcentaje_abonado = serializers.SerializerMethodField()
     nombre_deudor = serializers.SerializerMethodField()

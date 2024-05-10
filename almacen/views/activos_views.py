@@ -3474,7 +3474,7 @@ class BusquedaGeneralInventario(generics.ListAPIView):
     serializer_class = InventarioSerializer
 
     def get_queryset(self):
-        queryset = Inventario.objects.filter(id_bien__doc_identificador_nro__isnull=False, id_bien__cod_tipo_bien='A')
+        queryset = Inventario.objects.all()
 
         # Obtener parámetros de consulta
         nombre_bien = self.request.query_params.get('nombre_bien')

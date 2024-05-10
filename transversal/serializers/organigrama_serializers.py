@@ -96,7 +96,8 @@ class PersonaOrgSerializer(serializers.ModelSerializer):
         
 class NewUserOrganigramaSerializer(serializers.ModelSerializer):
     tipo_documento = serializers.ReadOnlyField(source='id_persona_cargo.tipo_documento.cod_tipo_documento',default=None)
-    numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None) 
+    numero_documento = serializers.ReadOnlyField(source='id_persona_cargo.numero_documento',default=None)
+    ruta_resolucion = serializers.ReadOnlyField(source='ruta_resolucion.ruta_archivo.url', default=None)
     nombre_completo = serializers.SerializerMethodField()
     usado = serializers.SerializerMethodField()
     

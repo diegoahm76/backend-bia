@@ -13,6 +13,7 @@ class Deudores(models.Model):
     email = models.CharField(max_length=255, db_column='T410email')
     ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410Id_Ubicacion')
     naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410Id_NaturalezaJuridica')
+    id_persona_deudor = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, blank=True, null=True, db_column='T410Id_PersonaDeudor')
 
     class Meta:
         db_table = 'T410Deudores'
