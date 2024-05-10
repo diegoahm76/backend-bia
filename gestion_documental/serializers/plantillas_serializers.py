@@ -6,6 +6,8 @@ from docxtpl import DocxTemplate
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
 from gestion_documental.models.trd_models import TipologiasDoc
 
+import os
+
 
 class ArchivosDigitalesSerializer(serializers.ModelSerializer):
     class Meta:
@@ -133,6 +135,11 @@ class PlantillasDocSerializerGet(serializers.ModelSerializer):
             return True
         
     def get_variables(self, obj):
-        doc = DocxTemplate(obj.id_archivo_digital.ruta_archivo)
-        variables = doc.get_undeclared_template_variables()
-        return variables
+        ruta_archivo = obj.id_archivo_digital.ruta_archivo.path if obj.id_archivo_digital else None
+        print(ruta_archivo)
+        if ruta_archivo and os.path.exists(ruta_archivo):
+            doc = DocxTemplate(ruta_archivo)
+            variables = doc.get_undeclared_template_variables()
+            return variables
+        else:
+            return None

@@ -29,17 +29,9 @@ class PlantillasDocCreate(generics.CreateAPIView):
         data_acceso=[]
         data_in = request.data.copy()
         data_in['id_persona_crea_plantilla'] = usuario
-        #CONFIGURACION TEMPORAL PARA HACER PRUEBAS
-        if 'ruta_temporal' in data_in and data_in['ruta_temporal']:
-
-            ruta_temporal = data_in['ruta_temporal']
-        else:
-            ruta_temporal = ''
-        elementos = ruta_temporal.split(",")
-        ruta = os.path.join(*elementos)
        
         #FIN PRUEBAS
-        #ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
+        ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
        
         #print(ruta)
     
@@ -541,7 +533,7 @@ class PlantillasDocGet(generics.ListAPIView):
             raise NotFound("No existen registros.")
         serializador = self.serializer_class(plantillas,many=True, context={'usuario':usuario})
 
-        data = [unidad for unidad in serializador.data if unidad['accesos_unidades_organizacionales']]
+        data = [unidad for unidad in serializador.data if unidad['accesos_unidades_organizacionales'] and unidad['variables'] != None]
         
         return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':data},status=status.HTTP_200_OK)
     
