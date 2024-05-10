@@ -2353,6 +2353,11 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
     @transaction.atomic
     def create_notificacion_sistema(self, request, sistema):
         data_total = request.data
+        print(str(type(data_total.get('data'))))
+        #raise ValidationError(str(type(data_total.get('data'))))
+        # if type(data_total.get('data') == dict):
+        #    data = data_total.get('data') 
+        # else:
         data = json.loads(data_total.get('data'))
         fecha_actual = timezone.now()
 
@@ -2389,7 +2394,7 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
             if len(numero_radicado) != 3:
                 raise ValidationError('El indicador_solicitud_tramite no tiene el formato correcto.')
             
-            radicado = T262Radicados.objects.filter(prefijo_radicado=numero_radicado[0], agno_radicado=numero_radicado[1], nro_radicado=numero_radicado[2]).first()
+            radicado = T262Radicados.objects.filter(prefijo_radicado=numero_radicado[0], agno_radicado=numero_radicado[1], nro_radicado=int(numero_radicado[2])).first()
             
             if not radicado:
                 raise ValidationError('El radicado no existe.')
@@ -2445,7 +2450,11 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
             cod_municipio_notificacion_nal = persona_titular.cod_municipio_notificacion_nal.cod_municipio
             dir_notificacion_nal = persona_titular.direccion_notificaciones
             tel_celular = persona_titular.telefono_celular
-            tel_fijo = persona_titular.telefono_fijo_residencial
+
+            if persona_titular.telefono_fijo_residencial == '':
+                tel_fijo = None
+            else:
+                tel_fijo = persona_titular.telefono_fijo_residencial
             email_notificacion = persona_titular.email
 
         
@@ -2490,6 +2499,8 @@ class NotificacionesAutomaticasCreate(generics.CreateAPIView):
         util_PQR = Util_PQR()
 
         anexos = util_PQR.set_archivo_in_anexo(data['anexos'], request.FILES, "create")
+        print(anexos)
+        #raise ValidationError("NONE")
 
         if anexos:
             anexosCreate = AnexosSistemaCreate()
