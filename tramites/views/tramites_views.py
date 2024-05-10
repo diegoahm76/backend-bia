@@ -1356,3 +1356,14 @@ class DeleteTiposTramitesView(generics.DestroyAPIView):
                 raise PermissionDenied('No puedes eliminar un tipo de tramite precargado')
         else:
             raise NotFound('No existe el tipo de tramite')
+        
+class GetTiposTramitesSasoftcoGetView(generics.ListAPIView):
+    serializer_class = GetTiposTramitesSerializer
+    queryset = PermisosAmbientales.objects.filter(id_permiso_ambiental__gte=15, id_permiso_ambiental__lte=46)
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tipos_tramites = self.queryset.all()
+        serializador = self.serializer_class(tipos_tramites, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)
