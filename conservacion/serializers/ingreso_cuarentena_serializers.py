@@ -76,6 +76,7 @@ class GetIngresoCuarentenaSerializer(serializers.ModelSerializer):
     saldo_disponible = serializers.SerializerMethodField()
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
     
     def get_saldo_disponible(self, obj):
         inventario_vivero = InventarioViveros.objects.filter(id_bien=obj.id_bien, id_vivero=obj.id_vivero, agno_lote=obj.agno_lote, nro_lote=obj.nro_lote, cod_etapa_lote=obj.cod_etapa_lote, id_siembra_lote_germinacion=None).first()

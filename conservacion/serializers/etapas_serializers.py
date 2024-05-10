@@ -61,6 +61,7 @@ class ActualizarCambioEtapaSerializer(serializers.ModelSerializer):
 class GetCambioEtapasSerializer(serializers.ModelSerializer):
     codigo = serializers.ReadOnlyField(source='id_bien.codigo_bien',default=None)
     nombre = serializers.ReadOnlyField(source='id_bien.nombre',default=None)
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
     cod_etapa_lote_destino = serializers.SerializerMethodField()
     desc_etapa_lote_origen = serializers.SerializerMethodField()
     desc_etapa_lote_destino = serializers.SerializerMethodField()

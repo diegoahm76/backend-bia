@@ -43,7 +43,7 @@ class RegistroMantenimientos(models.Model):
     contrato_mantenimiento = models.CharField(max_length=20, db_column='T070contratoMantenimiento', blank=True, null=True)
     id_persona_realiza = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T070Id_PersonaRealiza', related_name='id_persona_realiza')
     id_persona_diligencia = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T070Id_PersonaDiligencia', related_name='id_persona_diligencia')
-    ruta_documentos_soporte = models.FileField(db_column='T070rutaDocumentoSoporte', max_length=255, upload_to='almacen/registro_mantenimientos/', blank=True, null=True)
+    ruta_documentos_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T070rutaDocumentoSoporte')
     cod_estado_anterior = models.ForeignKey(EstadosArticulo, db_column='T070codEstadoAnterior', on_delete=models.CASCADE, related_name='cod_estado_anterior')
     fecha_estado_anterior = models.DateTimeField(db_column='T070fechaAnteriorMov')
     tipo_doc_anterior_mov = models.CharField(max_length=5, choices=tipo_doc_ultimo_CHOICES, db_column='T070tipoDocAnteriorMov')

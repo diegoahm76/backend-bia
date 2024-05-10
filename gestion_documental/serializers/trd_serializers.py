@@ -105,6 +105,7 @@ class BusquedaTRDNombreVersionSerializer(serializers.ModelSerializer):
         fields = ['id_trd','id_ccd','id_organigrama','version','nombre','fecha_terminado','fecha_puesta_produccion','fecha_retiro_produccion','actual','usado']
 
 class GetHistoricoTRDSerializer(serializers.ModelSerializer):
+    ruta_archivo = serializers.ReadOnlyField(source='ruta_archivo.ruta_archivo.url', default=None)
     persona_cambia = serializers.SerializerMethodField()
     
     def get_persona_cambia(self, obj):
@@ -303,6 +304,7 @@ class GetSeriesSubSUnidadOrgTRDSerializer(serializers.ModelSerializer):
     nombre_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.nombre', default=None)
     cod_subserie = serializers.ReadOnlyField(source='id_cat_serie_und.id_catalogo_serie.id_subserie_doc.codigo', default=None)
     disposicion_final = serializers.ReadOnlyField(source='cod_disposicion_final.cod_disposicion_final', default=None)
+    ruta_archivo_cambio = serializers.ReadOnlyField(source='ruta_archivo_cambio.ruta_archivo.url', default=None)
     # version = serializers.ReadOnlyField(source='id_trd.version')
     class Meta:
         model = CatSeriesUnidadOrgCCDTRD

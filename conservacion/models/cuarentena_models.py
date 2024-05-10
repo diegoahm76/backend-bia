@@ -27,7 +27,7 @@ class CuarentenaMatVegetal(models.Model):
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column='T164justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(db_column='T164fechaAnulacion', blank=True, null=True)
     id_persona_anula = models.ForeignKey(Personas, on_delete=models.SET_NULL, related_name='persona_anula_cuarentena', blank=True, null=True, db_column='T164Id_PersonaAnula')
-    ruta_archivo_soporte = models.FileField(max_length=255, upload_to='conservacion/cuarentenas/', db_column='T164rutaArchivoSoporte', blank=True, null=True)
+    ruta_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T164rutaArchivoSoporte')
     
     def __str__(self):  
         return str(self.id_cuarentena_mat_vegetal)
@@ -77,7 +77,7 @@ class BajasVivero(models.Model):
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column='T166justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(db_column='T166fechaAnulacion', blank=True, null=True)
     id_persona_anula = models.ForeignKey(Personas, on_delete=models.SET_NULL, blank=True, null=True, related_name='persona_anula_bajas', db_column='T166Id_PersonaAnula')
-    ruta_archivo_soporte = models.FileField(null=True, blank=True, max_length=255, upload_to='conservacion/bajas_vivero/', db_column='T166rutaArchivoSoporte')
+    ruta_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T166rutaArchivoSoporte')
     
     def __str__(self):
         return str(self.id_baja)

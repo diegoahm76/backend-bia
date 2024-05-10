@@ -61,6 +61,14 @@ class GarantiasFacilidadSerializer(serializers.ModelSerializer):
         fields = '__all__'    
 
 
+class GarantiasFacilidadGetSerializer(serializers.ModelSerializer):
+    documento_garantia = serializers.ReadOnlyField(source='documento_garantia.ruta_archivo.url', default=None)
+
+    class Meta:
+        model = GarantiasFacilidad
+        fields = '__all__'    
+
+
 class DetallesBienFacilidadPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetallesBienFacilidadPago
@@ -68,6 +76,14 @@ class DetallesBienFacilidadPagoSerializer(serializers.ModelSerializer):
 
 
 class CumplimientoRequisitosSerializer (serializers.ModelSerializer):
+    class Meta:
+        model = CumplimientoRequisitos
+        fields = '__all__'
+
+
+class CumplimientoRequisitosGetSerializer (serializers.ModelSerializer):
+    documento = serializers.ReadOnlyField(source='documento.ruta_archivo.url', default=None)
+
     class Meta:
         model = CumplimientoRequisitos
         fields = '__all__'
@@ -167,6 +183,9 @@ class FuncionariosSerializer(serializers.ModelSerializer):
 
 class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
     tipo_actuacion = serializers.ReadOnlyField(source='id_tipo_actuacion.descripcion',default=None)
+    documento_soporte = serializers.ReadOnlyField(source='documento_soporte.ruta_archivo.url', default=None)
+    consignacion_soporte = serializers.ReadOnlyField(source='consignacion_soporte.ruta_archivo.url', default=None)
+    documento_no_enajenacion = serializers.ReadOnlyField(source='documento_no_enajenacion.ruta_archivo.url', default=None)
 
     class Meta:
         model = FacilidadesPago
@@ -180,6 +199,7 @@ class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
 class BienesDeudorSerializer(serializers.ModelSerializer):
     ubicacion = serializers.ReadOnlyField(source='id_ubicacion.nombre', default=None)
     nombre_tipo_bien = serializers.ReadOnlyField(source='id_tipo_bien.descripcion', default=None)
+    documento_soporte = serializers.ReadOnlyField(source='documento_soporte.ruta_archivo.url', default=None)
     valor = serializers.SerializerMethodField()
     
     def get_valor(self, obj):
@@ -193,6 +213,14 @@ class BienesDeudorSerializer(serializers.ModelSerializer):
 
 
 class RespuestaSolicitudSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RespuestaSolicitud
+        fields = '__all__'
+
+
+class RespuestaSolicitudGetSerializer(serializers.ModelSerializer):
+    informe_dbme = serializers.ReadOnlyField(source='informe_dbme.ruta_archivo.url', default=None)
+
     class Meta:
         model = RespuestaSolicitud
         fields = '__all__'

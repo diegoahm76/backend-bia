@@ -1,7 +1,11 @@
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from recaudo.serializers.facilidades_pagos_serializers import (
     AvaluosSerializer,
     CarteraSerializer,
     ConsultaCarteraSerializer,
+    CumplimientoRequisitosGetSerializer,
+    GarantiasFacilidadGetSerializer,
     ListadoDeudoresUltSerializer,
     DeudorFacilidadPagoSerializer,
     FacilidadesPagoSerializer,
@@ -10,6 +14,7 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     DetallesBienFacilidadPagoSerializer,
     CumplimientoRequisitosSerializer,
     BienesDeudorSerializer,
+    RespuestaSolicitudGetSerializer,
     TipoBienSerializer,
     TipoActuacionSerializer,
     DatosContactoDeudorSerializer,
@@ -332,6 +337,15 @@ class BienCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('documento_soporte')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "BienesRecaudo")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['documento_soporte'] = archivo_creado_instance.id_archivo_digital
 
         # CREAR BIEN
         bien = self.crear_bien(data)
@@ -394,6 +408,15 @@ class GarantiasFacilidadCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('documento_garantia')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "GarantiasFacilidadPago")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['documento_garantia'] = archivo_creado_instance.id_archivo_digital
 
         # Crear relación de facilidades de pago y bienes mediante garantías
         garantias_facilidad = self.crear_garantias_facilidad(data)
@@ -425,6 +448,15 @@ class CumplimientoRequisitosCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('documento')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CumplimientoRequisitosFacilidadPago")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['documento'] = archivo_creado_instance.id_archivo_digital
 
         # Crear relación de facilidades de pago y bienes mediante garantías
         cumplimiento_requisitos = self.crear_cumplimiento_requisitos(data)
@@ -495,9 +527,13 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
     
     def post(self, request):
         data_in = request.data
+        data_in._mutable=True
         instancia_bien = BienCreateView()
         instancia_avaluo = AvaluoCreateView()
         instancia_det_bien_facilidad = DetallesBienFacilidadPagoCreateView()
+        documento_soporte = request.FILES.get('documento_soporte')
+        consignacion_soporte = request.FILES.get('consignacion_soporte')
+        documento_no_enajenacion = request.FILES.get('documento_no_enajenacion')
 
         #CREAR FACILIDAD DE PAGO
         numero_radicado = self.generar_numero_radicacion()
@@ -512,6 +548,25 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         
         if fecha_abono > datetime.now().date():
             raise ValidationError('La fecha de abono es incorrecta')
+        
+        # CREAR ARCHIVO EN T238
+        if documento_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(documento_soporte, "FacilidadPago")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_in['documento_soporte'] = archivo_creado_instance.id_archivo_digital
+        
+        if consignacion_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(consignacion_soporte, "FacilidadPago")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_in['consignacion_soporte'] = archivo_creado_instance.id_archivo_digital
+        
+        if documento_no_enajenacion:
+            archivo_creado = UtilsGestor.create_archivo_digital(documento_no_enajenacion, "FacilidadPago")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_in['documento_no_enajenacion'] = archivo_creado_instance.id_archivo_digital
         
         facilidad_data = {
             'id_deudor': data_in['id_deudor'],
@@ -550,6 +605,14 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         for descripcion, direccion, id_tipo_bien, documento_soporte, id_ubicacion, valor in zip(
                 descripciones_bien, direcciones_bien, id_tipos_bien, documentos_soporte_bien, id_ubicaciones,
                 avaluos_bien):
+            
+            # CREAR ARCHIVO EN T238
+            if documento_soporte:
+                archivo_creado = UtilsGestor.create_archivo_digital(documento_soporte, "FacilidadesPago")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                documento_soporte = archivo_creado_instance.id_archivo_digital
+
             # CREAR BIEN
             bien_data = {
                 'id_deudor': data_in['id_deudor'],
@@ -597,6 +660,15 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
             # CREAR GARANTIAS FACILIDAD
             if total_plazos > 12:
                 instancia_garantias_facilidad = GarantiasFacilidadCreateView()
+                documento_garantia = request.FILES.get('documento_garantia')
+
+                # CREAR ARCHIVO EN T238
+                if documento_garantia:
+                    archivo_creado = UtilsGestor.create_archivo_digital(documento_garantia, "GarantiasFacilidadPago")
+                    archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                    
+                    data_in['documento_garantia'] = archivo_creado_instance.id_archivo_digital
+
                 garantias_facilidad_data = {
                     'id_rol': data_in['id_rol'],
                     'id_facilidad_pago': id_facilidad_pago,
@@ -615,6 +687,13 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         
         instancia_cumplimiento = CumplimientoRequisitosCreateView()
         for documento, requisito in zip(documentos_deudor, requisitos):
+            # CREAR ARCHIVO EN T238
+            if documento:
+                archivo_creado = UtilsGestor.create_archivo_digital(documento, "FacilidadesPago")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                documento = archivo_creado_instance.id_archivo_digital
+
             cumplimiento_data = {
                 'id_facilidad_pago': id_facilidad_pago,
                 'id_requisito_actuacion': requisito.id,
@@ -761,7 +840,7 @@ class FacilidadPagoFuncionarioUpdateView(generics.UpdateAPIView):
 
 ### MOSTRAR LA FACILIDAD DE PAGO
 class CumplimientoRequisitosGetView(generics.ListAPIView):
-    serializer_class = CumplimientoRequisitosSerializer
+    serializer_class = CumplimientoRequisitosGetSerializer
 
     def get_documentos_requisitos(self, id_facilidad_pago):
         documentos_deudor = CumplimientoRequisitos.objects.filter(id_facilidad_pago=id_facilidad_pago)
@@ -776,7 +855,7 @@ class CumplimientoRequisitosGetView(generics.ListAPIView):
 
 
 class GarantiasFacilidadGetView(generics.ListAPIView):
-    serializer_class = GarantiasFacilidadSerializer
+    serializer_class = GarantiasFacilidadGetSerializer
 
     def get_documento_garantia(self, id_facilidad_pago):
         documento_garantia = GarantiasFacilidad.objects.filter(id_facilidad_pago=id_facilidad_pago).first()
@@ -886,6 +965,15 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('informe_dbme')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "RespuestaSolicitudFacilidadPago")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['informe_dbme'] = archivo_creado_instance.id_archivo_digital
 
         # CREAR RESPUESTA SOLICITUD
         respuesta_solicitud = self.crear_respuesta_solicitud(data)
@@ -897,7 +985,7 @@ class RespuestaSolicitudFacilidadView(generics.CreateAPIView):
 
 
 class RespuestaSolicitudFacilidadGetView(generics.ListAPIView):
-    serializer_class = RespuestaSolicitudSerializer
+    serializer_class = RespuestaSolicitudGetSerializer
 
     def get_respuesta_solicitud(self, id_facilidad_pago):
         facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)

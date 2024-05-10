@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from django.db import transaction
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_gestor import PermisoActualizarAsignacionSeccionesResponsablesCCD, PermisoActualizarCCD, PermisoActualizarDelegacionOficinasResponsablesExpedientes, PermisoActualizarHomologacionSeccionesPersistentesCCD, PermisoCrearAsignacionSeccionesResponsablesCCD, PermisoCrearCCD, PermisoCrearDelegacionOficinasResponsablesExpedientes, PermisoCrearHomologacionSeccionesPersistentesCCD
 from seguridad.utils import Util
 from datetime import datetime
@@ -66,6 +68,16 @@ class CreateCuadroClasificacionDocumental(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('ruta_soporte')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CuadroClasificacionDocumental")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_soporte'] = archivo_creado_instance.id_archivo_digital
+
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         
@@ -106,6 +118,9 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 
     def patch(self, request, pk):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('ruta_soporte')
+
         ccd = CuadrosClasificacionDocumental.objects.filter(id_ccd=pk).first()
         
         # VALIDACIONES CCD
@@ -120,6 +135,21 @@ class UpdateCuadroClasificacionDocumental(generics.RetrieveUpdateAPIView):
 
         elif not ccd.fecha_terminado:
             previoud_ccd = copy.copy(ccd)
+
+            # ACTUALIZAR ARCHIVO
+            if archivo_soporte:
+                if ccd.ruta_soporte:
+                    ccd.ruta_soporte.ruta_archivo.delete()
+                    ccd.ruta_soporte.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CuadroClasificacionDocumental")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data['ruta_soporte'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and ccd.ruta_soporte:
+            #     ccd.ruta_soporte.ruta_archivo.delete()
+            #     ccd.ruta_soporte.delete()
+
             serializer = self.serializer_class(ccd, data=data)
             serializer.is_valid(raise_exception=True)
             

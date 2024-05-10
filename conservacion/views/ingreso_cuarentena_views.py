@@ -1,5 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarIngresoCuarentenaMaterialVegetal, PermisoAnularIngresoCuarentenaMaterialVegetal, PermisoCrearIngresoCuarentenaMaterialVegetal
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
@@ -149,7 +151,7 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
 
     def post(self, request):
         data_cuarentena = json.loads(request.data['data_ingreso_cuarentena'])
-        data_cuarentena['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         data_cuarentena['id_persona_cuarentena'] = request.user.persona.id_persona
 
         #VALIDACIÓN QUE EL VIVERO ENVIADO EXISTA
@@ -231,6 +233,13 @@ class CreateIngresoCuarentenaView(generics.CreateAPIView):
         if lote_etapa_inventario.cod_etapa_lote == 'P' or lote_etapa_inventario.cod_etapa_lote == 'D':
             if data_cuarentena['cantidad_cuarentena'] > lote_etapa_inventario.cantidad_entrante:
                 raise ValidationError ('No se puede ingresar a cuarentena una cantidad mayor a la existente')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "IngresoCuarentena")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_cuarentena['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
 
         serializer = self.serializer_class(data=data_cuarentena, many=False)
         serializer.is_valid(raise_exception=True)
@@ -335,7 +344,9 @@ class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
     def put(self, request, id_ingreso_cuarentena):
 
         data = json.loads(request.data['data'])
-        data['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
+        data._mutable=True
+        
         data['fecha_actualizacion'] = datetime.now()
 
         #VALIDACIÓN SI EXISTE LA CUARENTENA SELECCIONADA
@@ -379,6 +390,19 @@ class UpdateIngresoCuarentenaView(generics.RetrieveUpdateAPIView):
             if data['fecha_actualizacion'] > (cuarentena.fecha_cuarentena + timedelta(days=30)):
                 raise ValidationError ('Estos datos solo se pueden modificar hasta 30 días despues del ingreso en cuarentena')
 
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if cuarentena.ruta_archivo_soporte:
+                cuarentena.ruta_archivo_soporte.ruta_archivo.delete()
+                cuarentena.ruta_archivo_soporte.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "IngresoCuarentena")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and cuarentena.ruta_archivo_soporte:
+        #     cuarentena.ruta_archivo_soporte.ruta_archivo.delete()
+        #     cuarentena.ruta_archivo_soporte.delete()
 
         if data['cantidad_cuarentena'] != cuarentena.cantidad_cuarentena:
             if data['cantidad_cuarentena'] > cuarentena.cantidad_cuarentena:

@@ -3,9 +3,11 @@ from rest_framework import generics, views
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from itertools import groupby
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.serializers.ccd_serializers import CCDSerializer
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_transversal import PermisoActualizarOrganigramas, PermisoActualizarTrasladoMasivoUnidadesEntidad, PermisoCambiarOrganigrama, PermisoCrearOrganigramas, PermisoEjecutarTrasladoMasivoUnidadUnidad, PermisoEjecutarTrasladoMasivoUnidadesEntidad
 from seguridad.utils import Util
 from django.db.models import Q, F
@@ -662,9 +664,17 @@ class CreateOrgChart(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearOrganigramas]
     def post(self, request):
         persona = request.user.persona.id_persona
+        archivo_soporte = request.FILES.get('ruta_resolucion')
         
         data=request.data
         data._mutable = True
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Organigramas")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_resolucion'] = archivo_creado_instance.id_archivo_digital
         
         data['id_persona_cargo']=persona
         
@@ -695,6 +705,9 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated, PermisoActualizarOrganigramas]
 
     def patch(self, request, id_organigrama):
+        data=request.data
+        data._mutable = True
+        archivo_soporte = request.FILES.get('ruta_resolucion')
         persona_logueada = request.user.persona.id_persona
         
         organigrama = Organigramas.objects.filter(id_organigrama=id_organigrama).first()
@@ -712,7 +725,21 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
         
         ccd = list(CuadrosClasificacionDocumental.objects.filter(id_organigrama=organigrama.id_organigrama).values())
         if not len(ccd):
-            serializer = self.serializer_class(organigrama, data=request.data)
+            # ACTUALIZAR ARCHIVO
+            if archivo_soporte:
+                if organigrama.ruta_resolucion:
+                    organigrama.ruta_resolucion.ruta_archivo.delete()
+                    organigrama.ruta_resolucion.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Organigramas")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data['ruta_resolucion'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and organigrama.ruta_resolucion:
+            #     organigrama.ruta_resolucion.ruta_archivo.delete()
+            #     organigrama.ruta_resolucion.delete()
+
+            serializer = self.serializer_class(organigrama, data=data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
 
