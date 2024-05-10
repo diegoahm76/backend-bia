@@ -14,11 +14,11 @@ class FacilidadesPago(models.Model):
     fecha_generacion = models.DateTimeField(auto_now_add=True, db_column='T426fechaGeneracion')
     periodicidad = models.IntegerField(db_column='T426periodicidad')
     cuotas = models.IntegerField(db_column='T426cuotas')
-    documento_soporte = models.FileField(db_column='T426documentoSoporte')
-    consignacion_soporte = models.FileField(db_column='T426consignacionSoporte')
+    documento_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', related_name='facilidad_documento_soporte', on_delete=models.CASCADE, db_column='T426documentoSoporte')
+    consignacion_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', related_name='facilidad_consignacion_soporte', on_delete=models.CASCADE, db_column='T426consignacionSoporte')
     valor_abonado = models.DecimalField(max_digits=30, decimal_places=2, db_column='T426valorAbonado')
     fecha_abono = models.DateField(db_column='T426fechaAbono')
-    documento_no_enajenacion = models.FileField(db_column='T426documentoNoEnajenacion')
+    documento_no_enajenacion = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T426documentoNoEnajenacion')
     observaciones = models.TextField(db_column='T426observaciones')
     id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
@@ -46,7 +46,7 @@ class CumplimientoRequisitos(models.Model):
     id = models.AutoField(primary_key=True, db_column='T429IdCumplimientoRequisito')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T429Id_FacilidadPago')
     id_requisito_actuacion = models.ForeignKey(RequisitosActuacion, on_delete=models.CASCADE, db_column='T429Id_RequisitoActuacion')
-    documento = models.FileField(db_column='T429documento')
+    documento = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T429documento')
 
     class Meta:
         db_table = 'T429CumplimientoRequisitos'
@@ -69,7 +69,7 @@ class GarantiasFacilidad(models.Model):
     id = models.AutoField(primary_key=True, db_column='T431IdGarantiaFacilidad')
     id_facilidad_pago = models.ForeignKey(FacilidadesPago, on_delete=models.CASCADE, db_column='T431Id_FacilidadPago')
     id_rol = models.ForeignKey(RolesGarantias, on_delete=models.CASCADE, db_column='T431Id_RolGarantia')
-    documento_garantia = models.FileField(db_column='T431documentoGarantia')
+    documento_garantia = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T431documentoGarantia')
     
     class Meta:
         db_table = 'T431GarantiasFacilidad'
@@ -84,7 +84,7 @@ class RespuestaSolicitud(models.Model):
     estado = models.CharField(max_length=255, db_column='T432estado')
     aprobacion = models.BooleanField(db_column='T432aprobacion')
     observacion = models.CharField(max_length=255, db_column='T432observacion')
-    informe_dbme = models.FileField(db_column='T432informeDbme')
+    informe_dbme = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T432informeDbme')
     reportado_dbme = models.BooleanField(db_column='T432reportadoDbme')
 
     class Meta:

@@ -12,7 +12,7 @@ class CuadrosClasificacionDocumental(models.Model):
     fecha_puesta_produccion = models.DateTimeField(null=True, blank=True, db_column='T206fechaPuestaEnProduccion')
     fecha_retiro_produccion = models.DateTimeField(null=True, blank=True, db_column='T206fechaRetiroDeProduccion')
     justificacion = models.CharField(max_length=255, null=True, blank=True, db_column='T206justificacionNuevaVersion')
-    ruta_soporte = models.FileField(max_length=255, upload_to='gestion_documental/ccd/', null=True, blank=True, db_column='T206rutaSoporte')
+    ruta_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T206rutaSoporte')
     actual = models.BooleanField(default=False, db_column='T206actual')
     valor_aumento_serie = models.SmallIntegerField(db_column='T206valorAumentoSerie')
     valor_aumento_subserie = models.SmallIntegerField(db_column='T206valorAumentoSubserie')

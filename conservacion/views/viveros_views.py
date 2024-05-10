@@ -2,6 +2,8 @@ from conservacion.serializers.viveros_serializers import ViveristaActualSerializ
 from conservacion.models.viveros_models import HistoricoResponsableVivero
 from conservacion.serializers.viveros_serializers import HistorialViveristaByViveroSerializers
 from rest_framework import generics, status
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarAdministrarViveros, PermisoAperturaCierreVivero, PermisoBorrarAdministrarViveros, PermisoCrearAdministrarViveros, PermisoCrearResponsablesViveros, PermisoIngresoRetiroCuarentena, PermisoActualizarTipificaciónBienesConsumoViveros
 from transversal.serializers.personas_serializers import PersonasFilterSerializer
 from seguridad.utils import Util  
@@ -55,6 +57,10 @@ class DeleteVivero(generics.DestroyAPIView):
         if vivero.en_funcionamiento != None:
             raise PermissionDenied('No se puede eliminar un vivero que ha tenido una apertura')
         
+        if vivero.ruta_archivo_creacion:
+            vivero.ruta_archivo_creacion.ruta_archivo.delete()
+            vivero.ruta_archivo_creacion.delete()
+
         vivero.delete()
         
         # AUDITORIA DE CREATE DE VIVEROS
@@ -194,8 +200,16 @@ class CreateViveros(generics.CreateAPIView):
     
     def post(self, request):
         data = request.data.copy()
+        archivo_soporte = request.FILES.get('ruta_archivo_creacion')
         persona = request.user.persona.id_persona
         data['id_persona_crea'] = persona
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Viveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_archivo_creacion'] = archivo_creado_instance.id_archivo_digital
     
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)

@@ -14,6 +14,13 @@ class TrasladosViverosSerializers(serializers.ModelSerializer):
         model = TrasladosViveros
         fields = '__all__'
 
+class TrasladosGetViverosSerializers(serializers.ModelSerializer):
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
+
+    class Meta:
+        model = TrasladosViveros
+        fields = '__all__'
+
 class ItemsTrasladosViverosSerielizers(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien_origen.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien_origen.codigo_bien', default=None)

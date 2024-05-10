@@ -3,6 +3,8 @@ from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.serializers.despachos_serializers import SerializersDespachoConsumo, SerializersItemDespachoConsumo, SerializersSolicitudesConsumibles, SerializersItemsSolicitudConsumible, SearchBienInventarioSerializer
 from rest_framework import generics,status
 from rest_framework.response import Response
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from transversal.models.personas_models import Personas
 from rest_framework.decorators import api_view
 from seguridad.utils import Util
@@ -56,7 +58,7 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
         user_logeado = request.user
         info_despacho = json.loads(datos_ingresados['info_despacho'])
         items_despacho = json.loads(datos_ingresados['items_despacho'])
-        info_despacho['ruta_archivo_doc_con_recibido'] = request.FILES.get('ruta_archivo_doc_con_recibido')
+        archivo_soporte = request.FILES.get('ruta_archivo_doc_con_recibido')
         
         if info_despacho['es_despacho_conservacion'] != True:
             raise NotFound('En este servicio no se pueden procesar despachos que no sean de vivero, además verfique el campo (es_despacho_conservacion), este debe ser True o False')
@@ -245,6 +247,13 @@ class CreateDespachoMaestroVivero(generics.UpdateAPIView):
             aux_local_uno = ItemsSolicitudConsumible.objects.filter(Q(id_solicitud_consumibles=info_despacho['id_solicitud_consumo']) & Q(id_bien=int(key))).first()
             if int(aux_validacion_bienes_repetidos[key]) > aux_local_uno.cantidad:
                 raise ValidationError('Una de las cantidades despachadas supera la cantidad solicitada')
+            
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "DespachoConsumoVivero")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            info_despacho['ruta_archivo_doc_con_recibido'] = archivo_creado_instance.id_archivo_digital
  
         serializer = self.serializer_class(data=info_despacho)
         serializer.is_valid(raise_exception=True)
@@ -378,7 +387,7 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
         user_logeado = request.user
         info_despacho = json.loads(datos_ingresados['info_despacho'])
         items_despacho = json.loads(datos_ingresados['items_despacho'])
-        info_despacho['ruta_archivo_doc_con_recibido'] = request.FILES.get('ruta_archivo_doc_con_recibido')
+        archivo_soporte = request.FILES.get('ruta_archivo_doc_con_recibido')
         
         # SE INSTANCIAN ALGUNAS TABLAS QUE SE VAN A TOCAR
         despacho_maestro_instancia = DespachoConsumo.objects.filter(id_despacho_consumo=info_despacho['id_despacho_consumo']).first()
@@ -577,6 +586,20 @@ class ActualizarDespachoConsumo(generics.UpdateAPIView):
 
         # SE ACTUALIZA EL MAESTRO (DESPACHO)
         previous_maestro = copy.copy(despacho_maestro_instancia)
+
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if despacho_maestro_instancia.ruta_archivo_doc_con_recibido:
+                despacho_maestro_instancia.ruta_archivo_doc_con_recibido.ruta_archivo.delete()
+                despacho_maestro_instancia.ruta_archivo_doc_con_recibido.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "DespachoConsumoVivero")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            info_despacho['ruta_archivo_doc_con_recibido'] = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and despacho_maestro_instancia.ruta_archivo_doc_con_recibido:
+        #     despacho_maestro_instancia.ruta_archivo_doc_con_recibido.ruta_archivo.delete()
+        #     despacho_maestro_instancia.ruta_archivo_doc_con_recibido.delete()
         
         serializer = self.serializer_class(despacho_maestro_instancia, data=info_despacho)
         serializer.is_valid(raise_exception=True)

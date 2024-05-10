@@ -9,7 +9,7 @@ class Bienes(models.Model):
     descripcion = models.CharField(max_length=255, db_column='T416descripcion')
     direccion = models.CharField(max_length=255, db_column='T416direccion')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T416Id_TipoBien')
-    documento_soporte = models.FileField(db_column='T416documentoSoporte')
+    documento_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T416documentoSoporte')
     id_ubicacion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T416Id_Ubicacion')
 
     class Meta:
@@ -102,7 +102,7 @@ class ValoresProceso(models.Model):
     id_proceso = models.ForeignKey(Procesos, on_delete=models.CASCADE, db_column='T423Id_Proceso')
     id_atributo = models.ForeignKey(AtributosEtapas, on_delete=models.CASCADE, db_column='T423Id_AtributoEtapa')
     valor = models.TextField(db_column='T423valor', null=True, blank=True)
-    documento = models.FileField(db_column='T423documento', null=True, blank=True)
+    documento = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T423documento')
 
     class Meta:
         db_table = 'T423ValoresProceso'

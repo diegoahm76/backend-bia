@@ -23,7 +23,7 @@ class TrasladosViveros(models.Model):
     justificacion_anulacion = models.CharField(max_length=255, null=True, blank=True, db_column='T162justificacionAnulacion')
     fecha_anulado = models.DateTimeField(null=True, blank=True, db_column='T162fechaAnulado')
     id_persona_anula = models.ForeignKey(Personas, on_delete=models.SET_NULL, null=True, blank=True, db_column='T162Id_PersonaAnula', related_name='id_persona_anula_traslada')
-    ruta_archivo_soporte = models.FileField(null=True, blank=True, max_length=255, upload_to='conservacion/traslados/', db_column='T162rutaArchivoSoporte')
+    ruta_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T162rutaArchivoSoporte')
     
     def __str__(self):
         return str(self.id_siembra)

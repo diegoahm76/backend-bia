@@ -2,6 +2,8 @@ import json
 import logging
 
 from django.http import JsonResponse
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
@@ -476,6 +478,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 
     def put(self, request, id_serie_subs_unidadorg_trd):
         data_entrante = request.data
+        data_entrante._mutable=True
         persona_usuario_logeado = request.user.persona
         serie_subs_unidadorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_serie_subs_unidadorg_trd).first()
         previous = copy.copy(serie_subs_unidadorg_trd)
@@ -580,6 +583,18 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 
             # SI LA TRD A MODIFICAR ES LA ACTUAL, GENERA HISTORICOS Y ASIGNA NUEVAS TIPOLOGIAS
             elif serie_subs_unidadorg_trd.id_trd.actual == True:
+                archivo_soporte = request.FILES.get('ruta_archivo_cambio')
+
+                # ACTUALIZAR ARCHIVO
+                if archivo_soporte:
+                    archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CatalogoTRD")
+                    archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                    
+                    data_entrante['ruta_archivo_cambio'] = archivo_creado_instance.id_archivo_digital
+                # elif not archivo_soporte and serie_subs_unidadorg_trd.ruta_archivo_cambio:
+                #     serie_subs_unidadorg_trd.ruta_archivo_cambio.ruta_archivo.delete()
+                #     serie_subs_unidadorg_trd.ruta_archivo_cambio.delete()
+
                 serializador = self.serializer_class(serie_subs_unidadorg_trd, data=data_entrante, many=False)
                 serializador.is_valid(raise_exception=True)
 
