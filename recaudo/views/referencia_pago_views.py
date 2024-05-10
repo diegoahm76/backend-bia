@@ -379,7 +379,7 @@ class RefCreateView(generics.CreateAPIView):
         data_consecutivo['nro_consecutivo'] = data_respuesta['referencia_actual']
         data_consecutivo['fecha_consecutivo'] = data_respuesta['fecha_consecutivo_actual']
         data_consecutivo['id_persona_solicita'] = data_respuesta['id_persona_referencia_actual']
-        data_consecutivo['id_solicitud_tramite'] = data_in['id_solicitud_tramite']
+        data_consecutivo['id_solicitud_tramite'] = 2115
 
 
 
