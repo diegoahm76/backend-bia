@@ -35,6 +35,7 @@ from docxtpl import DocxTemplate
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework.request import Request
+import requests
 
 
 
@@ -407,6 +408,27 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
 
+
+    def nombre_tramites (self,nombre_tramite):
+
+        raise ValidationError(nombre_tramite)
+        url = "https://backendclerkapi.sedeselectronicas.com/api/Procedures"
+        headers = {"accept": "text/plain"}
+        
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json() 
+  
+                # Convertimos los datos a JSON
+            
+            # Aquí puedes procesar los datos según tus necesidades
+            # En este ejemplo, simplemente devolvemos los datos como están
+            return data
+        except requests.RequestException as e:
+            return None  # Manejo de errores de solicitud
+
+
     def nombre_persona(self,persona):
            
         nombre_completo_responsable = None
@@ -528,8 +550,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             asignacion.save()
 
             #Identificar tipo de tramite
-            vista_detalle_tramite = TramitesPivotGetView()
-
+           
             #tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=asignacion.id_solicitud_tramite).first()
             tramite = asignacion.id_solicitud_tramite
             #APERTURA DEL EXPEDIENTE
@@ -551,6 +572,19 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
            
             data_auto = {}
             #PENDIENTE VALIDACION DE TIPO DE TRAMITE
+
+            instance_radicado = tramite.id_radicado
+
+            cadena_radicado = self.radicado_completo(instance_radicado)
+    
+            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+
+            if not 'typeRequest' in detalle_tramite_data:
+                raise ValidationError("No se retorna el nombre del tramite")
+            
+            nombres_tramite = self.nombre_tramites(detalle_tramite_data['typeRequest'])
+            print(nombres_tramite)
+            #raise ValidationError("VALIDACION DE TIPOS DE TRAMITE")
             #Solicitud de Concesión de Aguas Superficiales
             data_auto['n_auto'] = 1
             crear = ActaInicioCreate()

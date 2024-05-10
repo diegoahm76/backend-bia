@@ -107,7 +107,7 @@ class EntradasAlmacen(models.Model):
     id_proveedor= models.ForeignKey('transversal.Personas', related_name='persona_provee_entrada', on_delete=models.CASCADE, db_column='T063Id_Proveedor')
     id_tipo_entrada = models.ForeignKey('almacen.TiposEntradas', on_delete=models.CASCADE, db_column='T063Cod_TipoEntrada')
     id_bodega = models.ForeignKey(Bodegas, on_delete=models.CASCADE, db_column='T063Id_BodegaGral')
-    id_archivo_soporte = models.IntegerField(db_column='T063Id_ArchivoSoporte', blank=True, null=True)
+    id_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T063Id_ArchivoSoporte')
     valor_total_entrada = models.DecimalField(max_digits=12,decimal_places=2, db_column='T063valorTotalEntrada')
     id_creador = models.ForeignKey('transversal.Personas', related_name='persona_crea_entrada', on_delete=models.CASCADE, db_column='T063Id_PersonaCrea')	
     id_persona_ult_act_dif_creador = models.ForeignKey('transversal.Personas', related_name='persona_actualiza_entrada', on_delete=models.SET_NULL, blank=True, null=True, db_column='T063Id_PersonaUltActualizacionDifACrea')			

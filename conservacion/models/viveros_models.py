@@ -35,7 +35,7 @@ class Vivero(models.Model):
     fecha_inicio_cuarentena = models.DateTimeField(null=True, blank=True, db_column='T150fechaInicioCuarentena')
     id_persona_cuarentena = models.ForeignKey(Personas, related_name='persona_cuarentena_vivero', on_delete=models.SET_NULL, null=True, blank=True, db_column='T150Id_PersonaCuarentena')
     justificacion_cuarentena = models.CharField(max_length=255, null=True, blank=True, db_column='T150justificacionCuarentena')
-    ruta_archivo_creacion = models.FileField(db_column='T150rutaArchivoCreacion', upload_to='conservacion/viveros/')
+    ruta_archivo_creacion = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T150rutaArchivoCreacion')
     activo = models.BooleanField(default=True, db_column='T150activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T150itemYaUsado')
     

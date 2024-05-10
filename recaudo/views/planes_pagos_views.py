@@ -1,5 +1,8 @@
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from recaudo.models.facilidades_pagos_models import FacilidadesPago, DetallesFacilidadPago
 from recaudo.serializers.planes_pagos_serializers import (
+    ResolucionesPlanPagoGetSerializer,
     TipoPagoSerializer, 
     PlanPagosSerializer, 
     ResolucionesPlanPagoSerializer,
@@ -478,6 +481,15 @@ class ResolucionPlanPagosCreateView(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('doc_asociado')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "PlanPagosRecaudo")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['doc_asociado'] = archivo_creado_instance.id_archivo_digital
 
         resolucion = self.crear_resolucion(data)
 
@@ -488,7 +500,7 @@ class ResolucionPlanPagosCreateView(generics.CreateAPIView):
 
 
 class ResolucionPlanPagoGetView(generics.RetrieveAPIView):
-    serializer_class = ResolucionesPlanPagoSerializer
+    serializer_class = ResolucionesPlanPagoGetSerializer
 
     def get_resoluciones(self, id_plan_pago):
         resoluciones = ResolucionesPlanPago.objects.filter(id_plan_pago=id_plan_pago).order_by('-fecha_creacion_registro')
@@ -514,7 +526,7 @@ class ResolucionPlanPagoGetView(generics.RetrieveAPIView):
 
 
 class ResolucionUltimaPlanPagoGetView(generics.RetrieveAPIView):
-    serializer_class = ResolucionesPlanPagoSerializer
+    serializer_class = ResolucionesPlanPagoGetSerializer
 
     def get_ultima_resolucion(self, id_plan_pago):
         resoluciones = ResolucionesPlanPago.objects.filter(id_plan_pago=id_plan_pago).order_by('-fecha_creacion_registro')

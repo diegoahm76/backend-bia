@@ -67,6 +67,7 @@ class FlujoProcesoPostSerializer(serializers.ModelSerializer):
 
 class ValoresProcesoSerializer(serializers.ModelSerializer):
     id_atributo = AtributosEtapasSerializer(many=False)
+    documento = serializers.ReadOnlyField(source='documento.ruta_archivo.url', default=None)
 
     class Meta:
         model = ValoresProceso

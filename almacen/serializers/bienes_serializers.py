@@ -201,6 +201,7 @@ class TiposEntradasSerializer(serializers.ModelSerializer):
 
 class EntradaSerializer(serializers.ModelSerializer):
     tipo_entrada = serializers.ReadOnlyField(source='id_tipo_entrada.nombre', default=None)
+    id_archivo_soporte = serializers.ReadOnlyField(source='id_archivo_soporte.ruta_archivo.url', default=None)
     
     class Meta:
         model = EntradasAlmacen

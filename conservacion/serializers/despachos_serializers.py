@@ -78,6 +78,7 @@ class SolicitudesParaDespachoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DespachosParaDespachoSerializer(serializers.ModelSerializer):
+    ruta_archivo_con_recibido = serializers.ReadOnlyField(source='ruta_archivo_con_recibido.ruta_archivo.url', default=None)
     
     class Meta:
         model = DespachoViveros

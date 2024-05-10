@@ -155,6 +155,7 @@ class SubseriesDocPutSerializer(serializers.ModelSerializer):
 class CCDSerializer(serializers.ModelSerializer):
     # series = serializers.SerializerMethodField()
     # subseries = serializers.SerializerMethodField()
+    ruta_soporte = serializers.ReadOnlyField(source='ruta_soporte.ruta_archivo.url', default=None)
     usado = serializers.SerializerMethodField()
     
     # def get_series(self,obj):
@@ -416,6 +417,7 @@ class CatalogosSeriesUnidadSerializer(serializers.ModelSerializer):
         ]
 
 class BusquedaCCDSerializer(serializers.ModelSerializer):
+    ruta_soporte = serializers.ReadOnlyField(source='ruta_soporte.ruta_archivo.url', default=None)
     usado = serializers.SerializerMethodField()
     
     def get_usado(self,obj):

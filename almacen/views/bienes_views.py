@@ -1353,8 +1353,9 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
     def post(self, request):
         data = request.data
-        entrada_data = data.get('info_entrada')
-        items_entrada = data.get('info_items_entrada')
+        entrada_data = json.loads(data.get('info_entrada'))
+        items_entrada = json.loads(data.get('info_items_entrada'))
+        archivo_soporte = request.FILES.get('archivo_soporte')
 
         # VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
         cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] < 1]
@@ -1638,13 +1639,13 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
             items_guardados.append(item_guardado)
             items_guardados_data.append(serializador_item_entrada.data)
             
-        # # CREAR ARCHIVO EN T238
-        # if archivo_soporte:
-        #     archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
-        #     archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
             
-        #     entrada_creada.id_archivo_soporte = archivo_creado_instance
-        #     entrada_creada.save()
+            entrada_creada.id_archivo_soporte = archivo_creado_instance
+            entrada_creada.save()
     
         # AUDITORIA CREATE ENTRADA
         valores_creados_detalles = []
@@ -1769,7 +1770,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
 
     def update_maestro(self, request, id_entrada):
         data = request.data.get('info_entrada')
-        # archivo_soporte = request.FILES.get('archivo_soporte')
+        archivo_soporte = request.FILES.get('archivo_soporte')
 
         # VALIDACIÓN QUE LA ENTRADA SELECCIONADA EXISTA
         entrada = EntradasAlmacen.objects.filter(
@@ -1841,13 +1842,13 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
-        # # ACTUALIZAR ARCHIVO
-        # if archivo_soporte and not entrada.id_archivo_soporte:
-        #     archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
-        #     archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte and not entrada.id_archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Entradas")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
             
-        #     entrada.id_archivo_soporte = archivo_creado_instance
-        #     entrada.save()
+            entrada.id_archivo_soporte = archivo_creado_instance
+            entrada.save()
         
         valores_actualizados_maestro = {'previous':entrada_previous, 'current':entrada}
         

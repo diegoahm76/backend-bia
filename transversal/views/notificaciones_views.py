@@ -3,6 +3,8 @@ from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from transversal.serializers.notificaciones_serializers import(
     DatosRemitenteSerializer,
     MedioNotificacionSerializer,
@@ -51,6 +53,16 @@ class CrearNotificacionView(generics.CreateAPIView):
     def post(self, request):
         funcionario = request.user.persona.id_persona
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('doc_asociado')
+        
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "NotificacionesTransversal")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['doc_asociado'] = archivo_creado_instance.id_archivo_digital
+
         data['id_funcionario'] = funcionario
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
@@ -77,8 +89,17 @@ class CrearRespuestaNotificacionView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        funcionario = request.user.persona.id_persona
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('doc_asociado')
+        
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "RespuestaNotificacionTransversal")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['doc_asociado'] = archivo_creado_instance.id_archivo_digital
+        
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

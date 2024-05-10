@@ -60,7 +60,7 @@ class CatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     cod_clas_expediente=models.ForeignKey(ClasificacionExpedientes, on_delete=models.CASCADE, db_column='T215Cod_ClasificacionExp')
     fecha_registro=models.DateTimeField(auto_now_add=True, db_column='T215fechaRegistro')
     justificacion_cambio=models.CharField(max_length=255, db_column='T215justificacionDelCambio', blank=True, null=True)
-    ruta_archivo_cambio=models.FileField(max_length=255, upload_to='gestion_documental/tca/', db_column='T215rutaArchivoCambio', blank=True, null=True)
+    ruta_archivo_cambio = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T215rutaArchivoCambio')
     
     def __str__(self):
         return str(self.id_cat_serie_unidad_org_ccd_trd_tca)
@@ -77,7 +77,7 @@ class HistoricoCatSeriesUnidadOrgCCD_TRD_TCA(models.Model):
     cod_clasificacion_exp=models.ForeignKey(ClasificacionExpedientes, on_delete=models.CASCADE, db_column='T220Cod_ClasificacionExp')
     fecha_inicio=models.DateTimeField(auto_now_add=True, db_column='T220fechaInicioClasificacion')
     justificacion_del_cambio=models.CharField(max_length=255, blank=True, null=True, db_column='T220justificacionDelCambio')
-    ruta_archivo_cambio=models.FileField(max_length=255, upload_to='gestion_documental/historico_catalogo_tca/', blank=True, null=True, db_column='T220rutaArchivoCambio')
+    ruta_archivo_cambio = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T220rutaArchivoCambio')
     id_persona_cambia=models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T220Id_personaCambia')
 
     def __str__(self):
