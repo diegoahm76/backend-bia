@@ -8,8 +8,10 @@ import copy
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.utils import timezone
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
+import json
 
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.notificaciones_views import NotificacionesAutomaticasCreate
 from recaudo.models.referencia_pago_models import ConfigReferenciaPagoAgno, Referencia
 from recaudo.serializers.referencia_pago_serializers import ConfigTipoRefgnoCreateSerializer, ConfigTipoRefgnoGetSerializer, ConfigTipoRefgnoPutSerializer, ReferenciaCreateSerializer
 from tramites.models.tramites_models import SolicitudesTramites
@@ -381,7 +383,7 @@ class RefCreateView(generics.CreateAPIView):
 
 
 
-        archivos =request.FILES.getlist('archivo')
+        archivos =request.FILES.getlist('archivo-create-Nombre anexo')
         data_archivo ={}
         for archivo in archivos:
                 
@@ -392,7 +394,7 @@ class RefCreateView(generics.CreateAPIView):
                 archivo_modificado = ContentFile(contenido, name=nombre_nuevo)
                 #print(archivo_modificado)
             
-                ruta = "home,BIA,Recaudo,referencia"
+                ruta = "home,BIA,Recaudo,liquidaciones"
                 respuesta_archivo = self.vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},archivo_modificado)
                 data_archivo = respuesta_archivo.data['data']
                 if respuesta_archivo.status_code != status.HTTP_201_CREATED:
@@ -412,6 +414,48 @@ class RefCreateView(generics.CreateAPIView):
         serializer = self.serializer_class(data=data_consecutivo)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        data_liquidacion = serializer.data
+
+        data_notificacion ={}
+        data_notificacion["cod_tipo_solicitud"] = "NO"
+        data_notificacion["numero_expediente_documental"] = None
+        data_notificacion["indicador_solicitud_tramite"] = data_liquidacion["radicado"]
+        data_notificacion["asunto"] ="Se a generado la liquidacion del tramite"
+        data_notificacion["id_persona_solicita"] = request.user.persona.id_persona
+        data_notificacion["descripcion"] = "Se adjunta documento de liquidacion"
+        data_notificacion["cantidad_anexos"] = 1
+        data_notificacion["nro_folios_totales"] = 1
+        data_notificacion["cod_tipo_documento"] = 1
+        data_anexo = [
+            {
+                "nombre_anexo": "Nombre anexo",
+                "orden_anexo_doc": 0,
+                "cod_medio_almacenamiento": "Na",
+                "medio_almacenamiento_otros_Cual": None,
+                "numero_folios": 0,
+                "ya_digitalizado": True,
+                "uso_del_documento": True,
+                "cod_tipo_documento": 3
+            }]
+        data_notificacion['anexos'] =data_anexo
+        request.data['data']  = json.dumps(data_notificacion)
+
+        #raise ValidationError(str(data_notificacion))
+#        request.FILES = archivo_modificado
+
+        print(data_liquidacion["radicado"])
+        #raise ValidationError(data_liquidacion["radicado"])
+
+
+
+
+
+        instancia_notificacion = NotificacionesAutomaticasCreate()
+        sistema = 'BIA'
+        data = instancia_notificacion.create_notificacion_sistema(request, sistema)
+
+
+
         return Response({'succes': True, 'detail':'Se creo el consecutivo correctamente', 'data':{**serializer.data
         }}, status=status.HTTP_201_CREATED)
 
