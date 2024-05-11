@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.plantillas_models import AccesoUndsOrg_PlantillaDoc, PlantillasDoc
 from gestion_documental.models.trd_models import FormatosTiposMedio, TipologiasDoc
-from gestion_documental.serializers.plantillas_serializers import AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, OtrasTipologiasSerializerGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
+from gestion_documental.serializers.plantillas_serializers import PlantillasDocSerializerGet, AccesoUndsOrg_PlantillaDocCreateSerializer, AccesoUndsOrg_PlantillaDocGetSerializer, OtrasTipologiasSerializerGetSerializer, PlantillasDocBusquedaAvanzadaDetalleSerializer, PlantillasDocBusquedaAvanzadaSerializer, PlantillasDocCreateSerializer, PlantillasDocGetSeriallizer, PlantillasDocSerializer, PlantillasDocUpdateSerializer, TipologiasDocSerializerGetSerializer
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 import os
 from rest_framework.permissions import IsAuthenticated
@@ -29,17 +29,9 @@ class PlantillasDocCreate(generics.CreateAPIView):
         data_acceso=[]
         data_in = request.data.copy()
         data_in['id_persona_crea_plantilla'] = usuario
-        #CONFIGURACION TEMPORAL PARA HACER PRUEBAS
-        if 'ruta_temporal' in data_in and data_in['ruta_temporal']:
-
-            ruta_temporal = data_in['ruta_temporal']
-        else:
-            ruta_temporal = ''
-        elementos = ruta_temporal.split(",")
-        ruta = os.path.join(*elementos)
        
         #FIN PRUEBAS
-        #ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
+        ruta = os.path.join("home", "BIA", "Otros", "Plantillas")
        
         #print(ruta)
     
@@ -527,4 +519,24 @@ class OtrasTipologiasDocGetActivo(generics.ListAPIView):
 
         serializador = self.serializer_class(instance,many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador.data,}, status=status.HTTP_200_OK)
+    
+class PlantillasDocGet(generics.ListAPIView):
+    serializer_class = PlantillasDocSerializerGet
+    permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        usuario = request.user.persona
+
+        plantillas =  PlantillasDoc.objects.filter(activa=True)
+
+        if not plantillas:
+            raise NotFound("No existen registros.")
+        serializador = self.serializer_class(plantillas,many=True, context={'usuario':usuario})
+
+        data = [unidad for unidad in serializador.data if unidad['accesos_unidades_organizacionales'] and unidad['variables'] != None]
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':data},status=status.HTTP_200_OK)
+    
+
+
     

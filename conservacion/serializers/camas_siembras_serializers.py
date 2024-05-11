@@ -60,6 +60,8 @@ class GetBienSembradoSerializer(serializers.ModelSerializer):
 
 
 class GetSiembraSerializer(serializers.ModelSerializer):
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
+    
     class Meta:
         model = Siembras
         fields = (
@@ -198,6 +200,7 @@ class GetSiembrasSerializer(serializers.ModelSerializer):
     cod_tipo_elemento_vivero = serializers.ReadOnlyField(source='id_bien_sembrado.cod_tipo_elemento_vivero', default=None)
     es_semilla_vivero = serializers.ReadOnlyField(source='id_bien_sembrado.es_semilla_vivero', default=None)
     unidad_medida = serializers.ReadOnlyField(source='id_bien_sembrado.id_unidad_medida.abreviatura', default=None)
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
     
     def get_cama_germinacion(self, obj):
         cama_germinacion = CamasGerminacionViveroSiembra.objects.filter(id_siembra=obj.id_siembra).values_list('id_cama_germinacion_vivero', flat=True)

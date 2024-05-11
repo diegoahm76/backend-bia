@@ -173,7 +173,7 @@ class ListTramitesGetView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, cod_tipo_permiso_ambiental):
-        cod_tipo_permiso_ambiental_correctos = ['L', 'P', 'D', 'O']
+        cod_tipo_permiso_ambiental_correctos = ['LA', 'DA', 'PA', 'PR', 'CE', 'EV', 'RE', 'PM', 'OP']
         if cod_tipo_permiso_ambiental not in cod_tipo_permiso_ambiental_correctos:
             raise ValidationError('El código del tipo de permiso ambiental es incorrecto')
         
@@ -201,11 +201,22 @@ class TramiteListGetView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request, id_persona_titular):
-        tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2, id_solicitud_tramite__id_persona_titular=id_persona_titular, id_permiso_ambiental__cod_tipo_permiso_ambiental = 'O')
+        tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2, id_solicitud_tramite__id_persona_titular=id_persona_titular, id_permiso_ambiental__cod_tipo_permiso_ambiental = 'OP')
 
         serializer = self.serializer_class(tramites_opas, many=True)
         
-        return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)   
+        return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+class TramiteListGetViewPM(generics.ListAPIView):
+    serializer_class = TramiteListGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_persona_titular):
+        tramites_opas = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite__id_medio_solicitud=2, id_solicitud_tramite__id_persona_titular=id_persona_titular, id_permiso_ambiental__cod_tipo_permiso_ambiental = 'PM')
+
+        serializer = self.serializer_class(tramites_opas, many=True)
+        
+        return Response({'success': True, 'detail':'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)      
 
 class InicioTramiteCreateView(generics.CreateAPIView):
     serializer_class = InicioTramiteCreateSerializer
@@ -238,13 +249,6 @@ class InicioTramiteCreateView(generics.CreateAPIView):
         if not permiso_ambiental:
             raise ValidationError('No se encontró el trámite elegido')
         
-        id_persona_titular = data.get('id_persona_titular')
-        id_persona_interpone = data.get('id_persona_interpone')
-        
-        if id_persona_titular == id_persona_interpone:
-            data['cod_relacion_con_el_titular'] = 'MP'
-        else:
-            data['cod_relacion_con_el_titular'] = 'RL' # VALIDAR PARA CASO DE APODERADOS
         
         data['cod_tipo_operacion_tramite'] = 'N'
         data['requiere_digitalizacion'] = True
@@ -469,6 +473,123 @@ class AnexosUpdateView(generics.UpdateAPIView):
         
         return Response({'success':True, 'detail':'Anexos procesados correctamente', 'data':serializer_get.data}, status=status.HTTP_201_CREATED)
 
+class AnexosUpdatePMView(generics.UpdateAPIView):
+    serializer_class = AnexosUpdateSerializer
+    serializer_get_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_solicitud_tramite):
+        data = request.data
+        data_anexos = json.loads(data['data_anexos'])
+        archivos = request.FILES.getlist('archivos')
+        current_date = datetime.now()
+        
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud_tramite:
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
+        
+        if solicitud_tramite.id_radicado:
+            raise ValidationError('No puede actualizar un trámite que ya ha sido radicado')
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        
+        anexos_crear = [anexo for anexo in data_anexos if not anexo['id_anexo_tramite']]
+        anexos_actualizar = [anexo for anexo in data_anexos if anexo['id_anexo_tramite']]
+        anexos_eliminar = anexos_instances.exclude(id_anexo_tramite__in=[anexo['id_anexo_tramite'] for anexo in anexos_actualizar])
+        
+        if len(anexos_crear) != len(archivos):
+            raise ValidationError('Debe enviar la data para cada archivo anexado')
+        
+        # ELIMINAR ANEXOS
+        for anexo in anexos_eliminar:
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo.id_anexo).first()
+            metadata_instance.id_archivo_sistema.delete()
+            metadata_instance.delete()
+            anexo.id_anexo.delete()
+            anexo.delete()
+        
+        last_orden = anexos_instances.aggregate(Max('id_anexo__orden_anexo_doc'))
+        last_orden = last_orden['id_anexo__orden_anexo_doc__max'] if last_orden['id_anexo__orden_anexo_doc__max'] else 0
+        
+        # CREAR ANEXOS
+        for index, (data, archivo) in enumerate(zip(anexos_crear, archivos)):
+            cont = index + 1
+            
+            # VALIDAR FORMATO ARCHIVO 
+            archivo_nombre = archivo.name
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.all().values_list('nombre', flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del anexo {archivo_nombre} no es válido')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "PermisoMenor", str(current_year))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in archivo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            # CREAR ARCHIVO EN T238
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            archivo_digital_instance = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+            
+            # CREAR ANEXO EN T258
+            anexo_creado = Anexos.objects.create(
+                nombre_anexo = nombre_sin_extension,
+                orden_anexo_doc = last_orden + cont,
+                cod_medio_almacenamiento = 'Na',
+                numero_folios = 0,
+                ya_digitalizado = False
+            )
+            
+            # CREAR ANEXO EN T260
+            MetadatosAnexosTmp.objects.create(
+                id_anexo = anexo_creado,
+                nombre_original_archivo = nombre_sin_extension,
+                fecha_creacion_doc = current_date,
+                descripcion = data['descripcion'],
+                id_archivo_sistema = archivo_digital_instance
+            )
+            
+            # CREAR DOCUMENTO EN T287
+            data['id_solicitud_tramite'] = id_solicitud_tramite
+            data['id_permiso_amb_solicitud_tramite'] = solicitud_tramite.permisosambsolicitudestramite_set.first().id_permiso_amb_solicitud_tramite
+            data['id_anexo'] = anexo_creado.id_anexo
+            
+            serializer_crear = self.serializer_class(data=data)
+            serializer_crear.is_valid(raise_exception=True)
+            serializer_crear.save()
+        
+        # ACTUALIZAR ANEXOS
+        for anexo in anexos_actualizar:
+            anexo_instance = anexos_instances.filter(id_anexo_tramite=anexo['id_anexo_tramite']).first()
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo_instance.id_anexo.id_anexo).first()
+            if metadata_instance and anexo['descripcion'] != metadata_instance.descripcion:
+                metadata_instance.descripcion = anexo['descripcion']
+                metadata_instance.save()
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        serializer_get = self.serializer_get_class(anexos_instances, many=True, context={'request': request})
+        
+        return Response({'success':True, 'detail':'Anexos procesados correctamente', 'data':serializer_get.data}, status=status.HTTP_201_CREATED)
+    
 class AnexosGetView(generics.ListAPIView):
     serializer_class = AnexosGetSerializer
     permission_classes = [IsAuthenticated]
@@ -477,6 +598,20 @@ class AnexosGetView(generics.ListAPIView):
         solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud_tramite:
             raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        serializer_get = self.serializer_class(anexos_instances, many=True, context={'request': request})
+        
+        return Response({'success':True, 'detail':'Se encontraron los siguientes anexos del trámite', 'data':serializer_get.data}, status=status.HTTP_200_OK)
+    
+class AnexosGetPMView(generics.ListAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud_tramite:
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
         serializer_get = self.serializer_class(anexos_instances, many=True, context={'request': request})
@@ -536,7 +671,62 @@ class RadicarCreateView(generics.CreateAPIView):
         template = "envio-radicado-opas.html"
         Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
         
-        return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)   
+        return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED) 
+
+class RadicarCreatePMView(generics.CreateAPIView):
+    serializer_class = AnexosGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, id_solicitud_tramite):
+        data = request.data
+        current_date = datetime.now()
+        
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
+        
+        if solicitud.id_radicado:
+            raise ValidationError('El trámite ya ha sido radicado')
+        
+        data['fecha_actual'] = current_date
+        data['id_persona'] = request.user.persona.id_persona
+        data['tipo_radicado'] = "E" # VALIDAR
+        data['modulo_radica'] = "Trámites y servicios" # VALIDAR
+        
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
+        
+        # ACTUALIZAR SOLICITUD
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        if not radicado:
+            raise NotFound('No se encontró el radicado generado')
+        
+        estado_solicitud = EstadosSolicitudes.objects.filter(id_estado_solicitud=2).first()
+        if not estado_solicitud:
+            raise NotFound('No se encontró el estado de la solicitud')
+        
+        solicitud.id_radicado = radicado
+        solicitud.fecha_radicado = current_date
+        solicitud.id_estado_actual_solicitud = estado_solicitud
+        solicitud.save()
+        
+        # Insertar en T255 con estado RADICADO
+        Estados_PQR.objects.create(
+            id_tramite = solicitud,
+            estado_solicitud = estado_solicitud,
+            fecha_iniEstado = current_date,
+            persona_genera_estado = request.user.persona
+        )
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "PM radicado con éxito - "
+        template = "envio-radicado-pm.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
+        
+        return Response({'success': True, 'detail':'Se realizó la radicación correctamente', 'data':radicado_response}, status=status.HTTP_201_CREATED)    
 
 class RadicarGetView(generics.ListAPIView):
     serializer_class = RadicadoPostSerializer
@@ -546,6 +736,28 @@ class RadicarGetView(generics.ListAPIView):
         solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
         if not solicitud:
             raise NotFound('No se encontró el trámite del OPA elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(solicitud.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        serializer_data = serializer.data
+        serializer_data['radicado_nuevo'] = radicado_nuevo
+        
+        return Response({'success': True, 'detail':'Se encontró la información de la radicación', 'data':serializer_data}, status=status.HTTP_200_OK)
+
+class RadicarGetPMView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
         
         if not solicitud.id_radicado:
             raise ValidationError('El trámite aún no ha sido radicado')
@@ -587,7 +799,32 @@ class RadicarVolverEnviarGetView(generics.ListAPIView):
         
         return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer_data}, status=status.HTTP_200_OK)   
 
-
+class RadicarVolverEnviarGetPMView(generics.ListAPIView):
+    serializer_class = RadicadoPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        solicitud = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud:
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
+        
+        if not solicitud.id_radicado:
+            raise ValidationError('El trámite aún no ha sido radicado')
+        
+        instance_config_tipo_radicado =ConfigTiposRadicadoAgno.objects.filter(agno_radicado=solicitud.id_radicado.agno_radicado,cod_tipo_radicado=solicitud.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(solicitud.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        radicado_nuevo= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
+        # ENVIAR CORREO CON RADICADO
+        subject = "PM radicado con éxito - "
+        template = "envio-radicado-pm.html"
+        Util.notificacion(request.user.persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,numero_radicado=radicado_nuevo)
+        
+        serializer = self.serializer_class(solicitud.id_radicado, context={'request': request})
+        serializer_data = serializer.data
+        serializer_data['radicado_nuevo'] = radicado_nuevo
+        
+        return Response({'success': True, 'detail':'Se volvió a enviar la radicación correctamente', 'data':serializer_data}, status=status.HTTP_200_OK)  
 
 ################################################################################################################################################
 #CONSULTA_ESTADO_OPAS
@@ -596,7 +833,7 @@ class ConsultaEstadoOPAS(generics.ListAPIView):
 
     def get_queryset(self):
         opas = PermisosAmbSolicitudesTramite.objects.filter(
-            id_permiso_ambiental__cod_tipo_permiso_ambiental='O'
+            id_permiso_ambiental__cod_tipo_permiso_ambiental='OP'
         )
 
         fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
@@ -915,6 +1152,134 @@ class AnexosMetadatosUpdateView(generics.UpdateAPIView):
         
         return Response({'success':True, 'detail':'Anexos procesados correctamente', 'data':serializer_get.data}, status=status.HTTP_201_CREATED)
 
+
+class AnexosMetadatosUpdatePMView(generics.UpdateAPIView):
+    serializer_class = AnexosUpdateSerializer
+    serializer_get_class = AnexosGetSerializer
+    serializer_metadatos_class = MetadatosPostSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_solicitud_tramite):
+        data = request.data
+        data_anexos = json.loads(data['data_anexos'])
+        archivos = request.FILES.getlist('archivos')
+        current_date = datetime.now()
+        
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not solicitud_tramite:
+            raise NotFound('No se encontró el trámite del Permiso Menor elegido')
+        
+        if solicitud_tramite.id_radicado:
+            raise ValidationError('No puede actualizar un trámite que ya ha sido radicado')
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        
+        anexos_crear = [anexo for anexo in data_anexos if not anexo['id_anexo_tramite']]
+        anexos_actualizar = [anexo for anexo in data_anexos if anexo['id_anexo_tramite']]
+        anexos_eliminar = anexos_instances.exclude(id_anexo_tramite__in=[anexo['id_anexo_tramite'] for anexo in anexos_actualizar])
+        
+        if len(anexos_crear) != len(archivos):
+            raise ValidationError('Debe enviar la data para cada archivo anexado')
+        
+        # ELIMINAR ANEXOS
+        for anexo in anexos_eliminar:
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo.id_anexo).first()
+            metadata_instance.id_archivo_sistema.delete()
+            metadata_instance.delete()
+            anexo.id_anexo.delete()
+            anexo.delete()
+        
+        last_orden = anexos_instances.aggregate(Max('id_anexo__orden_anexo_doc'))
+        last_orden = last_orden['id_anexo__orden_anexo_doc__max'] if last_orden['id_anexo__orden_anexo_doc__max'] else 0
+        
+        # CREAR ANEXOS
+        for index, (data, archivo) in enumerate(zip(anexos_crear, archivos)):
+            cont = index + 1
+            
+            # VALIDAR FORMATO ARCHIVO 
+            archivo_nombre = archivo.name
+            nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+            extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+            
+            formatos_tipos_medio_list = FormatosTiposMedio.objects.all().values_list('nombre', flat=True)
+            
+            if extension_sin_punto.lower() not in list(formatos_tipos_medio_list) and extension_sin_punto.upper() not in list(formatos_tipos_medio_list):
+                raise ValidationError(f'El formato del anexo {archivo_nombre} no es válido')
+            
+            # CREAR ARCHIVO EN T238
+            # Obtiene el año actual para determinar la carpeta de destino
+            current_year = datetime.now().year
+            ruta = os.path.join("home", "BIA", "Otros", "OPAS", str(current_year))
+
+            # Calcula el hash MD5 del archivo
+            md5_hash = hashlib.md5()
+            for chunk in archivo.chunks():
+                md5_hash.update(chunk)
+
+            # Obtiene el valor hash MD5
+            md5_value = md5_hash.hexdigest()
+
+            # Crea el archivo digital y obtiene su ID
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value  # Agregamos el hash MD5 al diccionario de datos
+            }
+            
+            # CREAR ARCHIVO EN T238
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, archivo)
+            archivo_digital_instance = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+            
+            # CREAR ANEXO EN T258
+            nro_folios_documento = data.get('nro_folios_documento') if data.get('nro_folios_documento') else 0
+            anexo_creado = Anexos.objects.create(
+                nombre_anexo = nombre_sin_extension,
+                orden_anexo_doc = last_orden + cont,
+                cod_medio_almacenamiento = 'Na',
+                numero_folios = nro_folios_documento,
+                ya_digitalizado = False
+            )
+            
+            # VALIDACIÓN TIPOLOGIA
+            if data.get('id_tipologia_doc') and data.get('tipologia_no_creada_TRD'):
+                raise ValidationError('Solo puede elegir la tipologia o ingresar el nombre de la tipología, no las dos cosas')
+            elif not data.get('id_tipologia_doc') and not data.get('tipologia_no_creada_TRD'):
+                raise ValidationError('Debe elegir una tipologia o ingresar el nombre de la tipología')
+            
+            # CREAR ANEXO EN T260
+            data['id_anexo'] = anexo_creado.id_anexo
+            data['nombre_original_archivo'] = nombre_sin_extension
+            data['fecha_creacion_doc'] = current_date
+            data['id_archivo_sistema'] = archivo_digital_instance.id_archivo_digital
+            
+            serializer_anexo = self.serializer_metadatos_class(data=data)
+            serializer_anexo.is_valid(raise_exception=True)
+            serializer_anexo.save()
+            
+            # CREAR DOCUMENTO EN T287
+            data['id_solicitud_tramite'] = id_solicitud_tramite
+            data['id_permiso_amb_solicitud_tramite'] = solicitud_tramite.permisosambsolicitudestramite_set.first().id_permiso_amb_solicitud_tramite
+            
+            serializer_crear = self.serializer_class(data=data)
+            serializer_crear.is_valid(raise_exception=True)
+            serializer_crear.save()
+        
+        # ACTUALIZAR ANEXOS
+        for anexo in anexos_actualizar:
+            anexo_instance = anexos_instances.filter(id_anexo_tramite=anexo['id_anexo_tramite']).first()
+            metadata_instance = MetadatosAnexosTmp.objects.filter(id_anexo=anexo_instance.id_anexo.id_anexo).first()
+            if metadata_instance:
+                anexo['id_anexo'] = metadata_instance.id_anexo.id_anexo
+                serializer_anexo = self.serializer_metadatos_class(metadata_instance, data=anexo, partial=True)
+                serializer_anexo.is_valid(raise_exception=True)
+                serializer_anexo.save()
+        
+        anexos_instances = AnexosTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite)
+        serializer_get = self.serializer_get_class(anexos_instances, many=True, context={'request': request})
+        
+        return Response({'success':True, 'detail':'Anexos procesados correctamente', 'data':serializer_get.data}, status=status.HTTP_201_CREATED)
+    
 # CRUD TIPOS TRAMITES
 class GetTiposTramitesByFilterView(generics.ListAPIView):
     serializer_class = GetTiposTramitesSerializer
@@ -991,3 +1356,14 @@ class DeleteTiposTramitesView(generics.DestroyAPIView):
                 raise PermissionDenied('No puedes eliminar un tipo de tramite precargado')
         else:
             raise NotFound('No existe el tipo de tramite')
+        
+class GetTiposTramitesSasoftcoGetView(generics.ListAPIView):
+    serializer_class = GetTiposTramitesSerializer
+    queryset = PermisosAmbientales.objects.filter(id_permiso_ambiental__gte=15, id_permiso_ambiental__lte=46)
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tipos_tramites = self.queryset.all()
+        serializador = self.serializer_class(tipos_tramites, many=True)
+        
+        return Response({'success':True, 'detail':'Se encontró la siguiente información', 'data':serializador.data}, status=status.HTTP_200_OK)

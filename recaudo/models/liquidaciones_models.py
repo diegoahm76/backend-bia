@@ -1,5 +1,6 @@
 from django.db import models
 from recaudo.models.base_models import NaturalezaJuridica, TipoRenta, Ubicaciones
+from recaudo.models.extraccion_model_recaudo import T920Expediente
 from recaudo.choices.estados_liquidacion_choices import estados_liquidacion_CHOICES
 
 
@@ -12,6 +13,7 @@ class Deudores(models.Model):
     email = models.CharField(max_length=255, db_column='T410email')
     ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410Id_Ubicacion')
     naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410Id_NaturalezaJuridica')
+    id_persona_deudor = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, blank=True, null=True, db_column='T410Id_PersonaDeudor')
 
     class Meta:
         db_table = 'T410Deudores'
@@ -27,7 +29,8 @@ class Expedientes(models.Model):
     cod_auto = models.CharField(max_length=255, db_column='T407codigoAuto')
     cod_recurso = models.CharField(max_length=255, db_column='T407codigoRecurso')
     liquidado = models.BooleanField(default=False, db_column='T407liquidado')
-    id_expediente_doc = models.ForeignKey('gestion_documental.ExpedientesDocumentales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T407Id_ExpedienteDoc') # Definir. Según modelado debe ser obligatorio
+    id_expediente_doc = models.ForeignKey('gestion_documental.ExpedientesDocumentales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T407Id_ExpedienteDoc')
+    id_expediente_pimisys = models.ForeignKey(T920Expediente, on_delete=models.SET_NULL, blank=True, null=True, db_column='T407Id_ExpedientePimisys')
 
     class Meta:
         db_table = 'T407Expedientes'
@@ -83,6 +86,7 @@ class LiquidacionesBase(models.Model):
     se_cobra = models.CharField(max_length=1, blank=True, null=True, db_column="T403seCobra")
     fecha_en_firme = models.DateTimeField(null=True, blank=True, db_column="T403fechaEnFirme")
     nnum_origen_liq = models.IntegerField(blank=True, null=True, db_column="T403NnumOrigenLiq")
+    id_persona_liquida = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, blank=True, null=True, db_column="T403Id_PersonaLiquida")
 
     class Meta:
         db_table = "T403LiquidacionesBase"
@@ -117,7 +121,7 @@ class CalculosLiquidacionBase(models.Model):
 
 class HistEstadosLiq(models.Model):
     id_hist_estado_liq = models.AutoField(primary_key=True, db_column='T470IdHistEstadoLiq')
-    liquidacion_base = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column='T470Id_LiquidacionBase')
+    id_liquidacion_base = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column='T470Id_LiquidacionBase')
     estado_liq = models.CharField(choices=estados_liquidacion_CHOICES, max_length=10, db_column='T470EstadoLiq')
     fecha_estado = models.DateTimeField(blank=True, null=True, db_column='T470fechaEstado')
 

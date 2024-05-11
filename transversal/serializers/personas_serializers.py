@@ -913,6 +913,8 @@ class PersonasFilterAdminUserSerializer(PersonasFilterSerializer):
         fields = PersonasFilterSerializer.Meta.fields + ['usuarios']
 
 class BusquedaHistoricoCambiosSerializer(serializers.ModelSerializer):
+    ruta_archivo_soporte = serializers.ReadOnlyField(source='ruta_archivo_soporte.ruta_archivo.url', default=None)
+
     class Meta:
         model = HistoricoCambiosIDPersonas
         fields = '__all__'

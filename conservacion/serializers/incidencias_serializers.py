@@ -69,7 +69,25 @@ class IncidenciaSerializer(serializers.ModelSerializer):
     
     class Meta:
         fields = '__all__'
-        model = IncidenciasMatVegetal  
+        model = IncidenciasMatVegetal
+
+class IncidenciaGetSerializer(serializers.ModelSerializer):
+    nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    ruta_archivos_soporte = serializers.ReadOnlyField(source='ruta_archivos_soporte.ruta_archivo.url', default=None)
+    persona_registra = serializers.SerializerMethodField()
+    
+    def get_persona_registra(self, obj):
+        persona_registra = None
+        nombre_list = [obj.id_persona_registra.primer_nombre, obj.id_persona_registra.segundo_nombre,
+                        obj.id_persona_registra.primer_apellido, obj.id_persona_registra.segundo_apellido]
+        persona_registra = ' '.join(item for item in nombre_list if item is not None)
+        persona_registra = persona_registra if persona_registra != "" else None
+        return persona_registra
+    
+    class Meta:
+        fields = '__all__'
+        model = IncidenciasMatVegetal 
         
 class ActualizacionIncidenciaSerializer(serializers.ModelSerializer):
     class Meta:

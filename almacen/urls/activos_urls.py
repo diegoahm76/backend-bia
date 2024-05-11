@@ -84,6 +84,10 @@ urlpatterns = [
     path('resumen-despacho-activos/<int:id_despacho_activo>/', views.ResumenDespachosGeneralActivosView.as_view(), name='resumen-despachp-activos'),
     path('actualizar-anexo-despacho-activos/<int:pk>/', views.ActualizarAnexoDespachoActivosView.as_view(), name='actualizar-anexo-despacho-activos'),
 
+    #Codigo_Barras
+    path('busqueda-bienes-general/get/', views.BusquedaGeneralInventario.as_view(), name='busqueda-codigo-barras'),
+    path('generar-codigo-barras/get/', views.GenerarCodigoBarras.as_view(), name='generar-codigo-barras'),
+
 
 
 

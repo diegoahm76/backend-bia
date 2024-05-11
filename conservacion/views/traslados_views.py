@@ -1,11 +1,13 @@
 from rest_framework.response import Response
 from rest_framework import generics,status
 from django.db.models import Q
-from conservacion.serializers.traslados_serializers import TrasladosViverosSerializers, ItemsTrasladosViverosSerielizers, InventarioViverosSerielizers, CreateSiembraInventarioViveroSerializer
+from conservacion.serializers.traslados_serializers import TrasladosGetViverosSerializers, TrasladosViverosSerializers, ItemsTrasladosViverosSerielizers, InventarioViverosSerielizers, CreateSiembraInventarioViveroSerializer
 from conservacion.models.inventario_models import InventarioViveros
 from conservacion.models.viveros_models import Vivero
 from conservacion.models.traslados_models import TrasladosViveros, ItemsTrasladoViveros
 from almacen.models.bienes_models import CatalogoBienes
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarTrasladosEntreViveros, PermisoAnularTrasladosEntreViveros, PermisoBorrarTrasladosEntreViveros, PermisoCrearTrasladosEntreViveros
 from transversal.models.personas_models import Personas
 from datetime import datetime, timedelta
@@ -26,7 +28,7 @@ class TrasladosCreate(generics.UpdateAPIView):
         user_logeado = request.user
         info_traslado = json.loads(datos_ingresados['info_traslado'])
         items_traslado = json.loads(datos_ingresados['items_traslado'])
-        info_traslado['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         
         # SE OBTIENE EL ÚLTIMO NÚMERO DE TRASLADO DISPONIBLE
         traslados_existentes = TrasladosViveros.objects.all()
@@ -127,6 +129,13 @@ class TrasladosCreate(generics.UpdateAPIView):
             valores_creados_detalles.append({'nombre' : instancia_bien.nombre})
             aux_valores_repetidos.append([i['id_bien_origen'], i['agno_lote_origen'], i['nro_lote_origen']])
             
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "TrasladosViveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            info_traslado['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
+
         # SE CREA EL REGISTRO EN LA TABLA TRASLADOS
         serializer_crear = self.serializer_class(data=info_traslado, many=False)
         serializer_crear.is_valid(raise_exception=True)
@@ -276,7 +285,7 @@ class FilterInventarioVivero(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontró lo siguiente', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 class GetTrasladosByIdTraslados(generics.ListAPIView):
-    serializer_class = TrasladosViverosSerializers
+    serializer_class = TrasladosGetViverosSerializers
     queryset = TrasladosViveros
     serializer_item_class = ItemsTrasladosViverosSerielizers
     permission_classes = [IsAuthenticated]
@@ -296,7 +305,7 @@ class GetTrasladosByIdTraslados(generics.ListAPIView):
         return Response({'success':True, 'detail':'Ok', 'data':salida}, status=status.HTTP_200_OK)
 
 class GetAvanzadoTraslados(generics.ListAPIView):
-    serializer_class = TrasladosViverosSerializers
+    serializer_class = TrasladosGetViverosSerializers
     queryset = TrasladosViveros
     permission_classes = [IsAuthenticated]
     
@@ -349,10 +358,10 @@ class TrasladosActualizar(generics.UpdateAPIView):
     
     def put(self, request):
         datos_ingresados = request.data
-        user_logeado = request.user
         aux_valores_repetidos = []
         info_traslado = json.loads(datos_ingresados['info_traslado'])
         items_traslado = json.loads(datos_ingresados['items_traslado'])
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         instancia_traslado = TrasladosViveros.objects.filter(id_traslado=info_traslado['id_traslado']).first()
         instancia_vivero_origen = Vivero.objects.filter(id_vivero=instancia_traslado.id_vivero_origen.id_vivero).first()
         instancia_vivero_destino = Vivero.objects.filter(id_vivero=instancia_traslado.id_vivero_destino.id_vivero).first()
@@ -460,8 +469,24 @@ class TrasladosActualizar(generics.UpdateAPIView):
             valores_eliminados_detalles.append({'nombre' : aux_bien.nombre})
         aux_nro_posicion = []
         
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if instancia_traslado.ruta_archivo_soporte:
+                instancia_traslado.ruta_archivo_soporte.ruta_archivo.delete()
+                instancia_traslado.ruta_archivo_soporte.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "TrasladosViveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            instancia_traslado.ruta_archivo_soporte = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and instancia_traslado.ruta_archivo_soporte:
+        #     instancia_traslado.ruta_archivo_soporte.ruta_archivo.delete()
+        #     instancia_traslado.ruta_archivo_soporte.delete()
+
         # SE GUARDAN LAS MODIFICACIONES EN LA TABLA TRASLADOS
         instancia_traslado.observaciones = info_traslado['observaciones']
+        instancia_traslado.save()
+
         valores_creados_detalles = []
         valores_actualizados_detalles = []
         

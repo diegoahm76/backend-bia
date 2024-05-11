@@ -10,7 +10,9 @@ from django.urls import reverse
 from django.shortcuts import redirect
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.sites.shortcuts import get_current_site
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.ventanilla_serializers import AutorizacionNotificacionesSerializer
+from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.bandeja_tareas_views import BandejaTareasPersonaCreate
 
 from seguridad.permissions.permissions_seguridad import PermisoActualizarAutorizacionNotificacionesCuentaPropia
@@ -1078,12 +1080,22 @@ class ActualizarPersonasNatCamposRestringidosView(generics.UpdateAPIView):
                     valor_previous= getattr(persona,field)
                     valor_previous = valor_previous.cod_tipo_documento if field == 'tipo_documento' else valor_previous
 
+                    archivo_soporte = request.FILES.get('ruta_archivo_soporte')
+                    documento = None
+
+                    # CREAR ARCHIVO EN T238
+                    if archivo_soporte:
+                        archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "HistoricoCambiosIDPersonas")
+                        archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                        
+                        documento = archivo_creado_instance
+
                     if value != valor_previous:
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
                             nombre_campo_cambiado=field,
                             valor_campo_cambiado=valor_previous if valor_previous!=None else "",
-                            ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
+                            ruta_archivo_soporte=documento,
                             justificacion_cambio=request.data.get('justificacion', ''),
                         )
                         historicos_creados.append(historico)
@@ -1145,12 +1157,23 @@ class ActualizarPersonasJurCamposRestringidosView(generics.UpdateAPIView):
                 
                 if field != 'ruta_archivo_soporte' and field != "justificacion":
                     valor_previous= getattr(persona,field)
+
+                    archivo_soporte = request.FILES.get('ruta_archivo_soporte')
+                    documento = None
+
+                    # CREAR ARCHIVO EN T238
+                    if archivo_soporte:
+                        archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "HistoricoCambiosIDPersonas")
+                        archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                        
+                        documento = archivo_creado_instance
+
                     if value != valor_previous:
                         historico = HistoricoCambiosIDPersonas.objects.create(
                             id_persona=persona,
                             nombre_campo_cambiado=field,
                             valor_campo_cambiado=valor_previous if valor_previous!=None else "",
-                            ruta_archivo_soporte=request.data.get('ruta_archivo_soporte', ''),
+                            ruta_archivo_soporte=documento,
                             justificacion_cambio=request.data.get('justificacion', ''),
                         )
                         historicos_creados.append(historico)
