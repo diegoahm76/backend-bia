@@ -86,7 +86,6 @@ class ActaInicioCreate(generics.CreateAPIView):
         return file
     def acta_inicio(self,data):
 
-
         context = data
         print(context)
         pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/AUTO_INICIO_AGUAS_SUPERFICIALES.docx'
@@ -409,9 +408,197 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
 
 
+    def document_to_inmemory_uploadedfile(self,doc):
+        # Guardar el documento en un búfer de memoria
+        buffer = BytesIO()
+        doc.save(buffer)
+        
+        # Crear un objeto InMemoryUploadedFile
+        file = InMemoryUploadedFile(
+            buffer,  # El búfer de memoria que contiene los datos
+            None,    # El campo de archivo (no es relevante en este contexto)
+            'output.docx',  # El nombre del archivo
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # El tipo MIME del archivo
+            buffer.tell(),  # El tamaño del archivo en bytes
+            None     # El conjunto de caracteres (no es relevante en este contexto)
+        )
+        
+        return file
+
+    def acta_inicio(self,data,plantilla):
+
+        context = data
+        print(context)
+        pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/'+plantilla
+        outputPath = str(settings.BASE_DIR) + '/gestion_documental/templates/output_'+plantilla
+
+        doc = DocxTemplate(pathToTemplate)
+        doc.render(context)
+        doc.save(outputPath)
+
+        return doc
+
+    def crear_acto(self, tramite,respuesta_expediente):
+        fecha_actual =datetime.now()
+   
+        
+        data_auto = {}
+            #PENDIENTE VALIDACION DE TIPO DE TRAMITE
+
+        instance_radicado = tramite.id_radicado
+
+        cadena_radicado = self.radicado_completo(instance_radicado)
+
+        detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+
+        if not 'typeRequest' in detalle_tramite_data:
+            raise ValidationError("No se retorna el nombre del tramite")
+        
+        nombres_tramite = self.nombre_tramites(detalle_tramite_data['typeRequest'])
+    
+        #raise ValidationError(detalle_tramite_data['typeRequest'])
+        #Solicitud de Concesión de Aguas Superficiales
+        if detalle_tramite_data['typeRequest'] == 'Solicitud de concesión de aguas superficiales':
+            plantilla = 'AUTO_INICIO_AGUAS_SUPERFICIALES.docx'
+  
+            data_auto['dato1'] = 'Auto 1'#NUMERO DE AUTO
+            data_auto['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']#NUMERO DE EXPEDIENTE
+            #NOMBRE DEL USUARIO
+            titular = tramite.id_persona_titular
+            nombre_usuario = self.nombre_persona(titular)
+            data_auto['dato3'] = nombre_usuario
+            #TIPO DE DOCUMENTO
+            data_auto['dato4'] = titular.tipo_documento.nombre
+            data_auto['dato5'] = titular.numero_documento
+
+            #DETALLE DEL TRAMITE DATOS DE SASOFT
+            #SE ASOCIA POR EL RADICADO
+            #MONTAJE DE RADICADO
+            instance_radicado = tramite.id_radicado
+            cadena_radicado = self.radicado_completo(instance_radicado)
+            
+            
+            print("DETALLEEEE DEL TRAMITE SASOFT")
+
+            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+
+            #UBICACION /DIRECCION 
+            if 'Direecion' in detalle_tramite_data:
+                data_auto['dato6'] = detalle_tramite_data['Direccion']
+            else:
+                data_auto['dato6'] = 'SIN IDENTIFICAR'
+            #NUMERO DE RADICADO
+            data_auto['dato35'] = cadena_radicado
+            #FECHA DE RADICADO
+            data_auto['dato36'] = instance_radicado.fecha_radicado
+            #MUNICIPIO
+            if 'Municipio' in detalle_tramite_data:
+                data_auto['dato7'] = detalle_tramite_data['Municipio']
+            else:
+                data_auto['dato7'] ='[[DATO7]]'
+
+            ##DATO 8 FECHA DE VISITA NO NECESARIO
+            data_auto['dato8'] = '[[DATO8]]'
+            #DATO 9 NOMBRE DE FUENTE DE CAPTACION
+            if 'fuente_captacion' in detalle_tramite_data:
+                fuente_captacion_json= detalle_tramite_data['fuente_captacion'][0]
+                # print(fuente_captacion_json)
+                # #raise ValidationError('pere')
+                data_auto['dato9'] = fuente_captacion_json['Name_fuente_hidrica_value']
+            else:
+                data_auto['dato9'] = '[[DATO9]]'
+            
+            #DATO 11 NOMBRE DE PREDIO 
+            if 'Npredio' in detalle_tramite_data:
+                data_auto['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                data_auto['dato11'] = '[[DATO11]]'
+            #DATO 12 NUMERO DE MATRICULA DE PREDIO
+            if 'MatriInmobi' in detalle_tramite_data:
+                data_auto['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                data_auto['dato12'] = '[[MatriInmobiDato12]]'
+        
+            ##FIN_DATA_AGUAS SUPERFICIALES
+        if detalle_tramite_data['typeRequest'] == 'Concesión de aguas subterráneas':
+            plantilla = 'AUTO_INICIO_CONCESION_SUBTERRANEA.docx'
+  
+            data_auto['dato1'] = 'Auto 1'#NUMERO DE AUTO
+            data_auto['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']#NUMERO DE EXPEDIENTE
+            #NOMBRE DEL USUARIO
+            titular = tramite.id_persona_titular
+            nombre_usuario = self.nombre_persona(titular)
+            data_auto['dato3'] = nombre_usuario
+            #TIPO DE DOCUMENTO
+            data_auto['dato4'] = titular.tipo_documento.nombre
+            data_auto['dato5'] = titular.numero_documento
+
+            #DETALLE DEL TRAMITE DATOS DE SASOFT
+            #SE ASOCIA POR EL RADICADO
+            #MONTAJE DE RADICADO
+            instance_radicado = tramite.id_radicado
+            cadena_radicado = self.radicado_completo(instance_radicado)
+            
+            
+            print("DETALLEEEE DEL TRAMITE SASOFT")
+
+            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+
+            #UBICACION /DIRECCION 
+            if 'Direecion' in detalle_tramite_data:
+                data_auto['dato6'] = detalle_tramite_data['Direccion']
+            else:
+                data_auto['dato6'] = 'SIN IDENTIFICAR'
+            #NUMERO DE RADICADO
+            data_auto['dato35'] = cadena_radicado
+            #FECHA DE RADICADO
+            data_auto['dato36'] = instance_radicado.fecha_radicado
+            #MUNICIPIO
+            if 'Municipio' in detalle_tramite_data:
+                data_auto['dato7'] = detalle_tramite_data['Municipio']
+            else:
+                data_auto['dato7'] ='[[DATO7]]'
+
+            ##DATO 8 FECHA DE VISITA NO NECESARIO
+            data_auto['dato8'] = '[[DATO8]]'
+            #DATO 9 NOMBRE DE FUENTE DE CAPTACION
+
+            
+            data_auto['dato9'] = titular.email
+            
+            #DATO 11 NOMBRE DE PREDIO 
+            if 'Npredio' in detalle_tramite_data:
+                data_auto['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                data_auto['dato11'] = '[[DATO11]]'
+            #DATO 12 NUMERO DE MATRICULA DE PREDIO
+            if 'MatriInmobi' in detalle_tramite_data:
+                data_auto['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                data_auto['dato12'] = '[[MatriInmobiDato12]]'
+        
+            ##FIN_DATA
+
+        
+
+        dato=self.acta_inicio(data_auto,plantilla)
+        memoria = self.document_to_inmemory_uploadedfile(dato)
+   
+        vista_archivos = ArchivosDgitalesCreate()
+        ruta = "home,BIA,Otros,RecursoHidrico,Avances"
+
+        respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},memoria)
+        data_archivo = respuesta_archivo.data['data']
+        if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+            return respuesta_archivo
+        
+        
+        print(dato)
+
+        return respuesta_archivo
     def nombre_tramites (self,nombre_tramite):
 
-        raise ValidationError(nombre_tramite)
+        #raise ValidationError(nombre_tramite)
         url = "https://backendclerkapi.sedeselectronicas.com/api/Procedures"
         headers = {"accept": "text/plain"}
         
@@ -570,84 +757,9 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             if not expediente:
                 raise NotFound("No se encontro el expediente")
            
-            data_auto = {}
-            #PENDIENTE VALIDACION DE TIPO DE TRAMITE
 
-            instance_radicado = tramite.id_radicado
 
-            cadena_radicado = self.radicado_completo(instance_radicado)
-    
-            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
-
-            if not 'typeRequest' in detalle_tramite_data:
-                raise ValidationError("No se retorna el nombre del tramite")
-            
-            nombres_tramite = self.nombre_tramites(detalle_tramite_data['typeRequest'])
-            print(nombres_tramite)
-            #raise ValidationError("VALIDACION DE TIPOS DE TRAMITE")
-            #Solicitud de Concesión de Aguas Superficiales
-            data_auto['n_auto'] = 1
-            crear = ActaInicioCreate()
-            data_acto= {}
-            request.data['dato1'] = 'Auto 1'#NUMERO DE AUTO
-            request.data['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']#NUMERO DE EXPEDIENTE
-            #NOMBRE DEL USUARIO
-            titular = tramite.id_persona_titular
-            nombre_usuario = self.nombre_persona(titular)
-            request.data['dato3'] = nombre_usuario
-            #TIPO DE DOCUMENTO
-            request.data['dato4'] = titular.tipo_documento.nombre
-            request.data['dato5'] = titular.numero_documento
-
-            #DETALLE DEL TRAMITE DATOS DE SASOFT
-            #SE ASOCIA POR EL RADICADO
-            #MONTAJE DE RADICADO
-            instance_radicado = tramite.id_radicado
-            cadena_radicado = self.radicado_completo(instance_radicado)
-           
-            
-            print("DETALLEEEE DEL TRAMITE SASOFT")
-
-            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
-
-            #UBICACION /DIRECCION 
-            if 'Direecion' in detalle_tramite_data:
-                request.data['dato6'] = detalle_tramite_data['Direccion']
-            else:
-                request.data['dato6'] = 'SIN IDENTIFICAR'
-            #NUMERO DE RADICADO
-            request.data['dato35'] = cadena_radicado
-            #FECHA DE RADICADO
-            request.data['dato36'] = instance_radicado.fecha_radicado
-            #MUNICIPIO
-            if 'Municipio' in detalle_tramite_data:
-                request.data['dato7'] = detalle_tramite_data['Municipio']
-            else:
-                request.data['dato7'] ='[[DATO7]]'
-
-            ##DATO 8 FECHA DE VISITA NO NECESARIO
-            request.data['dato8'] = '[[DATO8]]'
-            #DATO 9 NOMBRE DE FUENTE DE CAPTACION
-            if 'fuente_captacion' in detalle_tramite_data:
-                fuente_captacion_json= detalle_tramite_data['fuente_captacion'][0]
-                # print(fuente_captacion_json)
-                # #raise ValidationError('pere')
-                request.data['dato9'] = fuente_captacion_json['Name_fuente_hidrica_value']
-            else:
-                request.data['dato9'] = '[[DATO9]]'
-            
-            #DATO 11 NOMBRE DE PREDIO 
-            if 'Npredio' in detalle_tramite_data:
-                request.data['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
-            else:
-                request.data['dato11'] = '[[DATO11]]'
-            #DATO 12 NUMERO DE MATRICULA DE PREDIO
-            if 'MatriInmobi' in detalle_tramite_data:
-                request.data['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
-            else:
-                request.data['dato12'] = '[[MatriInmobiDato12]]'
-            archivo_acto = crear.create(request)
-            print(archivo_acto)
+            data_archivo = self.crear_acto(tramite,respuesta_expediente)
             raise ValidationError("HAAA")
         
             tramite = asignacion.id_solicitud_tramite
