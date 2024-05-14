@@ -488,9 +488,96 @@ class CausasOAnomaliasSerializer(serializers.ModelSerializer):
 
 
 class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
+    
+    nombre_completo = serializers.SerializerMethodField()
+    direcion = serializers.SerializerMethodField()
+    telefono = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    ciudad = serializers.SerializerMethodField()
+    numero_expediente = serializers.SerializerMethodField()
+    numero_acto_administrativo = serializers.SerializerMethodField()
+    fecha_acto_administrativo = serializers.SerializerMethodField()
+
     class Meta:
-        model = DocumentosDeArchivoExpediente
-        fields = '__all__'
+        model = NotificacionesCorrespondencia
+        fields = ('id_notificacion_correspondencia',
+                    'nombre_completo',
+                    'direcion',
+                    'telefono',
+                    'email',
+                    'ciudad',
+                    'numero_expediente',
+                    'numero_acto_administrativo',
+                    'fecha_acto_administrativo',
+                    'id_expediente_documental',
+                    'id_acto_administrativo',
+                    'id_persona_titular'
+                    )
+        
+    def get_nombre_completo(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.tipo_persona == 'N':
+                nombre_completo = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre, obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+                nombre_completo =  ' '.join(filter(None, nombre_completo))
+                return f"{nombre_completo}"
+            else:
+                return obj.id_persona_titular.razon_social
+        else:
+            return None
+    
+    def get_direcion(self, obj):
+        if obj.id_persona_titular:
+            return obj.id_persona_titular.direccion_notificaciones
+        else:
+            return None
+        
+    def get_telefono(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.telefono_celular:
+                return obj.id_persona_titular.telefono_celular
+            else:
+                return obj.id_persona_titular.telefono_fijo_residencial
+        else:
+            return None
+        
+    def get_email(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.email:
+                return obj.id_persona_titular.email
+            else:
+                return 'no registra'
+        else:
+            return None
+        
+    def get_ciudad(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.pais_residencia:
+                if obj.id_persona_titular.pais_residencia.cod_pais == 'CO':
+                    return f"{obj.id_persona_titular.cod_municipio_residencia.nombre}, {obj.id_persona_titular.cod_municipio_residencia.cod_departamento.nombre}"
+                else:
+                    return f"{obj.id_persona_titular.pais_residencia.nombre}"
+        else:
+            return None
+
+    def get_numero_expediente(self, obj):
+        if obj.id_expediente_documental:
+            numero_expediente = f"{obj.id_expediente_documental.codigo_exp_und_serie_subserie}-{obj.id_expediente_documental.codigo_exp_Agno}-{obj.id_expediente_documental.codigo_exp_consec_por_agno}"
+            return numero_expediente
+        else:
+            return None
+        
+    def get_numero_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.numero_acto_administrativo
+        else:
+            return None
+        
+    def get_fecha_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.fecha_acto_administrativo
+        else:
+            return None
+    
 
 class ConstanciaNotificacionSerializer(serializers.ModelSerializer):
     class Meta:
