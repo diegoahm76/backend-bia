@@ -3234,11 +3234,19 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        variable = request.data.get('variable')
 
-        if request.data.get('consecutivio'):
+        if variable == 'C':
             self.consecutivo(request)
-        else:
-            self.GenerarDocumento(request)
+        elif variable == 'B':
+            self.GenerarDocumento(request.payload)
+        elif variable == 'DC':
+            payload = request.payload
+            payload['consecutivo'] = self.consecutivo(request)
+            self.GenerarDocumento(payload)
+        elif variable == 'AD':
+            payload = self.consecutivo(request)
+            self.GenerarDocumento(payload)
 
     def consecutivo(self, request):
         try:
@@ -3246,8 +3254,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             # unidad_organizacional = request.data.get('unidad_organizacional')
             # if not unidad_organizacional:
             #     raise ValidationError('Debe especificar la unidad organizacional.')
-
-            unidad_organizacional = request.user.persona.id_unidad_organizacional_actual
+            unidad_organizacional = request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional
             
             unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=unidad_organizacional)
             tipologias_doc = request.data.get('tipologias_doc')
@@ -3313,7 +3320,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                         id_archivo_digital = None,
                     )
 
-
+                    print("Hola mundo")
                     # Actualizar el consecutivo actual
                     consecutivo.consecutivo_actual += 1
                     consecutivo.fecha_consecutivo_actual = current_date
@@ -3380,13 +3387,15 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         except ValidationError as e:
             return Response({
                 'success': False,
-                'detail': e.detail,
+                'detail': f"aqui {e.detail}",
             }, status=status.HTTP_404_NOT_FOUND)
         
         
-    def GenerarDocumento(payload, plantilla, consecutivo):
+    def GenerarDocumento(payload, plantilla):
         ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
         if ruta_archivo and os.path.exists(ruta_archivo):
+            # if consecutivo:
+            #     payload['consecutivo'] = consecutivo
             doc = DocxTemplate(ruta_archivo)
             doc.render(payload)
 
@@ -3396,14 +3405,20 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             new_filename = f"{file_uuid}{extension}"
 
             # Guardar el documento resultante con el nuevo nombre
-            #doc.save(new_filename)
+            doc.save(f"home/BIA/Otros/DocsTemp/{new_filename}")
 
+            doc = DocxTemplate(f"home/BIA/Otros/DocsTemp/{new_filename}")
             # Crear el archivo digital
             ruta = os.path.join("home", "BIA", "Otros", "Documentos")
 
+            # md5_hash = hashlib.md5()
+            # for chunk in doc.chunks():
+            #     md5_hash.update(chunk)
+
             md5_hash = hashlib.md5()
-            for chunk in new_filename.chunks():
-                md5_hash.update(chunk)
+            with open(f"home/BIA/Otros/DocsTemp/{new_filename}", 'rb') as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    md5_hash.update(chunk)
             
             md5_value = md5_hash.hexdigest()
 
@@ -3414,5 +3429,6 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             }
                 
             archivo_class = ArchivosDgitalesCreate()
-            respuesta = archivo_class.crear_archivo(data_archivo, new_filename)
+            respuesta = archivo_class.crear_archivo(data_archivo,  f"home/BIA/Otros/DocsTemp/{new_filename}")
             return respuesta
+
