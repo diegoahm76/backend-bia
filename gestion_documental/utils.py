@@ -504,8 +504,6 @@ class UtilsGestor:
             if fecha_actual.weekday() < 5 and fecha_actual not in festivos:
                 dias_habiles -= 1
         return fecha_actual
-<<<<<<< Updated upstream
-=======
     
     @staticmethod
     def get_mes(mes):
@@ -524,4 +522,3 @@ class UtilsGestor:
             12: 'DICIEMBRE'
         }
         return meses[int(mes)]
->>>>>>> Stashed changes
