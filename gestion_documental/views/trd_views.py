@@ -1,9 +1,14 @@
+import hashlib
 import json
 import logging
 
 from django.http import JsonResponse
 from gestion_documental.models.expedientes_models import ArchivosDigitales
+from docxtpl import DocxTemplate
+import os
+import uuid
 from gestion_documental.utils import UtilsGestor
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
@@ -3229,11 +3234,20 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+
+        if request.data.get('consecutivio'):
+            self.consecutivo(request)
+        else:
+            self.GenerarDocumento(request)
+
+    def consecutivo(self, request):
         try:
             # Obtener los datos enviados por el usuario
-            unidad_organizacional = request.data.get('unidad_organizacional')
-            if not unidad_organizacional:
-                raise ValidationError('Debe especificar la unidad organizacional.')
+            # unidad_organizacional = request.data.get('unidad_organizacional')
+            # if not unidad_organizacional:
+            #     raise ValidationError('Debe especificar la unidad organizacional.')
+
+            unidad_organizacional = request.user.persona.id_unidad_organizacional_actual
             
             unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=unidad_organizacional)
             tipologias_doc = request.data.get('tipologias_doc')
@@ -3368,3 +3382,37 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 'success': False,
                 'detail': e.detail,
             }, status=status.HTTP_404_NOT_FOUND)
+        
+        
+    def GenerarDocumento(payload, plantilla, consecutivo):
+        ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
+        if ruta_archivo and os.path.exists(ruta_archivo):
+            doc = DocxTemplate(ruta_archivo)
+            doc.render(payload)
+
+            file_uuid = uuid.uuid4()
+
+            extension = os.path.splitext(ruta_archivo)[1]
+            new_filename = f"{file_uuid}{extension}"
+
+            # Guardar el documento resultante con el nuevo nombre
+            #doc.save(new_filename)
+
+            # Crear el archivo digital
+            ruta = os.path.join("home", "BIA", "Otros", "Documentos")
+
+            md5_hash = hashlib.md5()
+            for chunk in new_filename.chunks():
+                md5_hash.update(chunk)
+            
+            md5_value = md5_hash.hexdigest()
+
+            data_archivo = {
+                'es_Doc_elec_archivo': True,
+                'ruta': ruta,
+                'md5_hash': md5_value
+            }
+                
+            archivo_class = ArchivosDgitalesCreate()
+            respuesta = archivo_class.crear_archivo(data_archivo, new_filename)
+            return respuesta

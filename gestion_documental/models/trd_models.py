@@ -112,8 +112,8 @@ class CatSeriesUnidadOrgCCDTRD(models.Model):
     tiempo_retencion_ac = models.SmallIntegerField(null=True, blank=True, db_column='T218tiempoRetencionAC')
     descripcion_procedimiento = models.CharField(max_length=1000, null=True, blank=True, db_column='T218descripcionProcedimiento')
     fecha_registro = models.DateTimeField(auto_now=True, null=True, blank=True, db_column='T218fechaRegistro')
-    justificacion_cambio = models.CharField(max_length=255, null=True, blank=True, db_column='T218JustificacionCambio')
-    ruta_archivo_cambio = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T218RutaArchivoCambio')
+    justificacion_cambio = models.CharField(max_length=255, null=True, blank=True, db_column='T218justificacionCambio')
+    ruta_archivo_cambio = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T218rutaArchivoCambio')
     
     def __str__(self):
         return str(self.id_catserie_unidadorg)

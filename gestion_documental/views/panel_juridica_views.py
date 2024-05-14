@@ -2,6 +2,7 @@ from rest_framework.exceptions import ValidationError, NotFound, PermissionDenie
 from rest_framework import status, generics
 from rest_framework.response import Response
 from django.forms import model_to_dict
+from django.db.models import Q
 from datetime import datetime
 from gestion_documental.serializers.panel_juridica_serializers import SolicitudesJuridicaGetSerializer, SolicitudesJuridicaInformacionOPAGetSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -113,3 +114,59 @@ class SolicitudesJuridicaRevisionCreate(generics.CreateAPIView):
         
         return Response({'succes': True, 'detail':'Se finalizó la revisión correctamente', 'data':solicitud_data, 'estados':data_respuesta_estado_asociado}, status=status.HTTP_200_OK)
     
+
+
+class SolicitudesJuridicaTramitesGet(generics.ListAPIView):
+    serializer_class = SolicitudesJuridicaGetSerializer
+    queryset = SolicitudesDeJuridica.objects.all().exclude(id_solicitud_tramite=None).order_by('fecha_solicitud')
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        filter={}
+        radicado = request.query_params.get('radicado', '')
+        
+        for key, value in request.query_params.items():
+            if key =='id_persona_solicita_revision':
+                if value != '':
+                    filter[key] = value
+            if key == 'nombre_proyecto':
+                if value != '':
+                    filter['id_solicitud_tramite__nombre_proyecto__icontains'] = value
+            if key == 'expediente':
+                if value != '':
+                    filter['id_solicitud_tramite__id_expediente__titulo_expediente__icontains'] = value
+            if key == 'pago':
+                if value != '':
+                    filter['id_solicitud_tramite__pago'] = True if 'true' in value else False
+            if key == 'id_estado_actual_solicitud':
+                if value != '':
+                    filter['id_solicitud_tramite__id_estado_actual_solicitud'] = value
+        
+        solicitudes_juridica_opas = self.queryset.filter(**filter)
+        tramites = PermisosAmbSolicitudesTramite.objects.exclude(Q(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'OP') | Q(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'PM'))        
+        tramites_id_list = [tramite.id_solicitud_tramite.id_solicitud_tramite for tramite in tramites]
+        solicitudes_juridica_tramites = solicitudes_juridica_opas.filter(id_solicitud_tramite__in = tramites_id_list)
+
+        serializador = self.serializer_class(solicitudes_juridica_tramites,many=True)
+        serializador_data = serializador.data
+         
+        if radicado:
+            serializador_data = [item for item in serializador_data if radicado in item.get('radicado', '')]
+        
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializador_data}, status=status.HTTP_200_OK)
+    
+
+class SolicitudesJuridicaInformacionTramiteGet(generics.ListAPIView):
+    serializer_class = SolicitudesJuridicaInformacionOPAGetSerializer
+    queryset = SolicitudesDeJuridica.objects.all().exclude(id_solicitud_tramite=None).order_by('fecha_solicitud')
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, id_solicitud_tramite):
+        opa = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=id_solicitud_tramite).exclude(Q(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'OP') | Q(id_permiso_ambiental__cod_tipo_permiso_ambiental = 'PM')).first()
+        if not opa:
+            raise NotFound('No existe el OPA ingresado')
+        
+        serializador = self.serializer_class(opa)
+        serializador_data = serializador.data
+        
+        return Response({'succes': True, 'detail':'Se encontró la siguiente información', 'data':serializador_data}, status=status.HTTP_200_OK)
