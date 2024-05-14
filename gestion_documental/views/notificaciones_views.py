@@ -1491,6 +1491,21 @@ class AnexosSoporteCreate(generics.CreateAPIView):
          for anexo in anexos:
             data_anexo = self.crear_anexo(anexo)
 
+
+            # id_registro_notificacion
+            # id_acto_administrativo
+            # doc_entrada_salida
+            # uso_del_documento
+            # cod_tipo_documento
+            # doc_generado
+            # id_persona_anexa_documento
+            # fecha_anexo
+            # id_causa_o_anomalia
+            # link_publicacion
+            # observaciones
+            # usuario_notificado
+            # id_anexo
+
             data_anexos = {}
             data_anexos['id_notificacion_correspondecia'] = id_notificacion
             data_anexos['usuario_notificado'] = False
@@ -1690,9 +1705,8 @@ class RegistrosNotificacionesCorrespondenciaEdictosUpdate(generics.CreateAPIView
     permission_classes = [IsAuthenticated]
 
     def put(self, request, id_registro_notificacion):
-        data = request.data
         instancia_registro = RegistrosNotificacionesCorrespondenciaGacetaUpdate()
-        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
+        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, request)
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 ## Endpoints para la correo electronico
@@ -1832,9 +1846,9 @@ class RegistrosNotificacionesCorrespondenciaAvisosUpdate(generics.CreateAPIView)
     permission_classes = [IsAuthenticated]
 
     def put(self, request, id_registro_notificacion):
-        data = request.data
+        # data = request.data
         instancia_registro = RegistrosNotificacionesCorrespondenciaGacetaUpdate()
-        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
+        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, request)
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 ## Endpoints para la pagina personal
@@ -1891,9 +1905,9 @@ class RegistrosNotificacionesCorrespondenciaPersonalUpdate(generics.CreateAPIVie
     permission_classes = [IsAuthenticated]
 
     def put(self, request, id_registro_notificacion):
-        data = request.data
+        # data = request.data
         instancia_registro = RegistrosNotificacionesCorrespondenciaGacetaUpdate()
-        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
+        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, request)
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 
@@ -1965,9 +1979,9 @@ class RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate(generics.Creat
     permission_classes = [IsAuthenticated, PermisoCrearAsignacionTareasNotificaciones]
 
     def put(self, request, id_registro_notificacion):
-        data = request.data
+        # data = request.data
         instancia_registro = RegistrosNotificacionesCorrespondenciaGacetaUpdate()
-        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, data, request.FILES)
+        registro = instancia_registro.update_registro_notificacion(id_registro_notificacion, request)
         return Response({'succes': True, 'detail':'Se creo el registro correctamente', 'data':registro}, status=status.HTTP_201_CREATED)
 
 
