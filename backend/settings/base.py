@@ -218,7 +218,7 @@ STATICFILES_DIRS = [
 ]
 
 
-MEDIA_ROOT = FILES_DIR + '/bia/media'
+MEDIA_ROOT = FILES_DIR + '/bia/gestor'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 USE_X_FORWARDED_HOST = True
