@@ -107,6 +107,9 @@ urlpatterns = [
     path('acciones_correctivas/create/',views.AccionesCorrectivasCreate.as_view(),name='create_acciones_correctivas'),
     path('acciones_correctivas/update/<str:pk>/',views.AccionesCorrectivasUpdate.as_view(),name='update_acciones_correctivas'),
     path('busqueda_tramites/',views.BusquedaTramitesByExpediente.as_view(),name='busqueda_tramites'),
-    
-    
+    path('tipo_acciones/get/',views.TiposAccionesCorrectivasList.as_view(),name='get-tipo-acciones'),
+    path('tipo_acciones/create/',views.TiposAccionesCorrectivasCreate.as_view(),name='create_tipo_acciones'),
+    path('tipo_acciones/update/<str:pk>/',views.TiposAccionesCorrectivasUpdate.as_view(),name='update_tipo_acciones'),
+    path('acciones_correctivas/delete/<str:pk>/',views.TiposAccionesCorrectivasDelete.as_view(),name='delete_acciones_correctivas'),
+
 ]   
