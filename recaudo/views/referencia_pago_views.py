@@ -543,7 +543,7 @@ class ConsecutivoGetView(generics.ListAPIView):
 
             if key == 'id_persona':
                 if value != '':
-                    filter['id_id_persona_solicita'] = value
+                    filter['id_persona_solicita'] = value
         instance = self.get_queryset().filter(**filter).order_by('fecha_consecutivo')
         
         consecutivo_value = request.query_params.get('consecutivo')
