@@ -86,6 +86,12 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
         estado = self.request.query_params.get('estado')
         estado_asignacion = self.request.query_params.get('estado_asignacion')
         funcionario_asignado = self.request.query_params.get('funcionario_asignado')
+        flag = self.request.query_params.get('flag')
+
+        if flag == 'NO':
+            queryset = queryset.filter(cod_tipo_solicitud='NO')
+        elif flag == 'CD':
+            queryset = queryset.filter(cod_tipo_solicitud = 'CD')
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
@@ -175,7 +181,13 @@ class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
         grupo_solicitante = self.request.query_params.get('grupo_solicitante')
         estado = self.request.query_params.get('estado')
         estado_asignacion = self.request.query_params.get('estado_asignacion')
+        flag = self.request.query_params.get('flag')
         #funcionario_asignado = self.request.query_params.get('funcionario_asignado')
+
+        if flag == 'NO':
+            queryset = queryset.filter(cod_tipo_solicitud = 'NO')
+        elif flag == 'CD':
+            queryset = queryset.filter(cod_tipo_solicitud = 'CD')
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
