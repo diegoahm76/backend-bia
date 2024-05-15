@@ -431,7 +431,8 @@ class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
 
 
 class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerializer):
-    tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
+    id_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
+    nombre_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
     asunto = serializers.SerializerMethodField()
     funcionario = serializers.SerializerMethodField()
     archivo = serializers.SerializerMethodField()
@@ -440,7 +441,8 @@ class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerial
         model = Anexos_NotificacionesCorrespondencia
         
         fields = ['id_anexo',
-                  'tipo_documento',
+                  'id_tipo_documento',
+                  'nombre_tipo_documento',
                   'asunto',
                   'funcionario',
                   'doc_entrada_salida',

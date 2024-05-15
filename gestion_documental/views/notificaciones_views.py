@@ -1481,56 +1481,60 @@ class CausasOAnomaliasGacetaGet(generics.ListAPIView):
 class AnexosSoporteCreate(generics.CreateAPIView):
     serializer_class = AnexosPostSerializer
 
-    def create_anexos_notificaciones(self, anexos, id_notificacion, fecha_actual, id_persona_recibe_solicitud):
-         nombres_anexos = [anexo['nombre_anexo'] for anexo in anexos]
-         nombres_anexos_auditoria = []
-         # Validar que no haya valores repetidos
-         if len(nombres_anexos) != len(set(nombres_anexos)):
+    @transaction.atomic
+    def create_anexos_notificaciones(self, anexos, id_registro_notificacion, fecha_actual, id_persona_recibe_solicitud):
+
+        nombres_anexos = [anexo['nombre_anexo'] for anexo in anexos]
+        # Validar que no haya valores repetidos
+        if len(nombres_anexos) != len(set(nombres_anexos)):
             raise ValidationError("error': 'No se permiten nombres de anexos repetidos.")
+        
+        try:
+            registro_notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('El registro de la notificación no existe.')
          
-         for anexo in anexos:
+        for anexo in anexos:
+
             data_anexo = self.crear_anexo(anexo)
 
-
-            # id_registro_notificacion
-            # id_acto_administrativo
-            # doc_entrada_salida
-            # uso_del_documento
-            # cod_tipo_documento
-            # doc_generado
-            # id_persona_anexa_documento
-            # fecha_anexo
-            # id_causa_o_anomalia
-            # link_publicacion
-            # observaciones
-            # usuario_notificado
-            # id_anexo
-
-            data_anexos = {}
-            data_anexos['id_notificacion_correspondecia'] = id_notificacion
-            data_anexos['usuario_notificado'] = False
+            data_anexo_soporte = {}
+            data_anexo_soporte['id_notificacion_correspondecia'] = registro_notificacion.id_notificacion_correspondencia.id_notificacion_correspondencia
+            data_anexo_soporte['id_registro_notificacion'] = registro_notificacion.id_registro_notificacion_correspondencia
+            data_anexo_soporte['id_acto_administrativo'] = None
+            data_anexo_soporte['doc_entrada_salida'] = 'EN'
             if anexo['uso_del_documento']:
-                data_anexos['uso_del_documento'] = 'IN'
+                data_anexo_soporte['uso_del_documento'] = 'IN'
             else:
-                data_anexos['uso_del_documento'] = 'PU'
-            data_anexos['doc_entrada_salida'] = 'EN'
+                data_anexo_soporte['uso_del_documento'] = 'PU'
             if anexo['id_tipo_anexo_soporte']:
                 try:
-                    tipo_documento = TiposAnexosSoporte.objects.get(id_tipo_documento=anexo['id_tipo_anexo_soporte'])
+                    tipo_documento = TiposAnexosSoporte.objects.get(id_tipo_anexo_soporte=anexo['id_tipo_anexo_soporte'])
                 except TiposAnexosSoporte.DoesNotExist:
                     raise ValidationError(f'El tipo de documento con id {anexo["id_tipo_anexo_soporte"]} no existe.')
-                data_anexos['cod_tipo_documento'] = tipo_documento.id_tipo_anexo_soporte
-            data_anexos['doc_generado'] = 'SI'
-            data_anexos['id_persona_anexa_documento'] = id_persona_recibe_solicitud.id_persona
-            data_anexos['fecha_anexo'] = fecha_actual
-            data_anexos['id_anexo'] = data_anexo['id_anexo']
-            # Agregue usuario notificado
-            if 'usuario_notificado' in data_anexo:
-                data_anexos['usuario_notificado'] = data_anexo['usuario_notificado']
+                data_anexo_soporte['cod_tipo_documento'] = tipo_documento.id_tipo_anexo_soporte
+            
+            data_anexo_soporte['doc_generado'] = 'SI'
+            data_anexo_soporte['id_persona_anexa_documento'] = id_persona_recibe_solicitud.id_persona
+            data_anexo_soporte['fecha_anexo'] = fecha_actual
+            if anexo['id_causa_o_anomalia'] is not None:
+                try:
+                    causa_o_anomalia = CausasOAnomalias.objects.get(id_causa_o_anomalia=anexo['id_causa_o_anomalia'])
+                except CausasOAnomalias.DoesNotExist:
+                    raise ValidationError(f'La causa o anomalia con id {anexo["id_causa_o_anomalia"]} no existe.')
+                data_anexo_soporte['id_causa_o_anomalia'] = causa_o_anomalia.id_causa_o_anomalia
             else:
-                data_anexos['usuario_notificado'] = False
+                data_anexo_soporte['id_causa_o_anomalia'] = None
+            data_anexo_soporte['link_publicacion'] = None
+            data_anexo_soporte['observaciones'] = anexo['observaciones']
+            if 'usuario_notificado' in data_anexo:
+                data_anexo_soporte['usuario_notificado'] = data_anexo['usuario_notificado']
+            else:
+                data_anexo_soporte['usuario_notificado'] = False     
+            data_anexo_soporte['id_anexo'] = data_anexo['id_anexo']
+            
             anexosNotificacionCreate = AnexoNotificacionesCreate()
-            anexosNotificacionCreate.crear_anexo_notificacion(data_anexos)
+            anexosNotificacionCreate.crear_anexo_notificacion(data_anexo_soporte)
 
             #Guardar el archivo en la tabla T238
             if anexo['archivo']:
@@ -1545,6 +1549,8 @@ class AnexosSoporteCreate(generics.CreateAPIView):
             data_metadatos['id_archivo_digital'] = archivo_creado.data.get('data').get('id_archivo_digital')
             metadatosNotificacionesCreate = MetadatosNotificacionesCreate()
             metadatosNotificacionesCreate.create_metadatos_notificaciones(data_metadatos)
+
+        return True
 
     def crear_anexo(self, request):
         try:
@@ -1576,7 +1582,7 @@ class AnexosSoporteCreate(generics.CreateAPIView):
         # Crea el archivo digital y obtiene su ID
         data_archivo = {
             'es_Doc_elec_archivo': False,
-            'ruta': ruta,
+            'ruta': ruta
         }
         
         archivos_Digitales = ArchivosDgitalesCreate()
@@ -1632,19 +1638,32 @@ class RegistrosNotificacionesCorrespondenciaGacetaUpdate(generics.UpdateAPIView)
         persona_anexa = request.user.persona
         util_PQR = Util_PQR()
         anexos = util_PQR.set_archivo_in_anexo(data['anexos'], request.FILES, "create")
-        if anexos:
-            print("PASO POR AQUI")
+        valores_creados_detalles = None
+        cant_anexos = 0
+        numero_folios = 0
         
         if anexos:
-            anexosCreate = AnexosCreate()
-            valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, registro_notificacion.id_notificacion_correspondencia.id_notificacion_correspondencia, fecha_actual, persona_anexa)
+            anexosCreate = AnexosSoporteCreate()
+            valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, registro_notificacion.id_registro_notificacion_correspondencia, fecha_actual, persona_anexa)
+
+        if valores_creados_detalles:
+            cant_anexos = len(anexos)
+            for anexo in anexos:
+                if anexo['numero_folios']:
+                    numero_folios += anexo['numero_folios']
+            print(valores_creados_detalles)
+
         
+
+        registro_notificacion.nro_folios_totales += numero_folios
+        registro_notificacion.cantidad_anexos += cant_anexos
+        registro_notificacion.save()
+        
+
         serializer = self.serializer_class(registro_notificacion, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         return serializer.data
-    
-
 
     def put(self, request, id_registro_notificacion):
         registro = self.update_registro_notificacion(id_registro_notificacion, request)
