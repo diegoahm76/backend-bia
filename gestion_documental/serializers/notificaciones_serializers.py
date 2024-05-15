@@ -433,22 +433,34 @@ class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
 class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerializer):
     id_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
     nombre_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
+    id_causa_o_anomalia = serializers.ReadOnlyField(source='cod_causa_o_anomalia.id_causa_o_anomalia', default=None)
+    nombre_anexo = serializers.ReadOnlyField(source='id_anexo.nombre_anexo', default=None)
     asunto = serializers.SerializerMethodField()
     funcionario = serializers.SerializerMethodField()
     archivo = serializers.SerializerMethodField()
+    ruta_archivo = serializers.SerializerMethodField()
 
     class Meta:
         model = Anexos_NotificacionesCorrespondencia
         
-        fields = ['id_anexo',
-                  'id_tipo_documento',
-                  'nombre_tipo_documento',
-                  'asunto',
-                  'funcionario',
-                  'doc_entrada_salida',
-                  'archivo',
-                  'observaciones'
-                  ]
+        fields = [
+            'id_anexo_notificacion_correspondencia',
+            'id_anexo',
+            'id_notificacion_correspondecia',
+            'id_registro_notificacion',
+            'id_tipo_documento',
+            'id_causa_o_anomalia',
+            'nombre_tipo_documento',
+            'nombre_anexo',
+            'asunto',
+            'fecha_anexo',
+            'funcionario',
+            'doc_entrada_salida',
+            'link_publicacion',
+            'ruta_archivo',
+            'archivo',
+            'observaciones'
+        ]
     
     def metadatos(self, obj):
         metadatos = MetadatosAnexosTmp.objects.filter(id_anexo=obj.id_anexo).first()
@@ -470,6 +482,13 @@ class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerial
         archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital = metadatos['id_archivo_sistema']).first()
 
         return ArchivosSerializer(archivo_digital).data
+    
+    def get_ruta_archivo(self, obj):
+        metadatos = self.metadatos(obj)
+        archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital = metadatos['id_archivo_sistema']).first()
+        archivo_digital = ArchivosSerializer(archivo_digital).data
+        ruta_archivo = str(archivo_digital['ruta_archivo'])
+        return ruta_archivo
         
 
 class AnexosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
