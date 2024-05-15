@@ -1431,7 +1431,26 @@ class AnexosNotificacionGacetaGet(generics.ListAPIView):
         except Registros_NotificacionesCorrespondecia.DoesNotExist:
             raise ValidationError('El registro de la notificación no existe.')
         
-        anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia)
+        anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia, id_registro_notificacion__isnull=True)
+        return anexos
+
+    def get(self, request, id_registro_notificacion):
+        anexos = self.get_anexos(id_registro_notificacion)
+        serializer = self.serializer_class(anexos, many=True)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+
+class AnexosNotificacionRegistroGet(generics.ListAPIView):
+    serializer_class = AnexosNotificacionesCorrespondenciaDatosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_anexos(self, id_registro_notificacion):
+
+        try:
+            notificacion = Registros_NotificacionesCorrespondecia.objects.get(id_registro_notificacion_correspondencia=id_registro_notificacion)
+        except Registros_NotificacionesCorrespondecia.DoesNotExist:
+            raise ValidationError('El registro de la notificación no existe.')
+        
+        anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia, id_registro_notificacion=notificacion.id_registro_notificacion_correspondencia)
         return anexos
 
     def get(self, request, id_registro_notificacion):
@@ -1525,7 +1544,7 @@ class AnexosSoporteCreate(generics.CreateAPIView):
                 data_anexo_soporte['id_causa_o_anomalia'] = causa_o_anomalia.id_causa_o_anomalia
             else:
                 data_anexo_soporte['id_causa_o_anomalia'] = None
-            data_anexo_soporte['link_publicacion'] = None
+            data_anexo_soporte['link_publicacion'] = anexo['link_publicacion']
             data_anexo_soporte['observaciones'] = anexo['observaciones']
             if 'usuario_notificado' in data_anexo:
                 data_anexo_soporte['usuario_notificado'] = data_anexo['usuario_notificado']
@@ -2230,6 +2249,10 @@ class GenerarConstanciaNotificacion(generics.CreateAPIView):
                 
                 notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=registro.id_notificacion_correspondencia.id_notificacion_correspondencia)
                 num_expediente, num_acto = self.get_numero_expesiente_acto(notificacion.id_notificacion_correspondencia)
+                if num_expediente is None:
+                    num_expediente = ''
+                if num_acto is None:
+                    num_acto = ''
                 
                 publicacion = {
                     'fecha_publicacion': registro.fecha_registro.date(),
