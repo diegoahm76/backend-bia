@@ -3,6 +3,7 @@ from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSeriesUnidad
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
     ConfigTipologiasDocAgno,
@@ -394,9 +395,13 @@ class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsecPorNivelesTipologiasDocAgno
         fields = '__all__'
-
+class ArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
 
 class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
+    archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
     class Meta:
         model = ConsecutivoTipologia
         fields = '__all__'
