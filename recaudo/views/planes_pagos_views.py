@@ -100,6 +100,7 @@ class FacilidadPagoDatosPlanView(generics.ListAPIView):
 
 
 class CarteraSeleccionadaListViews(generics.ListAPIView):
+    
     serializer_class = VisualizacionCarteraSelecionadaSerializer
 
     def get_monto_total(self, carteras):
@@ -107,10 +108,10 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
         intereses_total = 0
         monto_total = sum(float(cartera["monto_inicial"]) for cartera in carteras)
         intereses_total = sum(cartera["valor_intereses"] for cartera in carteras)
+        print("aaaaaaaaaaaaaaaaaaaaa",monto_total,intereses_total,intereses_total+intereses_total)
         monto_total_con_intereses = monto_total + intereses_total
         return monto_total, intereses_total, monto_total_con_intereses
-        
-    
+     
     def cartera_selecionada(self, id_facilidad_pago, fecha):
         
         facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
@@ -139,14 +140,33 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
                 fecha_inicio_mora_str = obligacion["inicio"]
                 fecha_inicio_mora = datetime.strptime(fecha_inicio_mora_str, '%Y-%m-%d').date()
                 dias_mora = (fecha_final - fecha_inicio_mora).days
+
+                #print("monto_inicial",monto_inicial)
+                dato=(round((monto_inicial + valor_intereses),2))
+                monto_total, intereses_total, _ = self.get_monto_total(obligaciones)
+
+
+                facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+                abono_facilidad = round(float(facilidad_pago.valor_abonado), 2)
+                saldo_capital=dato*1000-((dato/(dato+intereses_total))*abono_facilidad)
+
+              
             
             if dias_mora != 0:
                 valor_intereses = round(((0.12 / 360 * monto_inicial) * dias_mora),2)
+                valor_interesesdos = round(((0.12 / 360 *dias_mora ) * saldo_capital),2)
+                InteresMoratorio = round(valor_interesesdos/100, 2)
+                print("daaaaaaaaaaaaaaaaaaaa",((0.12 / 360 *dias_mora ) * saldo_capital),dias_mora,InteresMoratorio,monto_total,intereses_total,monto_inicial,valor_intereses,round(saldo_capital/1000,2),abono_facilidad,intereses_total,valor_interesesdos)
+                print("xxxxxxxxxxxxxxxxxxxx",round(saldo_capital/1000,2))
+                print("zzzzzzzzzzzzzzzzzzzz",monto_total-round(saldo_capital/1000,2))
+                abono_30=monto_total-(saldo_capital/1000)
 
             obligacion['dias_mora'] = dias_mora
             obligacion['valor_intereses'] = valor_intereses
             obligacion['valor_capital_intereses'] = round((monto_inicial + valor_intereses),2)
-
+            obligacion['InteresMoratorio_c'] = InteresMoratorio/10
+            obligacion['valor_capital_intereses_c'] = round(saldo_capital/1000,2)+ InteresMoratorio/10
+            obligacion['valor_descuento_30%'] =  round(abono_30,2)
 
         monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
  
