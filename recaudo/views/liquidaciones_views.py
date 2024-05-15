@@ -271,6 +271,11 @@ class LiquidacionTramiteCreateView(generics.CreateAPIView):
         
         data_liquidacion = json.loads(data_liquidacion)
         data_detalles = json.loads(data_detalles) if data_detalles else None
+        
+        # VALIDAR QUE NO EXISTA UNA LIQUIDACIÓN PENDIENTE PARA EL MISMO TRÁMITE
+        liquidacion_pendiente = LiquidacionesBase.objects.filter(id_solicitud_tramite=data_liquidacion['id_solicitud_tramite'], estado='PENDIENTE', fecha_liquidacion__year=current_date.year).first()
+        if liquidacion_pendiente:
+            raise ValidationError('El trámite elegido ya tiene una liquidación actual pendiente, si desea generar otro para este trámite debe anular el anterior')
 
         # Guardar archivo
         # VALIDAR FORMATO ARCHIVO 
