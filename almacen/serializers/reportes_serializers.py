@@ -29,10 +29,13 @@ class EntradasInventarioGetSerializer(serializers.ModelSerializer):
     def get_nombre_proveedor(self, obj):
         nombre_completo_proveedor = None
         if obj.id_entrada_almacen.id_proveedor:
-            nombre_list = [obj.id_entrada_almacen.id_proveedor.primer_nombre, obj.id_entrada_almacen.id_proveedor.segundo_nombre,
-                            obj.id_entrada_almacen.id_proveedor.primer_apellido, obj.id_entrada_almacen.id_proveedor.segundo_apellido]
-            nombre_completo_proveedor = ' '.join(item for item in nombre_list if item is not None)
-            nombre_completo_proveedor = nombre_completo_proveedor if nombre_completo_proveedor != "" else None
+            if obj.id_entrada_almacen.id_proveedor.tipo_persona == 'J':
+                nombre_completo_proveedor = obj.id_entrada_almacen.id_proveedor.razon_social
+            else:
+                nombre_list = [obj.id_entrada_almacen.id_proveedor.primer_nombre, obj.id_entrada_almacen.id_proveedor.segundo_nombre,
+                                obj.id_entrada_almacen.id_proveedor.primer_apellido, obj.id_entrada_almacen.id_proveedor.segundo_apellido]
+                nombre_completo_proveedor = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_proveedor = nombre_completo_proveedor if nombre_completo_proveedor != "" else None
         return nombre_completo_proveedor
     
     def get_entrada(self, obj):
