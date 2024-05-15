@@ -15,8 +15,8 @@ from datetime import datetime,date,timedelta
 from django.db.models import Max
 from django.db import transaction
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from recurso_hidrico.models.bibliotecas_models import AccionesCorrectivas, ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
-from recurso_hidrico.serializers.biblioteca_serializers import TramiteSerializer, AccionesCorrectivasSerializer, ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
+from recurso_hidrico.models.bibliotecas_models import TiposAccionesCorrectivas, AccionesCorrectivas, ArchivosInstrumento, CarteraAforos, Cuencas, CuencasInstrumento, DatosCarteraAforos, DatosRegistroLaboratorio, DatosSesionPruebaBombeo, Instrumentos, ParametrosLaboratorio, Pozos, PruebasBombeo, ResultadosLaboratorio, Secciones, SesionesPruebaBombeo,Subsecciones
+from recurso_hidrico.serializers.biblioteca_serializers import TiposAccionesCorrectivasSerializer, TramiteSerializer, AccionesCorrectivasSerializer, ActualizarSeccionesSerializer, ArchivosInstrumentoBusquedaAvanzadaSerializer, ArchivosInstrumentoPostSerializer, ArchivosInstrumentoUpdateSerializer, ArchivosInstrumentosGetSerializer, CarteraAforosDeleteSerializer, CarteraAforosGetSerializer, CarteraAforosPostSerializer, CarteraAforosUpdateSerializer, CuencasGetByInstrumentoSerializer, CuencasGetSerializer, CuencasInstrumentoDeleteSerializer, CuencasInstrumentoSerializer, CuencasPostSerializer, CuencasUpdateSerializer, DatosCarteraAforosDeleteSerializer, DatosCarteraAforosGetSerializer, DatosCarteraAforosPostSerializer, DatosCarteraAforosUpdateSerializer, DatosRegistroLaboratorioDeleteSerializer, DatosRegistroLaboratorioGetSerializer, DatosRegistroLaboratorioPostSerializer, DatosRegistroLaboratorioUpdateSerializer, DatosSesionPruebaBombeoDeleteSerializer, DatosSesionPruebaBombeoGetSerializer, DatosSesionPruebaBombeoPostSerializer, DatosSesionPruebaBombeoPutSerializer, EliminarSubseccionSerializer, GetSeccionesSerializer,GetSubseccionesSerializer, InstrumentoBusquedaAvanzadaSerializer, InstrumentoCuencasGetSerializer, InstrumentosDeleteSerializer, InstrumentosPostSerializer, InstrumentosSerializer, InstrumentosUpdateSerializer, ParametrosLaboratorioGetSerializer, ParametrosLaboratorioPostSerializer, ParametrosLaboratorioUpdateSerializer, PozosGetSerializer, PozosPostSerializer, PozosUpdateSerializer, PruebasBombeoDeleteSerializer, PruebasBombeoGetSerializer, PruebasBombeoPostSerializer, PruebasBombeoUpdateSerializer,RegistrarSeccionesSerializer,ActualizarSubseccionesSerializer, RegistrarSubSeccionesSerializer, ResultadosLaboratorioDeleteSerializer, ResultadosLaboratorioGetSerializer, ResultadosLaboratorioPostSerializer, ResultadosLaboratorioUpdateSerializer, SeccionSerializer, SeccionesSerializer, SesionesPruebaBombeoDeleteSerializer, SesionesPruebaBombeoGetSerializer, SesionesPruebaBombeoPostSerializer, SesionesPruebaBombeoPutSerializer, SubseccionBusquedaAvanzadaSerializer, SubseccionContarInstrumentosSerializer,EliminarSeccionSerializer
 from seguridad.permissions.permissions_recurso_hidrico import PermisoActualizarAdministracionInstrumentosBiblioteca, PermisoActualizarRegistroCuencas, PermisoActualizarRegistroParametrosLaboratorio, PermisoActualizarRegistroPozos, PermisoActualizarRegistroSeccionesBiblioteca, PermisoBorrarAdministracionInstrumentosBiblioteca, PermisoBorrarRegistroCuencas, PermisoBorrarRegistroParametrosLaboratorio, PermisoBorrarRegistroPozos, PermisoBorrarRegistroSeccionesBiblioteca, PermisoCrearAdministracionInstrumentosBiblioteca, PermisoCrearRegistroCuencas, PermisoCrearRegistroParametrosLaboratorio, PermisoCrearRegistroPozos, PermisoCrearRegistroSeccionesBiblioteca
 from seguridad.utils import Util
 from tramites.models.tramites_models import SolicitudesTramites
@@ -2776,6 +2776,62 @@ class AccionesCorrectivasListByIdTramite(generics.ListAPIView):
         return Response({'success': True, 'detail': 'Se encontraron las siguientes acciones correctivas.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
+class TiposAccionesCorrectivasCreate(generics.CreateAPIView):
+    serializer_class = TiposAccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se registró el tipo de acción correctiva correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+
+
+class TiposAccionesCorrectivasUpdate(generics.UpdateAPIView):
+    serializer_class = TiposAccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data = request.data
+        tipo = TiposAccionesCorrectivas.objects.filter(id_tipo_accion=pk).first()
+
+        if not tipo:
+            raise NotFound('No existe el tipo de acción correctiva especificado.')
+
+        serializer = self.serializer_class(tipo, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Se actualizó el tipo de acción correctiva correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class TiposAccionesCorrectivasDelete(generics.DestroyAPIView):
+    serializer_class = TiposAccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        tipo = TiposAccionesCorrectivas.objects.filter(id_tipo_accion=pk).first()
+
+        if not tipo:
+            raise NotFound('No existe el tipo de acción correctiva especificado.')
+        
+        if tipo.item_ya_usado:
+            raise ValidationError('No se puede eliminar un tipo de acción correctiva que ya ha sido utilizado en una acción correctiva.')
+
+        tipo.delete()
+        return Response({'success': True, 'detail': 'Se eliminó el tipo de acción correctiva correctamente.', 'data': self.serializer_class(tipo).data}, status=status.HTTP_200_OK)
+
+class TiposAccionesCorrectivasList(generics.ListAPIView):
+    serializer_class = TiposAccionesCorrectivasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        tipos = TiposAccionesCorrectivas.objects.all()
+        serializer = self.serializer_class(tipos, many=True)
+
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes tipos de acciones correctivas.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
 class AccionesCorrectivasCreate(generics.CreateAPIView):
     serializer_class = AccionesCorrectivasSerializer
     permission_classes = [IsAuthenticated]
@@ -2870,3 +2926,4 @@ class BusquedaTramitesByExpediente(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
 
         return Response({'success': True, 'detail': 'Se encontraron los siguientes trámites.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
