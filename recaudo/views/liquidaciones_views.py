@@ -17,6 +17,7 @@ from recaudo.serializers.liquidaciones_serializers import (
     HistEstadosLiqGetSerializer,
     HistEstadosLiqPostSerializer,
     LiquidacionesTramiteAnularSerializer,
+    LiquidacionesTramiteGetSerializer,
     LiquidacionesTramitePostSerializer,
     OpcionesLiquidacionBaseSerializer,
     OpcionesLiquidacionBasePutSerializer,
@@ -350,6 +351,19 @@ class LiquidacionTramiteCreateView(generics.CreateAPIView):
         serializer_historico.save()
 
         return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+class LiquidacionTramiteGetView(generics.ListAPIView):
+    serializer_class = LiquidacionesTramiteGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_liquidacion_base):
+        liquidacion = LiquidacionesBase.objects.filter(id=id_liquidacion_base).first()
+        if not liquidacion:
+            raise NotFound('No se encontró la liquidación ingresada')
+        
+        serializer_liquidacion = self.serializer_class(liquidacion)
+
+        return Response({'success': True, 'detail': 'Se encontró la siguiente liquidación', 'data': serializer_liquidacion.data}, status=status.HTTP_200_OK)
 
 class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
     serializer_class = LiquidacionesTramiteAnularSerializer

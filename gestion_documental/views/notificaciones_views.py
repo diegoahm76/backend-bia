@@ -8,7 +8,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
-from gestion_documental.models.radicados_models import T262Radicados
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, T262Radicados
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales
 from seguridad.permissions.permissions_notificaciones import PermisoActualizarAsignacionTareasNotificaciones, PermisoActualizarAutorizarAsignaciones, PermisoActualizarCausasAnomaliasNotificaciones, PermisoActualizarEstadosNotificaciones, PermisoActualizarRechazarNotificaciones, PermisoActualizarTiposAnexosNotificaciones, PermisoActualizarTiposDocumentoNoti, PermisoActualizarTiposNotificaciones, PermisoBorrarCausasAnomaliasNotificaciones, PermisoBorrarEstadosNotificaciones, PermisoBorrarTiposAnexosNotificaciones, PermisoBorrarTiposDocumentoNoti, PermisoBorrarTiposNotificaciones, PermisoCrearAsignacionTareasNotificaciones, PermisoCrearCausasAnomaliasNotificaciones, PermisoCrearCrearNotificaciones, PermisoCrearEstadosNotificaciones, PermisoCrearGeneradorDocumentosNotificaciones, PermisoCrearPublicarGacetaAmbiental, PermisoCrearTiposAnexosNotificaciones, PermisoCrearTiposDocumentoNoti, PermisoCrearTiposNotificaciones
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -18,7 +18,7 @@ from datetime import datetime, time
 
 from tramites.models.tramites_models import SolicitudesTramites
 from gestion_documental.serializers.pqr_serializers import AnexosPostSerializer, MetadatosPostSerializer
-from gestion_documental.views.pqr_views import Util_PQR
+from gestion_documental.views.pqr_views import RadicadoCreate, Util_PQR
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.utils import UtilsGestor
@@ -1446,8 +1446,8 @@ class AnexosNotificacionGacetaGet(generics.ListAPIView):
         anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia, id_registro_notificacion__isnull=True)
         return anexos
 
-    def get(self, request, id_registro_notificacion):
-        anexos = self.get_anexos(id_registro_notificacion)
+    def get(self, request, id_notificacion):
+        anexos = self.get_anexos(id_notificacion)
         serializer = self.serializer_class(anexos, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
@@ -2412,81 +2412,153 @@ class DatosDocumentosNotificacion(generics.ListAPIView):
 
 
 class DocumentosGeneradosCreate(generics.CreateAPIView):
-    serializer_class = DocumentosDeArchivoExpedienteSerializer
+    serializer_class = GeneradorDocumentosSerializer
     permission_classes = [IsAuthenticated]
 
-    def create_documento(self, data):
+    def create_documento(self, request):
+        data_total = request.data
+        data = json.loads(data_total.get('data'))
+        id_persona = request.user.persona.id_persona
+        fecha_actual = timezone.now()
+
+
         try:
-            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data.get('id_tipo_documento'))
+            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=data['cod_tipo_documento'])
         except TiposDocumentos.DoesNotExist:
             raise ValidationError('El tipo de documento no existe.')
         
         try:
-            notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=data.get('id_notificacion_correspondencia'))
+            notificacion = NotificacionesCorrespondencia.objects.get(id_notificacion_correspondencia=data['id_notificacion_correspondencia'])
         except NotificacionesCorrespondencia.DoesNotExist:
             raise ValidationError('La notificación no existe.')
         
-        try:
-            persona = Personas.objects.get(id_persona=data.get('id_persona'))
-        except Personas.DoesNotExist:
-            raise ValidationError('La persona no existe.')
+        if data['id_expediente_documental'] is not None:
+            try:
+                expediente = ExpedientesDocumentales.objects.get(id_expediente_documental=data['id_expediente_documental'])
+            except ExpedientesDocumentales.DoesNotExist:
+                raise ValidationError('El expediente no existe.')
+        else:
+            expediente = None
+        
+        if data['id_tipo_acto_administrativo'] is not None:
+            try:
+                tipo_acto = TiposActosAdministrativos.objects.get(id_tipo_acto_administrativo=data['id_tipo_acto_administrativo'])
+            except TiposActosAdministrativos.DoesNotExist:
+                raise ValidationError('El tipo de acto administrativo no existe.')
+        else:
+            tipo_acto = None
+        
+        if data['id_acto_administrativo'] is not None:
+            try:
+                acto_administrativo = ActosAdministrativos.objects.get(id_acto_administrativo=data['id_acto_administrativo'])
+            except ActosAdministrativos.DoesNotExist:
+                raise ValidationError('El acto administrativo no existe.')
+        else:
+            acto_administrativo = None
         
         try:
-            expediente = ExpedientesDocumentales.objects.get(id_expediente=data.get('id_expediente'))
-        except ExpedientesDocumentales.DoesNotExist:
-            raise ValidationError('El expediente no existe.')
-        
-        try:
-            tipo_acto = TiposActosAdministrativos.objects.get(id_tipo_acto_administrativo=data.get('id_tipo_acto_administrativo'))
-        except TiposActosAdministrativos.DoesNotExist:
-            raise ValidationError('El tipo de acto administrativo no existe.')
-        
-        try:
-            acto_administrativo = ActosAdministrativos.objects.get(id_acto_administrativo=data.get('id_acto_administrativo'))
-        except ActosAdministrativos.DoesNotExist:
-            raise ValidationError('El acto administrativo no existe.')
-        
-        try:
-            causa = CausasOAnomalias.objects.get(id_causa_o_anomalia=data.get('id_causa_o_anomalia'))
-        except CausasOAnomalias.DoesNotExist:
-            raise ValidationError('La causa o anomalia no existe.')
-
-        
-        try:
-            persona_titular = Personas.objects.get(id_persona=data.get('id_persona_titular'))
+            persona_titular = Personas.objects.get(id_persona=data['id_persona_titular'])
         except Personas.DoesNotExist:
             raise ValidationError('La persona titular no existe.')
+              
         
-        # #RADICAR
-        # data_radicado = {}
-        # data_radicado['fecha_actual'] = fecha_actual
-        # data_radicado['id_persona'] = request.user.persona.id_persona
-        # data_radicado['tipo_radicado'] = "E" #validar cual tipo de radicado
-        # data_radicado['modulo_radica'] = 'Respuesta del Titular a Una Solicitud sobre PQRSDF'
+        #RADICAR
+        data_radicado = {}
+        data_radicado['fecha_actual'] = fecha_actual
+        data_radicado['id_persona'] = id_persona
+        data_radicado['tipo_radicado'] = "E" #validar cual tipo de radicado
+        data_radicado['modulo_radica'] = 'Generador de Documento'
+        
         # if solicitud.id_radicado_salida:
         #     data_radicado['id_radicado_asociado'] = solicitud.id_radicado_salida.id_radicado_salida
 
-        # print(data_radicado)
-        # radicadoCreate = RadicadoCreate()
+        radicadoCreate = RadicadoCreate()
                 
-        # respuesta_radicado = radicadoCreate.post(data_radicado)
-        # print(respuesta_radicado)
+        respuesta_radicado = radicadoCreate.post(data_radicado)
+        radicado = None
+        cadena = ""
+        if respuesta_radicado['id_radicado']:
+            radicado = T262Radicados.objects.get(id_radicado=respuesta_radicado['id_radicado'])
+            #radicado = obj.id_solicitud_tramite.id_radicado
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        
 
-        # data_in['id_radicado'] = respuesta_radicado['id_radicado']
-        # data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
+        if len(data['anexos']) == 0 or data['anexos'] is None:
+            raise ValidationError('El anexo es obligatorio')
+        
+        if len(data['anexos']) > 1:
+            raise ValidationError('Solo se permite un anexo')
+        
+        util_PQR = Util_PQR()
+
+        anexos = util_PQR.set_archivo_in_anexo(data['anexos'], request.FILES, "create")
+
+        if anexos:
+            anexosCreate = AnexosSistemaCreate()
+            valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, notificacion.id_notificacion_correspondencia, fecha_actual, id_persona)
+
+        numero_folios = 0
+        for anexo in anexos:
+            numero_folios += anexo['numero_folios']
+    
+        data_out = {
+            'id_tipo_documento': data['cod_tipo_documento'],
+            'id_notificacion_correspondencia': data['id_notificacion_correspondencia'],
+            'id_radico': radicado.id_radicado,
+            'fecha_radicado': radicado.fecha_radicado,
+            'numero_radicado': cadena,
+            'numero_folios': numero_folios,
+            }
 
 
+        if persona_titular.tipo_persona == 'N':
+            nombre_completo = [persona_titular.primer_nombre, persona_titular.segundo_nombre, persona_titular.primer_apellido, persona_titular.segundo_apellido]
+            nombre_completo =  ' '.join(filter(None, nombre_completo))
+            tipo_documento = persona_titular.tipo_documento.cod_tipo_documento
+            numero_documento = persona_titular.numero_documento
+            razon_social = None
+
+            data_out['nombre_completo'] = nombre_completo
+            data_out['tipo_documento'] = tipo_documento
+            data_out['numero_documento'] = numero_documento
+            data_out['razon_social'] = razon_social
+
+        else:
+            razon_social = persona_titular.razon_social
+            tipo_documento = persona_titular.tipo_documento.cod_tipo_documento
+            numero_documento = persona_titular.numero_documento
+
+            representante_legal = Personas.objects.filter(id_persona=persona_titular.representante_legal.id_persona).first()
+
+            nombre_completo = [representante_legal.primer_nombre, representante_legal.segundo_nombre, representante_legal.primer_apellido, representante_legal.segundo_apellido]
+            nombre_completo_rl =  ' '.join(filter(None, nombre_completo))
+            tipo_documento_rl = representante_legal.tipo_documento.cod_tipo_documento
+            numero_documento_rl = representante_legal.numero_documento
+
+            data_out['razon_social'] = razon_social
+            data_out['tipo_documento'] = tipo_documento
+            data_out['numero_documento'] = numero_documento
+            data_out['representante_legal'] = {
+                'nombre_completo': nombre_completo_rl,
+                'tipo_documento': tipo_documento_rl,
+                'numero_documento': numero_documento_rl
+            }
+            
 
 
         
-        serializer = self.serializer_class(data=data)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        return serializer.data
+
+        
+        # serializer = self.serializer_class(data=data)
+        # serializer.is_valid(raise_exception=True)
+        # instance = serializer.save()
+        return data_out
     
     def post(self, request):
-        data = request.data
-        documento = self.create_documento(data)
+        
+        documento = self.create_documento(request)
 
         return Response({'succes': True, 'detail':'Se creo el documento correctamente', 'data':documento}, status=status.HTTP_201_CREATED)
     
@@ -2690,7 +2762,10 @@ class AnexosSistemaCreate(generics.CreateAPIView):
             data_anexos['uso_del_documento'] = 'PU'
             data_anexos['doc_entrada_salida'] = 'EN'
             if anexo['cod_tipo_documento']:
-                tipo_documento = TiposAnexosSoporte.objects.filter(id_tipo_anexo_soporte=anexo['cod_tipo_documento']).first()
+                try:
+                    tipo_documento = TiposAnexosSoporte.objects.get(id_tipo_anexo_soporte=anexo['cod_tipo_documento'])
+                except TiposAnexosSoporte.DoesNotExist:
+                    raise ValidationError('El tipo de documento no existe.')
                 data_anexos['cod_tipo_documento'] = tipo_documento.id_tipo_anexo_soporte
             data_anexos['doc_generado'] = 'SI'
             data_anexos['id_persona_anexa_documento'] = id_persona_recibe_solicitud
@@ -2720,8 +2795,6 @@ class AnexosSistemaCreate(generics.CreateAPIView):
             metadatosNotificacionesCreate = MetadatosNotificacionesCreate()
             metadatosNotificacionesCreate.create_metadatos_notificaciones(data_metadatos)
 
-
-        
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
         nombre=uploaded_file.name

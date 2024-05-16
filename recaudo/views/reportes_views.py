@@ -4,19 +4,27 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, F, Sum
+from itertools import groupby
+from operator import itemgetter
 from django.db.models import Value as V
 from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
 from recaudo.models.liquidaciones_models import Deudores
+from recaudo.models.base_models import RangosEdad
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.serializers.reportes_serializers import (
     CarteraGeneralSerializer,
     CarteraGeneralDetalleSerializer,
     CarteraEdadesSerializer,
+    CarteraSerializer,
+    ConceptoContableSerializer,
+    RangosEdadSerializer,
     ReporteFacilidadesPagosSerializer,
     ReporteFacilidadesPagosDetalleSerializer,
 )
+from collections import defaultdict
+from heapq import nlargest
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
 
@@ -593,3 +601,358 @@ class ReporteFacilidadesPagosDetalleView(generics.ListAPIView):
 #         }
 
 #         return Response(response_data, status=status.HTTP_200_OK)
+
+
+class RangosEdadListView(generics.ListAPIView):
+    serializer_class = RangosEdadSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = RangosEdad.objects.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'detail': 'Datos de Rangos de Edad obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ConceptoContableView(generics.ListAPIView):
+    serializer_class = ConceptoContableSerializer
+
+    def get_queryset(self):
+        queryset = ConceptoContable.objects.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'detail': 'Datos de Concepto Contable obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class CarteraListView(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Mapeo de IDs de rangos de días a nombres
+        nombres_rangos = {
+            1: "0 a 30 Dias",
+            2: "181 a 360 Dias",
+            3: "Mas 360 Dias"
+        }
+
+        # Agrupar la data por id_rango y sumar valor_sancion para cada grupo
+        grouped_data = {}
+        for key, group in groupby(serializer.data, key=itemgetter('id_rango')):
+            nombre_rango = nombres_rangos.get(key, "Desconocido")
+            total_sancion = sum(float(item['valor_sancion']) for item in group)
+            grouped_data[nombre_rango] = total_sancion
+
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data}, status=status.HTTP_200_OK)
+    
+
+class ReporteGeneralCarteraDeuda(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if codigo_contable:
+            queryset = queryset.filter(codigo_contable=codigo_contable)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Agrupar la data por codigo_contable y obtener la descripcion, codigo_contable y id para cada grupo
+        grouped_data = {}
+        for key, group in groupby(serializer.data, key=itemgetter('codigo_contable__descripcion')):
+            group_data = list(group) 
+            descripcion = group_data[0]['codigo_contable__descripcion']  
+            codigo_contable = group_data[0]['codigo_contable']  
+            id = group_data[0]['id']  
+            total_sancion = sum(float(item['valor_sancion']) for item in group_data)  
+            grouped_data[descripcion] = {'codigo_contable': codigo_contable, 'id': id, 'total_sancion': total_sancion}
+
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data}, status=status.HTTP_200_OK)
+    
+
+class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if codigo_contable:
+            queryset = queryset.filter(codigo_contable=codigo_contable)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Crear un diccionario para almacenar la suma total de valor_sancion por cada codigo_contable
+        total_sancion_por_codigo_contable = defaultdict(float)
+        for data in serializer.data:
+            total_sancion_por_codigo_contable[data['codigo_contable__descripcion']] += float(data['valor_sancion'])
+
+        # Obtener los top 5 basados en la suma total de valor_sancion para cada codigo_contable
+        top_5 = nlargest(5, total_sancion_por_codigo_contable.items(), key=lambda x: x[1])
+
+        # Convertir el resultado nuevamente en un diccionario
+        top_5_dict = {descripcion: value for descripcion, value in top_5}
+
+        # Filtrar los datos agrupados para incluir solo los que están en el top 5
+        grouped_data_top_5 = {}
+        for key, group in groupby(serializer.data, key=itemgetter('codigo_contable__descripcion')):
+            if key in top_5_dict:
+                group_data = list(group) 
+                descripcion = group_data[0]['codigo_contable__descripcion']  
+                codigo_contable = group_data[0]['codigo_contable']  
+                codigo_contable = group_data[0]['codigo_contable']  
+                # Calcular el total_sancion solo para los datos del top 5 de cada codigo_contable
+                total_sancion_top_5 = sum(float(item['valor_sancion']) for item in group_data)
+                # Agregar la suma total de valor_sancion de los datos del top 5
+                total_sancion_total = total_sancion_por_codigo_contable[descripcion]
+                grouped_data_top_5[descripcion] = {'codigo_contable': codigo_contable, 'total_sancion': total_sancion_total}
+
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': grouped_data_top_5, 'top_5_por_codigo_contable': top_5_dict}, status=status.HTTP_200_OK)
+    
+
+
+
+
+
+class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if codigo_contable:
+            queryset = queryset.filter(codigo_contable=codigo_contable)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Obtener la descripción del id_rango
+        rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
+
+        # Agrupar la data por codigo_contable y id_rango y obtener la descripcion, codigo_contable, id_rango y la sumatoria de valor_sancion para cada grupo
+        grouped_data = {}
+        for key, group in groupby(serializer.data, key=lambda x: (x['codigo_contable__descripcion'], x['id_rango'])):
+            group_data = list(group) 
+            descripcion = group_data[0]['codigo_contable__descripcion']  
+            codigo_contable = group_data[0]['codigo_contable']
+            id_rango = group_data[0]['id_rango']
+            total_sancion = sum(float(item['valor_sancion']) for item in group_data)  
+            # Obtener la descripción del id_rango
+            descripcion_rango = rangos.get(id_rango, 'Desconocido')
+            # Concatenar descripcion y descripcion_rango en una clave única
+            key = f"{descripcion}_{descripcion_rango}"
+            grouped_data[key] = {'descripcion': descripcion, 'id_rango':id_rango,'codigo_contable': codigo_contable, 'descripcion_rango': descripcion_rango, 'total_sancion': total_sancion}
+
+        # Ordenar el diccionario por el código contable
+        grouped_data_sorted = dict(sorted(grouped_data.items(), key=lambda x: x[0]))
+
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data_sorted}, status=status.HTTP_200_OK)
+
+
+# class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
+#     serializer_class = CarteraSerializer
+
+#     def get_queryset(self):
+#         queryset = Cartera.objects.all()
+
+#         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+#         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+#         codigo_contable = self.request.query_params.get('codigo_contable')
+#         id_rango = self.request.query_params.get('id_rango')
+
+#         if fecha_facturacion_desde:
+#             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+#         if fecha_facturacion_hasta:
+#             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+#         if codigo_contable:
+#             queryset = queryset.filter(codigo_contable=codigo_contable)
+
+#         if id_rango:
+#             queryset = queryset.filter(id_rango=id_rango)
+
+#         return queryset
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.serializer_class(queryset, many=True)
+
+#         # Obtener la descripción del id_rango
+#         rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
+
+#         # Agrupar la data por codigo_contable y id_rango y obtener la descripcion, codigo_contable, id_rango y la sumatoria de valor_sancion para cada grupo
+#         grouped_data = {}
+#         for key, group in groupby(serializer.data, key=lambda x: (x['codigo_contable__descripcion'], x['id_rango'])):
+#             group_data = list(group) 
+#             descripcion = group_data[0]['codigo_contable__descripcion']  
+#             codigo_contable = group_data[0]['codigo_contable']
+#             id_rango = group_data[0]['id_rango']
+#             total_sancion = sum(float(item['valor_sancion']) for item in group_data)  
+#             # Obtener la descripción del id_rango
+#             descripcion_rango = rangos.get(id_rango, 'Desconocido')
+#             # Concatenar descripcion y descripcion_rango en una clave única
+#             key = f"{descripcion}_{descripcion_rango}"
+#             grouped_data[key] = {'descripcion': descripcion, 'id_rango':id_rango,'codigo_contable': codigo_contable, 'descripcion_rango': descripcion_rango, 'total_sancion': total_sancion}
+
+#         # Ordenar el diccionario por el código contable
+#         grouped_data_sorted = dict(sorted(grouped_data.items(), key=lambda x: x[0]))
+
+#         # Obtener el top 5 basado en la suma total de sanciones
+#         top_5 = nlargest(5, grouped_data_sorted.items(), key=lambda x: x[1]['total_sancion'])
+
+#         # Convertir el resultado nuevamente en un diccionario
+#         top_5_dict = {key: value for key, value in top_5}
+
+#         # Retornar la respuesta con los datos procesados
+#         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': top_5_dict}, status=status.HTTP_200_OK)
+
+class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if codigo_contable:
+            queryset = queryset.filter(codigo_contable=codigo_contable)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+
+        # Obtener la descripción del id_rango
+        rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
+
+        # Crear un diccionario para almacenar la suma de total_sancion para cada combinación de codigo_contable e id_rango
+        grouped_data = defaultdict(float)
+        for item in serializer.data:
+            descripcion = item['codigo_contable__descripcion']  # Acceder al campo 'codigo_contable__descripcion' desde el serializador
+            id_rango = item['id_rango']
+            total_sancion = float(item['valor_sancion'])
+            grouped_data[(descripcion, id_rango)] += total_sancion
+
+        # Calcular la suma total de total_sancion para cada codigo_contable
+        total_sancion_por_codigo_contable = defaultdict(float)
+        for key, value in grouped_data.items():
+            descripcion, id_rango = key
+            total_sancion_por_codigo_contable[descripcion] += value
+
+        # Obtener los top 5 basados en la suma total de total_sancion para cada codigo_contable
+        top_5 = nlargest(5, total_sancion_por_codigo_contable.items(), key=lambda x: x[1])
+
+        # Convertir el resultado nuevamente en un diccionario
+        top_5_dict = {descripcion: value for descripcion, value in top_5}
+
+        # Crear un diccionario para almacenar la suma de valor_sancion por cada id_rango para cada codigo_contable del top 5
+        detalles_por_codigo_contable = defaultdict(dict)
+        for codigo_contable in top_5_dict.keys():
+            for key, value in grouped_data.items():
+                descripcion, id_rango = key
+                if descripcion == codigo_contable:
+                    detalles_por_codigo_contable[codigo_contable][rangos[id_rango]] = value  # Utilizar el id_rango como clave para obtener la descripción del rango desde el diccionario 'rangos'
+
+        # Retornar la respuesta con los datos procesados
+        return Response({
+            'success': True,
+            'detail': 'Datos de Cartera obtenidos exitosamente',
+            'top_5_por_codigo_contable': top_5_dict,
+            'detalles_por_codigo_contable': detalles_por_codigo_contable
+        }, status=status.HTTP_200_OK)
