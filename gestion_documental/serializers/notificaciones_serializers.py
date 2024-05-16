@@ -174,6 +174,7 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
     plazo_entrega = serializers.SerializerMethodField()
     dias_faltantes = serializers.SerializerMethodField()
     tipo_gestion = serializers.ReadOnlyField(source='id_tipo_notificacion_correspondencia.nombre', default=None)
+    tipo_notificacion_correspondencia = serializers.SerializerMethodField()
     class Meta:
         model = Registros_NotificacionesCorrespondecia
         fields = '__all__'
@@ -211,6 +212,10 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
     def get_fecha_actuacion(self, obj):
         if obj.id_persona_asignada and  obj.cod_estado_asignacion == 'Ac':
             return obj.fecha_eleccion_estado
+
+    def get_tipo_notificacion_correspondencia(self, obj):
+        serializer_tipo_notificacion_correspondencia = TiposNotificacionesCorrespondenciaSerializer(obj.id_tipo_notificacion_correspondencia)
+        return serializer_tipo_notificacion_correspondencia.data
         
         
 class Registros_NotificacionesCorrespondeciaCreateSerializer(serializers.ModelSerializer):
@@ -431,10 +436,10 @@ class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
 
 
 class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerializer):
-    id_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
-    nombre_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
-    id_causa_o_anomalia = serializers.ReadOnlyField(source='cod_causa_o_anomalia.id_causa_o_anomalia', default=None)
+    id_tipo_documento_anexo = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
+    id_tipo_documento_notificacion = serializers.ReadOnlyField(source='id_notificacion_correspondecia.cod_tipo_documento.id_tipo_documento', default=None)
     nombre_anexo = serializers.ReadOnlyField(source='id_anexo.nombre_anexo', default=None)
+    nro_folios = serializers.ReadOnlyField(source='id_anexo.numero_folios', default=None)
     asunto = serializers.SerializerMethodField()
     funcionario = serializers.SerializerMethodField()
     archivo = serializers.SerializerMethodField()
@@ -445,21 +450,22 @@ class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerial
         
         fields = [
             'id_anexo_notificacion_correspondencia',
-            'id_anexo',
             'id_notificacion_correspondecia',
             'id_registro_notificacion',
-            'id_tipo_documento',
+            'id_tipo_documento_anexo',
+            'id_tipo_documento_notificacion',
             'id_causa_o_anomalia',
-            'nombre_tipo_documento',
+            'id_anexo',
             'nombre_anexo',
+            'nro_folios',
             'asunto',
             'fecha_anexo',
             'funcionario',
             'doc_entrada_salida',
+            'observaciones',
             'link_publicacion',
             'ruta_archivo',
-            'archivo',
-            'observaciones'
+            'archivo'
         ]
     
     def metadatos(self, obj):
@@ -517,23 +523,28 @@ class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
     ciudad = serializers.SerializerMethodField()
     numero_expediente = serializers.SerializerMethodField()
     numero_acto_administrativo = serializers.SerializerMethodField()
+    id_tipo_acto_administrativo = serializers.SerializerMethodField()
+    nombre_tipo_acto_administrativo = serializers.SerializerMethodField()
     fecha_acto_administrativo = serializers.SerializerMethodField()
 
     class Meta:
         model = NotificacionesCorrespondencia
         fields = ('id_notificacion_correspondencia',
-                    'nombre_completo',
-                    'direcion',
-                    'telefono',
-                    'email',
-                    'ciudad',
-                    'numero_expediente',
-                    'numero_acto_administrativo',
-                    'fecha_acto_administrativo',
-                    'id_expediente_documental',
-                    'id_acto_administrativo',
-                    'id_persona_titular'
-                    )
+                  'cod_tipo_documento',
+                  'id_expediente_documental',
+                  'numero_expediente',
+                  'id_tipo_acto_administrativo',
+                  'nombre_tipo_acto_administrativo',
+                  'id_acto_administrativo',
+                  'numero_acto_administrativo',
+                  'fecha_acto_administrativo',
+                  'id_persona_titular',
+                  'nombre_completo',
+                  'direcion',
+                  'telefono',
+                  'email',
+                  'ciudad'
+                )
         
     def get_nombre_completo(self, obj):
         if obj.id_persona_titular:
@@ -596,6 +607,18 @@ class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
     def get_fecha_acto_administrativo(self, obj):
         if obj.id_acto_administrativo:
             return obj.id_acto_administrativo.fecha_acto_administrativo
+        else:
+            return None
+    
+    def get_id_tipo_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo
+        else:
+            return None
+        
+    def get_nombre_tipo_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo
         else:
             return None
     
