@@ -1554,6 +1554,7 @@ class SolicitudesTramitesGetSerializer(serializers.ModelSerializer):
     estado_asignacion_grupo = serializers.SerializerMethodField()
     persona_asignada = serializers.SerializerMethodField()
     unidad_asignada = serializers.SerializerMethodField()
+    id_liquidacion = serializers.SerializerMethodField()
     
     def get_cantidad_anexos(self, obj):
         conteo_anexos = AnexosTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).count()
@@ -1651,6 +1652,14 @@ class SolicitudesTramitesGetSerializer(serializers.ModelSerializer):
         if permiso_ambiental:
             nombre_tramite = permiso_ambiental.id_permiso_ambiental.nombre
         return nombre_tramite
+    
+    def get_id_liquidacion(self, obj):
+        current_date = datetime.now()
+        id_liquidacion = None
+        liquidacion_pendiente = obj.liquidacionesbase_set.filter(estado='PENDIENTE', fecha_liquidacion__year=current_date.year).first()
+        if liquidacion_pendiente:
+            id_liquidacion = liquidacion_pendiente.id
+        return id_liquidacion
     
     class Meta:
         model = SolicitudesTramites

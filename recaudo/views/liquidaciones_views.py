@@ -17,6 +17,7 @@ from recaudo.serializers.liquidaciones_serializers import (
     HistEstadosLiqGetSerializer,
     HistEstadosLiqPostSerializer,
     LiquidacionesTramiteAnularSerializer,
+    LiquidacionesTramiteGetSerializer,
     LiquidacionesTramitePostSerializer,
     OpcionesLiquidacionBaseSerializer,
     OpcionesLiquidacionBasePutSerializer,
@@ -271,6 +272,11 @@ class LiquidacionTramiteCreateView(generics.CreateAPIView):
         
         data_liquidacion = json.loads(data_liquidacion)
         data_detalles = json.loads(data_detalles) if data_detalles else None
+        
+        # VALIDAR QUE NO EXISTA UNA LIQUIDACIÓN PENDIENTE PARA EL MISMO TRÁMITE
+        liquidacion_pendiente = LiquidacionesBase.objects.filter(id_solicitud_tramite=data_liquidacion['id_solicitud_tramite'], estado='PENDIENTE', fecha_liquidacion__year=current_date.year).first()
+        if liquidacion_pendiente:
+            raise ValidationError('El trámite elegido ya tiene una liquidación actual pendiente, si desea generar otro para este trámite debe anular el anterior')
 
         # Guardar archivo
         # VALIDAR FORMATO ARCHIVO 
@@ -345,6 +351,19 @@ class LiquidacionTramiteCreateView(generics.CreateAPIView):
         serializer_historico.save()
 
         return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+class LiquidacionTramiteGetView(generics.ListAPIView):
+    serializer_class = LiquidacionesTramiteGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_liquidacion_base):
+        liquidacion = LiquidacionesBase.objects.filter(id=id_liquidacion_base).first()
+        if not liquidacion:
+            raise NotFound('No se encontró la liquidación ingresada')
+        
+        serializer_liquidacion = self.serializer_class(liquidacion)
+
+        return Response({'success': True, 'detail': 'Se encontró la siguiente liquidación', 'data': serializer_liquidacion.data}, status=status.HTTP_200_OK)
 
 class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
     serializer_class = LiquidacionesTramiteAnularSerializer

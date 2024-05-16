@@ -431,22 +431,37 @@ class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
 
 
 class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerializer):
-    tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
+    id_tipo_documento_anexo = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
+    id_tipo_documento_notificacion = serializers.ReadOnlyField(source='id_notificacion_correspondecia.cod_tipo_documento.id_tipo_documento', default=None)
+    nombre_anexo = serializers.ReadOnlyField(source='id_anexo.nombre_anexo', default=None)
+    nro_folios = serializers.ReadOnlyField(source='id_anexo.numero_folios', default=None)
     asunto = serializers.SerializerMethodField()
     funcionario = serializers.SerializerMethodField()
     archivo = serializers.SerializerMethodField()
+    ruta_archivo = serializers.SerializerMethodField()
 
     class Meta:
         model = Anexos_NotificacionesCorrespondencia
         
-        fields = ['id_anexo',
-                  'tipo_documento',
-                  'asunto',
-                  'funcionario',
-                  'doc_entrada_salida',
-                  'archivo',
-                  'observaciones'
-                  ]
+        fields = [
+            'id_anexo_notificacion_correspondencia',
+            'id_notificacion_correspondecia',
+            'id_registro_notificacion',
+            'id_tipo_documento_anexo',
+            'id_tipo_documento_notificacion',
+            'id_causa_o_anomalia',
+            'id_anexo',
+            'nombre_anexo',
+            'nro_folios',
+            'asunto',
+            'fecha_anexo',
+            'funcionario',
+            'doc_entrada_salida',
+            'observaciones',
+            'link_publicacion',
+            'ruta_archivo',
+            'archivo'
+        ]
     
     def metadatos(self, obj):
         metadatos = MetadatosAnexosTmp.objects.filter(id_anexo=obj.id_anexo).first()
@@ -468,6 +483,13 @@ class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerial
         archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital = metadatos['id_archivo_sistema']).first()
 
         return ArchivosSerializer(archivo_digital).data
+    
+    def get_ruta_archivo(self, obj):
+        metadatos = self.metadatos(obj)
+        archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital = metadatos['id_archivo_sistema']).first()
+        archivo_digital = ArchivosSerializer(archivo_digital).data
+        ruta_archivo = str(archivo_digital['ruta_archivo'])
+        return ruta_archivo
         
 
 class AnexosNotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
@@ -488,9 +510,113 @@ class CausasOAnomaliasSerializer(serializers.ModelSerializer):
 
 
 class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
+    
+    nombre_completo = serializers.SerializerMethodField()
+    direcion = serializers.SerializerMethodField()
+    telefono = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    ciudad = serializers.SerializerMethodField()
+    numero_expediente = serializers.SerializerMethodField()
+    numero_acto_administrativo = serializers.SerializerMethodField()
+    id_tipo_acto_administrativo = serializers.SerializerMethodField()
+    nombre_tipo_acto_administrativo = serializers.SerializerMethodField()
+    fecha_acto_administrativo = serializers.SerializerMethodField()
+
     class Meta:
-        model = DocumentosDeArchivoExpediente
-        fields = '__all__'
+        model = NotificacionesCorrespondencia
+        fields = ('id_notificacion_correspondencia',
+                  'cod_tipo_documento',
+                  'id_expediente_documental',
+                  'numero_expediente',
+                  'id_tipo_acto_administrativo',
+                  'nombre_tipo_acto_administrativo',
+                  'id_acto_administrativo',
+                  'numero_acto_administrativo',
+                  'fecha_acto_administrativo',
+                  'id_persona_titular',
+                  'nombre_completo',
+                  'direcion',
+                  'telefono',
+                  'email',
+                  'ciudad'
+                )
+        
+    def get_nombre_completo(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.tipo_persona == 'N':
+                nombre_completo = [obj.id_persona_titular.primer_nombre, obj.id_persona_titular.segundo_nombre, obj.id_persona_titular.primer_apellido, obj.id_persona_titular.segundo_apellido]
+                nombre_completo =  ' '.join(filter(None, nombre_completo))
+                return f"{nombre_completo}"
+            else:
+                return obj.id_persona_titular.razon_social
+        else:
+            return None
+    
+    def get_direcion(self, obj):
+        if obj.id_persona_titular:
+            return obj.id_persona_titular.direccion_notificaciones
+        else:
+            return None
+        
+    def get_telefono(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.telefono_celular:
+                return obj.id_persona_titular.telefono_celular
+            else:
+                return obj.id_persona_titular.telefono_fijo_residencial
+        else:
+            return None
+        
+    def get_email(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.email:
+                return obj.id_persona_titular.email
+            else:
+                return 'no registra'
+        else:
+            return None
+        
+    def get_ciudad(self, obj):
+        if obj.id_persona_titular:
+            if obj.id_persona_titular.pais_residencia:
+                if obj.id_persona_titular.pais_residencia.cod_pais == 'CO':
+                    return f"{obj.id_persona_titular.cod_municipio_residencia.nombre}, {obj.id_persona_titular.cod_municipio_residencia.cod_departamento.nombre}"
+                else:
+                    return f"{obj.id_persona_titular.pais_residencia.nombre}"
+        else:
+            return None
+
+    def get_numero_expediente(self, obj):
+        if obj.id_expediente_documental:
+            numero_expediente = f"{obj.id_expediente_documental.codigo_exp_und_serie_subserie}-{obj.id_expediente_documental.codigo_exp_Agno}-{obj.id_expediente_documental.codigo_exp_consec_por_agno}"
+            return numero_expediente
+        else:
+            return None
+        
+    def get_numero_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.numero_acto_administrativo
+        else:
+            return None
+        
+    def get_fecha_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.fecha_acto_administrativo
+        else:
+            return None
+    
+    def get_id_tipo_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo
+        else:
+            return None
+        
+    def get_nombre_tipo_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo
+        else:
+            return None
+    
 
 class ConstanciaNotificacionSerializer(serializers.ModelSerializer):
     class Meta:
