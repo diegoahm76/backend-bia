@@ -2,6 +2,8 @@ from rest_framework import serializers
 from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
+from recaudo.models.base_models import RangosEdad
+
 
 # class CarteraGeneralSerializer(serializers.ModelSerializer):
 #     valor_sancion = serializers.DecimalField(max_digits=30, decimal_places=2, source='calcular_valor_total')
@@ -134,4 +136,20 @@ class ReporteFacilidadesPagosDetalleSerializer(serializers.ModelSerializer):
         model = DetallesFacilidadPago
         fields = ('tipo_cobro', 'identificacion', 'nombre_deudor', 'concepto_deuda','cod_expediente', 'numero_resolucion',
                   'numero_factura', 'valor_sancion')
+        
 
+class RangosEdadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RangosEdad
+        fields = '__all__'
+
+class CarteraSerializer(serializers.ModelSerializer):
+    codigo_contable__descripcion = serializers.CharField(source='codigo_contable.descripcion', read_only=True)
+    class Meta:
+        model = Cartera
+        fields = '__all__'
+
+class ConceptoContableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConceptoContable
+        fields = '__all__'
