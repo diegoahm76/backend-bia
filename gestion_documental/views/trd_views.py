@@ -16,6 +16,8 @@ from rest_framework import status
 from django.core.serializers import serialize
 from django.shortcuts import get_list_or_404
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+from gestion_documental.views.pqr_views import RadicadoCreate
+from gestion_documental.models.radicados_models import T262Radicados
 from django.db.models import Q
 import copy
 from django.db import transaction
@@ -3236,15 +3238,16 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
 
     def post(self, request):
         variable = request.data.get('variable')
+        persona = request.user.persona
+        current_date = datetime.now()
         data = {}
 
         match variable:
             case 'C':
                 data = self.consecutivo(request, True, None)
             case 'B':
-                data = self.GenerarDocumento(request.data.get('payload'), request.data.get('plantilla'), None)
+                data = self.GenerarDocumento(request.data.get('payload'), None, request.data.get('plantilla'), None)
                 platnilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
-                print(data.data)
                 data = data.data
                 generar_consecutivo = {
                     "id_unidad_organizacional": request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional,
@@ -3268,9 +3271,33 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 payload['consecutivo'] = data['data']['consecutivo']
                 data = self.GenerarDocumento(payload, request.data.get('plantilla'), None)
             case 'AD':
-                payload = self.consecutivo(request, False,None)
-                data = self.GenerarDocumento(payload, None, request.data.get('id_consecutivo'))
+                consecutivo = self.consecutivo(request, False,None)
+                data = self.GenerarDocumento(request.data.get('payload'), consecutivo, None, request.data.get('id_consecutivo'))
                 return data
+            case 'DCR':
+                payload = request.data.get('payload')
+                data = self.consecutivo(request, True, None).data
+                data_radicado = {
+                    "current_date": current_date,
+                    "id_persona": persona.id_persona,
+                    "tipo_radicado": request.data.get('tipo_radicado')
+                }
+                radicado = self.GenerarRadicado(data_radicado)
+
+                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo = data.get('id_consecutivo'))
+                if request.data.get('tipo_radicado') == 'S':
+                    consecutivo.id_radicado_salida = radicado.get('id_radicado')
+                    consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
+                    consecutivo.save()
+                else:
+                    consecutivo.id_radicado_interno = radicado.get('id_radicado')
+                    consecutivo.fecha_radicado_interno = radicado.get('fecha_radicado')
+                    consecutivo.save()
+
+                payload['radicado'] = radicado.get('radicado')
+                payload['consecutivo'] = data['data']['consecutivo']
+                data = self.GenerarDocumento(payload, request.data.get('plantilla'), None)
+
         return data
 
     def consecutivo(self, request, flag, id_archivo_digital):
@@ -3438,8 +3465,31 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 'detail': e.detail,
             }, status=status.HTTP_404_NOT_FOUND)
         
+    def GenerarRadicado(self, data):
+        data_radicar = {}
+        data_radicar['fecha_actual'] = data['current_date']
+        data_radicar['id_persona'] = data['id_persona']
+        data_radicar['tipo_radicado'] = data['tipo_radicado']
+        data_radicar['modulo_radica'] = "Generador de Documentos"
         
-    def GenerarDocumento(self, payload, plantilla, id_consecutivo):
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data_radicar)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        
+        data_response = {
+            "radicado": radicado_nuevo,
+            "id_radicado": radicado.id_radicado,
+            "fecha_radicado": radicado.fecha_radicado,
+            "tipo_radicado": radicado.cod_tipo_radicado
+        }
+
+        return data_response
+        
+        
+    def GenerarDocumento(self, payload, consecutivo, plantilla, id_consecutivo):
         try:
             if id_consecutivo:
                 print("id_consecutivo")
@@ -3449,13 +3499,16 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     doc = DocxTemplate(ruta_archivo)
                     dic = {
                         'consecutivo': payload.get('consecutivo'),
+                        'fecha': datetime.now().strftime('%d/%m/%Y'),
                     }
-                    doc.render(dic)
-                consecutivo.agno_consecutivo = payload.get('agno_consecutivo')
-                consecutivo.prefijo_consecutivo = payload.get('prefijo_consecutivo')
-                consecutivo.nro_consecutivo = payload.get('nro_consecutivo')
-                consecutivo.fecha_consecutivo = payload.get('fecha_consecutivo')
-                consecutivo.CatalogosSeriesUnidad = payload.get('catalogo') if payload.get('catalogo') else None
+                    payload['consecutivo'] = consecutivo.get('consecutivo')
+                    context = {k: v for k, v in payload.items() if v is not None and v != ''}
+                    doc.render(context)
+                consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
+                consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
+                consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
+                consecutivo.fecha_consecutivo = consecutivo.get('fecha_consecutivo')
+                consecutivo.CatalogosSeriesUnidad = consecutivo.get('catalogo') if consecutivo.get('catalogo') else None
                 serializer = ConsecutivoTipologiaDocSerializer(consecutivo, data=payload, partial=True)
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -3467,13 +3520,15 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 }, status=status.HTTP_201_CREATED)
 
             else:
+                print("aqui")
                 auto = ActaInicioCreate()
                 plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
                 ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
                 if ruta_archivo and os.path.exists(ruta_archivo):
                 
                     doc = DocxTemplate(ruta_archivo)
-                    doc.render(payload)
+                    context = {k: v for k, v in payload.items() if v is not None}
+                    doc.render(context)
 
                     file_uuid = uuid.uuid4()
 
