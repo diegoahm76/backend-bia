@@ -1434,8 +1434,8 @@ class AnexosNotificacionGacetaGet(generics.ListAPIView):
         anexos = Anexos_NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondecia=notificacion.id_notificacion_correspondencia, id_registro_notificacion__isnull=True)
         return anexos
 
-    def get(self, request, id_registro_notificacion):
-        anexos = self.get_anexos(id_registro_notificacion)
+    def get(self, request, id_notificacion):
+        anexos = self.get_anexos(id_notificacion)
         serializer = self.serializer_class(anexos, many=True)
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
