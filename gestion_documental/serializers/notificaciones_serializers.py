@@ -518,23 +518,28 @@ class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
     ciudad = serializers.SerializerMethodField()
     numero_expediente = serializers.SerializerMethodField()
     numero_acto_administrativo = serializers.SerializerMethodField()
+    id_tipo_acto_administrativo = serializers.SerializerMethodField()
+    nombre_tipo_acto_administrativo = serializers.SerializerMethodField()
     fecha_acto_administrativo = serializers.SerializerMethodField()
 
     class Meta:
         model = NotificacionesCorrespondencia
         fields = ('id_notificacion_correspondencia',
-                    'nombre_completo',
-                    'direcion',
-                    'telefono',
-                    'email',
-                    'ciudad',
-                    'numero_expediente',
-                    'numero_acto_administrativo',
-                    'fecha_acto_administrativo',
-                    'id_expediente_documental',
-                    'id_acto_administrativo',
-                    'id_persona_titular'
-                    )
+                  'cod_tipo_documento',
+                  'id_expediente_documental',
+                  'numero_expediente',
+                  'id_tipo_acto_administrativo',
+                  'nombre_tipo_acto_administrativo',
+                  'id_acto_administrativo',
+                  'numero_acto_administrativo',
+                  'fecha_acto_administrativo',
+                  'id_persona_titular',
+                  'nombre_completo',
+                  'direcion',
+                  'telefono',
+                  'email',
+                  'ciudad'
+                )
         
     def get_nombre_completo(self, obj):
         if obj.id_persona_titular:
@@ -597,6 +602,18 @@ class DocumentosDeArchivoExpedienteSerializer(serializers.ModelSerializer):
     def get_fecha_acto_administrativo(self, obj):
         if obj.id_acto_administrativo:
             return obj.id_acto_administrativo.fecha_acto_administrativo
+        else:
+            return None
+    
+    def get_id_tipo_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo
+        else:
+            return None
+        
+    def get_nombre_tipo_acto_administrativo(self, obj):
+        if obj.id_acto_administrativo:
+            return obj.id_acto_administrativo.id_tipo_acto_administrativo.tipo_acto_administrativo
         else:
             return None
     
