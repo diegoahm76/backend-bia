@@ -431,10 +431,10 @@ class DatosTitularesCorreoSerializer(serializers.ModelSerializer):
 
 
 class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerializer):
-    id_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
-    nombre_tipo_documento = serializers.ReadOnlyField(source='cod_tipo_documento.nombre', default=None)
-    id_causa_o_anomalia = serializers.ReadOnlyField(source='cod_causa_o_anomalia.id_causa_o_anomalia', default=None)
+    id_tipo_documento_anexo = serializers.ReadOnlyField(source='cod_tipo_documento.id_tipo_anexo_soporte', default=None)
+    id_tipo_documento_notificacion = serializers.ReadOnlyField(source='id_notificacion_correspondecia.cod_tipo_documento.id_tipo_documento', default=None)
     nombre_anexo = serializers.ReadOnlyField(source='id_anexo.nombre_anexo', default=None)
+    nro_folios = serializers.ReadOnlyField(source='id_anexo.numero_folios', default=None)
     asunto = serializers.SerializerMethodField()
     funcionario = serializers.SerializerMethodField()
     archivo = serializers.SerializerMethodField()
@@ -445,21 +445,22 @@ class AnexosNotificacionesCorrespondenciaDatosSerializer(serializers.ModelSerial
         
         fields = [
             'id_anexo_notificacion_correspondencia',
-            'id_anexo',
             'id_notificacion_correspondecia',
             'id_registro_notificacion',
-            'id_tipo_documento',
+            'id_tipo_documento_anexo',
+            'id_tipo_documento_notificacion',
             'id_causa_o_anomalia',
-            'nombre_tipo_documento',
+            'id_anexo',
             'nombre_anexo',
+            'nro_folios',
             'asunto',
             'fecha_anexo',
             'funcionario',
             'doc_entrada_salida',
+            'observaciones',
             'link_publicacion',
             'ruta_archivo',
-            'archivo',
-            'observaciones'
+            'archivo'
         ]
     
     def metadatos(self, obj):
