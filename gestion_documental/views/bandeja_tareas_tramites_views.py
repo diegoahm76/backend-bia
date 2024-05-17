@@ -438,7 +438,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
 
         return doc
 
-    def crear_acto(self, tramite,respuesta_expediente):
+    def crear_acto(self, tramite,respuesta_expediente,token):
         fecha_actual =datetime.now()
    
         
@@ -518,7 +518,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
                 data_auto['dato11'] = '[[DATO11]]'
             #DATO 12 NUMERO DE MATRICULA DE PREDIO
             if 'MatriInmobi' in detalle_tramite_data:
-                data_auto['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
+                data_auto['dato12'] = detalle_tramite_data['MatriInmobi'] 
             else:
                 data_auto['dato12'] = '[[MatriInmobiDato12]]'
         
@@ -548,8 +548,8 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             detalle_tramite_data = self.detalle_tramite(cadena_radicado)
 
             #UBICACION /DIRECCION 
-            if 'Direecion' in detalle_tramite_data:
-                data_auto['dato6'] = detalle_tramite_data['Direccion']
+            if 'Ndivision' in detalle_tramite_data:
+                data_auto['dato6'] = detalle_tramite_data['Ndivision']
             else:
                 data_auto['dato6'] = 'SIN IDENTIFICAR'
             #NUMERO DE RADICADO
@@ -562,8 +562,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             else:
                 data_auto['dato7'] ='[[DATO7]]'
 
-            ##DATO 8 FECHA DE VISITA NO NECESARIO
-            data_auto['dato8'] = '[[DATO8]]'
+
             #DATO 9 NOMBRE DE FUENTE DE CAPTACION
             data_auto['dato9']  = detalle_tramite_data['Tfuente']
 
@@ -675,10 +674,22 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
                 data_auto['dato6'] = detalle_tramite_data['Direccion']
             else:
                 data_auto['dato6'] = 'SIN IDENTIFICAR'
+
+
+            #DATO 11 NOMBRE DE PREDIO 
+            if 'Npredio' in detalle_tramite_data:
+                data_auto['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
+
+            #DATO 12 NUMERO DE MATRICULA DE PREDIO
+            if 'MatriInmobi' in detalle_tramite_data:
+                data_auto['dato12'] = detalle_tramite_data['MatriInmobi'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            else:
+                data_auto['dato12'] = '[[MatriInmobiDato12]]'
+
             #NUMERO DE RADICADO
-            data_auto['dato35'] = cadena_radicado
+            data_auto['dato33'] = cadena_radicado
             #FECHA DE RADICADO
-            data_auto['dato36'] = instance_radicado.fecha_radicado
+            data_auto['dato34'] = instance_radicado.fecha_radicado
             #MUNICIPIO
             if 'Municipio' in detalle_tramite_data:
                 data_auto['dato7'] = detalle_tramite_data['Municipio']
@@ -688,13 +699,8 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             ##DATO 8 FECHA DE VISITA NO NECESARIO
             data_auto['dato8'] = '[[DATO8]]'
             #DATO 9 NOMBRE DE FUENTE DE CAPTACION
-            if 'fuente_captacion' in detalle_tramite_data:
-                fuente_captacion_json= detalle_tramite_data['fuente_captacion'][0]
-                # print(fuente_captacion_json)
-                # #raise ValidationError('pere')
-                data_auto['dato9'] = fuente_captacion_json['Name_fuente_hidrica_value']
-            else:
-                data_auto['dato9'] = '[[DATO9]]'
+
+            data_auto['dato9'] =  titular.email
             
 
             #DATO 11 NOMBRE DEL PROYECTO
@@ -704,7 +710,79 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             data_auto['dato12'] = detalle_tramite_data['radicate_bia']
             data_auto['dato31'] = tramite.id_radicado.fecha_radicado
             #correo electronico
-            data_auto['dato30'] = titular.email
+         
+        if detalle_tramite_data['typeRequest'] == 'Solicitud de permiso de vertimiento al agua':
+
+            instance_radicado = tramite.id_radicado
+            cadena_radicado = self.radicado_completo(instance_radicado)
+            
+
+            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+            plantilla = 'AUTO_INICIO_VERTIMIENTO_AL_AGUA.docx'
+            #DATO1
+            data_auto['dato1'] = 'Auto 1'#NUMERO DE AUTO
+            #DATO2
+            data_auto['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']#NUMERO DE EXPEDIENTE
+            
+            #DATO17
+            data_auto['dato17'] = detalle_tramite_data['Area']
+
+            #DATO6
+            #UBICACION  
+            if 'Ndivision' in detalle_tramite_data:
+                data_auto['dato6'] = detalle_tramite_data['Ndivision']
+            #DATO11  #dice caudal de vertimiento  en tabala pero es el nombre del predio segun el texto del auto
+
+            if 'Npredio' in detalle_tramite_data:
+                data_auto['dato11'] = detalle_tramite_data['Npredio'] #NOMBRE PREDIO O NUMERO DE PREDIO
+            #DATO7
+            if 'Municipio' in detalle_tramite_data:
+                data_auto['dato7'] = detalle_tramite_data['Municipio']
+            #DATO12 #matricula inmoviliairia 
+            if 'MatriInmobi' in detalle_tramite_data:
+                data_auto['dato12'] = detalle_tramite_data['MatriInmobi'] 
+
+
+            titular = tramite.id_persona_titular
+            nombre_usuario = self.nombre_persona(titular)
+            #DATO3
+            data_auto['dato3'] = nombre_usuario
+            #DATO4
+            data_auto['dato4'] = titular.tipo_documento.nombre
+            #DATO5
+            data_auto['dato5'] = titular.numero_documento
+
+            #DATO33 NUMERO DE RADICADO
+            cadena_radicado = self.radicado_completo(instance_radicado)
+            data_auto['dato33'] = cadena_radicado
+            #DATO 34 FECHA DE RADICADO
+            data_auto['dato34'] =instance_radicado.fecha_radicado
+            #DATO35,#DATO36,#DATO37,#DATO38,#DATO39,#DATO40,#DATO41,#DATO42,#DATO43,#DATO44,#DATO45,#DAT
+
+            
+        if detalle_tramite_data['typeRequest'] == 'Permiso de emiciones atmosfericas':
+
+            plantilla = 'AUTO_INICIO_EMISIONES_ATMOSFÉRICAS.docx'
+            
+            instance_radicado = tramite.id_radicado
+            cadena_radicado = self.radicado_completo(instance_radicado)
+            detalle_tramite_data = self.detalle_tramite(cadena_radicado)
+            #DATO1
+            data_auto['dato1'] = 'Auto 1'#NUMERO DE AUTO
+            #DATO2
+            data_auto['dato2'] = respuesta_expediente['codigo_exp_consec_por_agno']#NUMERO DE EXPEDIENTE
+            #NOMBRE DEL USUARIO
+            titular = tramite.id_persona_titular
+            nombre_usuario = self.nombre_persona(titular)
+            #DATO3
+            data_auto['dato3'] = nombre_usuario
+            #TIPO DE DOCUMENTO
+            #DATO4
+            data_auto['dato4'] = titular.tipo_documento.nombre
+            #DATO5
+            data_auto['dato5'] = titular.numero_documento
+
+            #DATO6,#DATO30,#DATO31,#DATO6,#DATO3,#DATO49#DATO7,#DATO8,#DATO33,#DATO34,#DATO35,#DATO36,#DATO37,#DATO38,#DATO39,#DATO40,#DATO41,#DATO42,#DATO43,#DATO28
 
 
         dato=self.acta_inicio(data_auto,plantilla)
@@ -762,10 +840,10 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             return cadena
         return ""
     
-    def tarea_radicado(self,radicado):
-        url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"
+    def tarea_radicado(self,radicado,token):
+        url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"+" "+token
         headers = {"accept": "text/plain"}
-        
+        print(url)
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
@@ -897,9 +975,14 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             if not expediente:
                 raise NotFound("No se encontro el expediente")
            
-            print(request.user)
-            raise ValidationError(request)
-            #data_archivo = self.crear_acto(tramite,respuesta_expediente)
+           
+
+            #raise ValidationError(request)
+            data_archivo = self.crear_acto(tramite,respuesta_expediente,request.META.get('HTTP_AUTHORIZATION'))
+
+            #data_tareas = self.tarea_radicado('hola',request.META.get('HTTP_AUTHORIZATION'))
+            #print("SASOF TAREA")
+            #print(data_tareas)
             raise ValidationError("HAAA")
         
             tramite = asignacion.id_solicitud_tramite
