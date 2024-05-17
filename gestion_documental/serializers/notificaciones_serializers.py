@@ -39,6 +39,8 @@ class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     funcuinario_solicitante = serializers.SerializerMethodField()
     unidad_solicitante = serializers.CharField(source='id_und_org_oficina_solicita.nombre')
     estado_notificacion = estado_solicitud = serializers.CharField(source='get_cod_estado_display',read_only=True,default=None)
+    tipo_notificacion = serializers.SerializerMethodField()
+
 
     class Meta:
         model = NotificacionesCorrespondencia

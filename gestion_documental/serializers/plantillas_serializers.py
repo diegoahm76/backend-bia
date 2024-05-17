@@ -136,7 +136,6 @@ class PlantillasDocSerializerGet(serializers.ModelSerializer):
         
     def get_variables(self, obj):
         ruta_archivo = obj.id_archivo_digital.ruta_archivo.path if obj.id_archivo_digital else None
-        print(ruta_archivo)
         if ruta_archivo and os.path.exists(ruta_archivo):
             doc = DocxTemplate(ruta_archivo)
             variables = doc.get_undeclared_template_variables()
