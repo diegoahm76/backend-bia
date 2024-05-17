@@ -19,6 +19,8 @@ from recaudo.serializers.reportes_serializers import (
     CarteraEdadesSerializer,
     CarteraSerializer,
     ConceptoContableSerializer,
+    DeudorSerializer,
+    DeudorSumSerializer,
     RangosEdadSerializer,
     ReporteFacilidadesPagosSerializer,
     ReporteFacilidadesPagosDetalleSerializer,
@@ -27,6 +29,7 @@ from collections import defaultdict
 from heapq import nlargest
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.views import APIView
+from django.db import models
 
 
 class CustomPagination(PageNumberPagination):
@@ -701,21 +704,13 @@ class ReporteGeneralCarteraDeuda(generics.ListAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
 
-        # Agrupar la data por codigo_contable y obtener la descripcion, codigo_contable y id para cada grupo
-        grouped_data = {}
-        for key, group in groupby(serializer.data, key=itemgetter('codigo_contable__descripcion')):
-            group_data = list(group) 
-            descripcion = group_data[0]['codigo_contable__descripcion']  
-            codigo_contable = group_data[0]['codigo_contable']  
-            id = group_data[0]['id']  
-            total_sancion = sum(float(item['valor_sancion']) for item in group_data)  
-            grouped_data[descripcion] = {'codigo_contable': codigo_contable, 'id': id, 'total_sancion': total_sancion}
+        # Obtener la suma total de valor_sancion para cada codigo_contable
+        total_por_codigo_contable = queryset.values('codigo_contable', 'codigo_contable__descripcion').annotate(total_sancion=Sum('valor_sancion'))
 
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data}, status=status.HTTP_200_OK)
-    
-
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_codigo_contable}, status=status.HTTP_200_OK)
+        
 class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
     serializer_class = CarteraSerializer
 
@@ -772,11 +767,6 @@ class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
 
         # Retornar la respuesta con los datos procesados
         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': grouped_data_top_5, 'top_5_por_codigo_contable': top_5_dict}, status=status.HTTP_200_OK)
-    
-
-
-
-
 
 class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
     serializer_class = CarteraSerializer
@@ -807,28 +797,30 @@ class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
 
-        # Obtener la descripción del id_rango
+        # Obtener la descripción de los rangos
         rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
 
-        # Agrupar la data por codigo_contable y id_rango y obtener la descripcion, codigo_contable, id_rango y la sumatoria de valor_sancion para cada grupo
-        grouped_data = {}
-        for key, group in groupby(serializer.data, key=lambda x: (x['codigo_contable__descripcion'], x['id_rango'])):
-            group_data = list(group) 
-            descripcion = group_data[0]['codigo_contable__descripcion']  
-            codigo_contable = group_data[0]['codigo_contable']
-            id_rango = group_data[0]['id_rango']
-            total_sancion = sum(float(item['valor_sancion']) for item in group_data)  
-            # Obtener la descripción del id_rango
-            descripcion_rango = rangos.get(id_rango, 'Desconocido')
-            # Concatenar descripcion y descripcion_rango en una clave única
-            key = f"{descripcion}_{descripcion_rango}"
-            grouped_data[key] = {'descripcion': descripcion, 'id_rango':id_rango,'codigo_contable': codigo_contable, 'descripcion_rango': descripcion_rango, 'total_sancion': total_sancion}
+        detalles_por_codigo_contable = {}
 
-        # Ordenar el diccionario por el código contable
-        grouped_data_sorted = dict(sorted(grouped_data.items(), key=lambda x: x[0]))
+        # Iterar sobre los datos y agruparlos por "codigo_contable__descripcion" y "id_rango__descripcion"
+        for data in serializer.data:
+            codigo_contable = data['codigo_contable']
+            descripcion = data['codigo_contable__descripcion']
+            rango_id = data['id_rango']
+            total_sancion = float(data['valor_sancion'])
 
-        # Retornar la respuesta con los datos procesados
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data_sorted}, status=status.HTTP_200_OK)
+            # Obtener la descripción del rango
+            descripcion_rango = rangos.get(rango_id, 'Desconocido')
+
+            if descripcion not in detalles_por_codigo_contable:
+                detalles_por_codigo_contable[descripcion] = {'codigo_contable': codigo_contable}
+
+            if descripcion_rango not in detalles_por_codigo_contable[descripcion]:
+                detalles_por_codigo_contable[descripcion][descripcion_rango] = 0
+
+            detalles_por_codigo_contable[descripcion][descripcion_rango] += total_sancion
+
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': detalles_por_codigo_contable}, status=status.HTTP_200_OK)
 
 
 # class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
@@ -956,3 +948,58 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
             'top_5_por_codigo_contable': top_5_dict,
             'detalles_por_codigo_contable': detalles_por_codigo_contable
         }, status=status.HTTP_200_OK)
+
+
+
+class CarteraDeudoresTop(generics.ListAPIView):
+    serializer_class = DeudorSumSerializer  # Usa el serializador DeudorSumSerializer
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if codigo_contable:
+            queryset = queryset.filter(codigo_contable=codigo_contable)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Obtener los top 10 deudores basados en la suma total del valor_sancion
+        top_10_deudores = queryset.values('id_deudor').annotate(total_sancion=models.Sum('valor_sancion')).order_by('-total_sancion')[:10]
+
+        # Obtener la información detallada de los deudores en el top 10
+        deudores_data = []
+        for deudor_info in top_10_deudores:
+            deudor_id = deudor_info['id_deudor']
+            deudor_obj = Deudores.objects.get(id=deudor_id)
+            total_sancion = deudor_info['total_sancion']
+            deudor_data = {
+                'id': deudor_obj.id,
+                'identificacion': deudor_obj.identificacion,
+                'nombres': deudor_obj.nombres,
+                'apellidos': deudor_obj.apellidos,
+                'telefono': deudor_obj.telefono,
+                'email': deudor_obj.email,
+                'ubicacion_id': deudor_obj.ubicacion_id.id,
+                'naturaleza_juridica_id': deudor_obj.naturaleza_juridica_id.id,
+                'id_persona_deudor': deudor_obj.id_persona_deudor,
+                'total_sancion': total_sancion
+            }
+            deudores_data.append(deudor_data)
+
+        return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)

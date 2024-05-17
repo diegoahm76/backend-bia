@@ -153,3 +153,20 @@ class ConceptoContableSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConceptoContable
         fields = '__all__'
+
+class DeudorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deudores
+        fields = '__all__'
+
+class DeudorSumSerializer(serializers.ModelSerializer):
+    total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
+
+    class Meta:
+        model = Deudores
+        fields = ['id', 'identificacion', 'nombres', 'apellidos', 'telefono', 'email', 'ubicacion_id', 'naturaleza_juridica_id', 'id_persona_deudor', 'total_sancion']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['total_sancion'] = instance.total_sancion
+        return representation
