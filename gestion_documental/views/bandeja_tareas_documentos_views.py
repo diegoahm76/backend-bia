@@ -8,15 +8,17 @@ from django.db import transaction
 from rest_framework import generics,status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Max
 
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
+from gestion_documental.models.radicados_models import AsignacionDocs, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.bandeja_tareas_otros_serializers import AnexosOtrosGetSerializer, DetalleOtrosGetSerializer, MetadatosAnexosOtrosTmpSerializerGet, TareasAsignadasOotrosUpdateSerializer, TareasAsignadasOtrosGetSerializer
 from gestion_documental.serializers.bandeja_tareas_serializers import ReasignacionesTareasOtrosCreateSerializer, ReasignacionesTareasgetOtrosByIdSerializer, TareasAsignadasGetJustificacionSerializer
+from gestion_documental.serializers.bandeja_tareas_documentos_serializars import TareasAsignadasDocsGetSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -28,6 +30,8 @@ from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
+
+from transversal.views.alertas_views import AlertaEventoInmediadoCreate
 
 
 
@@ -283,7 +287,106 @@ class TareasAsignadasOtroJusTarea(generics.UpdateAPIView):
         
         serializer = self.serializer_class(tarea)
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
+
+
+
+class AsignacionDocCreate(generics.CreateAPIView):
+    serializer_class = TareasAsignadasDocsGetSerializer
+    queryset =AsignacionDocs.objects.all()
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        data_in = request.data
+
+        if not 'id_consecutivo_tipologia' in data_in:
+            raise ValidationError("No se envio el documento con el consecutivo de la tipologia")
         
+        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo_tipologia'])
+        for asignacion in instance:
+            #print(asignacion)
+            if asignacion.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud  ya fue Aceptada.")
+            if  not asignacion.cod_estado_asignacion:
+                raise ValidationError("La solicitud esta pendiente por respuesta.")
+        max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo_tipologia']).aggregate(Max('consecutivo_asign_x_doc'))
+
+        if max_consecutivo['consecutivo_asign_x_doc__max'] == None:
+             ultimo_consec= 1
+        else:
+            ultimo_consec = max_consecutivo['consecutivo_asign_x_doc__max'] + 1
+        
+        unidad_asignar = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional).first()
+        if not unidad_asignar:
+            raise ValidationError("No existe la unidad asignada")
+        
+        data_in['id_und_org_seccion_asignada'] = unidad_asignar.id_unidad_organizacional
+        #VALIDACION ENTREGA 102 SERIE PQRSDF
+       
+        # if contador == 0:
+        #     raise ValidationError("No se puede realizar la asignación de la PQRSDF a una  unidad organizacional seleccionada porque no tiene serie  documental de PQRSDF")
+        data_in['consecutivo_asign_x_doc'] = ultimo_consec 
+        data_in['fecha_asignacion'] = datetime.now()
+        data_in['id_persona_asigna'] = request.user.persona.id_persona
+        data_in['cod_estado_asignacion'] = None
+        data_in['asignacion_de_ventanilla'] = False
+
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        #Crear tarea y asignacion de tarea
+       
+        id_persona_asiganada = serializer.data['id_persona_asignada']
+
+ 
+        #Creamos la tarea 315
+        data_tarea = {}
+        data_tarea['cod_tipo_tarea'] = 'RDocs'
+        data_tarea['id_asignacion'] = serializer.data['id_asignacion_doc']
+        data_tarea['fecha_asignacion'] = datetime.now()
+
+        data_tarea['cod_estado_solicitud'] = 'Ep'
+        vista_tareas = TareasAsignadasCreate()    
+        respuesta_tareas = vista_tareas.crear_asignacion_tarea(data_tarea)
+        if respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            return respuesta_tareas
+        data_tarea_respuesta= respuesta_tareas.data['data']
+        #Teniendo la bandeja de tareas,la tarea ahora tenemos que asignar esa tarea a la bandeja de tareas
+        id_tarea_asiganada = data_tarea_respuesta['id_tarea_asignada']
+        vista_asignacion = TareaBandejaTareasPersonaCreate()
+
+        data_tarea_bandeja_asignacion = {}
+        data_tarea_bandeja_asignacion['id_persona'] = id_persona_asiganada
+        data_tarea_bandeja_asignacion['id_tarea_asignada'] = id_tarea_asiganada
+        data_tarea_bandeja_asignacion['es_responsable_ppal'] = True
+        respuesta_relacion = vista_asignacion.crear_tarea(data_tarea_bandeja_asignacion)
+        if respuesta_relacion.status_code != status.HTTP_201_CREATED:
+            return respuesta_relacion
+        #CREAMOS LA ALERTA DE ASIGNACION A GRUPO 
+
+        persona =Personas.objects.filter(id_persona = id_persona_asiganada).first()
+        nombre_completo_persona = ''
+        if persona:
+            nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                            persona.primer_apellido, persona.segundo_apellido]
+            nombre_completo_persona = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_persona = nombre_completo_persona if nombre_completo_persona != "" else None
+       
+        mensaje = "Le acaba de llenar un documento para que lo revise"
+        vista_alertas_programadas = AlertaEventoInmediadoCreate()
+        data_alerta = {}
+        data_alerta['cod_clase_alerta'] = 'Gst_SlALid'
+        data_alerta['id_persona'] = id_persona_asiganada
+        data_alerta['id_elemento_implicado'] = serializer.data['id_asignacion_doc']
+        data_alerta['informacion_complemento_mensaje'] = mensaje
+
+        respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
+        if respuesta_alerta.status_code != status.HTTP_200_OK:
+            return respuesta_alerta
+
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
+
+
 # class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
 #     serializer_class = ReasignacionesTareasOtrosCreateSerializer
 #     queryset = ReasignacionesTareas.objects.all()

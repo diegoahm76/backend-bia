@@ -3240,13 +3240,13 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         variable = request.data.get('variable')
         persona = request.user.persona
         current_date = datetime.now()
-        data = {}
 
         match variable:
             case 'C':
-                data = self.consecutivo(request, True, None)
+                data = self.consecutivo(request, None)
+                return Response(data, status=status.HTTP_201_CREATED)
             case 'B':
-                data = self.GenerarDocumento(request.data.get('payload'), None, request.data.get('plantilla'), None)
+                data = self.GenerarDocumento(request.data.get('payload'), request.data.get('plantilla'))
                 platnilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
                 data = data.data
                 generar_consecutivo = {
@@ -3266,41 +3266,60 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 }, status=status.HTTP_201_CREATED)
             
             case 'DC':
-                payload = request.data.get('payload')
-                data = self.consecutivo(request, True, None).data
-                payload['consecutivo'] = data['data']['consecutivo']
-                data = self.GenerarDocumento(payload, request.data.get('plantilla'), None)
-            case 'AD':
-                consecutivo = self.consecutivo(request, False,None)
-                data = self.GenerarDocumento(request.data.get('payload'), consecutivo, None, request.data.get('id_consecutivo'))
-                return data
+                payload = request.data.get('payload') 
+                data = self.consecutivo(request, None).data
+                if data['success']:
+                    payload['consecutivo'] = data['data']['consecutivo']
+                    documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+                    print(documento)
+                    consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+                    archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+                    consecutivo.id_archivo_digital = archivo_digital
+                    consecutivo.save()
+                    serializer = self.serializer_class(consecutivo)
+                    return Response({
+                        'success': True,
+                        'detail': 'Se ha generado el documento exitosamente.',
+                        'data': serializer.data
+                    }, status=status.HTTP_201_CREATED) 
+                else:
+                    return Response({
+                        'success': False,
+                        'detail': 'No se ha podido generar el documento.',
+                        'data': data
+                    }, status=status.HTTP_400_BAD_REQUEST)
             case 'DCR':
                 payload = request.data.get('payload')
-                data = self.consecutivo(request, True, None).data
+                data = self.consecutivo(request, None).data
+                print(f"dataaaaaaa: {data}")
                 data_radicado = {
                     "current_date": current_date,
                     "id_persona": persona.id_persona,
-                    "tipo_radicado": request.data.get('tipo_radicado')
+                    "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
                 }
                 radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
 
-                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo = data.get('id_consecutivo'))
-                if request.data.get('tipo_radicado') == 'S':
-                    consecutivo.id_radicado_salida = radicado.get('id_radicado')
-                    consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
-                    consecutivo.save()
-                else:
-                    consecutivo.id_radicado_interno = radicado.get('id_radicado')
-                    consecutivo.fecha_radicado_interno = radicado.get('fecha_radicado')
-                    consecutivo.save()
+                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+                consecutivo.id_radicado_salida = radicado_instance
+                consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
 
                 payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado')
                 payload['consecutivo'] = data['data']['consecutivo']
-                data = self.GenerarDocumento(payload, request.data.get('plantilla'), None)
+                documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+                print(f"documento: {documento}")
+                archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+                consecutivo.id_archivo_digital = archivo_digital
+                consecutivo.save() 
+                serializer = self.serializer_class(consecutivo)
+                return Response({
+                    'success': True,
+                    'detail': 'Se ha generado el documento exitosamente.',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
 
-        return data
-
-    def consecutivo(self, request, flag, id_archivo_digital):
+    def consecutivo(self, request, id_archivo_digital):
         try:
             # Obtener los datos enviados por el usuario
             # unidad_organizacional = request.data.get('unidad_organizacional')
@@ -3359,53 +3378,40 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     
                     # Formatear el consecutivo actual con ceros a la izquierda
                     nro_consecutivo = str(consecutivo.consecutivo_actual + 1).zfill(consecutivo.cantidad_digitos)
-                    if flag:
-                        generar_consecutivo = ConsecutivoTipologia.objects.create(
-                            id_unidad_organizacional = unidad_organizacional,
-                            id_tipologia_doc = plantilla.id_tipologia_doc_trd,
-                            CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
-                            agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
-                            nro_consecutivo = nro_consecutivo,
-                            prefijo_consecutivo = consecutivo.prefijo_consecutivo,
-                            fecha_consecutivo = current_date,
-                            id_persona_genera = request.user.persona,
-                            id_archivo_digital = id_archivo_digital if id_archivo_digital else None,
-                        )
+        
+                    generar_consecutivo = ConsecutivoTipologia.objects.create(
+                        id_unidad_organizacional = unidad_organizacional,
+                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
+                        agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
+                        nro_consecutivo = nro_consecutivo,
+                        prefijo_consecutivo = consecutivo.prefijo_consecutivo,
+                        fecha_consecutivo = current_date,
+                        id_persona_genera = request.user.persona,
+                        id_archivo_digital = id_archivo_digital if id_archivo_digital else None,
+                    )
 
-                        # Actualizar el consecutivo actual
-                        consecutivo.consecutivo_actual += 1
-                        consecutivo.fecha_consecutivo_actual = current_date
-                        consecutivo.id_persona_consecutivo_actual = request.user.persona
-                        if not consecutivo.item_ya_usado:
-                            consecutivo.item_ya_usado = True
-                        consecutivo.save()
+                    # Actualizar el consecutivo actual
+                    consecutivo.consecutivo_actual += 1
+                    consecutivo.fecha_consecutivo_actual = current_date
+                    consecutivo.id_persona_consecutivo_actual = request.user.persona
+                    if not consecutivo.item_ya_usado:
+                        consecutivo.item_ya_usado = True
+                    consecutivo.save()
 
-                        data = {
-                            "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{cod_series}.{cod_subseries}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
-                            "id_consecutivo": generar_consecutivo.id_consecutivo_tipologia,
-                            "catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_cat_serie_und,
-                        }
+                    data = {
+                        "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{cod_series}.{cod_subseries}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
+                        "id_consecutivo": generar_consecutivo.id_consecutivo_tipologia,
+                        "catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_cat_serie_und,
+                    }
 
-                        return Response({
-                            'success': True,
-                            'detail': 'Consecutivo creado exitosamente.',
-                            'data': data
-                        }, status=status.HTTP_201_CREATED)
-                    else:
-                        data = {
-                            "prefijo_consecutivo": consecutivo.prefijo_consecutivo,
-                            "agno_consecutivo": consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
-                            "nro_consecutivo": nro_consecutivo,
-                            "fecha_consecutivo": current_date,
-                            "catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
-                            "consecutivo": f"{consecutivo.prefijo_consecutivo}.{unidad_organizacional.codigo}.{cod_series}.{cod_subseries}.{consecutivo.id_config_tipologia_doc_agno.agno_tipologia}.{nro_consecutivo}",
-                            #"id_consecutivo": id_consecutivo,
-                        }
-                        return data
+                    return Response({
+                        'success': True,
+                        'detail': 'Consecutivo creado exitosamente.',
+                        'data': data
+                    }, status=status.HTTP_201_CREATED)
 
                 else:
-
-
                     # Obtener la configuración de consecutivo por unidad organizacional
                     consecutivo = ConsecPorNivelesTipologiasDocAgno.objects.filter(
                         id_config_tipologia_doc_agno=config_tipologia,
@@ -3425,39 +3431,30 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     if not consecutivo.item_ya_usado:
                         consecutivo.item_ya_usado = True
                     consecutivo.save()
-                    if flag:
-                        generar_consecutivo = ConsecutivoTipologia.objects.create(
-                            id_unidad_organizacional = unidad_organizacional,
-                            id_tipologia_doc = plantilla.id_tipologia_doc_trd,
-                            agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
-                            nro_consecutivo = nro_consecutivo,
-                            prefijo_consecutivo = consecutivo.prefijo_consecutivo,
-                            fecha_consecutivo = current_date,
-                            id_persona_genera = request.user.persona,
-                            id_archivo_digital = id_archivo_digital if id_archivo_digital else None,
-                        )
+                
+                    generar_consecutivo = ConsecutivoTipologia.objects.create(
+                        id_unidad_organizacional = unidad_organizacional,
+                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
+                        nro_consecutivo = nro_consecutivo,
+                        prefijo_consecutivo = consecutivo.prefijo_consecutivo,
+                        fecha_consecutivo = current_date,
+                        id_persona_genera = request.user.persona,
+                        id_archivo_digital = id_archivo_digital if id_archivo_digital else None,
+                    )
 
-                        data = {
-                            "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
-                            "id_consecutivo": generar_consecutivo.id_consecutivo_tipologia,
-                            "catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_cat_serie_und,
-                        }
+                    data = {
+                        "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
+                        "id_consecutivo": generar_consecutivo.id_consecutivo_tipologia,
+                        #"catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_cat_serie_und,
+                    }
 
-                        return Response({
-                            'success': True,
-                            'detail': 'Consecutivo creado exitosamente.',
-                            'data': data
-                        }, status=status.HTTP_201_CREATED)
-                    else:
-                        data = {
-                            "prefijo_consecutivo": consecutivo.prefijo_consecutivo,
-                            "agno_consecutivo": consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
-                            "nro_consecutivo": nro_consecutivo,
-                            "fecha_consecutivo": current_date,
-                            "consecutivo": f"{consecutivo.prefijo_consecutivo}.{unidad_organizacional.codigo}.{consecutivo.id_config_tipologia_doc_agno.agno_tipologia}.{nro_consecutivo}",
-                            ##"id_consecutivo": id_consecutivo,
-                        }
-                        return data
+                    return Response({
+                        'success': True,
+                        'detail': 'Consecutivo creado exitosamente.',
+                        'data': data
+                    }, status=status.HTTP_201_CREATED)
+                
 
         except ValidationError as e:
             return Response({
@@ -3469,11 +3466,13 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         data_radicar = {}
         data_radicar['fecha_actual'] = data['current_date']
         data_radicar['id_persona'] = data['id_persona']
-        data_radicar['tipo_radicado'] = data['tipo_radicado']
+        data_radicar['tipo_radicado'] = data['cod_tipo_radicado']
         data_radicar['modulo_radica'] = "Generador de Documentos"
         
         radicado_class = RadicadoCreate()
         radicado_response = radicado_class.post(data_radicar)
+
+        print(radicado_response)
         
         id_radicado = radicado_response.get('id_radicado')
         radicado_nuevo = radicado_response.get('radicado_nuevo')
@@ -3489,75 +3488,75 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         return data_response
         
         
-    def GenerarDocumento(self, payload, consecutivo, plantilla, id_consecutivo):
+    def GenerarDocumento(self, payload, plantilla):
         try:
-            if id_consecutivo:
-                print("id_consecutivo")
-                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
-                ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
-                if ruta_archivo and os.path.exists(ruta_archivo):
-                    doc = DocxTemplate(ruta_archivo)
-                    dic = {
-                        'consecutivo': payload.get('consecutivo'),
-                        'fecha': datetime.now().strftime('%d/%m/%Y'),
-                    }
-                    payload['consecutivo'] = consecutivo.get('consecutivo')
-                    context = {k: v for k, v in payload.items() if v is not None and v != ''}
-                    doc.render(context)
-                consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
-                consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
-                consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
-                consecutivo.fecha_consecutivo = consecutivo.get('fecha_consecutivo')
-                consecutivo.CatalogosSeriesUnidad = consecutivo.get('catalogo') if consecutivo.get('catalogo') else None
-                serializer = ConsecutivoTipologiaDocSerializer(consecutivo, data=payload, partial=True)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
+            # if id_consecutivo:
+            #     print("id_consecutivo")
+            #     consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+            #     ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
+            #     if ruta_archivo and os.path.exists(ruta_archivo):
+            #         doc = DocxTemplate(ruta_archivo)
+            #         dic = {
+            #             'consecutivo': payload.get('consecutivo'),
+            #             'fecha': datetime.now().strftime('%d/%m/%Y'),
+            #         }
+            #         payload['consecutivo'] = consecutivo.get('consecutivo')
+            #         context = {k: v for k, v in payload.items() if v is not None and v != ''}
+            #         doc.render(context)
+            #     consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
+            #     consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
+            #     consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
+            #     consecutivo.fecha_consecutivo = consecutivo.get('fecha_consecutivo')
+            #     consecutivo.CatalogosSeriesUnidad = consecutivo.get('catalogo') if consecutivo.get('catalogo') else None
+            #     serializer = ConsecutivoTipologiaDocSerializer(consecutivo, data=payload, partial=True)
+            #     serializer.is_valid(raise_exception=True)
+            #     serializer.save()
 
-                return Response({
-                    'success': True,
-                    'detail': 'Se ha actualizado el documento exitosamente.',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
+            #     return Response({
+            #         'success': True,
+            #         'detail': 'Se ha actualizado el documento exitosamente.',
+            #         'data': serializer.data
+            #     }, status=status.HTTP_201_CREATED)
 
-            else:
-                print("aqui")
-                auto = ActaInicioCreate()
-                plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
-                ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
-                if ruta_archivo and os.path.exists(ruta_archivo):
+            # else:
+            auto = ActaInicioCreate()
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
+            ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                doc = DocxTemplate(ruta_archivo)
+                context = {k: v for k, v in payload.items() if v is not None}
+                doc.render(context)
+
+                file_uuid = uuid.uuid4()
+
+                extension = os.path.splitext(ruta_archivo)[1]
+                new_filename = f"{file_uuid}{extension}"
+
+                # Guardar el documento resultante con el nuevo nombre
+                os.makedirs("/home/BIA/Otros/DocsTemp", exist_ok=True)
+                doc.save(f"/home/BIA/Otros/DocsTemp/{new_filename}")
+                memoria = auto.document_to_inmemory_uploadedfile(doc)
+                # Crear el archivo digital
+                ruta = os.path.join("home", "BIA", "Otros", "Documentos")
+
+                md5_hash = hashlib.md5()
+                with open(f"/home/BIA/Otros/DocsTemp/{new_filename}", 'rb') as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        md5_hash.update(chunk)
                 
-                    doc = DocxTemplate(ruta_archivo)
-                    context = {k: v for k, v in payload.items() if v is not None}
-                    doc.render(context)
+                md5_value = md5_hash.hexdigest()
 
-                    file_uuid = uuid.uuid4()
-
-                    extension = os.path.splitext(ruta_archivo)[1]
-                    new_filename = f"{file_uuid}{extension}"
-
-                    # Guardar el documento resultante con el nuevo nombre
-                    os.makedirs("/home/BIA/Otros/DocsTemp", exist_ok=True)
-                    doc.save(f"/home/BIA/Otros/DocsTemp/{new_filename}")
-                    memoria = auto.document_to_inmemory_uploadedfile(doc)
-                    # Crear el archivo digital
-                    ruta = os.path.join("home", "BIA", "Otros", "Documentos")
-
-                    md5_hash = hashlib.md5()
-                    with open(f"/home/BIA/Otros/DocsTemp/{new_filename}", 'rb') as f:
-                        for chunk in iter(lambda: f.read(4096), b""):
-                            md5_hash.update(chunk)
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
                     
-                    md5_value = md5_hash.hexdigest()
-
-                    data_archivo = {
-                        'es_Doc_elec_archivo': True,
-                        'ruta': ruta,
-                        'md5_hash': md5_value
-                    }
-                        
-                    archivo_class = ArchivosDgitalesCreate()
-                    respuesta = archivo_class.crear_archivo(data_archivo,  memoria)
-                    return respuesta
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo,  memoria)
+                return respuesta
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
         except ValidationError as e:
             error_message = {'error': e.detail}
             raise ValidationError(e.detail)

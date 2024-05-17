@@ -21,12 +21,15 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
     tipo_tarea =serializers.ReadOnlyField(source='get_cod_tipo_tarea_display',default=None)
     asignado_por = serializers.SerializerMethodField()
     asignado_para = serializers.SerializerMethodField()
+    consecutivo = serializers.SerializerMethodField()
+    fecha_consecutivo = serializers.SerializerMethodField()
+    persona_genera = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField(default=None)
     fecha_radicado =  serializers.SerializerMethodField(default=None)
     
     estado_tarea = serializers.ReadOnlyField(source='get_cod_estado_solicitud_display',default=None)
     estado_asignacion_tarea = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)#cod_estado_solicitud
-    id_documento = serializers.SerializerMethodField(default=None)
+    documento = serializers.SerializerMethodField(default=None)
     # respondida_por = serializers.ReadOnlyField(source='nombre_persona_que_responde',default=None)
     tarea_reasignada_a = serializers.SerializerMethodField(default=None)
     unidad_org_destino = serializers.SerializerMethodField(default=None)
@@ -39,7 +42,7 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
         
 
 
-    def get_id_documento(self,obj):
+    def get_documento(self,obj):
         #buscamos la asignacion
         
       
@@ -63,6 +66,28 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
         if not documento:
             return None
         return documento.id_consecutivo_tipologia
+    
+    def get_consecutivo(self,obj):
+        tarea = obj
+        documento = None
+
+        if tarea.id_asignacion:
+                asignacion = AsignacionDocs.objects.filter(id_asignacion_doc=tarea.id_asignacion).first()
+                consecutivo = f"{asignacion.id_consecutivo.prefijo_consecutivo}.{asignacion.id_consecutivo.id_unidad_organizacional.codigo}.{asignacion.id_consecutivo.nro_consecutivo}"
+        else:
+
+            while tarea:
+                tarea = tarea.id_tarea_asignada_padre_inmediata
+
+                if tarea.id_asignacion:
+                    asignacion = AsignacionDocs.objects.filter(id_asignacion_doc=tarea.id_asignacion).first()
+
+                    documento = asignacion.id_consecutivo
+                    break
+        if not documento:
+            return None
+        return documento.id_consecutivo_tipologia
+    
     
     def get_tarea_reasignada_a(self,obj):
 
