@@ -107,5 +107,5 @@ urlpatterns = [
     #Generador de Documentos
     path('tareas-asignadas/docs/get-by-persona/<str:id>/', views_docs.TareasAsignadasDocsGet.as_view(), name='get-tareas-asignadas-docs-by-persona'),
     path('asginacion/documentos/create/', views_docs.AsignacionDocCreate.as_view(), name='asignacion-documentos'),
-    
+    path('persona/bandeja/tareas/', views_docs.ObtenerPersonasConBandejaTareas.as_view(), name='get-personas-bandeja-tareas'),
 ]

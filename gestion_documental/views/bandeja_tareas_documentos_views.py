@@ -12,6 +12,9 @@ from django.db.models import Max
 
 from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
+from transversal.serializers.personas_serializers import PersonasSerializer
+from transversal.models.personas_models import Personas
+
 from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
 from gestion_documental.models.radicados_models import AsignacionDocs, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
@@ -19,6 +22,7 @@ from gestion_documental.models.trd_models import TipologiasDoc
 from gestion_documental.serializers.bandeja_tareas_otros_serializers import AnexosOtrosGetSerializer, DetalleOtrosGetSerializer, MetadatosAnexosOtrosTmpSerializerGet, TareasAsignadasOotrosUpdateSerializer, TareasAsignadasOtrosGetSerializer
 from gestion_documental.serializers.bandeja_tareas_serializers import ReasignacionesTareasOtrosCreateSerializer, ReasignacionesTareasgetOtrosByIdSerializer, TareasAsignadasGetJustificacionSerializer
 from gestion_documental.serializers.bandeja_tareas_documentos_serializars import TareasAsignadasDocsGetSerializer
+from gestion_documental.serializers.bandeja_tareas_documentos_serializars import AsignacionDocsPostSerializer
 
 from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
 from gestion_documental.utils import UtilsGestor
@@ -51,7 +55,7 @@ class DetalleOtrosGet(generics.ListAPIView):
 
 
 class TareasAsignadasDocsGet(generics.ListAPIView):
-    serializer_class = TareasAsignadasOtrosGetSerializer
+    serializer_class = TareasAsignadasDocsGetSerializer
     queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
 
@@ -291,23 +295,23 @@ class TareasAsignadasOtroJusTarea(generics.UpdateAPIView):
 
 
 class AsignacionDocCreate(generics.CreateAPIView):
-    serializer_class = TareasAsignadasDocsGetSerializer
+    serializer_class = AsignacionDocsPostSerializer
     queryset =AsignacionDocs.objects.all()
     permission_classes = [IsAuthenticated]
     def post(self, request):
         data_in = request.data
 
-        if not 'id_consecutivo_tipologia' in data_in:
+        if not 'id_consecutivo' in data_in:
             raise ValidationError("No se envio el documento con el consecutivo de la tipologia")
         
-        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo_tipologia'])
+        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'])
         for asignacion in instance:
             #print(asignacion)
             if asignacion.cod_estado_asignacion == 'Ac':
                 raise ValidationError("La solicitud  ya fue Aceptada.")
             if  not asignacion.cod_estado_asignacion:
                 raise ValidationError("La solicitud esta pendiente por respuesta.")
-        max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo_tipologia']).aggregate(Max('consecutivo_asign_x_doc'))
+        max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo']).aggregate(Max('consecutivo_asign_x_doc'))
 
         if max_consecutivo['consecutivo_asign_x_doc__max'] == None:
              ultimo_consec= 1
@@ -385,6 +389,20 @@ class AsignacionDocCreate(generics.CreateAPIView):
 
 
         return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
+
+
+class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
+    serializer_class = PersonasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = Personas.objects.all()
+        serializer = self.serializer_class(queryset, many=True)
+        data = [bandeja for bandeja in serializer.data if bandeja['tiene_usuario']]
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data}, status=status.HTTP_200_OK)
+
+
+
 
 
 # class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
