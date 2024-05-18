@@ -5,6 +5,7 @@ from datetime import datetime, date, timedelta
 import copy
 import datetime as dt
 from signal import raise_signal
+from backend.settings.base import FRONTEND_URL
 
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -1303,11 +1304,11 @@ class CreatePersonaJuridicaAndUsuario(generics.CreateAPIView):
         # relativeLink= reverse('verify')
         # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
 
+        subject = "Registro exitoso"
+        template = "verificacion-cuenta.html"
+        absurl = FRONTEND_URL+"#/auth/login"
 
-        subject = "Usuario registrado exitosamente"
-        template = "email-verified.html"
-
-        Util.notificacion(serializador,subject,template)
+        Util.notificacion(serializador,subject,template,absurl=absurl)
         #CREACION DE BANDEJA DE ALERTAS
         crear_bandeja=BandejaAlertaPersonaCreate()
 
@@ -1427,8 +1428,9 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
             # relativeLink= reverse('verify')
             # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
             
-            subject = "Verifica tu usuario"
-            template = "activación-de-usuario.html"
+            subject = "Registro exitoso"
+            template = "verificacion-cuenta.html"
+            absurl = FRONTEND_URL+"#/auth/login"
 
             #CREACION DE BANDEJA DE ALERTAS
             crear_bandeja=BandejaAlertaPersonaCreate()
@@ -1445,7 +1447,7 @@ class CreatePersonaNaturalAndUsuario(generics.CreateAPIView):
                 return respuesta_bandeja
 
             #FIN CREACION DE BANDEJA DE TAREAS
-            Util.notificacion(serializador,subject,template)
+            Util.notificacion(serializador,subject,template,absurl=absurl)
         
             return Response({'success':True, 'detail':'Se creo la persona natural y el usuario correctamente'},status=status.HTTP_200_OK)
     

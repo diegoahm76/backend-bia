@@ -15,9 +15,10 @@ urlpatterns = [
     path('reporte-concepto-contable/', views.ConceptoContableView.as_view(), name='reporte-concepto-contable'),
     path('reporte-general-cartera-edad/', views.CarteraListView.as_view(), name='reporte-cartera-edades'),
     path('reporte-general-cartera-deuda/', views.ReporteGeneralCarteraDeuda.as_view(), name='reporte-cartera-deuda'),
-    path('reporte-general-cartera-deuda-top/', views.ReporteGeneralCarteraDeudaTop.as_view(), name='reporte-cartera-deuda'),
     path('reporte-general-cartera-deuda-y-edad/', views.ReporteGeneralCarteraDeudaYEdad.as_view(), name='reporte-cartera-deuda-edad'),
+    path('reporte-general-cartera-deuda-top/', views.ReporteGeneralCarteraDeudaTop.as_view(), name='reporte-cartera-deuda'),
     path('reporte-general-cartera-deuda-y-edad-top/', views.ReporteGeneralCarteraDeudaYEdadTop.as_view(), name='reporte-cartera-deuda-edad-top'),
+    path('reporte-general-cartera-deudores/', views.CarteraDeudoresTop.as_view(), name='reporte-cartera-deuda-edad-top'),
 
 
 ]

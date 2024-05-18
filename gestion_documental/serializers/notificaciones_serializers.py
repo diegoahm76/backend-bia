@@ -39,6 +39,8 @@ class NotificacionesCorrespondenciaSerializer(serializers.ModelSerializer):
     funcuinario_solicitante = serializers.SerializerMethodField()
     unidad_solicitante = serializers.CharField(source='id_und_org_oficina_solicita.nombre')
     estado_notificacion = estado_solicitud = serializers.CharField(source='get_cod_estado_display',read_only=True,default=None)
+    tipo_notificacion = serializers.SerializerMethodField()
+
 
     class Meta:
         model = NotificacionesCorrespondencia
@@ -174,6 +176,7 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
     plazo_entrega = serializers.SerializerMethodField()
     dias_faltantes = serializers.SerializerMethodField()
     tipo_gestion = serializers.ReadOnlyField(source='id_tipo_notificacion_correspondencia.nombre', default=None)
+    tipo_notificacion_correspondencia = serializers.SerializerMethodField()
     class Meta:
         model = Registros_NotificacionesCorrespondecia
         fields = '__all__'
@@ -211,6 +214,10 @@ class Registros_NotificacionesCorrespondeciaSerializer(serializers.ModelSerializ
     def get_fecha_actuacion(self, obj):
         if obj.id_persona_asignada and  obj.cod_estado_asignacion == 'Ac':
             return obj.fecha_eleccion_estado
+
+    def get_tipo_notificacion_correspondencia(self, obj):
+        serializer_tipo_notificacion_correspondencia = TiposNotificacionesCorrespondenciaSerializer(obj.id_tipo_notificacion_correspondencia)
+        return serializer_tipo_notificacion_correspondencia.data
         
         
 class Registros_NotificacionesCorrespondeciaCreateSerializer(serializers.ModelSerializer):
