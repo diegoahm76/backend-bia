@@ -24,7 +24,7 @@ class ConsultarDatosAlertas(generics.ListAPIView):
         except ValueError:
             return Response({'success': False, 'detail': 'El mes debe estar en el formato YYYY-MM'}, status=status.HTTP_400_BAD_REQUEST)
 
-        alertas = self.queryset.filter(fecha_hora_envio__range=[
+        alertas = self.queryset.filter(fecha_hora_envio__date__range=[
             fecha_inicio, fecha_fin], id_estacion=pk)
 
         if alertas:
@@ -51,7 +51,7 @@ class ConsultarDatosEquipos(generics.ListAPIView):
         except ValueError:
             return Response({'success': False, 'detail': 'El mes debe estar en el formato YYYY-MM'}, status=status.HTTP_400_BAD_REQUEST)
 
-        alertas = self.queryset.filter(fecha_generacion__range=[
+        alertas = self.queryset.filter(fecha_generacion__date__range=[
             fecha_inicio, fecha_fin], id_estacion=pk)
 
         if alertas:
