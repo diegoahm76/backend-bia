@@ -198,6 +198,7 @@ class UpdateVinculacionColaboradorView(generics.RetrieveUpdateDestroyAPIView):
 
                     if unidad != persona.id_unidad_organizacional_actual.id_unidad_organizacional:
                         persona.id_unidad_organizacional_actual = unidad_inst_current
+                        persona.es_unidad_organizacional_actual = True
                         persona.fecha_asignacion_unidad = fecha_actual
         
                         if not justificacion or justificacion == '':
