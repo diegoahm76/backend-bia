@@ -3244,7 +3244,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         match variable:
             case 'C':
                 data = self.consecutivo(request, None)
-                return Response(data, status=status.HTTP_201_CREATED)
+                return data
             case 'B':
                 data = self.GenerarDocumento(request.data.get('payload'), request.data.get('plantilla'))
                 platnilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
