@@ -197,6 +197,7 @@ class MantenimientosRealizadosGetView(generics.ListAPIView):
 
 class BusquedaGeneralInventario(generics.ListAPIView):
     serializer_class = InventarioSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Inventario.objects.all()
@@ -232,6 +233,7 @@ class BusquedaGeneralInventario(generics.ListAPIView):
 
 class BusquedaVehiculos(generics.ListAPIView):
     serializer_class = HojaDeVidaVehiculosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
@@ -279,6 +281,7 @@ class BusquedaVehiculos(generics.ListAPIView):
 
 class BusquedaViajesAgendados(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Obtener el parámetro id_hoja_vida_vehiculo de la URL
@@ -304,6 +307,7 @@ class BusquedaViajesAgendados(generics.ListAPIView):
 
 class HistoricoTodosViajesAgendados(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Obtener los parámetros de los filtros adicionales
@@ -358,6 +362,7 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
 
 class BusquedaGeneralInventarioActivos(generics.ListAPIView):
     serializer_class = InventarioReporteSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Inventario.objects.filter(ubicacion_prestado=True)
@@ -389,6 +394,7 @@ class BusquedaGeneralInventarioActivos(generics.ListAPIView):
 
 class BusquedaGeneralDespachosConsumo(generics.ListAPIView):
     serializer_class = ItemDespachoConsumoSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = ItemDespachoConsumo.objects.all()

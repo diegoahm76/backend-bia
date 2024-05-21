@@ -1057,6 +1057,7 @@ class EliminarAnexoOpcional(generics.DestroyAPIView):
 class ListarAnexoOpcional(generics.ListAPIView):
     queryset = AnexosDocsAlma.objects.all()
     serializer_class = AnexosDocsAlmaSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         id_baja_activo = self.kwargs.get('id_baja_activo')
@@ -1404,6 +1405,7 @@ class CrearSalidaEspecialView(generics.CreateAPIView):
 
 
 class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
     def retrieve(self, request, consecutivo, *args, **kwargs):
         # Buscar la salida especial por su consecutivo
         salida_especial = get_object_or_404(SalidasEspecialesArticulos, consecutivo_por_salida=consecutivo)
@@ -1468,6 +1470,7 @@ class ObtenerDatosSalidaEspecialView(generics.RetrieveAPIView):
 
 
 class ObtenerUltimoConsecutivoView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
             # Obtener el último consecutivo en la base de datos
             ultimo_consecutivo = SalidasEspecialesArticulos.objects.all().order_by('-consecutivo_por_salida').first()
@@ -1506,6 +1509,7 @@ class InfoAlmcenistaPersonaGet(generics.ListAPIView):
 
 class DespachosDeActivosListGet(generics.ListAPIView):
     serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         id_persona = self.kwargs.get('id_persona')
@@ -1532,6 +1536,7 @@ class DespachosDeActivosListGet(generics.ListAPIView):
 
 class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
     serializer_class = ActivosDespachadosDevolucionSerializer
+    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         # Obtener el ID del despacho de activos desde los parámetros de la URL
@@ -1552,6 +1557,7 @@ class ActivosDespachadosDevolucionView(generics.RetrieveAPIView):
 class EstadosArticuloListView(generics.ListAPIView):
     queryset = EstadosArticulo.objects.all()
     serializer_class = EstadosArticuloSerializer
+    permission_classes = [IsAuthenticated]
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -1703,6 +1709,7 @@ class EstadosArticuloListView(generics.ListAPIView):
 
 class DevolucionActivosCreateView(generics.CreateAPIView):
     serializer_class = DevolucionActivosSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -1813,6 +1820,7 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
     
 
 class ObtenerUltimoConsecutivoDevolucionView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
             # Obtener el último consecutivo en la base de datos
             ultimo_consecutivo = DevolucionActivos.objects.all().order_by('-consecutivo_devolucion').first()
@@ -2278,6 +2286,7 @@ class DespachosAutorizarGet(generics.ListAPIView):
     
 class BusquedaArticulosPrincipalView(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, solicitud_id):
         try:
@@ -2336,7 +2345,8 @@ class BusquedaArticulosPrincipalView(generics.ListAPIView):
     
 
 class BusquedaArticulosSubView(generics.ListAPIView):
-    serializer_class = BusquedaArticuloSubSerializer  # Utiliza tu serializer personalizado
+    serializer_class = BusquedaArticuloSubSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         id_bien = self.kwargs['id_bien']  # Suponiendo que pasas el ID del bien como parte de la URL
@@ -2397,6 +2407,7 @@ class BusquedaArticulosSubView(generics.ListAPIView):
 
 class CrearDespachoActivosView(generics.CreateAPIView):
     serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -2627,6 +2638,7 @@ class CrearDespachoActivosView(generics.CreateAPIView):
 
 class CrearDespachoActivosSimSolicitudView(generics.CreateAPIView):
     serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -2787,6 +2799,7 @@ class CrearDespachoActivosSimSolicitudView(generics.CreateAPIView):
 #REASIGNACION_RESPONSABLE
 class InventarioPorPersonaResponsableView(generics.RetrieveAPIView):
     serializer_class = InventarioSerializer
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         # Obtener el id_persona de los parámetros de la URL
@@ -2809,6 +2822,7 @@ class InventarioPorPersonaResponsableView(generics.RetrieveAPIView):
 
 class CrearReasginacionResponsableView(generics.CreateAPIView):
     serializer_class = DespachoActivosSerializer
+    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -3227,6 +3241,8 @@ class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
 class ActualizarAnexoDespachoActivosView(generics.UpdateAPIView):
     serializer_class = DespachoActivosSerializer
     queryset = DespachoActivos.objects.all()  
+    permission_classes = [IsAuthenticated]
+
     def update(self, request, *args, **kwargs):
         despacho = self.get_object()
 
@@ -3472,6 +3488,7 @@ class AceptarDespachoPut(generics.UpdateAPIView):
 
 class BusquedaGeneralInventario(generics.ListAPIView):
     serializer_class = InventarioSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Inventario.objects.all()
@@ -3515,6 +3532,7 @@ class BusquedaGeneralInventario(generics.ListAPIView):
 
 class GenerarCodigoBarras(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Obtener el JSON del cuerpo de la solicitud
