@@ -1,6 +1,8 @@
 from almacen.models.generics_models import Bodegas
 from rest_framework import generics, status
 from django.db.models import Q
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_almacen import PermisoActualizarHojasVidaComputadores, PermisoActualizarHojasVidaOtrosActivos, PermisoActualizarHojasVidaVehiculos, PermisoBorrarHojasVidaComputadores, PermisoBorrarHojasVidaOtrosActivos, PermisoBorrarHojasVidaVehiculos
 from seguridad.utils import Util
 from rest_framework.permissions import IsAuthenticated
@@ -8,8 +10,11 @@ from almacen.serializers.bienes_serializers import CatalogoBienesSerializer
 from almacen.choices.estados_articulo_choices import estados_articulo_CHOICES
 from almacen.serializers.hoja_de_vida_serializers import (
     SerializersHojaDeVidaComputadores,
+    SerializersHojaDeVidaComputadoresGet,
+    SerializersHojaDeVidaOtrosActivosGet,
     SerializersHojaDeVidaVehiculos,
     SerializersHojaDeVidaOtrosActivos,
+    SerializersHojaDeVidaVehiculosGet,
     SerializersPutHojaDeVidaComputadores,
     SerializersPutHojaDeVidaVehiculos,
     SerializersPutHojaDeVidaOtrosActivos
@@ -46,7 +51,7 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoActualizarHojasVidaComputadores]
     def post(self,request):
         data=request.data
-        serializer = self.serializer_class(data=data)
+        ruta_imagen_foto = request.FILES.get('ruta_imagen_foto')
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
         print('ARTICULO',articulo_existentes)
@@ -63,6 +68,17 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
         articulo_existentes.tiene_hoja_vida=True
         articulo_existentes.save()
 
+        # CREAR ARCHIVO EN T238
+        if ruta_imagen_foto:
+            archivo_creado = UtilsGestor.create_archivo_digital(ruta_imagen_foto, "HojaVidaComputadores")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_imagen_foto'] = archivo_creado_instance.id_archivo_digital
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         # auditoria crear hoja de vida computadores
         usuario = request.user.id_usuario
         descripcion = {"NombreElemento": str(articulo_existentes.nombre), "Serial": str(articulo_existentes.doc_identificador_nro)}
@@ -77,8 +93,6 @@ class CreateHojaDeVidaComputadores(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
         return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
@@ -87,7 +101,7 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoActualizarHojasVidaVehiculos]
     def post(self,request):
         data=request.data
-        serializer = self.serializer_class(data=data)
+        ruta_imagen_foto = request.FILES.get('ruta_imagen_foto')
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
 
@@ -103,6 +117,18 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
         
         articulo_existentes.tiene_hoja_vida=True
         articulo_existentes.save()
+
+        # CREAR ARCHIVO EN T238
+        if ruta_imagen_foto:
+            archivo_creado = UtilsGestor.create_archivo_digital(ruta_imagen_foto, "HojaVidaVehiculos")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_imagen_foto'] = archivo_creado_instance.id_archivo_digital
+
+        data['id_vehiculo_arrendado'] = None
+        serializer = self.serializer_class(data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        instance =serializer.save()
         
         # auditoria crear hoja de vida vehiculos
         usuario = request.user.id_usuario
@@ -118,11 +144,6 @@ class CreateHojaDeVidaVehiculos(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
-
-
-    
-        serializer.is_valid(raise_exception=True)
-        instance =serializer.save()
         #print(articulo_existentes)
 
         #GENERACION DE ALERTA
@@ -153,7 +174,7 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoActualizarHojasVidaOtrosActivos]
     def post(self,request):
         data=request.data
-        serializer = self.serializer_class(data=data)
+        ruta_imagen_foto = request.FILES.get('ruta_imagen_foto')
         id_articulo=data['id_articulo']
         articulo_existentes=CatalogoBienes.objects.filter(Q(id_bien=id_articulo) & ~Q(nro_elemento_bien=None)).first()
         if not articulo_existentes:
@@ -168,6 +189,17 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
         
         articulo_existentes.tiene_hoja_vida=True
         articulo_existentes.save()
+
+        # CREAR ARCHIVO EN T238
+        if ruta_imagen_foto:
+            archivo_creado = UtilsGestor.create_archivo_digital(ruta_imagen_foto, "HojaVidaOtros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_imagen_foto'] = archivo_creado_instance.id_archivo_digital
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         
         # auditoria crear hoja de vida otros
         usuario = request.user.id_usuario
@@ -183,9 +215,6 @@ class CreateHojaDeVidaOtros(generics.CreateAPIView):
             "descripcion": descripcion, 
         }
         Util.save_auditoria(auditoria_data)
-        
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
         return Response({'success':True, 'detail':'Hoja de vida creada','data': serializer.data},status=status.HTTP_200_OK)
 
 class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
@@ -206,6 +235,8 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
         if mtto_programado != None or mtto_registrado != None:
             raise PermissionDenied('No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados')
         else:
+            hv_a_borrar.ruta_imagen_foto.ruta_archivo.delete()
+            hv_a_borrar.ruta_imagen_foto.delete()
             hv_a_borrar.delete()
             
             # auditoria delete hoja de vida computadores
@@ -222,7 +253,7 @@ class DeleteHojaDeVidaComputadores(generics.DestroyAPIView):
                 "descripcion": descripcion, 
             }
             Util.save_auditoria(auditoria_data)
-            raise PermissionDenied('Se eliminó la hoja de vida del computador seleccionado')
+            return Response({'success':True, 'detail':'Se eliminó la hoja de vida del computador seleccionado'}, status=status.HTTP_200_OK)
         
 class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaVehiculos
@@ -240,6 +271,8 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
         if mtto_programado != None or mtto_registrado != None:
             raise PermissionDenied('No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados')
         else:
+            hv_a_borrar.ruta_imagen_foto.ruta_archivo.delete()
+            hv_a_borrar.ruta_imagen_foto.delete()
             hv_a_borrar.delete()
             
             # auditoria delete hoja de vida Vehículos
@@ -256,7 +289,7 @@ class DeleteHojaDeVidaVehiculos(generics.DestroyAPIView):
                 "descripcion": descripcion, 
             }
             Util.save_auditoria(auditoria_data)
-            raise PermissionDenied('Se eliminó la hoja de vida del vehículo seleccionado')
+            return Response({'success':True, 'detail':'Se eliminó la hoja de vida del vehículo seleccionado'}, status=status.HTTP_200_OK)
         
 class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
     serializer_class=SerializersHojaDeVidaOtrosActivos
@@ -275,6 +308,8 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
         if mtto_programado != None or mtto_registrado != None:
             raise PermissionDenied('No se puede eliminar una hoja de vida que ya tiene mantenimientos programados o ejecutados')
         else:
+            hv_a_borrar.ruta_imagen_foto.ruta_archivo.delete()
+            hv_a_borrar.ruta_imagen_foto.delete()
             hv_a_borrar.delete()
             
             # auditoria delete hoja de vida Otros activos
@@ -291,7 +326,7 @@ class DeleteHojaDeVidaOtrosActivos(generics.DestroyAPIView):
                 "descripcion": descripcion, 
             }
             Util.save_auditoria(auditoria_data)
-            raise PermissionDenied('Se eliminó la hoja de vida del activo seleccionado')
+            return Response({'success':True, 'detail':'Se eliminó la hoja de vida del activo seleccionado'}, status=status.HTTP_200_OK)
         
 class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
     serializer_class=SerializersPutHojaDeVidaComputadores
@@ -300,6 +335,7 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
 
     def put(self,request,pk):
         data=request.data
+        ruta_imagen_foto = request.FILES.get('ruta_imagen_foto')
         hoja_vida_computador = HojaDeVidaComputadores.objects.filter(id_hoja_de_vida=pk).first()
         if hoja_vida_computador:
             hoja_vida_computador_previous = copy.copy(hoja_vida_computador)
@@ -315,6 +351,20 @@ class UpdateHojaDeVidaComputadores(generics.UpdateAPIView):
                 if marca_existe:
                     bien.id_marca = marca_existe
                     bien.save()
+
+            # ACTUALIZAR ARCHIVO
+            if ruta_imagen_foto:
+                if hoja_vida_computador.ruta_imagen_foto:
+                    hoja_vida_computador.ruta_imagen_foto.ruta_archivo.delete()
+                    hoja_vida_computador.ruta_imagen_foto.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(ruta_imagen_foto, "HojaVidaComputadores")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data['ruta_imagen_foto'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and hoja_vida_computador.ruta_imagen_foto:
+            #     hoja_vida_computador.ruta_imagen_foto.ruta_archivo.delete()
+            #     hoja_vida_computador.ruta_imagen_foto.delete()
             
             serializer = self.serializer_class(hoja_vida_computador, data=data)
             serializer.is_valid(raise_exception=True)
@@ -358,6 +408,7 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
 
     def put(self,request,pk):
         data=request.data
+        ruta_imagen_foto = request.FILES.get('ruta_imagen_foto')
         hoja_vida_vehiculo = HojaDeVidaVehiculos.objects.filter(id_hoja_de_vida=pk).first()
         if hoja_vida_vehiculo:
             hoja_vida_vehiculo_previous = copy.copy(hoja_vida_vehiculo)
@@ -373,6 +424,22 @@ class UpdateHojaDeVidaVehiculos(generics.UpdateAPIView):
                 if marca_existe:
                     bien.id_marca = marca_existe
                     bien.save()
+                else:
+                    raise ValidationError('No existe la marca ingresada')
+
+            # ACTUALIZAR ARCHIVO
+            if ruta_imagen_foto:
+                if hoja_vida_vehiculo.ruta_imagen_foto:
+                    hoja_vida_vehiculo.ruta_imagen_foto.ruta_archivo.delete()
+                    hoja_vida_vehiculo.ruta_imagen_foto.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(ruta_imagen_foto, "HojaVidaVehiculos")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data['ruta_imagen_foto'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and hoja_vida_vehiculo.ruta_imagen_foto:
+            #     hoja_vida_vehiculo.ruta_imagen_foto.ruta_archivo.delete()
+            #     hoja_vida_vehiculo.ruta_imagen_foto.delete()
             
             serializer = self.serializer_class(hoja_vida_vehiculo, data=data)
             serializer.is_valid(raise_exception=True)
@@ -418,6 +485,7 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
 
     def put(self,request,pk):
         data=request.data
+        ruta_imagen_foto = request.FILES.get('ruta_imagen_foto')
         hoja_vida_otros = HojaDeVidaOtrosActivos.objects.filter(id_hoja_de_vida=pk).first()
         if hoja_vida_otros:
             hoja_vida_otros_previous = copy.copy(hoja_vida_otros)
@@ -433,6 +501,20 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
                 if marca_existe:
                     bien.id_marca = marca_existe
                     bien.save()
+
+            # ACTUALIZAR ARCHIVO
+            if ruta_imagen_foto:
+                if hoja_vida_otros.ruta_imagen_foto:
+                    hoja_vida_otros.ruta_imagen_foto.ruta_archivo.delete()
+                    hoja_vida_otros.ruta_imagen_foto.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(ruta_imagen_foto, "HojaVidaOtros")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data['ruta_imagen_foto'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and hoja_vida_otros.ruta_imagen_foto:
+            #     hoja_vida_otros.ruta_imagen_foto.ruta_archivo.delete()
+            #     hoja_vida_otros.ruta_imagen_foto.delete()
             
             serializer = self.serializer_class(hoja_vida_otros, data=data)
             serializer.is_valid(raise_exception=True)
@@ -470,7 +552,7 @@ class UpdateHojaDeVidaOtrosActivos(generics.UpdateAPIView):
             raise NotFound('No existe la hoja de vida ingresada')
 
 class GetHojaDeVidaComputadoresById(generics.RetrieveAPIView):
-    serializer_class=SerializersHojaDeVidaComputadores
+    serializer_class=SerializersHojaDeVidaComputadoresGet
     queryset=HojaDeVidaComputadores.objects.all()
     
     def get(self, request, pk):
@@ -485,7 +567,7 @@ class GetHojaDeVidaComputadoresById(generics.RetrieveAPIView):
                 return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaVehiculosById(generics.RetrieveAPIView):
-    serializer_class=SerializersHojaDeVidaVehiculos
+    serializer_class=SerializersHojaDeVidaVehiculosGet
     queryset=HojaDeVidaVehiculos.objects.all()
     
     def get(self, request, pk):
@@ -500,7 +582,7 @@ class GetHojaDeVidaVehiculosById(generics.RetrieveAPIView):
                 return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
-    serializer_class=SerializersHojaDeVidaOtrosActivos
+    serializer_class=SerializersHojaDeVidaOtrosActivosGet
     queryset=HojaDeVidaOtrosActivos.objects.all()
     
     def get(self, request, pk):
@@ -515,7 +597,7 @@ class GetHojaDeVidaOtrosActivosById(generics.RetrieveAPIView):
                 return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaComputadoresByIdBien(generics.RetrieveAPIView):
-    serializer_class=SerializersHojaDeVidaComputadores
+    serializer_class=SerializersHojaDeVidaComputadoresGet
     queryset=HojaDeVidaComputadores.objects.all()
     
     def get(self, request, id_bien):
@@ -537,7 +619,7 @@ class GetHojaDeVidaComputadoresByIdBien(generics.RetrieveAPIView):
                 return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaVehiculosByIdBien(generics.RetrieveAPIView):
-    serializer_class=SerializersHojaDeVidaVehiculos
+    serializer_class=SerializersHojaDeVidaVehiculosGet
     queryset=HojaDeVidaVehiculos.objects.all()
     
     def get(self, request, id_bien):
@@ -559,7 +641,7 @@ class GetHojaDeVidaVehiculosByIdBien(generics.RetrieveAPIView):
                 return Response({'success':False, 'detail':'No se encontró la hoja de vida', 'data':[]}, status=status.HTTP_404_NOT_FOUND)
 
 class GetHojaDeVidaOtrosActivosByIdBien(generics.RetrieveAPIView):
-    serializer_class=SerializersHojaDeVidaOtrosActivos
+    serializer_class=SerializersHojaDeVidaOtrosActivosGet
     queryset=HojaDeVidaOtrosActivos.objects.all()
     
     def get(self, request, id_bien):
