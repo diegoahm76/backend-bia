@@ -3138,7 +3138,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         #outputPath = str(settings.BASE_DIR) +os.sep +'salida'+os.sep +str(plantilla)
 
         pathToTemplate = str(settings.MEDIA_ROOT) + os.sep +str(plantilla)
-        outputPath = str(settings.MEDIA_ROOT) +os.sep+'pruebas'+ os.sep +str(plantilla)
+        outputPath = str(settings.MEDIA_ROOT) +os.sep+'pruebas.docx'
 
         print(pathToTemplate)
         doc = DocxTemplate(pathToTemplate)
