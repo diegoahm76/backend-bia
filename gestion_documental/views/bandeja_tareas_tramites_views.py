@@ -13,7 +13,7 @@ from gestion_documental.models.configuracion_tiempos_respuesta_models import Con
 from gestion_documental.models.expedientes_models import ExpedientesDocumentales, IndicesElectronicosExp
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
 from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_tramites_serializers import AnexosTramitesGetSerializer, ComplementosUsu_TramiteGetByIdSerializer, DetalleTramitesComplementosUsu_PQRGetSerializer, MetadatosAnexosTramitesTmpSerializerGet, ReasignacionesTareasTramitesCreateSerializer, ReasignacionesTareasgetTramitesByIdSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasGetTramiteJustificacionSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
+from gestion_documental.serializers.bandeja_tareas_tramites_serializers import ActosAdministrativosCreateSerializer, AnexosTramitesGetSerializer, ComplementosUsu_TramiteGetByIdSerializer, DetalleTramitesComplementosUsu_PQRGetSerializer, MetadatosAnexosTramitesTmpSerializerGet, ReasignacionesTareasTramitesCreateSerializer, ReasignacionesTareasgetTramitesByIdSerializer, SolicitudesTramitesDetalleGetSerializer, TareasAsignadasGetTramiteJustificacionSerializer, TareasAsignadasTramiteUpdateSerializer, TareasAsignadasTramitesGetSerializer
 import json
 
 from gestion_documental.serializers.expedientes_serializers import AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
@@ -22,11 +22,12 @@ from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPersonaCreate, TareaBandejaTareasPersonaUpdate, TareasAsignadasCreate
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
+
 from seguridad.utils import Util
 from tramites.views.tramites_views import TramitesPivotGetView
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-from tramites.models.tramites_models import SolicitudesTramites, Tramites
+from tramites.models.tramites_models import ActosAdministrativos, SolicitudesTramites, Tramites
 
 from transversal.models.personas_models import Personas
 from rest_framework.exceptions import ValidationError,NotFound
@@ -87,9 +88,11 @@ class ActaInicioCreate(generics.CreateAPIView):
     def acta_inicio(self,data):
 
         context = data
-        print(context)
+        print(context) #MEDIA_ROOT
         pathToTemplate = str(settings.BASE_DIR) + '/gestion_documental/templates/AUTO_INICIO_AGUAS_SUPERFICIALES.docx'
         outputPath = str(settings.BASE_DIR) + '/gestion_documental/templates/output.docx'
+
+
 
         doc = DocxTemplate(pathToTemplate)
         doc.render(context)
@@ -284,9 +287,6 @@ class CrearExpedienteTramite(generics.CreateAPIView):
     serializer_class = AperturaExpedienteSimpleSerializer
     serializer_class_complejo = AperturaExpedienteComplejoSerializer
     permission_classes = [IsAuthenticated]
-
-
-    
 
     def create(self, request):
         data = request.data
@@ -752,6 +752,9 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             #DATO5
             data_auto['dato5'] = titular.numero_documento
 
+            #DATO9 CORREO ELECTRONICO
+            data_auto['dato9'] =  titular.email
+
             #DATO33 NUMERO DE RADICADO
             cadena_radicado = self.radicado_completo(instance_radicado)
             data_auto['dato34'] = cadena_radicado
@@ -981,10 +984,9 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             request.data['id_und_org_oficina_respon_actual'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
             request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
             respuesta = vista_creadora_expediente.create(request)
-
-
+            
             respuesta_expediente = respuesta.data['data']
-
+            
             id_expediente = respuesta_expediente['id_expediente_documental']
             expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
             if not expediente:

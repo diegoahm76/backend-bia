@@ -4,7 +4,7 @@ from gestion_documental.models.ccd_models import CatalogosSeriesUnidad
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TiposPQR, MediosSolicitud
-from tramites.models.tramites_models import AnexosTramite, PermisosAmbSolicitudesTramite, RespuestasRequerimientos, SolicitudesDeJuridica, SolicitudesTramites
+from tramites.models.tramites_models import ActosAdministrativos, AnexosTramite, PermisosAmbSolicitudesTramite, RespuestasRequerimientos, SolicitudesDeJuridica, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -1217,6 +1217,11 @@ class AsignacionTramitesPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = AsignacionTramites
         fields = '__all__'
+
+class ActosAdministrativosCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActosAdministrativos
+        fields ='__all__'
 
 
 

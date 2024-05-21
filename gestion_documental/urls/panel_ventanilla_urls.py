@@ -114,7 +114,8 @@ urlpatterns = [
     path('serie-subserie-unidad/get/<str:uni>/', views.SerieSubserioUnidadGet.as_view(), name='listar-serie-subserio-unidad'),
     
 
-
+    #CREAR AUTO DE INICIO
+    path('crear-auto-inicio/',views.CreateAutoInicio.as_view(),name='crear-auto initio')
 
 
 ]

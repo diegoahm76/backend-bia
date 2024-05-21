@@ -374,12 +374,12 @@ class ActosAdministrativos(models.Model):
     fecha_acto_administrativo = models.DateTimeField(null=True, blank=True, db_column='T294fechaActoAdministrativo')
     id_consec_por_nivel_tipologias_doc_agno = models.ForeignKey('gestion_documental.ConsecutivoTipologia', on_delete=models.CASCADE, db_column='T294Id_ConsecPorNivel_TipologiasDocAgno')
     id_notificacion = models.ForeignKey('gestion_documental.NotificacionesCorrespondencia',on_delete=models.SET_NULL,db_column='T294Id_Notificacion',null=True)
-    fecha_notificacion = models.DateTimeField(db_column='T294fechaNotificacion')
+    fecha_notificacion = models.DateTimeField(db_column='T294fechaNotificacion',null=True)
     procede_reposicion = models.BooleanField(null=True, blank=True, db_column='T294procedeReposicion')
     fecha_limite_reposicion = models.DateTimeField(null=True, blank=True, db_column='T294fechaLimiteReposicion')
     id_archivo_acto_administrativo = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T294Id_ArchivoActoAdministrativo')
-    id_persona_publica_acto = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T294Id_PersonaPublicaActo')
-    estado_actual = models.IntegerField(db_column='T294estadoActual')
+    id_persona_publica_acto = models.ForeignKey(Personas, on_delete=models.SET_NULL, db_column='T294Id_PersonaPublicaActo',null=True)
+    estado_actual = models.IntegerField(db_column='T294estadoActual',null=True)
     
     def __str__(self):
         return str(self.id_acto_administrativo)
