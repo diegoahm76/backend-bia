@@ -91,6 +91,7 @@ class ReporteCarteraGeneralView(generics.ListAPIView):
 
 class ReporteCarteraGeneralGraficaView(generics.ListAPIView):
     serializer_class = CarteraGeneralSerializer
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         fecha_corte_str = self.kwargs['fin']
@@ -636,6 +637,7 @@ class ConceptoContableView(generics.ListAPIView):
     
 class CarteraListView(generics.ListAPIView):
     serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
@@ -679,6 +681,7 @@ class CarteraListView(generics.ListAPIView):
 
 class ReporteGeneralCarteraDeuda(generics.ListAPIView):
     serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
@@ -713,6 +716,7 @@ class ReporteGeneralCarteraDeuda(generics.ListAPIView):
         
 class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
     serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
@@ -770,6 +774,7 @@ class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
 
 class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
     serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
@@ -883,6 +888,7 @@ class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
 
 class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
     serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
@@ -952,7 +958,8 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
 
 
 class CarteraDeudoresTop(generics.ListAPIView):
-    serializer_class = DeudorSumSerializer  # Usa el serializador DeudorSumSerializer
+    serializer_class = DeudorSumSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
