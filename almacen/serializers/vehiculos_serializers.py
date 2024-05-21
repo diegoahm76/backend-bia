@@ -250,20 +250,32 @@ class BusquedaVehiculoSerializer(serializers.ModelSerializer):
 class VehiculoPersonaLogueadaSerializer(serializers.ModelSerializer):
     marca = serializers.SerializerMethodField()
     contratista = serializers.CharField(source='id_hoja_vida_vehiculo.id_vehiculo_arrendado.empresa_contratista', read_only=True)
-    placa = serializers.CharField(source='id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa', read_only=True)
-
+    placa = serializers.SerializerMethodField()
     class Meta:
         model = VehiculosAgendables_Conductor
         fields = ['id_vehiculo_conductor', 'id_hoja_vida_vehiculo', 'id_persona_conductor', 'marca', 'contratista', 'placa']
 
-    def get_marca(self, obj):
-        if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado:
-            return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
-        return None
 
+    def get_placa(self, obj):
+        placa = None
+        if obj.id_hoja_vida_vehiculo.es_arrendado:
+            placa = obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+        else:
+            placa = obj.id_hoja_vida_vehiculo.id_articulo.doc_identificador_nro
+        
+        return placa
+    
+    def get_marca(self, obj):
+        marca = None
+        if obj.id_hoja_vida_vehiculo.es_arrendado:
+            marca = obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+        else:
+            marca = obj.id_hoja_vida_vehiculo.id_articulo.id_marca.nombre
+
+        return marca    
     def to_representation(self, instance):
         persona_logueada = self.context['request'].user.persona
-        vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=persona_logueada)
+        vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=persona_logueada, activo=True)
         serialized_data = []
         for vehiculo in vehiculos_asociados:
             vehiculo_data = {
@@ -272,7 +284,7 @@ class VehiculoPersonaLogueadaSerializer(serializers.ModelSerializer):
                 'id_persona_conductor': vehiculo.id_persona_conductor.id_persona,
                 'marca': self.get_marca(vehiculo),
                 'contratista': vehiculo.id_hoja_vida_vehiculo.id_vehiculo_arrendado.empresa_contratista if vehiculo.id_hoja_vida_vehiculo.id_vehiculo_arrendado else None,
-                'placa': vehiculo.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa if vehiculo.id_hoja_vida_vehiculo.id_vehiculo_arrendado else None
+                'placa': self.get_placa(vehiculo)
             }
             serialized_data.append(vehiculo_data)
         return serialized_data
