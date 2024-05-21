@@ -995,14 +995,14 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
            
 
             #raise ValidationError(request)
-            data_archivo = self.crear_acto(tramite,respuesta_expediente,request.META.get('HTTP_AUTHORIZATION'))
+            #data_archivo = self.crear_acto(tramite,respuesta_expediente,request.META.get('HTTP_AUTHORIZATION'))
             #radicado_cadena = self.radicado_completo(tramite.id_radicado)
             #data_tareas = self.tarea_radicado(radicado_cadena,request.META.get('HTTP_AUTHORIZATION'))
             
             #print(data_tareas)
             #print("SASOF TAREA")
             #print(data_tareas)
-            raise ValidationError("HAAA")
+            #raise ValidationError("HAAA")
         
             tramite = asignacion.id_solicitud_tramite
             tramite.id_expediente = expediente
