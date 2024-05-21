@@ -634,6 +634,7 @@ class CrearSolicitudViaje(generics.CreateAPIView):
 #Listar_Solicitudes_Viaje
 class ListaSolicitudesViaje(generics.ListAPIView):
     serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = SolicitudesViajes.objects.all()  # Obtiene todas las solicitudes de viaje
@@ -732,6 +733,7 @@ class EditarSolicitudViaje(generics.UpdateAPIView):
 #Busqueda-Vehiculos
 class BusquedaVehiculos(generics.ListAPIView):
     serializer_class = HojaDeVidaVehiculosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
@@ -746,10 +748,10 @@ class BusquedaVehiculos(generics.ListAPIView):
             queryset = queryset.filter(cod_tipo_vehiculo=tipo_vehiculo)
 
         if marca:
-            queryset = queryset.filter(id_vehiculo_arrendado__id_marca__nombre__icontains=marca)
+            queryset = queryset.filter( Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) | Q(id_articulo__id_marca__nombre__icontains=placa) )
 
         if placa:
-            queryset = queryset.filter(id_vehiculo_arrendado__placa__icontains=placa)
+            queryset = queryset.filter(Q(id_vehiculo_arrendado__placa__icontains=placa) | Q(id_articulo__doc_identificador_nro__icontains=placa) )
 
         return queryset
 
@@ -818,6 +820,7 @@ class BusquedaVehiculos(generics.ListAPIView):
 #Busqueda-Conductores
 class BusquedaConductores(generics.ListAPIView):
     serializer_class = ClaseTerceroPersonaSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         tipo_conductor = self.request.query_params.get('tipo_conductor')
@@ -1027,6 +1030,7 @@ class AsignarVehiculo(generics.CreateAPIView):
 
 class ListarAsignacionesVehiculos(generics.ListAPIView):
     serializer_class = AsignacionVehiculoSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = VehiculosAgendables_Conductor.objects.all()
@@ -1057,7 +1061,6 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
 
         tipo_conductor = request.query_params.get('tipo_conductor')
         if tipo_conductor:
-            # Verificamos si tipo_conductor es None antes de intentar iterar
             serializer_data = [vehiculo for vehiculo in serializer_data if vehiculo.get("tipo_conductor") and tipo_conductor.upper() in vehiculo["tipo_conductor"].upper()]
 
             
@@ -1067,6 +1070,7 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
 class EliminarAsignacionVehiculo(generics.UpdateAPIView):
     queryset = VehiculosAgendables_Conductor.objects.all()
     serializer_class = AsignacionVehiculoSerializer
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         try:
@@ -1085,6 +1089,7 @@ class EliminarAsignacionVehiculo(generics.UpdateAPIView):
 
 #INSPECCION_VEHICULOS
 class DatosBasicosConductorGet(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request, format=None):
         # Verificar si el usuario está autenticado
         if not request.user.is_authenticated:
@@ -1164,6 +1169,7 @@ class DatosBasicosConductorGet(generics.ListAPIView):
 #BUSQUEDA_AVANZADA_VEHICULOS
 class VehiculosAsociadosPersona(generics.ListAPIView):
     serializer_class = VehiculoPersonaLogueadaSerializer
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         # Obtener el ID de la persona logueada
@@ -1450,6 +1456,7 @@ class CrearInspeccionVehiculo(generics.CreateAPIView):
         
 class NovedadesVehiculosList(generics.ListAPIView):
     serializer_class = InspeccionVehiculoSerializer
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
         vehiculos_sin_novedad = []
@@ -1632,6 +1639,7 @@ class InspeccionVehiculoDetail(generics.RetrieveAPIView, generics.UpdateAPIView)
 class InspeccionVehiculoID(generics.RetrieveAPIView):
     queryset = InspeccionesVehiculosDia.objects.all()
     serializer_class = InspeccionVehiculoSerializer
+    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1646,6 +1654,7 @@ class InspeccionVehiculoID(generics.RetrieveAPIView):
 #Busqueda_Avanzada_Solicitud_Viajes
 class BusquedaSolicitudesViaje(generics.ListAPIView):
     serializer_class = BusquedaSolicitudViajeSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = SolicitudesViajes.objects.exclude(estado_solicitud='FN')  # Excluir las solicitudes en estado "Finalizada"
@@ -2029,6 +2038,7 @@ class ListaVehiculosDisponibles(generics.ListAPIView):
 
 class BusquedaVehiculosGRL(generics.ListAPIView):
     serializer_class = BusquedaAvanzadaGRLSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = VehiculosAgendables_Conductor.objects.all()
@@ -2093,7 +2103,8 @@ class BusquedaVehiculosGRL(generics.ListAPIView):
 
 class ObtenerSolicitudViaje(generics.RetrieveAPIView):
     queryset = SolicitudesViajes.objects.all()  # Obtener todas las solicitudes de viaje
-    serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente
+    serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         # Obtener el id_solicitud_viaje desde los argumentos de la URL
@@ -2116,13 +2127,14 @@ class ObtenerInformacionViajes(generics.RetrieveAPIView):
     viajes_serializer_class = ViajesAgendadosSolcitudSerializer  
     solicitudes_serializer_class = SolicitudViajeSerializer  
     personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, id_solicitud_viaje):
         try:
             # Verificar si existe una solicitud de viaje con el id dado y estado 'Finalizada' o 'Respondida'
             solicitud_viaje = SolicitudesViajes.objects.get(
                 id_solicitud_viaje=id_solicitud_viaje,
-                estado_solicitud__in=['FN', 'RE', 'RC']  # Estado 'Finalizada' o 'Respondida'
+                estado_solicitud__in=['FN', 'RE', 'RC','ES']  # Estado 'Finalizada' o 'Respondida'
             )
 
             # Obtener el viaje agendado asociado a la solicitud de viaje
@@ -2164,6 +2176,7 @@ class ObtenerInformacionAgendamiento(generics.RetrieveAPIView):
     queryset = ViajesAgendados.objects.all()  # Obtener todos los viajes agendados
     viajes_serializer_class = ViajesAgendadosPorIDSerializer  # Usar el serializador correspondiente para ViajesAgendados
     solicitudes_serializer_class = SolicitudViajeSerializer  # Usar el serializador correspondiente para SolicitudesViajes
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, id_solicitud_viaje):
         try:
@@ -2195,6 +2208,7 @@ class ObtenerInformacionViajesAll(generics.ListAPIView):
     viajes_serializer_class = ViajesAgendadosSolcitudSerializer  
     solicitudes_serializer_class = SolicitudViajeSerializer  
     personas_solicitud_serializer_class = PersonasSolicitudViajeSerializer  
+    permission_classes = [IsAuthenticated]
 
     def list(self, request):
         # Obtener todos los viajes agendados
@@ -2240,6 +2254,7 @@ class ObtenerInformacionViajesAll(generics.ListAPIView):
 
 class DetallesViajeGet(generics.ListAPIView):
     serializer_class = DetallesViajeSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return ViajesAgendados.objects.exclude(id_vehiculo_conductor__isnull=True)
@@ -2320,6 +2335,7 @@ class EliminarViajeAgendado(generics.DestroyAPIView):
     
 class ListarAgendamientos(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = ViajesAgendados.objects.exclude(fecha_autorizacion=None)
@@ -2411,6 +2427,7 @@ class CrearBitacoraSalida(generics.CreateAPIView):
 
 class ObtenerBitacoraSalida(generics.ListAPIView):
     serializer_class = BitacoraLlegadaSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
@@ -2441,6 +2458,7 @@ class ObtenerBitacoraSalida(generics.ListAPIView):
 
 class ActualizarBitacoraLlegada(generics.UpdateAPIView):
     serializer_class = BitacoraLlegadaSerializer
+    permission_classes = [IsAuthenticated]
 
     def put(self, request, *args, **kwargs):
         id_viaje_agendado = self.kwargs.get('id_viaje_agendado')
@@ -2538,6 +2556,7 @@ class BusquedaEstadoSolicitudViaje(generics.ListAPIView):
 
 class SolicitudesViajePersona(generics.ListAPIView):
     serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Obtener el ID de la persona logueada
@@ -2592,6 +2611,8 @@ class SolicitudesViajePersona(generics.ListAPIView):
 class AprobarSolicitudViaje(generics.UpdateAPIView):
     queryset = SolicitudesViajes.objects.all()
     serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated]
+
 
     def update(self, request, *args, **kwargs):
         try:
@@ -2624,6 +2645,7 @@ class AprobarSolicitudViaje(generics.UpdateAPIView):
 class RechazarSolicitudViaje(generics.UpdateAPIView):
     queryset = SolicitudesViajes.objects.all()
     serializer_class = SolicitudViajeSerializer
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, *args, **kwargs):
         try:
@@ -2656,6 +2678,7 @@ class RechazarSolicitudViaje(generics.UpdateAPIView):
 
 class ViajesAsociadosVehiculo(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         # Obtener el ID del vehículo conductor desde los parámetros de la solicitud

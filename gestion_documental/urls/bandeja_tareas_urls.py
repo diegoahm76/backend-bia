@@ -70,6 +70,7 @@ urlpatterns = [
     path('tareas-asignadas/tramites/complemento/documento/digital/get/<str:pk>/', views_tramites.ComplementoTramitesAnexoDocumentoDigitalGet.as_view(), name='get-archivo-complemento'),
     path('tareas-asignadas/tramites/respuesta/detalle/get/<str:pk>/', views_tramites.DetalleRespuestaTramitesByIdGet.as_view(), name='get-detalle-respuesta-tramites-by-id'),
 
+    
     #BANDEJA DE TAREAS DE OPAS
     path('tareas-asignadas/opas/get-by-persona/<str:id>/', views_opas.TareasAsignadasGetOpasByPersona.as_view(), name='get-tareas-asignadas-opas-by-persona'),
     path('detalle-opas/get/<str:id>/', views_opas.DetalleOpaGetbyId.as_view(), name='get-detalle-opas-by-id'),
