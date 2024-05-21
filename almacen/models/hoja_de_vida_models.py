@@ -20,7 +20,7 @@ class HojaDeVidaComputadores(models.Model):
     procesador = models.CharField(max_length=20, db_column='T065procesador', blank=True, null=True)
     memoria_ram = models.SmallIntegerField(db_column='T065memoriaRAM', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T065observacionesAdicionales', blank=True, null=True)
-    ruta_imagen_foto = models.ImageField(db_column='T065rutaImagenFoto', max_length=255, upload_to='almacen/hojas_de_vida_com/', blank=True, null=True)
+    ruta_imagen_foto = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T065rutaImagenFoto')
     
     def __str__(self):
         return str(self.id_hoja_de_vida)
@@ -57,7 +57,7 @@ class HojaDeVidaVehiculos(models.Model):
     es_agendable = models.BooleanField(db_column='T066esAgendable', blank=True, null=True)
     en_circulacion = models.BooleanField(db_column='T066enCirculacion', blank=True, null=True)
     fecha_circulacion = models.DateField(db_column='T066fechaCirculacion', blank=True, null=True)
-    ruta_imagen_foto = models.ImageField(db_column='T066rutaImagenFoto', max_length=255, upload_to='almacen/hojas_de_vida_veh/', blank=True, null=True)
+    ruta_imagen_foto = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T066rutaImagenFoto')
     
     def __str__(self):
         return str(self.id_hoja_de_vida)
@@ -74,7 +74,7 @@ class HojaDeVidaOtrosActivos(models.Model):
     caracteristicas_fisicas = models.TextField(db_column='T067caracteristicasFisicas', blank=True, null=True)
     especificaciones_tecnicas = models.TextField(db_column='T067especificacionesTecnicas', blank=True, null=True)
     observaciones_adicionales = models.CharField(max_length=255, db_column='T067observacionesAdicionales', blank=True, null=True)
-    ruta_imagen_foto = models.ImageField(db_column='T067rutaImagenFoto', max_length=255, upload_to='almacen/hojas_de_vida_oac/', blank=True, null=True)
+    ruta_imagen_foto = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T067rutaImagenFoto')
     
     def __str__(self):
         return str(self.id_hoja_de_vida)

@@ -16,6 +16,18 @@ class SerializersHojaDeVidaComputadores(serializers.ModelSerializer):
     class Meta:
         model=HojaDeVidaComputadores
         fields=('__all__')
+
+class SerializersHojaDeVidaComputadoresGet(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_articulo.nombre',default=None)
+    doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
+    id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
+    marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    ruta_imagen_foto=serializers.ReadOnlyField(source='ruta_imagen_foto.ruta_archivo.url', default=None)
+    
+    class Meta:
+        model=HojaDeVidaComputadores
+        fields=('__all__')
         
 class SerializersPutHojaDeVidaComputadores(serializers.ModelSerializer):
     class Meta:
@@ -41,7 +53,19 @@ class SerializersHojaDeVidaVehiculos(serializers.ModelSerializer):
     
     class Meta:
         model=HojaDeVidaVehiculos
-        fields=('__all__')
+        fields='__all__'
+        
+class SerializersHojaDeVidaVehiculosGet(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_articulo.nombre',default=None)
+    doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
+    id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
+    marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    ruta_imagen_foto=serializers.ReadOnlyField(source='ruta_imagen_foto.ruta_archivo.url', default=None)
+    
+    class Meta:
+        model=HojaDeVidaVehiculos
+        fields='__all__'
 
 class SerializersHojaDeVidaOtrosActivos(serializers.ModelSerializer):
     codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
@@ -49,6 +73,18 @@ class SerializersHojaDeVidaOtrosActivos(serializers.ModelSerializer):
     doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
     id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
     marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    
+    class Meta:
+        model=HojaDeVidaOtrosActivos
+        fields=('__all__')
+
+class SerializersHojaDeVidaOtrosActivosGet(serializers.ModelSerializer):
+    codigo_bien=serializers.ReadOnlyField(source='id_articulo.codigo_bien',default=None)
+    nombre=serializers.ReadOnlyField(source='id_articulo.nombre',default=None)
+    doc_identificador_nro=serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro',default=None)
+    id_marca=serializers.ReadOnlyField(source='id_articulo.id_marca.id_marca',default=None)
+    marca=serializers.ReadOnlyField(source='id_articulo.id_marca.nombre',default=None)
+    ruta_imagen_foto=serializers.ReadOnlyField(source='ruta_imagen_foto.ruta_archivo.url', default=None)
     
     class Meta:
         model=HojaDeVidaOtrosActivos

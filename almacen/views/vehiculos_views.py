@@ -748,10 +748,10 @@ class BusquedaVehiculos(generics.ListAPIView):
             queryset = queryset.filter(cod_tipo_vehiculo=tipo_vehiculo)
 
         if marca:
-            queryset = queryset.filter(id_vehiculo_arrendado__id_marca__nombre__icontains=marca)
+            queryset = queryset.filter( Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) | Q(id_articulo__id_marca__nombre__icontains=placa) )
 
         if placa:
-            queryset = queryset.filter(id_vehiculo_arrendado__placa__icontains=placa)
+            queryset = queryset.filter(Q(id_vehiculo_arrendado__placa__icontains=placa) | Q(id_articulo__doc_identificador_nro__icontains=placa) )
 
         return queryset
 
@@ -1061,7 +1061,6 @@ class ListarAsignacionesVehiculos(generics.ListAPIView):
 
         tipo_conductor = request.query_params.get('tipo_conductor')
         if tipo_conductor:
-            # Verificamos si tipo_conductor es None antes de intentar iterar
             serializer_data = [vehiculo for vehiculo in serializer_data if vehiculo.get("tipo_conductor") and tipo_conductor.upper() in vehiculo["tipo_conductor"].upper()]
 
             
