@@ -7,10 +7,12 @@ from recaudo.models.base_models import ValoresVariables
 from recaudo.models.liquidaciones_models import LiquidacionesBase
 from recaudo.models.pagos_models import Pagos
 from recaudo.serializers.liquidaciones_serializers import HistEstadosLiqPostSerializer
-from tramites.models.tramites_models import Tramites
+from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, PermisosAmbientales, SolicitudesTramites, Tramites
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas
 from datetime import datetime, timedelta
+
+from transversal.models.base_models import Municipio
 # from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
 
 
@@ -58,7 +60,7 @@ def actualizar_estados_liquidaciones():
 
 
 def update_tramites_bia(radicado):
-	# AÑADIR LO DE ACTUALIZAR TRAMITE EN T273 DE ACUERDO A LO INSERTADO EN T318
+	# AÑADIR LO DE ACTUALIZAR TRAMITE EN T280 DE ACUERDO A LO INSERTADO EN T318
 	tramites_values = Tramites.objects.filter(radicate_bia=radicado).values()
 	
 	if tramites_values:
@@ -75,7 +77,29 @@ def update_tramites_bia(radicado):
 			else:
 				value = item['value_key']
 			organized_data[field_name] = value
+	
+		# ACTUALIZAR TRAMITE EN T273
+		radicado_split = radicado.split("-")
+		prefijo_radicado = radicado_split[0]
+		agno_radicado = radicado_split[1]
+		nro_radicado = radicado_split[2].strip("0")
 
+		tramite_bia = SolicitudesTramites.objects.filter(id_radicado__prefijo_radicado=prefijo_radicado, id_radicado__agno_radicado=agno_radicado, id_radicado__nro_radicado=nro_radicado).first()
+		if tramite_bia:
+			str_permiso_ambiental = organized_data.get('typeRequest')
+			direccion = organized_data.get('Direccion')
+			municipio_id = organized_data.get('Municipio_value')
+
+			permiso_ambiental = PermisosAmbientales.objects.filter(nombre__icontains=str_permiso_ambiental).first()
+			municipio = Municipio.objects.filter(cod_municipio=municipio_id).first()
+
+			if permiso_ambiental and direccion and municipio:
+				PermisosAmbSolicitudesTramite.objects.create(
+					id_permiso_ambiental=permiso_ambiental,
+					id_solicitud_tramite=tramite_bia,
+					direccion=direccion,
+					cod_municipio=municipio
+				)
 
 def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
 	verificar_pago = VerificarPagoView()

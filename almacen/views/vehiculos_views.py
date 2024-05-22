@@ -1173,7 +1173,7 @@ class VehiculosAsociadosPersona(generics.ListAPIView):
 
     def get(self, request, *args, **kwargs):
         # Obtener el ID de la persona logueada
-        id_persona_logueada = self.request.user.persona.id_persona  # Suponiendo que la relación entre usuario y persona existe
+        id_persona_logueada = self.request.user.persona.id_persona 
 
         # Filtrar los vehículos asociados a la persona logueada con activo=True
         vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(
