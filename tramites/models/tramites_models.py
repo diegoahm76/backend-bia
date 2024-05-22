@@ -26,7 +26,7 @@ class SolicitudesTramites(models.Model):
     nombre_proyecto = models.CharField(max_length=255, db_column='T273nombreProyecto')
     costo_proyecto = models.DecimalField(max_digits=12, decimal_places=2, db_column='T273costoProyecto')
     pago = models.BooleanField(default=False, db_column='T273pago')
-    id_pago_evaluacion = models.IntegerField(null=True, blank=True, db_column='T273Id_PagoEvaluacion')
+    id_pago_evaluacion = models.ForeignKey('recaudo.Pagos', on_delete=models.SET_NULL, null=True, blank=True, db_column='T273Id_PagoEvaluacion')
     id_medio_solicitud = models.ForeignKey(MediosSolicitud, on_delete=models.CASCADE, db_column='T273Id_MedioSolicitud')
     fecha_registro = models.DateTimeField(auto_now_add=True, blank=True, db_column='T273fechaRegistro')
     fecha_envio_solicitud = models.DateTimeField(null=True, blank=True, db_column='T273fechaEnvioSolicitud')
