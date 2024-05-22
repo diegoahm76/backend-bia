@@ -312,7 +312,7 @@ class NotificarPagoView(generics.CreateAPIView):
                         if tramite:
                             if not tramite.pago:
                                 tramite.pago = True
-                                tramite.id_pago_evaluacion = pago.id_pago
+                                tramite.id_pago_evaluacion = pago
                                 tramite.save()
 
                         # Actualizar estado en liquidacion

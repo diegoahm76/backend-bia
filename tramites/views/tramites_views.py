@@ -167,7 +167,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         serializer_tramite_data['radicado_nuevo'] = radicado_nuevo
         
         if scheduler:
-            execution_time = datetime.now() + timedelta(minutes=1)
+            execution_time = datetime.now() + timedelta(minutes=2)
             scheduler.add_job(update_tramites_bia, args=[radicado_nuevo], trigger='date', run_date=execution_time)
         
         return Response({'success': True, 'detail':'Se realizó la creación del del trámite correctamente', 'data': serializer_tramite_data}, status=status.HTTP_201_CREATED)   
