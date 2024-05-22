@@ -3275,6 +3275,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
                     archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
                     consecutivo.id_archivo_digital = archivo_digital
+                    consecutivo.variables = payload
                     consecutivo.save()
                     serializer = self.serializer_class(consecutivo)
                     return Response({
@@ -3318,6 +3319,19 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     'detail': 'Se ha generado el documento exitosamente.',
                     'data': serializer.data
                 }, status=status.HTTP_201_CREATED)
+            
+            case 'A':
+                # documento = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = request.data.get('id_consecutivo'))
+                # archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento.id_archivo_digital.id_archivo_digital)
+                # consecutivo = self.consecutivo(request, archivo_digital).data
+                # documento.delete()
+                data = self.ActualizarDoc(request.data.get('payload'), request.data.get('id_consecutivo'))
+                return Response({
+                    'success': True,
+                    'detail': 'Se ha actualizado correctamente.',
+                    'data': data
+                }, status=status.HTTP_201_CREATED)
+
 
     def consecutivo(self, request, id_archivo_digital):
         try:
@@ -3381,6 +3395,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
+                        id_plantilla_doc = plantilla,
                         id_tipologia_doc = plantilla.id_tipologia_doc_trd,
                         CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
                         agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
@@ -3434,6 +3449,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
+                        id_plantilla_doc = plantilla,
                         id_tipologia_doc = plantilla.id_tipologia_doc_trd,
                         agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
                         nro_consecutivo = nro_consecutivo,
@@ -3490,6 +3506,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         
     def GenerarDocumento(self, payload, plantilla):
         try:
+            # id_consecutivo = payload.get('id_consecutivo')
             # if id_consecutivo:
             #     print("id_consecutivo")
             #     consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
@@ -3502,7 +3519,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             #         }
             #         payload['consecutivo'] = consecutivo.get('consecutivo')
             #         context = {k: v for k, v in payload.items() if v is not None and v != ''}
-            #         doc.render(context)
+            #         doc.render_properties(dic)
             #     consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
             #     consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
             #     consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
@@ -3524,8 +3541,12 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
             if ruta_archivo and os.path.exists(ruta_archivo):
                 doc = DocxTemplate(ruta_archivo)
-                context = {k: v for k, v in payload.items() if v is not None}
-                doc.render(context)
+                #context = {k: v for k, v in payload.items() if v is not None}
+                #all_variables = doc.get_undeclared_template_variables()
+                #existing_variables = {var: '' for var in all_variables}
+                #existing_variables.update(payload)
+                
+                doc.render(payload)
 
                 file_uuid = uuid.uuid4()
 
@@ -3560,3 +3581,46 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         except ValidationError as e:
             error_message = {'error': e.detail}
             raise ValidationError(e.detail)
+        
+    def ActualizarDoc(self, payload, id_consecutivo):
+        try:
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+            ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=consecutivo.id_archivo_digital.id_archivo_digital)
+                
+                payload.update(consecutivo.variables)
+                documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
+                id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
+                consecutivo.id_archivo_digital = id_archivo_digital
+                consecutivo.variables = payload
+                consecutivo.save()
+
+                os.remove(ruta_archivo)
+                archivo_digital.delete()
+                
+                serializer = self.serializer_class(consecutivo)
+                # doc = DocxTemplate(ruta_archivo)
+                # dic = {
+                #     'consecutivo': payload.get('consecutivo'),
+                #     'fecha': datetime.now().strftime('%d/%m/%Y'),
+                # }
+                # context = {k: v for k, v in payload.items() if v is not None and v != ''}
+                # doc.render_properties(dic)
+                # consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
+                # consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
+                # consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
+                # consecutivo.fecha_consecutivo = consecutivo.get('fecha_consecutivo')
+                # consecutivo.CatalogosSeriesUnidad = consecutivo.get('catalogo') if consecutivo.get('catalogo') else None
+                # serializer = ConsecutivoTipologiaDocSerializer(consecutivo, data=payload, partial=True)
+                # serializer.is_valid(raise_exception=True)
+                # serializer.save()
+
+                return serializer.data
+
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
