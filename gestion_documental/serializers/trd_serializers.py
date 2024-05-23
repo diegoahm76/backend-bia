@@ -15,9 +15,10 @@ from gestion_documental.models.trd_models import (
     CatSeriesUnidadOrgCCDTRD,
     SeriesSubSUnidadOrgTRDTipologias,
     FormatosTiposMedioTipoDoc,
-    ConsecutivoTipologia,
-    VerificacionFirmas
+    ConsecutivoTipologia
 )
+
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -410,5 +411,5 @@ class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
 
 class VerificacionFirmasSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VerificacionFirmas
+        model = DobleVerificacionTmp
         fields = '__all__'

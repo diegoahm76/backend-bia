@@ -3,9 +3,10 @@ import json
 import logging
 
 from django.http import JsonResponse
-from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from docxtpl import DocxTemplate
 import os
+import secrets
 import uuid
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -3723,20 +3724,85 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         
 
     #def GenerarDocsNotificaciones(self, request):      
-# class ValidarFirmaCreate(generics.CreateAPIView):
-#     serializer_class = VerificacionFirmasSerializer
-#     permission_classes = [IsAuthenticated]
+class ValidarFirmaCreate(generics.CreateAPIView):
+    serializer_class = VerificacionFirmasSerializer
+    permission_classes = [IsAuthenticated]
 
-#     def post(self, request):
-#         try:
-#             id_persona = request.user.persona.id_persona
-#             current_date = datetime.now()
-
-#             data = {
-#                 "id_consecutivo_tipologia": request.data.get('id_consecutivo_tipologia'),
-#                 "id_persona_verifica": id_persona,
-#                 "fecha_validacion": current_date,
-#                 "es_valida": True
-#             }
+    def post(self, request):
+        persona = request.user.persona
+        
+        consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=request.data.get('id_consecutivo'))
+        if not consecutivo_tipologia:
+            raise NotFound('No se encontró el consecutivo ingresado')
+        
+        
+        verification_code = secrets.randbelow(10**6)
+        verification_code_str = f'{verification_code:06}'
+        
+        # GUARDAR O ACTUALIZAR REGISTRO EN T270
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        
+        if doble_verificacion:
+            segundos = (datetime.now() - doble_verificacion.fecha_hora_codigo).total_seconds()
+            if segundos < 60:
+                raise ValidationError('Debe esperar un minuto antes de solicitar otro código')
+            doble_verificacion.codigo_generado = verification_code_str
+            doble_verificacion.fecha_hora_codigo = datetime.now()
+            doble_verificacion.save()
+        else:
+            DobleVerificacionTmp.objects.create(
+                id_persona_firma=persona,
+                id_consecutivo_tipologia=consecutivo_tipologia,
+                codigo_generado=verification_code_str,
+                fecha_hora_codigo=datetime.now()
+            )
+        
+        # ENVIAR SMS Y/O EMAIL
+        
+        if persona.telefono_celular:
+            sms = f'Ingrese el siguiente código para continuar con el cierre del índice electrónico: {verification_code_str}'
+            Util.send_sms(persona.telefono_celular, sms)
+        
+        if persona.email:
+            subject = "Código de Verificación - "
+            template = "codigo-verificacion-firma.html"
+            Util.notificacion(persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,verification_code_str=verification_code_str)
+        
+        # serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se ha realizado el envío del código de verificación'}, status=status.HTTP_200_OK)
             
 
+class ValidacionCodigoView(generics.UpdateAPIView):
+    serializer_class = VerificacionFirmasSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_consecutivo = request.data.get('id_consecutivo')
+        codigo = request.data.get('codigo')
+        
+        if not id_consecutivo or not codigo:
+            raise ValidationError('Debe enviar el consecutivo y el código')
+        
+        persona = request.user.persona
+        current_time = datetime.now()
+        
+        consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+        if not consecutivo_tipologia:
+            raise NotFound('No se encontró el consecutivo ingresado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        if not doble_verificacion:
+            raise ValidationError('No se encuentra un código para el índice ingresado')
+        
+        minutos = (current_time - doble_verificacion.fecha_hora_codigo).total_seconds() / 60.0
+        if minutos > 5:
+            raise ValidationError('El código ingresado ha expirado')
+        else:
+            if doble_verificacion.codigo_generado != codigo:
+                raise ValidationError('El código es inválido. Intente nuevamente')
+            else:
+                doble_verificacion.verificacion_exitosa = True
+                doble_verificacion.save()
+            
+        
+        return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
