@@ -1,4 +1,6 @@
 import os
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from rest_framework import status, generics
@@ -22,6 +24,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
 
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
+from recaudo.models.liquidaciones_models import LiquidacionesBase
 from seguridad.permissions.permissions_gestor import PermisoActualizarResponderRequerimientoOPA, PermisoCrearAsignacionSubseccion, PermisoCrearResponderRequerimientoOPA, PermisoCrearSolicitudComplementoPQRSDF
 from seguridad.utils import Util
 from gestion_documental.utils import UtilsGestor
@@ -3194,9 +3197,26 @@ class CreateAutoInicio(generics.CreateAPIView):
         doc = DocxTemplate(pathToTemplate)
         doc.render(context)
         doc.save(outputPath)
-        return None
+       
         return doc
     
+
+    def document_to_inmemory_uploadedfile(self,doc):
+        # Guardar el documento en un búfer de memoria
+        buffer = BytesIO()
+        doc.save(buffer)
+        
+        # Crear un objeto InMemoryUploadedFile
+        file = InMemoryUploadedFile(
+            buffer,  # El búfer de memoria que contiene los datos
+            None,    # El campo de archivo (no es relevante en este contexto)
+            'output.docx',  # El nombre del archivo
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # El tipo MIME del archivo
+            buffer.tell(),  # El tamaño del archivo en bytes
+            None     # El conjunto de caracteres (no es relevante en este contexto)
+        )
+        
+        return file
     def post(self, request):
         from gestion_documental.views.trd_views import ConsecutivoTipologiaDoc
         vista_consecutivo_trd = ConsecutivoTipologiaDoc
@@ -3259,9 +3279,17 @@ class CreateAutoInicio(generics.CreateAPIView):
         context_auto['FechaRadicadoUsuario'] = '{{FechaRadicadoUsuario}}'
 
         #PARA LIQUIDACION
-        context_auto['ValorLiquidacion '] = '{{ValorLiquidacion }}'
-        context_auto['NumeroReferencia'] = '{{NumeroReferencia}}'
-        context_auto['FechaReferenciaPago']  = '{{FechaReferenciaPago}}'
+
+        liquidacion_tramite =LiquidacionesBase.objects.filter(id_solicitud_tramite=tramite).first()
+        if liquidacion_tramite:
+
+            context_auto['ValorLiquidacion '] = liquidacion_tramite.valor_liq
+            context_auto['NumeroReferencia'] = liquidacion_tramite.num_liquidacion
+            context_auto['FechaReferenciaPago']  = liquidacion_tramite.fecha_liquidacion
+        else:
+            context_auto['ValorLiquidacion '] = '{{ValorLiquidacion }}'
+            context_auto['NumeroReferencia'] = '{{NumeroReferencia}}'
+            context_auto['FechaReferenciaPago']  = '{{FechaReferenciaPago}}'
         
         #PARA CONSTANCIA DE PAGO
         context_auto['NumRadicadoPago'] ='{{NumRadicadoPago}}'
@@ -3336,19 +3364,55 @@ class CreateAutoInicio(generics.CreateAPIView):
 
         context_auto['NormativaOcupacionCauce'] ='{{NormativaOcupacionCauce}}'
 
-        #AUTO INICIO VERTIMIENTO AL SUELOAUTO INICIO VERTIMIENTO AL SUELO
+        # INICIO VERTIMIENTO AL SUELO
         if 'Area' in detalle_tramite_data:
             context_auto['Area'] = detalle_tramite_data['Area']
         else:
             context_auto['Area'] = '{{Area}}'
         
         context_auto['NombrePropietarioPredio '] = '{{NombrePropietarioPredio}}' ##????????
-
+              
 
         context_auto['NormativaVertimientoAlSuelo'] = '{{NormativaVertimientoAlSuelo }}'#?????
-        self.acta_inicio(context_auto,plantilla.id_archivo_digital.ruta_archivo)
-            
+
+        # INICIO VERTIMIENTO AL AGUA
+        context_auto['NormativaVertimientoAlAgua'] = '{{NormativaVertimientoAlAgua }}'#?????
+
+        # PERMISO DE EMISIONES ATMOSFERICAS
+        context_auto['TerminoOtorgaCumplirRequerimiento'] = '{{TerminoOtorgaCumplirRequerimiento}}'
+
+        if 'Direccion' in detalle_tramite_data:
+            context_auto['Direccion'] = detalle_tramite_data['Direccion']
+        else:
+            context_auto['Direccion'] = '{{Direccion}}'
+
+        context_auto['TipoProceso'] = '{{TipoProceso}}' #CONSULTAR SASOFT
+
+
+        #INICIO PROSPECCION Y EXPLORACIÓN
+        context_auto['NormativaProspeccionYExploracion'] = '{{NormativaProspeccionYExploracion }}'#?????
+
+        #AUTO INICIO APROVECHAMIENTO FORESTAL UNICO
+        context_auto['NormativaAprocechamientoForestalUnico'] = '{{NormativaAprocechamientoForestalUnico }}'#?????
+
+        dato = self.acta_inicio(context_auto,plantilla.id_archivo_digital.ruta_archivo)
+
+        memoria = self.document_to_inmemory_uploadedfile(dato)
+
+        vista_archivos = ArchivosDgitalesCreate()
+        ruta = "home,BIA,tramites,Autos"
+
+        respuesta_archivo = vista_archivos.crear_archivo({"ruta":ruta,'es_Doc_elec_archivo':False},memoria)
+        data_archivo = respuesta_archivo.data['data']
+        if respuesta_archivo.status_code != status.HTTP_201_CREATED:
+            return respuesta_archivo
+        
+        data_in['id_archivo_acto_administrativo'] =data_archivo['id_archivo_digital']
+        data_in['fecha_acto_administrativo'] = datetime.now()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail':'Se creo el auto de inicio'}, status=status.HTTP_200_OK)
+        instance = serializer.save()
+
+        tramite.id_auto_inicio = instance
+        tramite.fecha_inicio = datetime.now()
+        return Response({'success': True, 'detail':'Se creo el auto de inicio','data':{'auto':serializer.data,'archivo':data_archivo}}, status=status.HTTP_200_OK)
