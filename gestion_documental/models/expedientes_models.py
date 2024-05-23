@@ -230,9 +230,11 @@ class ArchivosSoporte_CierreReapertura(models.Model):
         
 class DobleVerificacionTmp(models.Model):
     id_doble_verificacion = models.AutoField(primary_key=True, db_column='T270IdDobleVerificacion')
-    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T270Id_Expediente')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T270Id_Expediente')
+    id_consecutivo_tipologia = models.ForeignKey('gestion_documental.ConsecutivoTipologia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T270Id_ConsecutivoTipologia')
     id_persona_firma = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T270Id_PersonaFirma')
     codigo_generado = models.CharField(max_length=6, db_column='T270codigoGenerado')
+    verificacion_exitosa = models.BooleanField(db_column='T270verificacionExitosa', null=True, blank=True)
     fecha_hora_codigo = models.DateTimeField(auto_now_add=True, db_column="T270fechaHoraCodigo")
 
     class Meta:

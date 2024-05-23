@@ -223,17 +223,6 @@ class ConsecutivoTipologia(models.Model):
         db_table = 'T319ConsecutivoTipologia'
         #unique_together = [('agno_consecutivo','nro_consecutivo'),]    ble = 'T308Consecutivo'
 
-class VerificacionFirmas(models.Model):
-    id_verificacion_firma = models.AutoField(primary_key=True, db_column='T320IdVerificacionFirma')
-    id_consecutivo_tipologia = models.ForeignKey(ConsecutivoTipologia, on_delete=models.CASCADE, db_column='T320IdConsecutivoTipologia')
-    id_persona_verifica = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T320Id_PersonaVerifica')
-    codigo_verificacion = models.CharField(max_length=20, db_column='T320codigoVerificacion')
-    verificacion_exitosa = models.BooleanField(db_column='T320verificacionExitosa', null=True, blank=True)
-    fecha_verificacion = models.DateTimeField(db_column='T320fechaVerificacion', null=True, blank=True)
-
-    class Meta:
-        db_table = 'T320VerificacionFirmas'
-
 
 
 
