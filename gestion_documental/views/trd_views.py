@@ -3321,10 +3321,6 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 }, status=status.HTTP_201_CREATED)
             
             case 'A':
-                # documento = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = request.data.get('id_consecutivo'))
-                # archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento.id_archivo_digital.id_archivo_digital)
-                # consecutivo = self.consecutivo(request, archivo_digital).data
-                # documento.delete()
                 data = self.ActualizarDoc(request.data.get('payload'), request.data.get('id_consecutivo'))
                 return Response({
                     'success': True,
@@ -3335,10 +3331,6 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
 
     def consecutivo(self, request, id_archivo_digital):
         try:
-            # Obtener los datos enviados por el usuario
-            # unidad_organizacional = request.data.get('unidad_organizacional')
-            # if not unidad_organizacional:
-            #     raise ValidationError('Debe especificar la unidad organizacional.')
             unidad_organizacional = request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional
             
             unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=unidad_organizacional)
@@ -3598,7 +3590,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
 
                 os.remove(ruta_archivo)
                 archivo_digital.delete()
-                
+
                 serializer = self.serializer_class(consecutivo)
                 # doc = DocxTemplate(ruta_archivo)
                 # dic = {
