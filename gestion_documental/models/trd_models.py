@@ -203,6 +203,7 @@ class ConsecPorNivelesTipologiasDocAgno(models.Model):
 class ConsecutivoTipologia(models.Model):
     id_consecutivo_tipologia = models.AutoField(primary_key=True, db_column='T319IdConsecutivoTipologia')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T319Id_UnidadOrganizacional')
+    id_plantilla_doc = models.ForeignKey('gestion_documental.PlantillasDoc', on_delete=models.CASCADE, db_column='T319Id_Plantilla_Doc')
     id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T319Id_TipologiaDoc')
     CatalogosSeriesUnidad = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T329Id_CatalogoSeriesUnidad',related_name='T319Id_CatalogoSeriesUnidad')
     agno_consecutivo = models.SmallIntegerField(db_column='T319agnoConsecutivo', null=True, blank=True)
@@ -210,16 +211,28 @@ class ConsecutivoTipologia(models.Model):
     prefijo_consecutivo = models.CharField(max_length=10, db_column='T319prefijoConsecutivo', null=True, blank=True)
     fecha_consecutivo = models.DateTimeField(db_column='T319fechaConsecutivo', null=True, blank=True)
     id_persona_genera = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T319Id_PersonaGenera')
-    id_radicado_interno = models.ForeignKey('gestion_documental.T262Radicados', on_delete=models.SET_NULL, db_column='T319Id_RadicadoInterno', related_name='T319Id_RadicadoInterno', blank=True, null=True)
-    fecha_radicado_interno = models.DateTimeField(db_column='T319fechaRadicadoInterno', blank=True, null=True)
-    id_radicado_salida = models.ForeignKey('gestion_documental.T262Radicados', on_delete=models.SET_NULL, db_column='T319Id_RadicadoSalida', related_name='T319Id_RadicadoSalida', blank=True, null=True)
-    fecha_radicado_salida = models.DateTimeField(db_column='T319fechaRadicadoSalida', blank=True, null=True)
+    id_radicado = models.ForeignKey('gestion_documental.T262Radicados', on_delete=models.SET_NULL, db_column='T319Id_Radicado', related_name='T319Id_Radicado', blank=True, null=True)
+    fecha_radicado = models.DateTimeField(db_column='T319fechaRadicado', blank=True, null=True)
+    finalizado = models.BooleanField(db_column='T319finalizado', default=False)
+    variables  = models.JSONField(db_column='T319variables', blank=True, null=True)
     id_archivo_digital = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, db_column='T319Id_ArchivoDigital', blank=True, null=True)
     id_PQRSDF = models.ForeignKey('gestion_documental.PQRSDF', on_delete=models.SET_NULL, db_column='T319Id_PQRSDF', related_name='T319Id_PQRSDF', blank=True, null=True)
-    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', on_delete=models.SET_NULL, db_column='T319Id_Tramite', related_name='T319Id_Tramite', blank=True, null=True)   
+    id_tramite = models.ForeignKey('tramites.SolicitudesTramites', on_delete=models.SET_NULL, db_column='T319Id_Tramite', related_name='T319Id_Tramite', blank=True, null=True) 
+    id_notificaciones_correspondencia = models.ForeignKey('gestion_documental.NotificacionesCorrespondencia', on_delete=models.SET_NULL, db_column='T319Id_NotificacionesCorrespondencia', related_name='T319Id_NotificacionesCorrespondencia', blank=True, null=True)
     class Meta:
         db_table = 'T319ConsecutivoTipologia'
         #unique_together = [('agno_consecutivo','nro_consecutivo'),]    ble = 'T308Consecutivo'
+
+class VerificacionFirmas(models.Model):
+    id_verificacion_firma = models.AutoField(primary_key=True, db_column='T320IdVerificacionFirma')
+    id_consecutivo_tipologia = models.ForeignKey(ConsecutivoTipologia, on_delete=models.CASCADE, db_column='T320IdConsecutivoTipologia')
+    id_persona_verifica = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T320Id_PersonaVerifica')
+    codigo_verificacion = models.CharField(max_length=20, db_column='T320codigoVerificacion')
+    verificacion_exitosa = models.BooleanField(db_column='T320verificacionExitosa', null=True, blank=True)
+    fecha_verificacion = models.DateTimeField(db_column='T320fechaVerificacion', null=True, blank=True)
+
+    class Meta:
+        db_table = 'T320VerificacionFirmas'
 
 
 

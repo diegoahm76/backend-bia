@@ -511,6 +511,10 @@ class CrearNotiicacionManual(generics.CreateAPIView):
         id_persona_recibe_solicitud = request.user.persona
         fecha_actual = timezone.now()
 
+        tipo_notificacion = data.get('tipo_notificacion')
+        if not tipo_notificacion:
+            raise ValidationError({'tipo_notificacion': 'El tipo de notificación es obligatorio'})
+
         tipo_documento = data.get('tipo_documento')
         if not tipo_documento:
             raise ValidationError({'tipo_documento': 'El tipo de documento es obligatorio'})
@@ -520,7 +524,7 @@ class CrearNotiicacionManual(generics.CreateAPIView):
             raise ValidationError({'asunto': 'El asunto es obligatorio'})
 
         notificacion_data = {
-            'cod_tipo_solicitud': 'NO',
+            'cod_tipo_solicitud': tipo_notificacion,
             'cod_tipo_documento': tipo_documento,
             'id_expediente_documental': data.get('id_expediente_documental'),
             'id_solicitud_tramite': data.get('id_solicitud_tramite'),
