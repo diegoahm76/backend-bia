@@ -4546,3 +4546,11 @@ class ArchiarSolicitudPQRSDF(generics.UpdateAPIView):
         respuesta = archivo_class.crear_archivo(data_archivo, anexo)
 
         return respuesta
+    
+
+# class EnviarRespuestaCorreo(generics.ListAPIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request):
+#         persona = request.user.persona
+#         pqrsdf = PQRSDF.objects.filter(id_PQRSDF=request.data.get('id_pqrsdf')).first()
