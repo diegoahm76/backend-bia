@@ -714,6 +714,41 @@ class ReporteGeneralCarteraDeuda(generics.ListAPIView):
         # Retornar la respuesta con los datos procesados
         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_codigo_contable}, status=status.HTTP_200_OK)
         
+
+class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_rango = self.request.query_params.get('id_rango')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if codigo_contable:
+            queryset = queryset.filter(codigo_contable=codigo_contable)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Obtener la suma total de valor_sancion para cada codigo_contable
+        total_por_codigo_contable = queryset.values('codigo_contable', 'codigo_contable__descripcion').annotate(total_sancion=Sum('valor_sancion'))
+
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_codigo_contable}, status=status.HTTP_200_OK)
 class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
     serializer_class = CarteraSerializer
     permission_classes = [IsAuthenticated]
