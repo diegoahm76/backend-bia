@@ -13,9 +13,13 @@ from almacen.models.mantenimientos_models import (
 class SerializerProgramacionMantenimientos(serializers.ModelSerializer):
     id_persona_solicita = PersonasSerializer(read_only=True)
     id_persona_anula = PersonasSerializer(read_only=True)
+    placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
+
     class Meta:
         model=ProgramacionMantenimientos
-        fields=('__all__')
+        fields='__all__'
 
 class AnularMantenimientoProgramadoSerializer(serializers.ModelSerializer):
     justificacion_anulacion = serializers.CharField(max_length=255, min_length=10)

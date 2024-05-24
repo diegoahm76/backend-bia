@@ -305,12 +305,12 @@ class AsignacionDocCreate(generics.CreateAPIView):
             raise ValidationError("No se envio el documento con el consecutivo de la tipologia")
         
         instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'])
-        for asignacion in instance:
+        #for asignacion in instance:
             #print(asignacion)
-            if asignacion.cod_estado_asignacion == 'Ac':
-                raise ValidationError("La solicitud  ya fue Aceptada.")
-            if  not asignacion.cod_estado_asignacion:
-                raise ValidationError("La solicitud esta pendiente por respuesta.")
+            # if asignacion.cod_estado_asignacion == 'Ac':
+            #     raise ValidationError("La solicitud  ya fue Aceptada.")
+            # if  not asignacion.cod_estado_asignacion:
+            #     raise ValidationError("La solicitud esta pendiente por respuesta.")
         max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo']).aggregate(Max('consecutivo_asign_x_doc'))
 
         if max_consecutivo['consecutivo_asign_x_doc__max'] == None:
