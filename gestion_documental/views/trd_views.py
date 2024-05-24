@@ -3822,10 +3822,15 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
     
 
-# class DocumentosFinalizadosList(generics.ListAPIView):
-#     serializer_class = ConsecutivoTipologiaDocSerializer
-#     permission_classes = [IsAuthenticated]
+class DocumentosFinalizadosList(generics.ListAPIView):
+    serializer_class = ConsecutivoTipologiaDocSerializer
+    permission_classes = [IsAuthenticated]
 
-#     def get_queryset(self):
-#         persona = self.request.user.persona
-#         return ConsecutivoTipologia.objects.filter(id_persona_genera=persona, id_radicado_salida__isnull=False, id_archivo_digital__isnull=False)
+    def get(self, request):
+        persona = request.user.persona
+        print(persona.id_persona)
+        consecutivos = ConsecutivoTipologia.objects.all()
+        consecutivos = consecutivos.filter(id_persona_genera=persona.id_persona)
+        consecutivos = consecutivos.filter(finalizado= True)
+        serializer = self.serializer_class(consecutivos, many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
