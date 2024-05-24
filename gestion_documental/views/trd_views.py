@@ -3260,7 +3260,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 return data
             
             case 'A':
-                data = self.ActualizarDoc(request.data.get('payload'), request.data.get('id_consecutivo'))
+                data = self.ActualizarDoc(request, request.data.get('payload'), request.data.get('id_consecutivo'))
                 return Response({
                     'success': True,
                     'detail': 'Se ha actualizado correctamente.',
@@ -3551,12 +3551,13 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
 
         payload['radicado'] = radicado.get('radicado')
-        payload['fecha_radicado'] = radicado.get('fecha_radicado')
+        payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
         payload['consecutivo'] = data['data']['consecutivo']
         documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
         print(f"documento: {documento}")
         archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
         consecutivo.id_archivo_digital = archivo_digital
+        consecutivo.variables = payload
         consecutivo.save() 
         serializer = self.serializer_class(consecutivo)
         return Response({
@@ -3565,11 +3566,24 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             'data': serializer.data
         }, status=status.HTTP_201_CREATED)
         
-    def ActualizarDoc(self, payload, id_consecutivo):
+    def ActualizarDoc(self, request, payload, id_consecutivo):
         try:
             consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
             ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
             if ruta_archivo and os.path.exists(ruta_archivo):
+                if request.data.get('cod_tipo_radicado'):
+                    data_radicado = {
+                        "current_date": datetime.now(),
+                        "id_persona": request.user.persona.id_persona,
+                        "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+                    }
+                    radicado = self.GenerarRadicado(data_radicado)
+                    radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+                    consecutivo.id_radicado = radicado_instance
+                    consecutivo.fecha_radicado = radicado.get('fecha_radicado')
+                    payload['radicado'] = radicado.get('radicado')
+                    payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+
                 archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=consecutivo.id_archivo_digital.id_archivo_digital)
                 
                 payload.update(consecutivo.variables)
@@ -3806,3 +3820,12 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             
         
         return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+    
+
+# class DocumentosFinalizadosList(generics.ListAPIView):
+#     serializer_class = ConsecutivoTipologiaDocSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         persona = self.request.user.persona
+#         return ConsecutivoTipologia.objects.filter(id_persona_genera=persona, id_radicado_salida__isnull=False, id_archivo_digital__isnull=False)

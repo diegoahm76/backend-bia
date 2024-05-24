@@ -14,6 +14,7 @@ from recaudo.models.base_models import RangosEdad
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.serializers.reportes_serializers import (
+    CarteraDeudaYEtapaSerializer,
     CarteraGeneralSerializer,
     CarteraGeneralDetalleSerializer,
     CarteraEdadesSerializer,
@@ -716,7 +717,7 @@ class ReporteGeneralCarteraDeuda(generics.ListAPIView):
         
 
 class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
-    serializer_class = CarteraSerializer
+    serializer_class = CarteraDeudaYEtapaSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -726,6 +727,8 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
         codigo_contable = self.request.query_params.get('codigo_contable')
         id_rango = self.request.query_params.get('id_rango')
+        etapa = self.request.query_params.get('etapa')
+
 
         if fecha_facturacion_desde:
             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
@@ -739,16 +742,20 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
 
-        return queryset
+        if etapa:
+            queryset = queryset.filter(proceso_cartera__id_etapa=etapa).distinct()
 
+        return queryset
+    
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
         # Obtener la suma total de valor_sancion para cada codigo_contable
         total_por_codigo_contable = queryset.values('codigo_contable', 'codigo_contable__descripcion').annotate(total_sancion=Sum('valor_sancion'))
 
-        # Retornar la respuesta con los datos procesados
         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_codigo_contable}, status=status.HTTP_200_OK)
+    
+
 class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
     serializer_class = CarteraSerializer
     permission_classes = [IsAuthenticated]

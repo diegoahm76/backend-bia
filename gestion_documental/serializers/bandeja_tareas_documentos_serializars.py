@@ -264,9 +264,9 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
         # print("PQRSDF")
         # print(pqrsdf)
         cadena = ""
-        if  documento and documento.id_radicado_salida:
-            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=documento.id_radicado_salida.agno_radicado,cod_tipo_radicado=documento.id_radicado_salida.cod_tipo_radicado).first()
-            numero_con_ceros = str(documento.id_radicado_salida.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        if  documento and documento.id_radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=documento.id_radicado.agno_radicado,cod_tipo_radicado=documento.id_radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(documento.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
             cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
         return cadena
@@ -294,7 +294,7 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
                     break
         if not documento:
             return None
-        return documento.fecha_radicado_salida       
+        return documento.fecha_radicado      
 
         
 

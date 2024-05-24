@@ -397,6 +397,22 @@ class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
 
     def get(self, request):
         queryset = Personas.objects.all()
+        tipo_documento = request.query_params.get('tipo_documento')
+        if tipo_documento:
+            queryset = queryset.filter(tipo_documento__cod_tipo_documento=tipo_documento)
+        
+        identificacion = request.query_params.get('identificacion')
+        if identificacion:
+            queryset = queryset.filter(numero_documento=identificacion)
+
+        primer_nombre = request.query_params.get('primer_nombre')
+        if primer_nombre:
+            queryset = queryset.filter(primer_nombre__icontains=primer_nombre)
+
+        primer_apellido = request.query_params.get('primer_apellido')
+        if primer_apellido:
+            queryset = queryset.filter(primer_apellido__icontains=primer_apellido)
+            
         serializer = self.serializer_class(queryset, many=True)
         data = [bandeja for bandeja in serializer.data if bandeja['tiene_usuario']]
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data}, status=status.HTTP_200_OK)
