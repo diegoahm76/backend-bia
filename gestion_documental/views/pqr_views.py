@@ -1282,7 +1282,7 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
         template = render_to_string((template), context)
         if PQRSDF.id_persona_titular.email:
             print(PQRSDF.id_persona_titular.email)
-            email_data = {'template': template, 'email_subject': 'Documento', 'to_email':PQRSDF.id_persona_titular.email}
+            email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':PQRSDF.id_persona_titular.email}
             correo = Util.send_email_file(email_data, archivo)
             print("Correo enviado")
             return correo
