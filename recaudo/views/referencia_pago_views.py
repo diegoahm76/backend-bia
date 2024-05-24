@@ -474,7 +474,8 @@ class RefEjemGetView(generics.ListAPIView):
         age = hoy.year
         instance = ConfigReferenciaPagoAgno.objects.filter(agno_ref=age).first()
 
-
+        if not instance:
+            raise NotFound('No existe registro')
         
 
         cod_se_sub = ""
@@ -497,8 +498,7 @@ class RefEjemGetView(generics.ListAPIView):
         
         
         
-        if not instance:
-            raise NotFound('No existe registro')
+
         
         serializer = self.serializer_class(instance)
         
