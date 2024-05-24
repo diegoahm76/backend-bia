@@ -149,6 +149,21 @@ class CarteraSerializer(serializers.ModelSerializer):
         model = Cartera
         fields = '__all__'
 
+class CarteraDeudaYEtapaSerializer(serializers.ModelSerializer):
+    codigo_contable__descripcion = serializers.CharField(source='codigo_contable.descripcion', read_only=True)
+    etapa = serializers.SerializerMethodField()
+    class Meta:
+        model = Cartera
+        fields = '__all__'
+
+    def get_etapa(self, obj):
+        etapa= None
+        proceso_cartera = obj.procesos_set.first()
+        if proceso_cartera:
+            etapa = proceso_cartera.id_etapa.etapa
+        return etapa
+
+
 class ConceptoContableSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConceptoContable
