@@ -348,9 +348,9 @@ class CrearTareas(generics.CreateAPIView):
             'id_notificacion_correspondencia': request.get('id_notificacion'),
             'fecha_registro': fecha_actual,
             'id_tipo_notificacion_correspondencia': request.get('id_tipo_notificacion_correspondencia'),
-            'id_persona_titular': data.id_persona_titular.id_persona,
-            'id_persona_interpone': data.id_persona_interpone.id_persona,
-            'cod_relacion_con_titular': data.cod_relacion_con_titular,
+            'id_persona_titular': data.id_persona_titular.id_persona if data.id_persona_titular else None,
+            'id_persona_interpone': data.id_persona_interpone.id_persona if data.id_persona_interpone else None,
+            'cod_relacion_con_titular': data.cod_relacion_con_titular if data.cod_relacion_con_titular else None,
             'cod_tipo_documentoID': data.cod_tipo_documentoID.cod_tipo_documento,
             'numero_identificacion': data.nro_documentoID,
             'persona_a_quien_se_dirige': data.persona_a_quien_se_dirige,
@@ -2054,6 +2054,28 @@ class RegistrosNotificacionesCorrespondenciaEstadoUpdate(generics.UpdateAPIView)
 
         return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
     
+class SolicitudNotificacionesCorrespondenciaEstadoUpdate(generics.UpdateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data = request.data
+        estado = data.get('estado_notificacion_correspondencia')
+        estados_validos = ['RE', 'DE', 'EG', 'PE', 'NT']
+
+        if not estado in estados_validos:
+            raise ValidationError(f'El estado de la notificación estado no existe.')
+        notificacion_correspondencia = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=pk)
+        if not notificacion_correspondencia:
+            raise ValidationError(f'El registro de la notificación con id {pk} no existe.')
+        else:
+            notificacion_correspondencia.cod_estado = estado
+            notificacion_correspondencia.save()
+            serializer = self.get_serializer(notificacion_correspondencia)
+
+        return Response({'succes': True, 'detail':'Se actualizó el estado de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
+    
+
 ## Generador de Constancias
 
 class DocumentosConstanciaNotificacionCreate(generics.CreateAPIView):

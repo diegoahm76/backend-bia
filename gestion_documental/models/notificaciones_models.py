@@ -137,6 +137,7 @@ class TiposNotificacionesCorrespondencia(models.Model):
     notificacion_personal = models.BooleanField(db_column='T354notificacionPersonal')
     notificacion_correo_electronico = models.BooleanField(db_column='T354notificacionCorreoElectronico')
     notificacion_medio_fisico = models.BooleanField(db_column='T354notificacionMedioFisico')
+    publicacion_por_aviso = models.BooleanField(db_column='T354publicacionPorAviso')
     tiempo_en_dias = models.SmallIntegerField(db_column='T354tiempoEnDias')
     habiles_o_calendario = models.CharField(choices=habiles_calendario_CHOICES, max_length=1, db_column='T354habilesOCalendario')
     registro_precargado = models.BooleanField(db_column='T354registroPrecargado')
