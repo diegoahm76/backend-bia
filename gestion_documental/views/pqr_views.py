@@ -7,9 +7,9 @@ import os
 import io
 import subprocess
 from django.template.loader import render_to_string
-from gestion_documental.models.notificaciones_models import TiposDocumentos
-from gestion_documental.serializers.notificaciones_serializers import NotificacionesCorrespondenciaCreateSerializer
-from gestion_documental.views.notificaciones_views import AnexosSistemaCreate
+#from gestion_documental.models.notificaciones_models import TiposDocumentos
+#from gestion_documental.serializers.notificaciones_serializers import NotificacionesCorrespondenciaCreateSerializer
+#from gestion_documental.views.notificaciones_views import AnexosSistemaCreate
 from seguridad.permissions.permissions_gestor import PermisoActualizarPQRSDF, PermisoActualizarTiposMediosSolicitud, PermisoActualizarTiposPQRSDF, PermisoBorrarPQRSDF, PermisoBorrarRadicacionEmail, PermisoBorrarTiposMediosSolicitud, PermisoCrearPQRSDF, PermisoCrearRespuestaSolicitudPQRSDF, PermisoCrearTiposMediosSolicitud
 from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
@@ -1151,143 +1151,6 @@ class MediosSolicitudUpdate(generics.UpdateAPIView):
     
 
 ################################################### RESPUESTA A UNA SOLICITUD PQRSDF ###################################################################
-class NotificacionesAutomaticasCreate(generics.CreateAPIView):
-    serializer_class = NotificacionesCorrespondenciaCreateSerializer
-    permission_classes = [IsAuthenticated]
-
-    @transaction.atomic
-    def create_notificacion_sistema(self, request, sistema, pqrsdf, respuesta):
-        data_total = request.data
-        #raise ValidationError(str(type(data_total.get('data'))))
-        # if type(data_total.get('data') == dict):
-        #    data = data_total.get('data') 
-        # else:
-        data = json.loads(data_total.get('data'))
-        fecha_actual = timezone.now()
-
-        try:
-            tipo_documento = TiposDocumentos.objects.get(id_tipo_documento=7)
-        except TiposDocumentos.DoesNotExist:
-            raise ValidationError('El tipo de documento no existe.')
-        
-            
-        expediente_documental = ExpedientesDocumentales.objects.filter(id_expediente_documental=pqrsdf.id_expediente_doc.id_expediente_documental).first()
-        if not expediente_documental:
-            raise ValidationError('El expediente documental no existe.')
-        else:
-            id_expediente_documental = expediente_documental.id_expediente_documental
-
-            
-        radicado = T262Radicados.objects.filter(id_radicado = respuesta.id_radicado_salida.id_radicado).first()
-            
-        if not radicado:
-            raise ValidationError('El radicado no existe.')
- 
-        
-        id_solicitud_tramite = pqrsdf.id_solicitud_tramite
-        id_persona_titular = pqrsdf.id_persona_titular.id_persona
-        id_persona_interpone = pqrsdf.id_persona_interpone.id_persona
-        cod_relacion_con_titular = pqrsdf.cod_relacion_con_el_titular
- 
-
-        
-        if not data.get('asunto'):
-            raise ValidationError('El asunto es obligatorio')
-        
-        if not data.get('id_persona_solicita'):
-            raise ValidationError('El id_persona_solicita es obligatorio')
-        
-        try:
-            persona_solicita = Personas.objects.get(id_persona=data.get('id_persona_solicita'))
-        except Personas.DoesNotExist:
-            raise ValidationError('La persona solicitante no existe.')
-        
-        if sistema == 'SAS':
-            permite_notificacion_email = data.get('permite_notificacion_email')
-            persona_a_quien_se_dirige = data.get('persona_a_quien_se_dirige')
-            cod_tipo_documentoID = data.get('cod_tipo_documentoID')
-            nro_documentoID = data.get('nro_documentoID')
-            cod_municipio_notificacion_nal = data.get('cod_municipio_notificacion_nal')
-            dir_notificacion_nal = data.get('dir_notificacion_nal')
-            tel_celular = data.get('tel_celular')
-            tel_fijo = data.get('tel_fijo')
-            email_notificacion = data.get('email_notificacion')
-
-        if sistema == 'BIA':
-            persona_titular = Personas.objects.filter(id_persona=id_persona_titular).first()
-            permite_notificacion_email = persona_titular.acepta_notificacion_email
-            if persona_titular.primer_nombre is not None:
-                nombre_completo = [persona_titular.primer_nombre, persona_titular.segundo_nombre, persona_titular.primer_apellido, persona_titular.segundo_apellido]
-                persona_a_quien_se_dirige =  ' '.join(filter(None, nombre_completo))
-            else:
-                persona_a_quien_se_dirige = persona_titular.razon_social
-            cod_tipo_documentoID = persona_titular.tipo_documento.cod_tipo_documento
-            nro_documentoID = persona_titular.numero_documento
-            cod_municipio_notificacion_nal = persona_titular.cod_municipio_notificacion_nal.cod_municipio
-            dir_notificacion_nal = persona_titular.direccion_notificaciones
-            tel_celular = persona_titular.telefono_celular
-
-            if persona_titular.telefono_fijo_residencial == '':
-                tel_fijo = None
-            else:
-                tel_fijo = persona_titular.telefono_fijo_residencial
-            email_notificacion = persona_titular.email
-
-        
-
-        data_notificacion = {
-            'id_acto_administrativo': None,
-            'procede_recurso_reposicion': None,
-            'es_anonima': False,
-            'cod_medio_solicitud': 'SI',
-            'allega_copia_fisica': False,
-            'id_persona_recibe_solicitud_manual': None,
-            'requiere_digitalizacion': False,
-            'cod_estado': 'PE',
-            'cod_tipo_solicitud': data.get('cod_tipo_solicitud'),
-            'cod_tipo_documento': tipo_documento.id_tipo_documento,
-            'id_expediente_documental': id_expediente_documental,
-            'id_solicitud_tramite': id_solicitud_tramite,
-            'id_persona_titular': id_persona_titular,
-            'id_persona_interpone': id_persona_interpone,
-            'cod_relacion_con_titular': cod_relacion_con_titular,
-            'permite_notificacion_email': permite_notificacion_email,
-            'persona_a_quien_se_dirige': persona_a_quien_se_dirige,
-            'cod_tipo_documentoID': cod_tipo_documentoID,
-            'nro_documentoID': nro_documentoID,
-            'cod_municipio_notificacion_nal': cod_municipio_notificacion_nal,
-            'dir_notificacion_nal': dir_notificacion_nal,
-            'tel_celular': tel_celular,
-            'tel_fijo': tel_fijo,
-            'email_notificacion': email_notificacion,
-            'asunto': data.get('asunto'),
-            'descripcion': data.get('descripcion'),
-            'fecha_solicitud': fecha_actual,
-            'id_persona_solicita': persona_solicita.id_persona,
-            'id_und_org_oficina_solicita': persona_solicita.id_unidad_organizacional_actual.id_unidad_organizacional,
-            'cantidad_anexos': data.get('cantidad_anexos'),
-            'nro_folios_totales': data.get('nro_folios_totales')
-        }
-        
-        serializer = self.serializer_class(data=data_notificacion)
-        serializer.is_valid(raise_exception=True)
-        instance = serializer.save()
-        util_PQR = Util_PQR()
-
-        anexos = util_PQR.set_archivo_in_anexo(data['anexos'], request.FILES, "create")
-        print(anexos)
-        #raise ValidationError("NONE")
-
-        if anexos:
-            anexosCreate = AnexosSistemaCreate()
-            valores_creados_detalles = anexosCreate.create_anexos_notificaciones(anexos, serializer.data['id_notificacion_correspondencia'], fecha_actual, persona_solicita.id_persona)
-
-        return  serializer.data
-    
-    def post(self, request):
-        sistema = 'SAS'
-        data = self.create_notificacion_sistema(request, sistema)
-        return Response({'succes': True, 'detail':'Se creo la notificación correctamente', 'data':data}, status=status.HTTP_201_CREATED)
 
 
 class RespuestaPQRSDFCreate(generics.CreateAPIView):
