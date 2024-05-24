@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import requests
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -3395,6 +3396,8 @@ class CreateAutoInicio(generics.CreateAPIView):
         #AUTO INICIO APROVECHAMIENTO FORESTAL UNICO
         context_auto['NormativaAprocechamientoForestalUnico'] = '{{NormativaAprocechamientoForestalUnico }}'#?????
 
+        #AUTO INICIO APROVECHAMIENTO FORESTAL PERSISTENTE
+        context_auto['NormativaAprocechamientoForestalPersistente'] = '{{NormativaAprocechamientoForestalPersistente }}'#?????
         dato = self.acta_inicio(context_auto,plantilla.id_archivo_digital.ruta_archivo)
 
         memoria = self.document_to_inmemory_uploadedfile(dato)
@@ -3416,3 +3419,60 @@ class CreateAutoInicio(generics.CreateAPIView):
         tramite.id_auto_inicio = instance
         tramite.fecha_inicio = datetime.now()
         return Response({'success': True, 'detail':'Se creo el auto de inicio','data':{'auto':serializer.data,'archivo':data_archivo}}, status=status.HTTP_200_OK)
+
+
+
+class CreateValidacionTareaTramite(generics.CreateAPIView):
+    
+    serializer_class = None
+    queryset = None
+
+    def tarea_radicado(self,radicado,token):
+    # Corrigiendo la concatenación de la URL y añadiendo el radicado en la URL si es necesario
+        #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"
+        #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/task-by-number-radicate/"+radicado
+        # headers = {
+        #     "accept": "application/json",
+        #     "Authorization": f"Bearer {'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE2NjQ5NTk5LCJpYXQiOjE3MTY0NzY3OTksImp0aSI6ImZjMmE4ZWJmY2ZkOTQwMTZhZGU0MDIxZWU1YjIzYjY0IiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY8OpbiIsIlJvbCBDb25zZXJ2YWNpw7NuIiwiUm9sIEdlc3RvciIsIlJvbCBSZWNhdWRvIiwiUm9sIFJlY3Vyc28iLCJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgU2VndWltaWVudG8gYSBwbGFuZXMiLCJ6Q2FtdW5kYSAtIFJvbCBULUNvbmNlc2nDs24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjacOzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1csOtZGljYS1Db29yZGluYWRvciBvIEzDrWRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIEp1csOtZGljbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0acOzbiBBbWJpZW50YWwtUHJvZmVzaW9uYWwgSnVyw61kaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTMOtZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUp1csOtZGljYSIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzacOzbiBkZSBBZ3VhcyBTdWJ0ZXJyw6FuZWFzIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIE9jdXBhY2nDs24gZGUgQ2F1Y2UiLCJ6Q2FtdW5kYSAtIFJvbCBULVBlcm1pc28gZGUgUHJvc3BlY2Npw7NuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1TdWJkaXJlY3RvcmEgUGxhbmVhY2nDs24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzacOzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXSwidHlwZVBlcnNvbiI6ImZ1bmNpb25hcmlvIiwicHJldmlvdXNUb2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUowYjJ0bGJsOTBlWEJsSWpvaVlXTmpaWE56SWl3aVpYaHdJam94TnpFMk5qUTVOVGs1TENKcFlYUWlPakUzTVRZME56WTNPVGtzSW1wMGFTSTZJbVpqTW1FNFpXSm1ZMlprT1RRd01UWmhaR1UwTURJeFpXVTFZakl6WWpZMElpd2lkWE5sY2w5cFpDSTZNVEV5TENKcFpGOXdaWEp6YjI1aElqb3lNVFVzSW01dmJXSnlaVjlrWlY5MWMzVmhjbWx2SWpvaWMyVm5kWEpwWkdGa0lpd2ljbTlzWlhNaU9sc2lVbTlzSUZWemRXRnlhVzl6SUZkbFlpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGTmxaM1Z5YVdSaFpDSXNJbEp2YkNCQmJHMWhZMXgxTURCbE9XNGlMQ0pTYjJ3Z1EyOXVjMlZ5ZG1GamFWeDFNREJtTTI0aUxDSlNiMndnUjJWemRHOXlJaXdpVW05c0lGSmxZMkYxWkc4aUxDSlNiMndnVW1WamRYSnpieUlzSWxKdmJDQlVjbUZ1YzNabGNuTmhiQ0lzSWxKdmJDQlRaV2QxYVcxcFpXNTBieUJoSUhCc1lXNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRlF0UTI5dVkyVnphVngxTURCbU0yNGdaR1VnUVdkMVlYTWdVM1Z3WlhKbWFXTnBZV3hsY3lJc0lucERZVzExYm1SaElDMGdVbTlzSUZRdFJHVjBaWEp0YVc1aGJuUmxjeUJCYldKcFpXNTBZV3hsY3lCUWNtOXdhV1ZrWVdRZ1VISnBkbUZrWVNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVlZ6ZFdGeWFXOGlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxV1pXNTBZVzVwYkd4aElpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UkdseVpXTmphVngxTURCbU0yNGdSMlZ1WlhKaGJDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRUZuZFdGekxVTnZiM0prYVc1aFpHOXlJRzhnVEZ4MU1EQmxaR1JsY2lJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFRm5kV0Z6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1FXZDFZWE10VUhKdlptVnphVzl1WVd3aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QkJaM1ZoY3kxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFQyWnBZMmx1WVNCS2RYSmNkVEF3WldSa2FXTmhMVU52YjNKa2FXNWhaRzl5SUc4Z1RGeDFNREJsWkdSbGNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFU5bWFXTnBibUVnU25WeVhIVXdNR1ZrWkdsallTMVFjbTltWlhOcGIyNWhiQ0JLZFhKY2RUQXdaV1JrYVdOdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0VDJacFkybHVZU0JLZFhKY2RUQXdaV1JrYVdOaExWQnliMlpsYzJsdmJtRnNJR1JsSUVGd2IzbHZJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFUzVmlJRWRsYzNScFhIVXdNR1l6YmlCQmJXSnBaVzUwWVd3dFEyOXZjbVJwYm1Ga2IzSWlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxVGRXSWdSMlZ6ZEdsY2RUQXdaak51SUVGdFltbGxiblJoYkMxUWNtOW1aWE5wYjI1aGJDQktkWEpjZFRBd1pXUmthV052SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1QzSmtaVzVoYldsbGJuUnZJRlJsY25KcGRHOXlhV0ZzTFVOdmIzSmthVzVoWkc5eUlHOGdURngxTURCbFpHUmxjaUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUU5eVpHVnVZVzFwWlc1MGJ5QlVaWEp5YVhSdmNtbGhiQzFRY205bVpYTnBiMjVoYkNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFOXlaR1Z1WVcxcFpXNTBieUJVWlhKeWFYUnZjbWxoYkMxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFEYjI1alpYTnBYSFV3TUdZemJpQmtaU0JCWjNWaGN5QlRkV0owWlhKeVhIVXdNR1V4Ym1WaGN5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JQWTNWd1lXTnBYSFV3TUdZemJpQmtaU0JEWVhWalpTSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JRY205emNHVmpZMmxjZFRBd1pqTnVJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFRWlhKdGFYTnZJR1JsSUZabGNuUnBiV2xsYm5SdmN5QmhiQ0JUZFdWc2J5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVaMWJtTnBiMjVoY21sdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UVdSdGFXNXBjM1J5WVdSdmNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRTl5WkdWdVlXMXBaVzUwYnlCVVpYSnlhWFJ2Y21saGJDMUpibWRsYm1sbGNtOGdaR1VnVW1WMmFYTnBYSFV3TUdZemJpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFZOMVlpQkhaWE4wYVZ4MU1EQm1NMjRnUVcxaWFXVnVkR0ZzTFZOMVltUnBjbVZqZEc5eVlTQlFiR0Z1WldGamFWeDFNREJtTTI0aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QlRkV1ZzYjNNdFEyOXZjbVJwYm1Ga2IzSWdieUJNWEhVd01HVmtaR1Z5SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFZCeWIyWmxjMmx2Ym1Gc0lpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UjNKMWNHOGdVM1ZsYkc5ekxVcDFjbHgxTURCbFpHUnBZMkVpTENKNlEyRnRkVzVrWVNBdElISnZiR0Z6WkNJc0lucERZVzExYm1SaElDMGdVbTlzSUZCeWRXVmlZU0I2UXlJc0lsSnZiQ0JHZFc1amFXOXVZWEpwYnlJc0lsSnZiQ0JEYVhWa1lXUmhibThpTENKU2Iyd2dRV1J0YVc1cGMzUnlZV1J2Y2lJc0lsSnZiQ0JCWkcxdmJpSXNJbEp2YkNCT2IzUnBabWxqWVdOcGIyNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUVGbmRXRnpMVkJ5YjJabGMybHZibUZzTFZSbFkyNXBZMjhpTENKNlEyRnRkVzVrWVNBdElGSnZiQ0JCWTNSdmNpMUpiblJsY205d1pYSmhZbWxzYVdSaFpDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVsdWRHVnliM0JsY21GaWFXeHBaR0ZrSUZabGJuUmhibWxzYkdFaVhYMC4tNzh3ZDF3NUNPUnR2N2ltUWZDdmFjZUVacnN2bXE3NTZUVko0RjFpcUhFIiwiaWRQZXJzb24iOjIxNSwiZS1tYWlsIjoiZ3VpbGxlcm1vLnNhcm1pZW50b0BtYWNhcmVuaWEub3JnIn0.'}"
+        # }
+
+        auth_headers = {
+            "accept": "*/*",
+            "Content-Type": "application/json-patch+json"
+        }   
+        #TOKEN PARA SASOFTCO
+        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+        #url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login"
+        payload={
+            "access":token
+        }
+        # payload={
+        #     "nombre_de_usuario": "Seguridad",
+        #     "password": "Seguridad12345+"
+        # }
+        
+        print (token)
+        try:
+            response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()  # Convertimos los datos a JSON
+            print(data)
+
+            return data
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
+
+    def post(self, request):
+
+        #print(request.META.get('HTTP_AUTHORIZATION'))
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        
+        if not authorization_header:
+            raise ValidationError("No se suministro un Token")
+
+        token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+        radicado = 'UNICO-2024-00232'
+        data = self.tarea_radicado(radicado,token)
+        return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':data}, status=status.HTTP_201_CREATED)
+
