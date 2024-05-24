@@ -342,7 +342,6 @@ class CrearTareas(generics.CreateAPIView):
 
     def post(self, request, fecha_actual):
         data = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia=request.get('id_notificacion')).first()
-        print(request.get('id_notificacion'))
 
         notificacion_data = {
             'id_notificacion_correspondencia': request.get('id_notificacion'),
@@ -366,7 +365,7 @@ class CrearTareas(generics.CreateAPIView):
             'requiere_digitalizacion': data.requiere_digitalizacion,
             'fecha_inicial_registro': fecha_actual,
             'cod_estado': request.get('cod_estado'),
-            'id_estado_actual_registro': 2,
+            'id_estado_actual_registro': None,
         }
 
         serializer = self.serializer_class(data=notificacion_data)
