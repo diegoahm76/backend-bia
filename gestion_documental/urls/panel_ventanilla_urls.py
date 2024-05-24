@@ -115,7 +115,9 @@ urlpatterns = [
     
 
     #CREAR AUTO DE INICIO
-    path('crear-auto-inicio/',views.CreateAutoInicio.as_view(),name='crear-auto initio')
+    path('crear-auto-inicio/',views.CreateAutoInicio.as_view(),name='crear-auto initio'),
+    path('validar-tarea/',views.CreateValidacionTareaTramite.as_view(),name='validar-tarea')
+
 
 
 ]
