@@ -6,6 +6,7 @@ import json
 import os
 import io
 import subprocess
+from django.template.loader import render_to_string
 from seguridad.permissions.permissions_gestor import PermisoActualizarPQRSDF, PermisoActualizarTiposMediosSolicitud, PermisoActualizarTiposPQRSDF, PermisoBorrarPQRSDF, PermisoBorrarRadicacionEmail, PermisoBorrarTiposMediosSolicitud, PermisoCrearPQRSDF, PermisoCrearRespuestaSolicitudPQRSDF, PermisoCrearTiposMediosSolicitud
 from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
@@ -1160,6 +1161,8 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                 isCreateForWeb = ast.literal_eval(request.data.get('isCreateForWeb', ''))
                 user = request.user
 
+                pqrsdf = get_object_or_404(PQRSDF, id_PQRSDF=data_respuesta_pqrsdf['id_pqrsdf'])
+
                 persona = user.persona
 
                 fecha_actual = datetime.now()
@@ -1220,6 +1223,7 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                 tarea.fecha_respondido =data_respuesta_PQRSDF_creado['fecha_respuesta'] #fecha_respuesta
                 tarea.nombre_persona_que_responde = nombre_persona
                 tarea.save()
+
                 #SI LA TAREA FUE FRUTO DE UNA REASIGNACION 
                 if tarea.id_tarea_asignada_padre_inmediata:
                     tarea_padre = tarea.id_tarea_asignada_padre_inmediata
@@ -1240,6 +1244,7 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                         tarea_padre.nombre_persona_que_responde = nombre_persona
                         tarea_padre.ya_respondido_por_un_delegado = True
                         tarea_padre.save()
+                    #self.enviar_correo(pqrsdf, request.FILES)
                 return Response({'success': True, 'detail': 'Se creó el PQRSDF correctamente', 'data': data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -1252,6 +1257,27 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
+    
+    def enviar_correo(self, PQRSDF, archivo):
+        template = "respuesta_PQRSDF.html"
+        instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=PQRSDF.id_radicado.agno_radicado,cod_tipo_radicado=PQRSDF.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(PQRSDF.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        context = {
+            'nombre_titular':f"{PQRSDF.id_persona_titular.primer_nombre} {PQRSDF.id_persona_titular.segundo_apellido} {PQRSDF.id_persona_titular.primer_apellido} {PQRSDF.id_persona_titular.segundo_apellido}",
+            'primer_nombre': f"{PQRSDF.get_cod_tipo_PQRSDF_display()}",
+            "radicado": cadena
+        }
+        print("rederizo el template")
+        template = render_to_string((template), context)
+        print("no renderizo el template")
+        if PQRSDF.id_persona_titular.email:
+            email_data = {'template': template, 'email_subject': 'Documento', 'to_email':PQRSDF.id_persona_titular.email}
+            print("no se envio el correo")
+            Util.send_email_file(email_data, archivo)
+            print("Correo enviado")
+        else:
+            raise ValidationError("No se puede enviar el correo porque no se encontró el correo del titular")
 
     def update_requiereDigitalizacion_pqrsdf(self, data_respuesta_PQRSDF_creado):
         PrsdfUpdate = RespuestaPQRSDFUpdate()
