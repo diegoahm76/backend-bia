@@ -32,6 +32,7 @@ from gestion_documental.models.tca_models import TablasControlAcceso
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
 from rest_framework.permissions import IsAuthenticated
+from gestion_documental.views.notificaciones_views import AnexosSistemaCreate
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from gestion_documental.views.bandeja_tareas_tramites_views import ActaInicioCreate
