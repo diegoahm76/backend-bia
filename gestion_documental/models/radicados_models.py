@@ -449,6 +449,7 @@ class AsignacionDocs(models.Model):
     id_asignacion_doc = models.AutoField(primary_key=True,db_column='T320IdAsignacion_Doc')
     id_consecutivo = models.ForeignKey('ConsecutivoTipologia',on_delete=models.CASCADE,db_column='T320Id_Consecutivo')
     consecutivo_asign_x_doc = models.SmallIntegerField(db_column='T320consecutivoAsignXDoc')
+    firma = models.BooleanField(db_column='T320firma')
     fecha_asignacion = models.DateTimeField(db_column='T320fechaAsignacion')
     id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T320Id_PersonaAsigna',related_name='persona_asigna_docs')
     id_persona_asignada = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T320Id_PersonaAsignada',related_name='persona_asignada_docs')
