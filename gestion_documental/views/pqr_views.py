@@ -1244,7 +1244,7 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                         tarea_padre.nombre_persona_que_responde = nombre_persona
                         tarea_padre.ya_respondido_por_un_delegado = True
                         tarea_padre.save()
-                    #self.enviar_correo(pqrsdf, request.FILES)
+                    self.enviar_correo(pqrsdf, request.FILES)
                 return Response({'success': True, 'detail': 'Se creó el PQRSDF correctamente', 'data': data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
         except Exception as e:

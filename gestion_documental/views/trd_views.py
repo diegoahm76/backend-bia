@@ -3820,3 +3820,12 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             
         
         return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+    
+
+# class DocumentosFinalizadosList(generics.ListAPIView):
+#     serializer_class = ConsecutivoTipologiaDocSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         persona = self.request.user.persona
+#         return ConsecutivoTipologia.objects.filter(id_persona_genera=persona, id_radicado_salida__isnull=False, id_archivo_digital__isnull=False)
