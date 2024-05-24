@@ -3,6 +3,7 @@ import ast
 import copy
 from datetime import datetime, timedelta, timezone
 import json
+from django.utils.timezone import now
 import os
 import io
 import subprocess
@@ -3698,6 +3699,83 @@ class IndicadorVencimientoPQRSDF(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
 
+
+           
+#  fecha_rta_final_gestion__isnull=False,  # Tiene respuesta final registrada
+class IndicadorPQRSDFVencidasContestadas(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidas (excluir las que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidas = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True) |
+            Q(id_estado_actual_solicitud__nombre='GUARDADO')
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidas
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset)
+
+        # Filtrar las PQRSDF vencidas y contestadas
+        queryset_vencidas_contestadas = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) <= now()
+        ]
+
+        num_pqrsdf_vencidas_contestadas = len(queryset_vencidas_contestadas)
+
+        # Filtrar las PQRSDF vencidas pero no contestadas
+        queryset_vencidas_no_contestadas = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.fecha_rta_final_gestion is None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) <= now()
+        ]
+
+        num_pqrsdf_vencidas_no_contestadas = len(queryset_vencidas_no_contestadas)
+
+        # Número total de PQRSDF recibidas que están vencidas
+        num_pqrsdf_recibidas = len(results)
+
+        # Calcular porcentaje de PQRSDF vencidas contestadas
+        porcentaje_vencidas_contestadas = 0 if num_pqrsdf_recibidas == 0 else (num_pqrsdf_vencidas_contestadas / num_pqrsdf_recibidas) * 100
+
+        # Calcular porcentaje de PQRSDF vencidas no contestadas
+        porcentaje_vencidas_no_contestadas = 0 if num_pqrsdf_recibidas == 0 else (num_pqrsdf_vencidas_no_contestadas / num_pqrsdf_recibidas) * 100
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_vencidas_contestadas >= 80 else (
+            'Regular' if 60 <= porcentaje_vencidas_contestadas <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de PQRSDF vencidas y contestadas.',
+            'data': {
+                'num_pqrsdf_recibidas': num_pqrsdf_recibidas,
+                'num_pqrsdf_vencidas_contestadas': num_pqrsdf_vencidas_contestadas,
+                'num_pqrsdf_vencidas_no_contestadas': num_pqrsdf_vencidas_no_contestadas,
+                'porcentaje_vencidas_contestadas': porcentaje_vencidas_contestadas,
+                'porcentaje_vencidas_no_contestadas': porcentaje_vencidas_no_contestadas,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+    
 #Radicacion_Email
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
