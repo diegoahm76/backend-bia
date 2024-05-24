@@ -304,6 +304,9 @@ class AsignacionDocCreate(generics.CreateAPIView):
         if not 'id_consecutivo' in data_in:
             raise ValidationError("No se envio el documento con el consecutivo de la tipologia")
         
+        if not 'firma' in data_in:
+            raise ValidationError("No se envio la firma del documento")
+        
         instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'])
         #for asignacion in instance:
             #print(asignacion)

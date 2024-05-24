@@ -3427,7 +3427,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
     serializer_class = None
     queryset = None
 
-    def tarea_radicado(self,radicado,token):
+    def get_token_camunda(self,radicado,token):
     # Corrigiendo la concatenación de la URL y añadiendo el radicado en la URL si es necesario
         #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"
         #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/task-by-number-radicate/"+radicado
@@ -3444,25 +3444,32 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
         #url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login"
         payload={
-            "access":token
+            "access":'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE2NzM4NjIyLCJpYXQiOjE3MTY1NjU4MjIsImp0aSI6ImM1YTZiNjcwOWVjOTRlZDA5ZjY5Mjk3MDI3MGVhMzZhIiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY1x1MDBlOW4iLCJSb2wgQ29uc2VydmFjaVx1MDBmM24iLCJSb2wgR2VzdG9yIiwiUm9sIFJlY2F1ZG8iLCJSb2wgUmVjdXJzbyIsIlJvbCBUcmFuc3ZlcnNhbCIsIlJvbCBTZWd1aW1pZW50byBhIHBsYW5lcyIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzaVx1MDBmM24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjaVx1MDBmM24gR2VuZXJhbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXJcdTAwZWRkaWNhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyXHUwMGVkZGljYS1Qcm9mZXNpb25hbCBKdXJcdTAwZWRkaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3RpXHUwMGYzbiBBbWJpZW50YWwtQ29vcmRpbmFkb3IiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1TdWIgR2VzdGlcdTAwZjNuIEFtYmllbnRhbC1Qcm9mZXNpb25hbCBKdXJcdTAwZWRkaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1KdXJcdTAwZWRkaWNhIiwiekNhbXVuZGEgLSBSb2wgVC1Db25jZXNpXHUwMGYzbiBkZSBBZ3VhcyBTdWJ0ZXJyXHUwMGUxbmVhcyIsInpDYW11bmRhIC0gUm9sIFQtUGVybWlzbyBkZSBPY3VwYWNpXHUwMGYzbiBkZSBDYXVjZSIsInpDYW11bmRhIC0gUm9sIFQtUGVybWlzbyBkZSBQcm9zcGVjY2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpXHUwMGYzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0aVx1MDBmM24gQW1iaWVudGFsLVN1YmRpcmVjdG9yYSBQbGFuZWFjaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLUp1clx1MDBlZGRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXX0.aTkVFjnaJNIsmFtQTOAUwcfK5SsYQCDq9jkZ5V-v0kg'
         }
         # payload={
         #     "nombre_de_usuario": "Seguridad",
         #     "password": "Seguridad12345+"
         # }
         
-        print (token)
+        #print (token)
         try:
             response = requests.post(url_login_token,json=payload,headers=auth_headers)
             response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
             data = response.json()  # Convertimos los datos a JSON
-            print(data)
+            
+            if 'userinfo' in data:
+                if 'userinfo' in data['userinfo']:
+                    info = data['userinfo']['userinfo']
 
-            return data
+                    token = info['tokens']['access']
+                    return token
+            return None
         except requests.RequestException as e:
             print(f"Error en la solicitud: {e}")
             return None  # Manejo de errores de solicitud
 
+
+    
     def post(self, request):
 
         #print(request.META.get('HTTP_AUTHORIZATION'))
@@ -3473,6 +3480,8 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
         radicado = 'UNICO-2024-00232'
-        data = self.tarea_radicado(radicado,token)
-        return Response({'success':True, 'detail':'Apertura realizada de manera exitosa', 'data':data}, status=status.HTTP_201_CREATED)
+        token_camunda = self.get_token_camunda(radicado,token)
+
+
+        return Response(token_camunda, status=status.HTTP_201_CREATED)
 

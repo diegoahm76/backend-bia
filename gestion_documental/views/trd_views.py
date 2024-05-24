@@ -18,12 +18,13 @@ from django.core.serializers import serialize
 from django.shortcuts import get_list_or_404
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.views.pqr_views import RadicadoCreate
-from gestion_documental.models.radicados_models import T262Radicados
+from gestion_documental.models.radicados_models import T262Radicados, AsignacionDocs
 from django.db.models import Q
 import copy
 from django.db import transaction
 from datetime import datetime
 from django.utils import timezone
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp
 from rest_framework import generics
 from rest_framework.response import Response
 from gestion_documental.models.plantillas_models import PlantillasDoc
@@ -3780,6 +3781,7 @@ class ValidarFirmaCreate(generics.CreateAPIView):
         if persona.email:
             subject = "Código de Verificación - "
             template = "codigo-verificacion-firma.html"
+            print(request.user.nombre_de_usuario)
             Util.notificacion(persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,verification_code_str=verification_code_str)
         
         # serializer = self.serializer_class(indice_electronico_exp)
@@ -3798,6 +3800,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             raise ValidationError('Debe enviar el consecutivo y el código')
         
         persona = request.user.persona
+        print(persona.id_persona)
         current_time = datetime.now()
         
         consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
@@ -3817,9 +3820,34 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             else:
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
+                finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
-        
-        return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+        if finalizo:
+            return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+    
+    def DocumentoFinalizado(self, request, consecutivo_tipologia):
+
+        asignaciones = get_list_or_404(AsignacionDocs, id_consecutivo=consecutivo_tipologia.id_consecutivo_tipologia)
+
+        validar = []    
+        for asignacion in asignaciones:
+            if asignacion.firma:
+                persona_firma = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=asignacion.id_persona_asignada.id_persona).first()
+                if persona_firma:
+                    if persona_firma.verificacion_exitosa:
+                        validar.append(True)
+                    else:
+                        validar.append(False)
+                else:
+                    validar.append(False)
+        if False in validar:
+            return False
+        else:
+            consecutivo_tipologia.finalizado = True
+            consecutivo_tipologia.save()
+            return True
     
 
 class DocumentosFinalizadosList(generics.ListAPIView):
