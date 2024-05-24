@@ -2063,7 +2063,7 @@ class SeccionSubseccionAsignacionGet(generics.ListAPIView):
         unidad_gestion_ambiental = UnidadesOrganizacionales.objects.filter(
             cod_agrupacion_documental='SUB',
             id_organigrama=organigrama_actual.id_organigrama,
-            nombre__iexact='Gestión Ambiental'
+            nombre__iexact='Subdirección De Gestión Ambiental'
         ).first()
 
         # Verificar si hay subsección de Gestión Ambiental
