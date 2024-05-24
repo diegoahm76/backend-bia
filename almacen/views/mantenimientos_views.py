@@ -40,6 +40,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from django.db.models import F, Q
 from datetime import datetime, date, timedelta
+from django.utils.timezone import get_current_timezone, now
+
 import pytz
 import copy
 from holidays_co import get_colombia_holidays_by_year
@@ -162,32 +164,84 @@ class UpdateMantenimientoProgramado(generics.RetrieveUpdateAPIView):
         else:
             raise NotFound('No existe ningún mantenimiento con el parámetro ingresado')
         
+# class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
+#     serializer_class=SerializerProgramacionMantenimientos
+#     queryset=ProgramacionMantenimientos.objects.all()
+    
+#     def get(self, request):
+#         cod_tipo_activo = request.query_params.get('cod_tipo_activo')
+#         rango_inicial_fecha = request.query_params.get('rango-inicial-fecha')
+#         rango_final_fecha = request.query_params.get('rango-final-fecha')
+        
+#         if rango_inicial_fecha==None or rango_final_fecha==None:
+#             raise ValidationError('No se ingresaron parámetros de fecha')
+        
+#         # formateando las variables de tipo fecha
+#         start_date=datetime(int(rango_inicial_fecha.split('-')[2]),int(rango_inicial_fecha.split('-')[1]),int(rango_inicial_fecha.split('-')[0]), tzinfo=pytz.timezone('America/Bogota'))
+#         end_date=datetime(int(rango_final_fecha.split('-')[2]),int(rango_final_fecha.split('-')[1]),int(rango_final_fecha.split('-')[0]),23,59,59,999, tzinfo=pytz.timezone('America/Bogota'))
+        
+#         mantenimientos_programados = ProgramacionMantenimientos.objects.filter(fecha_programada__range=[start_date,end_date], ejecutado=False, fecha_anulacion=None)
+#         if cod_tipo_activo:
+#             mantenimientos_programados = mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
+        
+#         mantenimientos_programados = mantenimientos_programados.values(id_programacion_mantenimiento=F('id_programacion_mtto'), articulo=F('id_articulo'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')
+#         if mantenimientos_programados:
+#             mantenimientos_programados = [dict(item, estado='Vencido' if item['fecha'] < datetime.now().date() else 'Programado') for item in mantenimientos_programados]
+#             mantenimientos_programados = [dict(item, responsable='NA') for item in mantenimientos_programados]
+#             mantenimientos_programados = [dict(item, tipo_descripcion='Correctivo' if item['tipo']=='C' else 'Preventivo') for item in mantenimientos_programados]
+#             return Response({'status':True, 'detail':mantenimientos_programados}, status=status.HTTP_200_OK)
+#         else:
+#             raise NotFound('No existe ningún mantenimiento programado entre el rango de fechas ingresado')
+
+
 class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
-    serializer_class=SerializerProgramacionMantenimientos
-    queryset=ProgramacionMantenimientos.objects.all()
+    serializer_class = SerializerProgramacionMantenimientos
+    queryset = ProgramacionMantenimientos.objects.all()
     
     def get(self, request):
         cod_tipo_activo = request.query_params.get('cod_tipo_activo')
         rango_inicial_fecha = request.query_params.get('rango-inicial-fecha')
         rango_final_fecha = request.query_params.get('rango-final-fecha')
         
-        if rango_inicial_fecha==None or rango_final_fecha==None:
+        if rango_inicial_fecha is None or rango_final_fecha is None:
             raise ValidationError('No se ingresaron parámetros de fecha')
         
-        # formateando las variables de tipo fecha
-        start_date=datetime(int(rango_inicial_fecha.split('-')[2]),int(rango_inicial_fecha.split('-')[1]),int(rango_inicial_fecha.split('-')[0]), tzinfo=pytz.timezone('America/Bogota'))
-        end_date=datetime(int(rango_final_fecha.split('-')[2]),int(rango_final_fecha.split('-')[1]),int(rango_final_fecha.split('-')[0]),23,59,59,999, tzinfo=pytz.timezone('America/Bogota'))
+        try:
+            start_date = datetime.strptime(rango_inicial_fecha, '%d-%m-%Y').replace(tzinfo=get_current_timezone())
+            end_date = datetime.strptime(rango_final_fecha, '%d-%m-%Y').replace(hour=23, minute=59, second=59, tzinfo=get_current_timezone())
+        except ValueError:
+            raise ValidationError('Formato de fecha inválido. Use DD-MM-YYYY.')
         
-        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(fecha_programada__range=[start_date,end_date], ejecutado=False, fecha_anulacion=None)
+        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(
+            fecha_programada__range=[start_date, end_date], ejecutado=False, fecha_anulacion=None
+        )
+        
         if cod_tipo_activo:
             mantenimientos_programados = mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
         
-        mantenimientos_programados = mantenimientos_programados.values(id_programacion_mantenimiento=F('id_programacion_mtto'), articulo=F('id_articulo'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')
+        mantenimientos_programados = mantenimientos_programados.values(
+            id_programacion_mantenimiento=F('id_programacion_mtto'),
+            articulo=F('id_articulo'),
+            tipo=F('cod_tipo_mantenimiento'),
+            fecha=F('fecha_programada'),
+            placa=F('id_articulo__doc_identificador_nro'),
+            marca=F('id_articulo__id_marca__nombre'),
+            codigo_bien=F('id_articulo__codigo_bien'),
+            consecutivo=F('id_articulo__nro_elemento_bien')
+        ).order_by('fecha')
+        
         if mantenimientos_programados:
-            mantenimientos_programados = [dict(item, estado='Vencido' if item['fecha'] < datetime.now().date() else 'Programado') for item in mantenimientos_programados]
-            mantenimientos_programados = [dict(item, responsable='NA') for item in mantenimientos_programados]
-            mantenimientos_programados = [dict(item, tipo_descripcion='Correctivo' if item['tipo']=='C' else 'Preventivo') for item in mantenimientos_programados]
-            return Response({'status':True, 'detail':mantenimientos_programados}, status=status.HTTP_200_OK)
+            ahora = now().date()
+            mantenimientos_programados = [
+                dict(
+                    item,
+                    estado='Vencido' if item['fecha'] < ahora else 'Programado',
+                    responsable='NA',
+                    tipo_descripcion='Correctivo' if item['tipo'] == 'C' else 'Preventivo'
+                )
+                for item in mantenimientos_programados
+            ]
+            return Response({'status': True, 'detail': mantenimientos_programados}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe ningún mantenimiento programado entre el rango de fechas ingresado')
         
@@ -306,7 +360,7 @@ class UpdateRegistroMantenimiento(generics.UpdateAPIView):
         archivo_soporte = request.FILES.get('ruta_documentos_soporte')
         registro_mantenimiento=RegistroMantenimientos.objects.filter(id_registro_mtto=pk).first()
         persona = request.user.persona.id_persona
-        request.data._mutable=True
+        # request.data._mutable=True
         request.data['id_persona_diligencia']=persona
 
         # ACTUALIZAR ARCHIVO
@@ -725,7 +779,7 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
     
     def post(self, request, *args, **kwargs):
         datos_ingresados = request.data
-        datos_ingresados._mutable=True
+        # datos_ingresados._mutable=True
         archivo_soporte = request.FILES.get('ruta_documentos_soporte')
         #VALIDACION FORMATE DE FECHAS ENTRANTES
         try:

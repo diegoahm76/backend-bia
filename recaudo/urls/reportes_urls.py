@@ -19,6 +19,7 @@ urlpatterns = [
     path('reporte-general-cartera-deuda-top/', views.ReporteGeneralCarteraDeudaTop.as_view(), name='reporte-cartera-deuda'),
     path('reporte-general-cartera-deuda-y-edad-top/', views.ReporteGeneralCarteraDeudaYEdadTop.as_view(), name='reporte-cartera-deuda-edad-top'),
     path('reporte-general-cartera-deudores/', views.CarteraDeudoresTop.as_view(), name='reporte-cartera-deuda-edad-top'),
+    path('reporte-general-cartera-deuda-y-etapa/', views.ReporteGeneralCarteraDeudaYEtapa.as_view(), name='reporte-cartera-deuda-y-etapa'),
 
 
 ]
