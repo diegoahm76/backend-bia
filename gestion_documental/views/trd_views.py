@@ -3,9 +3,10 @@ import json
 import logging
 
 from django.http import JsonResponse
-from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from docxtpl import DocxTemplate
 import os
+import secrets
 import uuid
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
@@ -56,7 +57,8 @@ from gestion_documental.serializers.trd_serializers import (
     TipologiasDocumentalesPutSerializer,
     GetSeriesSubSUnidadOrgTRDSerializer,
     TipologiasSeriesSubSUnidadOrgTRDSerializer,
-    ConsecutivoTipologiaDocSerializer
+    ConsecutivoTipologiaDocSerializer,
+    VerificacionFirmasSerializer
 )
 from gestion_documental.serializers.ccd_serializers import (
     CCDSerializer
@@ -3245,80 +3247,17 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             case 'C':
                 data = self.consecutivo(request, None)
                 return data
+            
             case 'B':
-                data = self.GenerarDocumento(request.data.get('payload'), request.data.get('plantilla'))
-                platnilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
-                data = data.data
-                generar_consecutivo = {
-                    "id_unidad_organizacional": request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional,
-                    "id_tipologia_doc": platnilla.id_tipologia_doc_trd.id_tipologia_documental,
-                    "id_persona_genera": request.user.persona.id_persona,
-                    "id_archivo_digital": data['data']['id_archivo_digital'],
-                }
-                serializer = self.serializer_class(data=generar_consecutivo)
-                serializer.is_valid(raise_exception=True)
-                instance=serializer.save()
-
-                return Response({
-                    'success': True,
-                    'detail': 'Se ha generado el documento exitosamente.',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
+                data = self.BorradorDocumento(request)
+                return data
             
             case 'DC':
-                payload = request.data.get('payload') 
-                data = self.consecutivo(request, None).data
-                if data['success']:
-                    payload['consecutivo'] = data['data']['consecutivo']
-                    documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
-                    print(documento)
-                    consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
-                    archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
-                    consecutivo.id_archivo_digital = archivo_digital
-                    consecutivo.variables = payload
-                    consecutivo.save()
-                    serializer = self.serializer_class(consecutivo)
-                    return Response({
-                        'success': True,
-                        'detail': 'Se ha generado el documento exitosamente.',
-                        'data': serializer.data
-                    }, status=status.HTTP_201_CREATED) 
-                else:
-                    return Response({
-                        'success': False,
-                        'detail': 'No se ha podido generar el documento.',
-                        'data': data
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                data = self.DocumentoConsecutivo(request)
+                return data
             case 'DCR':
-                payload = request.data.get('payload')
-                data = self.consecutivo(request, None).data
-                print(f"dataaaaaaa: {data}")
-                data_radicado = {
-                    "current_date": current_date,
-                    "id_persona": persona.id_persona,
-                    "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
-                }
-                radicado = self.GenerarRadicado(data_radicado)
-                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
-
-                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
-                consecutivo.id_radicado_salida = radicado_instance
-                consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
-
-                payload['radicado'] = radicado.get('radicado')
-                payload['fecha_radicado'] = radicado.get('fecha_radicado')
-                payload['consecutivo'] = data['data']['consecutivo']
-                documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
-                print(f"documento: {documento}")
-                archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
-                consecutivo.id_archivo_digital = archivo_digital
-                consecutivo.save() 
-                serializer = self.serializer_class(consecutivo)
-                return Response({
-                    'success': True,
-                    'detail': 'Se ha generado el documento exitosamente.',
-                    'data': serializer.data
-                }, status=status.HTTP_201_CREATED)
+                data = self.DocumentoConsecutivoRadicado(request, current_date, persona)
+                return data
             
             case 'A':
                 data = self.ActualizarDoc(request.data.get('payload'), request.data.get('id_consecutivo'))
@@ -3327,7 +3266,13 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     'detail': 'Se ha actualizado correctamente.',
                     'data': data
                 }, status=status.HTTP_201_CREATED)
-
+            
+            case 'N':
+                data = self.Notificaciones(request, current_date, persona)
+                return data
+            
+            # case 'SD':
+            #     data = self.SubirDocumento(request, archivo, current_date, persona)
 
     def consecutivo(self, request, id_archivo_digital):
         try:
@@ -3498,46 +3443,13 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         
     def GenerarDocumento(self, payload, plantilla):
         try:
-            # id_consecutivo = payload.get('id_consecutivo')
-            # if id_consecutivo:
-            #     print("id_consecutivo")
-            #     consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
-            #     ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
-            #     if ruta_archivo and os.path.exists(ruta_archivo):
-            #         doc = DocxTemplate(ruta_archivo)
-            #         dic = {
-            #             'consecutivo': payload.get('consecutivo'),
-            #             'fecha': datetime.now().strftime('%d/%m/%Y'),
-            #         }
-            #         payload['consecutivo'] = consecutivo.get('consecutivo')
-            #         context = {k: v for k, v in payload.items() if v is not None and v != ''}
-            #         doc.render_properties(dic)
-            #     consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
-            #     consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
-            #     consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
-            #     consecutivo.fecha_consecutivo = consecutivo.get('fecha_consecutivo')
-            #     consecutivo.CatalogosSeriesUnidad = consecutivo.get('catalogo') if consecutivo.get('catalogo') else None
-            #     serializer = ConsecutivoTipologiaDocSerializer(consecutivo, data=payload, partial=True)
-            #     serializer.is_valid(raise_exception=True)
-            #     serializer.save()
-
-            #     return Response({
-            #         'success': True,
-            #         'detail': 'Se ha actualizado el documento exitosamente.',
-            #         'data': serializer.data
-            #     }, status=status.HTTP_201_CREATED)
-
-            # else:
+          
             auto = ActaInicioCreate()
             plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
             ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
             if ruta_archivo and os.path.exists(ruta_archivo):
                 doc = DocxTemplate(ruta_archivo)
-                #context = {k: v for k, v in payload.items() if v is not None}
-                #all_variables = doc.get_undeclared_template_variables()
-                #existing_variables = {var: '' for var in all_variables}
-                #existing_variables.update(payload)
-                
+
                 doc.render(payload)
 
                 file_uuid = uuid.uuid4()
@@ -3574,6 +3486,85 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError(e.detail)
         
+    def DocumentoConsecutivo(self, request):
+        payload = request.data.get('payload') 
+        data = self.consecutivo(request, None).data
+        if data['success']:
+            payload['consecutivo'] = data['data']['consecutivo']
+            documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+            print(documento)
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+            archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.id_archivo_digital = archivo_digital
+            consecutivo.variables = payload
+            consecutivo.save()
+            serializer = self.serializer_class(consecutivo)
+            return Response({
+                'success': True,
+                'detail': 'Se ha generado el documento exitosamente.',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED) 
+        else:
+            return Response({
+                'success': False,
+                'detail': 'No se ha podido generar el documento.',
+                'data': data
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+
+    def BorradorDocumento(self, request):
+        data = self.GenerarDocumento(request.data.get('payload'), request.data.get('plantilla'))
+        platnilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
+        data = data.data
+        generar_consecutivo = {
+            "id_unidad_organizacional": request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional,
+            "id_plantilla_doc": platnilla.id_plantilla_doc,
+            "id_tipologia_doc": platnilla.id_tipologia_doc_trd.id_tipologia_documental,
+            "id_persona_genera": request.user.persona.id_persona,
+            "id_archivo_digital": data['data']['id_archivo_digital'],
+        }
+        serializer = self.serializer_class(data=generar_consecutivo)
+        serializer.is_valid(raise_exception=True)
+        instance=serializer.save()
+
+        return Response({
+            'success': True,
+            'detail': 'Se ha generado el documento exitosamente.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
+    
+    def DocumentoConsecutivoRadicado(self, request, current_date, persona):
+        payload = request.data.get('payload')
+        data = self.consecutivo(request, None).data
+        print(f"dataaaaaaa: {data}")
+        data_radicado = {
+            "current_date": current_date,
+            "id_persona": persona.id_persona,
+            "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+        }
+        radicado = self.GenerarRadicado(data_radicado)
+        radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+
+        consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+        consecutivo.id_radicado_salida = radicado_instance
+        consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
+
+        payload['radicado'] = radicado.get('radicado')
+        payload['fecha_radicado'] = radicado.get('fecha_radicado')
+        payload['consecutivo'] = data['data']['consecutivo']
+        documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+        print(f"documento: {documento}")
+        archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+        consecutivo.id_archivo_digital = archivo_digital
+        consecutivo.save() 
+        serializer = self.serializer_class(consecutivo)
+        return Response({
+            'success': True,
+            'detail': 'Se ha generado el documento exitosamente.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
     def ActualizarDoc(self, payload, id_consecutivo):
         try:
             consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
@@ -3592,21 +3583,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 archivo_digital.delete()
 
                 serializer = self.serializer_class(consecutivo)
-                # doc = DocxTemplate(ruta_archivo)
-                # dic = {
-                #     'consecutivo': payload.get('consecutivo'),
-                #     'fecha': datetime.now().strftime('%d/%m/%Y'),
-                # }
-                # context = {k: v for k, v in payload.items() if v is not None and v != ''}
-                # doc.render_properties(dic)
-                # consecutivo.agno_consecutivo = consecutivo.get('agno_consecutivo')
-                # consecutivo.prefijo_consecutivo = consecutivo.get('prefijo_consecutivo')
-                # consecutivo.nro_consecutivo = consecutivo.get('nro_consecutivo')
-                # consecutivo.fecha_consecutivo = consecutivo.get('fecha_consecutivo')
-                # consecutivo.CatalogosSeriesUnidad = consecutivo.get('catalogo') if consecutivo.get('catalogo') else None
-                # serializer = ConsecutivoTipologiaDocSerializer(consecutivo, data=payload, partial=True)
-                # serializer.is_valid(raise_exception=True)
-                # serializer.save()
+              
 
                 return serializer.data
 
@@ -3616,3 +3593,216 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError(e.detail)
         
+        
+    def Notificaciones(self, request, current_date, persona):
+        payload = request.data.get('payload')
+        data_radicado = {
+            "current_date": current_date,
+            "id_persona": persona.id_persona,
+            "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+        }
+        consecutivo = None
+        if request.data.get('consecutivo'):
+            data = self.consecutivo(request, None).data
+            payload['consecutivo'] = data['data']['consecutivo']
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+
+            if request.data.get('radicado'):
+                radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+                consecutivo.id_radicado = radicado_instance
+                consecutivo.fecha_radicado = radicado_instance.fecha_radicado
+                payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+            consecutivo.variables = payload
+            documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+            consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.save()
+            print("holiiiiii")
+
+            if not data['success']:
+                raise ValidationError('No se ha podido generar el consecutivo.')
+            
+        else:
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
+            consecutivo = ConsecutivoTipologia.objects.create(
+                id_unidad_organizacional = request.user.persona.id_unidad_organizacional_actual,
+                id_plantilla_doc = plantilla,
+                id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                id_persona_genera = request.user.persona,
+                fecha_consecutivo = current_date,  
+            )
+
+            if request.data.get('radicado'):
+                radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+
+                consecutivo.id_radicado = radicado_instance
+                consecutivo.fecha_radicado = radicado.get('fecha_radicado')
+
+                payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+            documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+            consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.variables = payload
+            consecutivo.save()    
+        serializer = self.serializer_class(consecutivo)
+        return Response({
+            'success': True,
+            'detail': 'Se ha generado el documento exitosamente.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)   
+        
+            
+        
+    def SubirDocumento(self, request, archivo, current_date, persona):
+        try:
+          
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.get('plantilla'))
+            ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+
+                payload = request.get('payload')
+
+                # Crear el archivo digital
+                ruta = os.path.join("home", "BIA", "Otros", "Documentos")
+
+                md5_hash = hashlib.md5()
+                for chunk in archivo.chunks():
+                    md5_hash.update(chunk)
+                
+                md5_value = md5_hash.hexdigest()
+
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
+                    
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo,  archivo)
+
+                data_consecutivo = self.consecutivo(request, respuesta.get('id_archivo_digital')).data
+                payload['consecutivo'] = data_consecutivo['data']['consecutivo']
+
+                #Radicado
+                data_radicado = {
+                    "current_date": current_date,
+                    "id_persona": persona.id_persona,
+                    "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+                }
+                radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+
+                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data_consecutivo['data']['id_consecutivo'])
+                consecutivo.id_radicado_salida = radicado_instance
+                consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
+                consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = respuesta.get('id_archivo_digital'))
+                consecutivo.variables = payload
+
+                payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado')
+
+                doc = DocxTemplate(respuesta.get('ruta_archivo'))
+                doc.render(payload)
+
+               
+                serializer = self.serializer_class(consecutivo)
+
+                return Response({
+                    'success': True,
+                    'detail': 'Se ha generado el documento exitosamente.',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+                return respuesta
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+        
+
+    #def GenerarDocsNotificaciones(self, request):      
+class ValidarFirmaCreate(generics.CreateAPIView):
+    serializer_class = VerificacionFirmasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        persona = request.user.persona
+        
+        consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=request.data.get('id_consecutivo'))
+        if not consecutivo_tipologia:
+            raise NotFound('No se encontró el consecutivo ingresado')
+        
+        
+        verification_code = secrets.randbelow(10**6)
+        verification_code_str = f'{verification_code:06}'
+        
+        # GUARDAR O ACTUALIZAR REGISTRO EN T270
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        
+        if doble_verificacion:
+            segundos = (datetime.now() - doble_verificacion.fecha_hora_codigo).total_seconds()
+            if segundos < 60:
+                raise ValidationError('Debe esperar un minuto antes de solicitar otro código')
+            doble_verificacion.codigo_generado = verification_code_str
+            doble_verificacion.fecha_hora_codigo = datetime.now()
+            doble_verificacion.save()
+        else:
+            DobleVerificacionTmp.objects.create(
+                id_persona_firma=persona,
+                id_consecutivo_tipologia=consecutivo_tipologia,
+                codigo_generado=verification_code_str,
+                fecha_hora_codigo=datetime.now()
+            )
+        
+        # ENVIAR SMS Y/O EMAIL
+        
+        if persona.telefono_celular:
+            sms = f'Ingrese el siguiente código para continuar con el cierre del índice electrónico: {verification_code_str}'
+            Util.send_sms(persona.telefono_celular, sms)
+        
+        if persona.email:
+            subject = "Código de Verificación - "
+            template = "codigo-verificacion-firma.html"
+            Util.notificacion(persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,verification_code_str=verification_code_str)
+        
+        # serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se ha realizado el envío del código de verificación'}, status=status.HTTP_200_OK)
+            
+
+class ValidacionCodigoView(generics.UpdateAPIView):
+    serializer_class = VerificacionFirmasSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_consecutivo = request.data.get('id_consecutivo')
+        codigo = request.data.get('codigo')
+        
+        if not id_consecutivo or not codigo:
+            raise ValidationError('Debe enviar el consecutivo y el código')
+        
+        persona = request.user.persona
+        current_time = datetime.now()
+        
+        consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+        if not consecutivo_tipologia:
+            raise NotFound('No se encontró el consecutivo ingresado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        if not doble_verificacion:
+            raise ValidationError('No se encuentra un código para el índice ingresado')
+        
+        minutos = (current_time - doble_verificacion.fecha_hora_codigo).total_seconds() / 60.0
+        if minutos > 5:
+            raise ValidationError('El código ingresado ha expirado')
+        else:
+            if doble_verificacion.codigo_generado != codigo:
+                raise ValidationError('El código es inválido. Intente nuevamente')
+            else:
+                doble_verificacion.verificacion_exitosa = True
+                doble_verificacion.save()
+            
+        
+        return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
