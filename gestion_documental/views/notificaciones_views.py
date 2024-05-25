@@ -342,20 +342,19 @@ class CrearTareas(generics.CreateAPIView):
 
     def post(self, request, fecha_actual):
         data = NotificacionesCorrespondencia.objects.filter(id_notificacion_correspondencia=request.get('id_notificacion')).first()
-        print(request.get('id_notificacion'))
 
         notificacion_data = {
             'id_notificacion_correspondencia': request.get('id_notificacion'),
             'fecha_registro': fecha_actual,
             'id_tipo_notificacion_correspondencia': request.get('id_tipo_notificacion_correspondencia'),
-            'id_persona_titular': data.id_persona_titular.id_persona,
-            'id_persona_interpone': data.id_persona_interpone.id_persona,
-            'cod_relacion_con_titular': data.cod_relacion_con_titular,
+            'id_persona_titular': data.id_persona_titular.id_persona if data.id_persona_titular else None,
+            'id_persona_interpone': data.id_persona_interpone.id_persona if data.id_persona_interpone else None,
+            'cod_relacion_con_titular': data.cod_relacion_con_titular if data.cod_relacion_con_titular else None,
             'cod_tipo_documentoID': data.cod_tipo_documentoID.cod_tipo_documento,
             'numero_identificacion': data.nro_documentoID,
-            'persona_a_quien_se_dirige': data.persona_a_quien_se_dirige,
-            'dir_notificacion_nal': data.dir_notificacion_nal,
-            'cod_municipio_notificacion_nal': data.cod_municipio_notificacion_nal.cod_municipio,
+            'persona_a_quien_se_dirige': data.persona_a_quien_se_dirige if data.persona_a_quien_se_dirige else None,
+            'dir_notificacion_nal': data.dir_notificacion_nal if data.dir_notificacion_nal else None,
+            'cod_municipio_notificacion_nal': data.cod_municipio_notificacion_nal.cod_municipio if data.cod_municipio_notificacion_nal else None,
             'tel_fijo': data.tel_fijo,
             'tel_celular': data.tel_celular,
             'email_notificacion': data.email_notificacion,
@@ -366,7 +365,7 @@ class CrearTareas(generics.CreateAPIView):
             'requiere_digitalizacion': data.requiere_digitalizacion,
             'fecha_inicial_registro': fecha_actual,
             'cod_estado': request.get('cod_estado'),
-            'id_estado_actual_registro': 2,
+            'id_estado_actual_registro': None,
         }
 
         serializer = self.serializer_class(data=notificacion_data)
@@ -2054,6 +2053,28 @@ class RegistrosNotificacionesCorrespondenciaEstadoUpdate(generics.UpdateAPIView)
 
         return Response({'succes': True, 'detail':'Se actualizó el registro de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
     
+class SolicitudNotificacionesCorrespondenciaEstadoUpdate(generics.UpdateAPIView):
+    serializer_class = NotificacionesCorrespondenciaCreateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, pk):
+        data = request.data
+        estado = data.get('estado_notificacion_correspondencia')
+        estados_validos = ['RE', 'DE', 'EG', 'PE', 'NT']
+
+        if not estado in estados_validos:
+            raise ValidationError(f'El estado de la notificación estado no existe.')
+        notificacion_correspondencia = get_object_or_404(NotificacionesCorrespondencia, id_notificacion_correspondencia=pk)
+        if not notificacion_correspondencia:
+            raise ValidationError(f'El registro de la notificación con id {pk} no existe.')
+        else:
+            notificacion_correspondencia.cod_estado = estado
+            notificacion_correspondencia.save()
+            serializer = self.get_serializer(notificacion_correspondencia)
+
+        return Response({'succes': True, 'detail':'Se actualizó el estado de la notificación correctamente', 'data':{**serializer.data}}, status=status.HTTP_200_OK)
+    
+
 ## Generador de Constancias
 
 class DocumentosConstanciaNotificacionCreate(generics.CreateAPIView):

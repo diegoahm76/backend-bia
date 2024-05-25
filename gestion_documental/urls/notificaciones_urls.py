@@ -16,6 +16,7 @@ urlpatterns = [
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
     path('update-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-tarea'),
     path('update-estado-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaEstadoUpdate.as_view(),name='update-tarea-estado'),
+    path('update-estado-notificacion/<int:pk>/', views.SolicitudNotificacionesCorrespondenciaEstadoUpdate.as_view(),name='update-solicitud-estado'),
 
     path('cancelar-asignacion-notificacion/<int:pk>/', views.CancelarAsignacionNotificacion.as_view(),name='cancelar-asignacion-notificacion'),
     path('cancelar-asignacion-tarea/<int:pk>/', views.CancelarAsignacionTarea.as_view(),name='cancelar-asignacion-tarea'),

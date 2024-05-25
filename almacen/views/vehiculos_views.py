@@ -1724,6 +1724,7 @@ class BusquedaSolicitudesViaje(generics.ListAPIView):
                 'id_solicitud_viaje': solicitud.id_solicitud_viaje,
                 'id_persona_solicita': solicitud.id_persona_solicita.id_persona if solicitud.id_persona_solicita else None,
                 'primer_nombre_solicitante': solicitud.id_persona_solicita.primer_nombre if solicitud.id_persona_solicita else None,
+                'primer_apellido_solicitante': solicitud.id_persona_solicita.primer_apellido if solicitud.id_persona_solicita else None,
                 'id_unidad_organizacional_solicitante': solicitud.id_unidad_org_solicita.id_unidad_organizacional if solicitud.id_unidad_org_solicita else None,
                 'nombre_unidad_organizacional_solicitante': solicitud.id_unidad_org_solicita.nombre if solicitud.id_unidad_org_solicita else None,
                 'cod_municipio': solicitud.cod_municipio.cod_municipio,                

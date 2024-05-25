@@ -682,6 +682,9 @@ class CreateOrgChart(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
 
+        data_output = serializer.data
+        data_output['ruta_resolucion'] = archivo_creado_instance.ruta_archivo.url if archivo_soporte else None
+
         #Auditoria Crear Organigrama
         usuario = request.user.id_usuario
         descripcion = {"Nombre": str(serializador.nombre), "Versión": str(serializador.version)}
@@ -696,7 +699,7 @@ class CreateOrgChart(generics.CreateAPIView):
         }
         Util.save_auditoria(auditoria_data)
 
-        return Response({'success':True, 'detail':serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success':True, 'detail':data_output}, status=status.HTTP_201_CREATED)
 
 class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
     serializer_class = OrganigramaPutSerializer
@@ -741,7 +744,10 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
 
             serializer = self.serializer_class(organigrama, data=data)
             serializer.is_valid(raise_exception=True)
-            serializer.save()
+            serializador = serializer.save()
+
+            data_output = serializer.data
+            data_output['ruta_resolucion'] = archivo_creado_instance.ruta_archivo.url if archivo_soporte else serializador.ruta_resolucion.ruta_archivo.url if serializador.ruta_resolucion else None
 
             # AUDITORIA DE UPDATE DE ORGANIGRAMA
             user_logeado = request.user.id_usuario
@@ -758,7 +764,7 @@ class UpdateOrganigrama(generics.RetrieveUpdateAPIView):
                 'valores_actualizados': valores_actualizados
             }
             Util.save_auditoria(auditoria_data)
-            return Response({'success':True, 'detail':serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'success':True, 'detail':data_output}, status=status.HTTP_201_CREATED)
         else:
             raise PermissionDenied('Ya está siendo usado este organigrama')
 

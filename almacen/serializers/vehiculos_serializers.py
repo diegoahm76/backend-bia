@@ -175,6 +175,7 @@ class ClaseTerceroPersonaSerializer(serializers.ModelSerializer):
 
 class AsignacionVehiculoSerializer(serializers.ModelSerializer):
     tipo_vehiculo = serializers.CharField(source='id_hoja_vida_vehiculo.cod_tipo_vehiculo')
+    nombre_tipo_vehiculo = serializers.CharField(source='id_hoja_vida_vehiculo.get_cod_tipo_vehiculo_display', read_only=True)
     marca = serializers.SerializerMethodField()
     placa = serializers.SerializerMethodField()
     tipo_conductor = serializers.SerializerMethodField()
@@ -200,13 +201,21 @@ class AsignacionVehiculoSerializer(serializers.ModelSerializer):
         return f"{obj.id_persona_conductor.primer_nombre} {obj.id_persona_conductor.primer_apellido}"
 
     def get_marca(self, obj):
-        if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado:
-            return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+        if obj.id_hoja_vida_vehiculo.es_arrendado:
+            if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado and obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca:
+                return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.id_marca.nombre
+        else:
+            if obj.id_hoja_vida_vehiculo.id_articulo and obj.id_hoja_vida_vehiculo.id_articulo.id_marca:
+                return obj.id_hoja_vida_vehiculo.id_articulo.id_marca.nombre
         return None
 
     def get_placa(self, obj):
-        if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado:
-            return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+        if obj.id_hoja_vida_vehiculo.es_arrendado:
+            if obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado:
+                return obj.id_hoja_vida_vehiculo.id_vehiculo_arrendado.placa
+        else:
+            if obj.id_hoja_vida_vehiculo.id_articulo:
+                return obj.id_hoja_vida_vehiculo.id_articulo.doc_identificador_nro
         return None
 
     
@@ -273,6 +282,8 @@ class VehiculoPersonaLogueadaSerializer(serializers.ModelSerializer):
             marca = obj.id_hoja_vida_vehiculo.id_articulo.id_marca.nombre
 
         return marca    
+    
+    
     def to_representation(self, instance):
         persona_logueada = self.context['request'].user.persona
         vehiculos_asociados = VehiculosAgendables_Conductor.objects.filter(id_persona_conductor=persona_logueada, activo=True)
@@ -360,8 +371,13 @@ class BusquedaSolicitudViajeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_nombre_solicitante(self, obj):
-        # Combinar el primer nombre y el primer apellido del solicitante
-        return f"{obj.id_persona_solicita.primer_nombre} {obj.id_persona_solicita.primer_apellido}"
+        nombre_solicitante = None
+        if obj.id_persona_solicita:
+            nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                            obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+            nombre_solicitante = ' '.join(item for item in nombre_list if item is not None)
+            nombre_solicitante = nombre_solicitante if nombre_solicitante != "" else None
+        return nombre_solicitante
 
     def get_nombre_municipio(self, obj):
         # Obtener el nombre del municipio

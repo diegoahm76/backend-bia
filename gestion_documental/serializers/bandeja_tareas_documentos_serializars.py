@@ -18,12 +18,18 @@ from transversal.models.personas_models import Personas
 
 
 
+class AsignacionDocsGetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AsignacionDocs
+        fields = '__all__'
+
 class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
    
     #cod_tipo_tarea es un choices
     tipo_tarea =serializers.ReadOnlyField(source='get_cod_tipo_tarea_display',default=None)
     asignado_por = serializers.SerializerMethodField()
     asignado_para = serializers.SerializerMethodField()
+    asignaciones = serializers.SerializerMethodField()
     consecutivo = serializers.SerializerMethodField()
     fecha_consecutivo = serializers.SerializerMethodField()    #persona_genera = serializers.SerializerMethodField()
     radicado = serializers.SerializerMethodField(default=None)
@@ -40,9 +46,12 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
     class Meta:#
         model = TareasAsignadas
         fields = '__all__'
-        fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para', 'consecutivo', 'fecha_consecutivo', 'radicado', 'fecha_radicado','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea', 'documento', 'tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
+        fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para', 'asignaciones', 'consecutivo', 'fecha_consecutivo', 'radicado', 'fecha_radicado','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea', 'documento', 'tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
         
-    
+    def get_asignaciones(self,obj):
+        asignaciones = AsignacionDocs.objects.filter(id_asignacion_doc=obj.id_asignacion).first()
+        return AsignacionDocsGetSerializer(asignaciones).data
+
     def get_fecha_consecutivo(self,obj):
         tarea = obj
         documento = None

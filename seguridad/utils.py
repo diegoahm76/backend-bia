@@ -37,7 +37,7 @@ class Util:
         email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
-        response = email.send(fail_silently=True)
+        response = email.send(fail_silently=False)
         return response
 
         # url = "https://dashboard.360nrs.com/api/rest/mailing"

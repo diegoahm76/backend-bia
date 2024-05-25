@@ -3,10 +3,14 @@ import ast
 import copy
 from datetime import datetime, timedelta, timezone
 import json
+from django.utils.timezone import now
 import os
 import io
 import subprocess
 from django.template.loader import render_to_string
+#from gestion_documental.models.notificaciones_models import TiposDocumentos
+#from gestion_documental.serializers.notificaciones_serializers import NotificacionesCorrespondenciaCreateSerializer
+#from gestion_documental.views.notificaciones_views import AnexosSistemaCreate
 from seguridad.permissions.permissions_gestor import PermisoActualizarPQRSDF, PermisoActualizarTiposMediosSolicitud, PermisoActualizarTiposPQRSDF, PermisoBorrarPQRSDF, PermisoBorrarRadicacionEmail, PermisoBorrarTiposMediosSolicitud, PermisoCrearPQRSDF, PermisoCrearRespuestaSolicitudPQRSDF, PermisoCrearTiposMediosSolicitud
 from transversal.models.entidades_models import SucursalesEmpresas
 from django.http import HttpResponse
@@ -1148,7 +1152,8 @@ class MediosSolicitudUpdate(generics.UpdateAPIView):
     
 
 ################################################### RESPUESTA A UNA SOLICITUD PQRSDF ###################################################################
-    
+
+
 class RespuestaPQRSDFCreate(generics.CreateAPIView):
     serializer_class = RespuestaPQRSDFPostSerializer
     permission_classes = [IsAuthenticated, PermisoCrearRespuestaSolicitudPQRSDF]
@@ -1181,21 +1186,25 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                     raise ValidationError('No se encontró la tarea asignada con el ID especificado.')
               
                 
-
+                print("antes de validar")
                 util_respuesta_PQR = Util_Respuesta_PQR()
                 anexos = util_respuesta_PQR.set_archivo_in_anexo(data_respuesta_pqrsdf['anexos'], request.FILES, "create")
+                #print(anexos.data)
+                print("despues de validar")
                 
                 # Verificar si la PQRSDF ya tiene respuesta
                 pqrsdf_id = data_respuesta_pqrsdf['id_pqrsdf']
                 respuesta_existente = RespuestaPQR.objects.filter(id_pqrsdf=pqrsdf_id).exists()
 
                 if respuesta_existente:
+                    print("ya existe respuesta")
                     # Si ya hay una respuesta, retornar un mensaje indicando que la PQRSDF ya tiene respuesta
                     return Response({'success': False, 'detail': 'Esta PQRSDF ya tiene una respuesta generada.'}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Crea la respuesta pqrsdf si no hay respuesta existente
+                print("antes de crear respuesta")
                 data_respuesta_PQRSDF_creado = self.create_respuesta_pqrsdf(data_respuesta_pqrsdf, fecha_actual, id_persona_responde)
-
+                print("despues de crear respuesta") 
                 # Guarda los anexos en la tabla T258 y la relación entre los anexos y el PQRSDF en la tabla T259 si tiene anexos
                 if anexos:
                     anexosCreate = AnexosRespuestaCreate()
@@ -1203,6 +1212,8 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                     update_requiere_digitalizacion = all(anexo.get('ya_digitalizado', False) for anexo in anexos)
                     if update_requiere_digitalizacion:
                         data_respuesta_PQRSDF_creado = self.update_requiereDigitalizacion_pqrsdf(data_respuesta_PQRSDF_creado)
+                    
+                print("antes de auditoria")
 
                 # # Auditoria
                 # descripcion_auditoria = self.set_descripcion_auditoria(data_respuesta_PQRSDF_creado)
@@ -1244,7 +1255,10 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                         tarea_padre.nombre_persona_que_responde = nombre_persona
                         tarea_padre.ya_respondido_por_un_delegado = True
                         tarea_padre.save()
-                    self.enviar_correo(pqrsdf, request.FILES)
+                print("antes de enviar el correo")
+                archivo = request.FILES.get('archivo-create-Nombre anexo')
+                correo_enviado = self.enviar_correo(pqrsdf, archivo)
+                print(correo_enviado)
                 return Response({'success': True, 'detail': 'Se creó el PQRSDF correctamente', 'data': data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
@@ -1263,19 +1277,20 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
         instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=PQRSDF.id_radicado.agno_radicado,cod_tipo_radicado=PQRSDF.id_radicado.cod_tipo_radicado).first()
         numero_con_ceros = str(PQRSDF.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
         cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        print(cadena)
         context = {
             'nombre_titular':f"{PQRSDF.id_persona_titular.primer_nombre} {PQRSDF.id_persona_titular.segundo_apellido} {PQRSDF.id_persona_titular.primer_apellido} {PQRSDF.id_persona_titular.segundo_apellido}",
-            'primer_nombre': f"{PQRSDF.get_cod_tipo_PQRSDF_display()}",
+            'tipo_solicitud': f"{PQRSDF.get_cod_tipo_PQRSDF_display()}",
             "radicado": cadena
         }
-        print("rederizo el template")
+        print(context)
         template = render_to_string((template), context)
-        print("no renderizo el template")
         if PQRSDF.id_persona_titular.email:
-            email_data = {'template': template, 'email_subject': 'Documento', 'to_email':PQRSDF.id_persona_titular.email}
-            print("no se envio el correo")
-            Util.send_email_file(email_data, archivo)
+            print(PQRSDF.id_persona_titular.email)
+            email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':PQRSDF.id_persona_titular.email}
+            correo = Util.send_email_file(email_data, archivo)
             print("Correo enviado")
+            return correo
         else:
             raise ValidationError("No se puede enviar el correo porque no se encontró el correo del titular")
 
@@ -3684,6 +3699,83 @@ class IndicadorVencimientoPQRSDF(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
 
+
+           
+#  fecha_rta_final_gestion__isnull=False,  # Tiene respuesta final registrada
+class IndicadorPQRSDFVencidasContestadas(generics.ListAPIView):
+    serializer_class = PQRSDFPostSerializer
+
+    def get_queryset(self):
+        # Filtrar PQRSDF recibidas (excluir las que están en estado 'GUARDADO' y sin radicado)
+        queryset_recibidas = PQRSDF.objects.exclude(
+            Q(id_radicado__isnull=True) |
+            Q(id_estado_actual_solicitud__nombre='GUARDADO')
+        )
+
+        fecha_radicado_desde = self.request.query_params.get('fecha_radicado_desde')
+        fecha_radicado_hasta = self.request.query_params.get('fecha_radicado_hasta')
+
+        if fecha_radicado_desde:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__gte=fecha_radicado_desde)
+
+        if fecha_radicado_hasta:
+            queryset_recibidas = queryset_recibidas.filter(fecha_radicado__lte=fecha_radicado_hasta)
+
+        return queryset_recibidas
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Obtener todos los resultados de la consulta
+        results = list(queryset)
+
+        # Filtrar las PQRSDF vencidas y contestadas
+        queryset_vencidas_contestadas = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.fecha_rta_final_gestion is not None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) <= now()
+        ]
+
+        num_pqrsdf_vencidas_contestadas = len(queryset_vencidas_contestadas)
+
+        # Filtrar las PQRSDF vencidas pero no contestadas
+        queryset_vencidas_no_contestadas = [
+            pqrsdf for pqrsdf in results
+            if pqrsdf.fecha_rta_final_gestion is None and
+            (pqrsdf.fecha_radicado + timedelta(days=pqrsdf.dias_para_respuesta)) <= now()
+        ]
+
+        num_pqrsdf_vencidas_no_contestadas = len(queryset_vencidas_no_contestadas)
+
+        # Número total de PQRSDF recibidas que están vencidas
+        num_pqrsdf_recibidas = len(results)
+
+        # Calcular porcentaje de PQRSDF vencidas contestadas
+        porcentaje_vencidas_contestadas = 0 if num_pqrsdf_recibidas == 0 else (num_pqrsdf_vencidas_contestadas / num_pqrsdf_recibidas) * 100
+
+        # Calcular porcentaje de PQRSDF vencidas no contestadas
+        porcentaje_vencidas_no_contestadas = 0 if num_pqrsdf_recibidas == 0 else (num_pqrsdf_vencidas_no_contestadas / num_pqrsdf_recibidas) * 100
+
+        # Calcular rango de cumplimiento
+        rango_cumplimiento = 'Excelente' if porcentaje_vencidas_contestadas >= 80 else (
+            'Regular' if 60 <= porcentaje_vencidas_contestadas <= 79 else 'Deficiente'
+        )
+
+        # Retornar resultados
+        return Response({
+            'success': True,
+            'detail': 'Indicador de PQRSDF vencidas y contestadas.',
+            'data': {
+                'num_pqrsdf_recibidas': num_pqrsdf_recibidas,
+                'num_pqrsdf_vencidas_contestadas': num_pqrsdf_vencidas_contestadas,
+                'num_pqrsdf_vencidas_no_contestadas': num_pqrsdf_vencidas_no_contestadas,
+                'porcentaje_vencidas_contestadas': porcentaje_vencidas_contestadas,
+                'porcentaje_vencidas_no_contestadas': porcentaje_vencidas_no_contestadas,
+                'rango_cumplimiento': rango_cumplimiento
+            }
+        }, status=status.HTTP_200_OK)
+    
+    
 #Radicacion_Email
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
