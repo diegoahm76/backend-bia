@@ -1054,6 +1054,7 @@ class GetElementosByIdNodo(generics.ListAPIView):
 
 class SearchArticuloByDocIdentificador(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
+    serializer_arrendados_class = CatalogoBienesSerializer
     queryset = CatalogoBienes.objects.all()
     permission_classes = [IsAuthenticated]
 
