@@ -3427,7 +3427,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
     serializer_class = None
     queryset = None
 
-    def get_token_camunda(self,radicado,token):
+    def get_token_camunda(self,token):
     # Corrigiendo la concatenación de la URL y añadiendo el radicado en la URL si es necesario
         #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"
         #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/task-by-number-radicate/"+radicado
@@ -3469,6 +3469,41 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
             return None  # Manejo de errores de solicitud
 
 
+    def get_tramite_ventanilla_sasoft(self,radicado,token):
+
+        #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"
+        url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/task-by-number-radicate/"+radicado
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = requests.get(url,headers=headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()  # Convertimos los datos a JSON
+            
+            #print(data)
+            return data
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
+
+    def buscar_tramite(self,radicado):
+        tramites = SolicitudesTramites.objects.all()
+
+        for tramite in tramites:
+                
+            if   tramite.id_radicado:
+                instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=tramite.id_radicado.agno_radicado,cod_tipo_radicado=tramite.id_radicado.cod_tipo_radicado).first()
+                numero_con_ceros = str(tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+                cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            
+                if cadena == radicado:
+                    return tramite
+        return None
+        
+
     
     def post(self, request):
 
@@ -3479,9 +3514,52 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
             raise ValidationError("No se suministro un Token")
 
         token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
-        radicado = 'UNICO-2024-00232'
-        token_camunda = self.get_token_camunda(radicado,token)
+        radicado = request.data['radicado']
+        token_camunda = self.get_token_camunda(token)
+        
+        data = self.get_tramite_ventanilla_sasoft(radicado,token_camunda)
+
+        if not data:
+            raise ValidationError("Algo salio mal")
+        
+        if not 'processInstanceId' in data:
+            raise ValidationError("Id del proceso no encontrado")
+        
+        id_instancia = data['processInstanceId']
+        print(id_instancia)
+
+        tramite = self.buscar_tramite(radicado)
+
+        if not tramite:
+            raise ValidationError("NO se encontro tramite asociado a este radicado")
+        
+        print(tramite)
+        #BUSCAR TRAMITE POR RADICADO
+
+        #BUSCAR ASIGNACION
+        asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=tramite,cod_estado_asignacion='Ac').first()
+
+        if not asignacion:
+            raise ValidationError("El tramite no a sigo aceptado por la unidad organizacional")
+
+        print(asignacion.id_und_org_seccion_asignada)
+        #CON ASIGNACION BUSCAR UNIDAD ORGANIZACIONAL
+        #CON TRAMITE BUSCAR DOCUMENTO SOPORTE 
+        #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
+
+        # NumeroAuto 
+        # DocumentoAuto 
+        # NumeroPago 
+        # SoportePago 
+        # NumExp
+        # GrupoFunTramite 
+        # dateAutoStart  #FECHA AUTO
+        # FNAuto #FECHA NOTIFICACION 
+        # priorityProject #PRIORITARIO O NO
+        # prioritario 
 
 
-        return Response(token_camunda, status=status.HTTP_201_CREATED)
+
+
+        return Response(data, status=status.HTTP_201_CREATED)
 

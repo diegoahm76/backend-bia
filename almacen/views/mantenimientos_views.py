@@ -8,6 +8,7 @@ from seguridad.utils import Util
 from almacen.serializers.mantenimientos_serializers import (
     ControlMantenimientosProgramadosGetListSerializer,
     SerializerProgramacionMantenimientos,
+    SerializerProgramacionMantenimientosGet,
     SerializerRegistroMantenimientos,
     AnularMantenimientoProgramadoSerializer,
     SerializerRegistroMantenimientosPost,
@@ -61,30 +62,26 @@ class GetMantenimientosProgramadosById(generics.RetrieveAPIView):
             raise NotFound('No existe ningún mantenimiento programado con el parámetro ingresado')
 
 class GetMantenimientosProgramadosFiveList(generics.ListAPIView):
-    serializer_class=SerializerProgramacionMantenimientos
+    serializer_class=SerializerProgramacionMantenimientosGet
     queryset=ProgramacionMantenimientos.objects.all()
     
     def get(self, request, id_articulo):
-        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(id_articulo=id_articulo, ejecutado=False, fecha_anulacion=None).values(id_programacion_mantenimiento=F('id_programacion_mtto'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')[:5]
+        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(id_articulo=id_articulo, ejecutado=False, fecha_anulacion=None).order_by('fecha_programada')[:5]
         if mantenimientos_programados:
-            mantenimientos_programados = [dict(item, estado='Vencido' if item['fecha'] < datetime.now().date() else 'Programado') for item in mantenimientos_programados]
-            mantenimientos_programados = [dict(item, responsable='NA') for item in mantenimientos_programados]
-            mantenimientos_programados = [dict(item, tipo_descripcion='Correctivo' if item['tipo']=='C' else 'Preventivo') for item in mantenimientos_programados]
-            return Response({'status':True, 'detail':mantenimientos_programados}, status=status.HTTP_200_OK)
+            serializer = self.serializer_class(mantenimientos_programados, many=True)
+            return Response({'status':True, 'detail':serializer.data}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe ningún mantenimiento programado para este artículo')
             
 class GetMantenimientosProgramadosList(generics.ListAPIView):
-    serializer_class=SerializerProgramacionMantenimientos
+    serializer_class=SerializerProgramacionMantenimientosGet
     queryset=ProgramacionMantenimientos.objects.all()
     
     def get(self, request, id_articulo):
-        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(id_articulo=id_articulo).values(id_programacion_mantenimiento=F('id_programacion_mtto'), tipo=F('cod_tipo_mantenimiento'), fecha=F('fecha_programada')).order_by('fecha')
+        mantenimientos_programados = ProgramacionMantenimientos.objects.filter(id_articulo=id_articulo).order_by('fecha_programada')
         if mantenimientos_programados:
-            mantenimientos_programados = [dict(item, estado='Vencido' if item['fecha'] < datetime.now().date() else 'Programado') for item in mantenimientos_programados]
-            mantenimientos_programados = [dict(item, responsable='NA') for item in mantenimientos_programados]
-            mantenimientos_programados = [dict(item, tipo_descripcion='Correctivo' if item['tipo']=='C' else 'Preventivo') for item in mantenimientos_programados]
-            return Response({'status':True, 'detail':mantenimientos_programados}, status=status.HTTP_200_OK)
+            serializer = self.serializer_class(mantenimientos_programados, many=True)
+            return Response({'status':True, 'detail':serializer.data}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe ningún mantenimiento programado para este artículo')
 

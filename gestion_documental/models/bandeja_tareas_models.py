@@ -35,7 +35,7 @@ class TareasAsignadas(models.Model):
         'self',
         null=True,
         on_delete=models.CASCADE,
-        db_column='T315IdTareaAsignadaPadreInmediata'
+        db_column='T315Id_TareaAsignadaPadre_Inmediata'
     )
 
     class Meta:
