@@ -8,6 +8,7 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, TareaBandejaTareasPersona
 from datetime import timedelta
 from datetime import datetime
+from gestion_documental.serializers.pqr_serializers import PersonaSerializerGet
 from tramites.models.tramites_models import ActosAdministrativos, AnexosTramite, PermisosAmbSolicitudesTramite, Requerimientos, RespuestaOPA, RespuestasRequerimientos, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
@@ -358,12 +359,15 @@ class OpaTramiteDetalleGetBandejaTareasSerializer(serializers.ModelSerializer):
     radicado = serializers.SerializerMethodField()
     estado_actual = serializers.ReadOnlyField(source='id_estado_actual_solicitud.nombre', default=None)
     tipo_operacion_tramite = serializers.ReadOnlyField(source='get_cod_tipo_operacion_tramite_display', default=None)
+    info_persona_titular = serializers.SerializerMethodField()
 
     class Meta:
         model = SolicitudesTramites
-        fields = ['id_solicitud_tramite','radicado','fecha_radicado','tipo_operacion_tramite','estado_actual']
+        fields = '__all__'
 
-
+    def get_info_persona_titular(self, obj):
+        persona = Personas.objects.filter(id_persona = obj.id_persona_titular_id).first()
+        return PersonaSerializerGet(persona).data
         
     def get_radicado(self, obj):
         cadena = ""
