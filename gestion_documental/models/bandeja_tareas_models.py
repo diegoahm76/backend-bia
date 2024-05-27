@@ -55,13 +55,13 @@ class ReasignacionesTareas(models.Model):
     id_tarea_asignada = models.ForeignKey(
         TareasAsignadas,
         on_delete=models.CASCADE,
-        db_column='T316IdTareaAsignada',
+        db_column='T316Id_TareaAsignada',
         related_name='reasignaciones'
     )
     id_persona_a_quien_se_reasigna = models.ForeignKey(
         'transversal.Personas',
         on_delete=models.CASCADE,
-        db_column='T316IdPersonaAQuienSeReasigna'
+        db_column='T316Id_PersonaAQuienSeReasigna'
     )
     comentario_reasignacion = models.CharField(max_length=255, null=True, db_column='T316comentarioReasignacion')
     fecha_reasignacion = models.DateTimeField(db_column='T316fechaReasignacion',null=True)
