@@ -20,6 +20,50 @@ class SerializerProgramacionMantenimientos(serializers.ModelSerializer):
     class Meta:
         model=ProgramacionMantenimientos
         fields='__all__'
+        
+class SerializerProgramacionMantenimientosGet(serializers.ModelSerializer):
+    id_programacion_mantenimiento = serializers.ReadOnlyField(source='id_programacion_mtto', default=None)
+    tipo = serializers.ReadOnlyField(source='cod_tipo_mantenimiento', default=None)
+    tipo_descripcion = serializers.CharField(source='get_cod_tipo_mantenimiento_display', default=None)
+    fecha = serializers.ReadOnlyField(source='fecha_programada', default=None)
+    responsable = serializers.SerializerMethodField()
+    estado = serializers.SerializerMethodField()
+
+    def get_responsable(self, obj):
+        nombre_completo_reponsable = None
+        if obj.id_persona_solicita:
+            if obj.id_persona_solicita.tipo_persona == 'J':
+                nombre_completo_reponsable = obj.id_persona_solicita.razon_social
+            else:
+                nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                                obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+                nombre_completo_reponsable = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_reponsable = nombre_completo_reponsable if nombre_completo_reponsable != "" else None
+        return nombre_completo_reponsable
+
+    def get_estado(self, obj):
+        estado = None
+        if obj.fecha_programada:
+            estado = 'Vencido' if obj.fecha_programada < datetime.now().date() else 'Programado'
+        else:
+            hdv_vehiculo = HojaDeVidaVehiculos.objects.filter(id_articulo=obj.id_articulo).first()
+            if hdv_vehiculo and hdv_vehiculo.ultimo_kilometraje:
+                estado = 'Vencido' if obj.kilometraje_programado < hdv_vehiculo.ultimo_kilometraje else 'Programado'
+            else:
+                estado = 'Programado'
+        return estado
+
+    class Meta:
+        model=ProgramacionMantenimientos
+        fields=[
+            'id_programacion_mantenimiento',
+            'tipo',
+            'kilometraje_programado',
+            'fecha',
+            'estado',
+            'responsable',
+            'tipo_descripcion'
+        ]
 
 class AnularMantenimientoProgramadoSerializer(serializers.ModelSerializer):
     justificacion_anulacion = serializers.CharField(max_length=255, min_length=10)

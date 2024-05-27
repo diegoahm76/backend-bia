@@ -1,18 +1,9 @@
-
 from rest_framework import serializers
-from rest_framework.serializers import ReadOnlyField
-from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
-from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
-from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.models.bandeja_tareas_models import ReasignacionesTareas, TareasAsignadas
 from gestion_documental.serializers.trd_serializers import ConsecutivoTipologiaDocSerializer
 
 from gestion_documental.models.radicados_models import AsignacionDocs, ConfigTiposRadicadoAgno, BandejaTareasPersona
-from datetime import timedelta
-from datetime import datetime
-from seguridad.models import User
 from transversal.models.base_models import Departamento
-from transversal.models.lideres_models import LideresUnidadesOrg
-from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
 
@@ -46,7 +37,7 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
     class Meta:#
         model = TareasAsignadas
         fields = '__all__'
-        fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para', 'asignaciones', 'consecutivo', 'fecha_consecutivo', 'radicado', 'fecha_radicado','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea', 'documento', 'tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
+        #fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para', 'consecutivo', 'asignaciones', 'fecha_consecutivo', 'radicado', 'fecha_radicado','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea', 'documento', 'tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
         
     def get_asignaciones(self,obj):
         asignaciones = AsignacionDocs.objects.filter(id_asignacion_doc=obj.id_asignacion).first()
@@ -105,7 +96,6 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
     def get_consecutivo(self,obj):
         tarea = obj
         documento = None
-
         if tarea.id_asignacion:
                 asignacion = AsignacionDocs.objects.filter(id_asignacion_doc=tarea.id_asignacion).first()
                 documento = asignacion.id_consecutivo

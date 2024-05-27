@@ -3592,6 +3592,64 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
 
 
-        return Response({'data':'hola'}, status=status.HTTP_201_CREATED)
+        return Response('data', status=status.HTTP_201_CREATED)
+    
+
+class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
+    serializer_class = SolicitudJuridicaOPACreateSerializer
+    serializer_tramite = TramitePutSerializer
+    queryset = SolicitudesDeJuridica.objects.all()
+    permission_classes = [IsAuthenticated]
+    creador_estados = Estados_PQRCreate
+    
+    def post(self, request):
+        fecha_actual = datetime.now()
+      
+        data_in = request.data
+        solicitud_tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+
+        if not solicitud_tramite:
+            raise NotFound("No existe el Tramite seleccionado.")
+
+        if solicitud_tramite.requiere_digitalizacion and not solicitud_tramite.fecha_envio_definitivo_a_digitalizacion:
+            raise ValidationError("Se debe completar la digitalización del Tramite antes de enviar la solicitud a jurídica")
+        
+        # instance = AsignacionTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite'])
+        # for asignacion in instance:
+        #     if asignacion.cod_estado_asignacion != 'Ac':
+        #         raise ValidationError("El OPA tiene que ser asignado a un grupo antes de enviar la solicitud a jurídica")
+        
+        solicitud_juridica = self.queryset.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        if solicitud_juridica:
+            raise ValidationError("El Tramite ya fue enviado a revisión jurídica")
+        
+        #CREA UN ESTADO NUEVO T255
+        data_estado = {}
+        data_estado['id_tramite'] = request.data['id_solicitud_tramite']
+        data_estado['estado_solicitud'] = 15
+        data_estado['fecha_iniEstado'] = fecha_actual
+        data_estado['persona_genera_estado'] = request.user.persona.id_persona
+        respuesta_estado = self.creador_estados.crear_estado(self,data_estado)
+        data_respuesta_estado_asociado = respuesta_estado.data['data']
+        
+        
+        #CAMBIAMOS EL ESTADO ACTUAL DEL OPA
+        serializador_opa = self.serializer_tramite(solicitud_tramite, data={'id_estado_actual_solicitud':15}, partial=True)
+        serializador_opa.is_valid(raise_exception=True)
+        serializador_opa.save()
+        
+        data_in['cod_tipo_solicitud_juridica'] = 'RE'
+        data_in['fecha_solicitud'] = fecha_actual
+        data_in['solicitud_completada'] = False
+        data_in['solicitud_sin_completar'] = True
+        data_in['id_persona_solicita_revision'] = request.user.persona.id_persona
+        data_in['cod_estado_tipo_solicitud_juridica'] = 'NR'
+        
+        serializer = self.serializer_class(data=data_in)
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de jurídica', 'data':serializer.data, 'estados':data_respuesta_estado_asociado}, status=status.HTTP_201_CREATED)
+
 
  
