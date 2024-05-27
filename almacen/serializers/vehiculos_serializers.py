@@ -71,6 +71,7 @@ class SolicitudViajeSerializer(serializers.ModelSerializer):
     cod_departamento = serializers.ReadOnlyField(source='cod_municipio.cod_departamento.cod_departamento')
     nombre_persona_solicita = serializers.SerializerMethodField()
     nombre_persona_responsable = serializers.SerializerMethodField()
+    unidad_organizacional_solicita = serializers.ReadOnlyField(source='id_persona_solicita.id_unidad_organizacional_actual.nombre', default=None)
 
     class Meta:
         model = SolicitudesViajes
