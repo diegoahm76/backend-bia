@@ -615,6 +615,8 @@ class AnexosCreate(generics.CreateAPIView):
             data_anexos['doc_entrada_salida'] = 'EN'
             if anexo['cod_tipo_documento']:
                 tipo_documento = TiposAnexosSoporte.objects.filter(id_tipo_anexo_soporte=anexo['cod_tipo_documento']).first()
+                if not tipo_documento:
+                    raise ValidationError("El tipo de anexo de soporte no existe")
                 data_anexos['cod_tipo_documento'] = tipo_documento.id_tipo_anexo_soporte
             data_anexos['doc_generado'] = 'MA'
             data_anexos['id_persona_anexa_documento'] = id_persona_recibe_solicitud.id_persona

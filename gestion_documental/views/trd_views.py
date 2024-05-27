@@ -3,6 +3,7 @@ import json
 import logging
 
 from django.http import JsonResponse
+import requests
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from docxtpl import DocxTemplate
 import os
@@ -3821,12 +3822,29 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             else:
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
+
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        
+                if not authorization_header:
+                    raise ValidationError("No se suministro un Token")
+
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                username = request.user.nombre_de_usuario
+                token_camunda = self.get_token_camunda(token)
+                
+                data = self.get_firmas_funcionarios_sasoft(username,token_camunda)
+
+                if not data:
+                    raise ValidationError("Algo salio mal")
+
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+        
+    
     
     def DocumentoFinalizado(self, request, consecutivo_tipologia):
 
@@ -3849,6 +3867,60 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             consecutivo_tipologia.finalizado = True
             consecutivo_tipologia.save()
             return True
+        
+    def get_token_camunda(self,token):
+
+        auth_headers = {
+            "accept": "*/*",
+            "Content-Type": "application/json-patch+json"
+        }   
+        #TOKEN PARA SASOFTCO
+        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+
+        payload={
+            "access": token
+        }
+
+        print(token)
+        
+        try:
+            response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            print("pase")
+            data = response.json()  # Convertimos los datos a JSON
+            
+            if 'userinfo' in data:
+                if 'userinfo' in data['userinfo']:
+                    info = data['userinfo']['userinfo']
+
+                    token = info['tokens']['access']
+                    print(token)
+                    return token
+            return None
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
+
+
+    def get_firmas_funcionarios_sasoft(self,username,token):
+
+        #url = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/tasks"
+        url = "https://backendclerkapi.sedeselectronicas.com/api/Documents/download-signature-by-username/"+username
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = requests.get(url,headers=headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()  # Convertimos los datos a JSON
+            
+            print(data)
+            return data
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
     
 
 class DocumentosFinalizadosList(generics.ListAPIView):

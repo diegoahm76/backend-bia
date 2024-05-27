@@ -37,7 +37,7 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
     class Meta:#
         model = TareasAsignadas
         fields = '__all__'
-        fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para', 'consecutivo', 'asignaciones', 'fecha_consecutivo', 'radicado', 'fecha_radicado','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea', 'documento', 'tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
+        #fields = ['id_tarea_asignada','tipo_tarea','asignado_por','asignado_para', 'consecutivo', 'asignaciones', 'fecha_consecutivo', 'radicado', 'fecha_radicado','fecha_asignacion','comentario_asignacion','radicado','fecha_radicado','estado_tarea','estado_asignacion_tarea','unidad_org_destino','estado_reasignacion_tarea', 'documento', 'tarea_reasignada_a','id_tarea_asignada_padre_inmediata']
         
     def get_asignaciones(self,obj):
         asignaciones = AsignacionDocs.objects.filter(id_asignacion_doc=obj.id_asignacion).first()
