@@ -1,8 +1,9 @@
-import psycopg2
+import pymssql
 import os
 from dotenv import load_dotenv
-import pymssql
+import psycopg2
 
+# Cargar variables de entorno desde el archivo .env
 load_dotenv()
 
 
@@ -21,26 +22,9 @@ def consultar_tabla_mssql():
         # Consultar los datos de la tabla T970TRAMITE
         select_query_970 = """
             SELECT 
-                T970CodCia,
-                T970IdTramite,
-                T970Agno,
-                T970CodTipoTramite,
-                T970CodExpediente,
-                T970CodDepen,
-                T970NumRadicadoEntrada,
-                T970FechaRadicadoEntrada,
-                T970Descripcion,
-                T970IdTramiteRef,
-                T970Observacion,
-                T970CodEstadoTram,
-                T970TUAFECHAINIPERM,
-                T970TUAMESESPLAZO,
-                T970TUAFECHAFINPERM,
-                T970NUMRESOLPERM,
-                T970FECHARESPERM,
-                T970TUACAUDALCONCESI,
-                T970TUAPREDIO,
-                T970VERIFICO_FUN
+                T970CodCia,T970IdTramite,T970Agno,T970CodTipoTramite,T970CodExpediente,T970CodDepen,T970NumRadicadoEntrada,T970FechaRadicadoEntrada,
+                T970Descripcion,T970IdTramiteRef,T970Observacion,T970CodEstadoTram,T970TUAFECHAINIPERM,T970TUAMESESPLAZO,T970TUAFECHAFINPERM,
+                T970NUMRESOLPERM,T970FECHARESPERM,T970TUACAUDALCONCESI,T970TUAPREDIO,T970VERIFICO_FUN
             FROM 
                 T970TRAMITE
         """
@@ -49,16 +33,8 @@ def consultar_tabla_mssql():
 
         select_query_987 = """
             SELECT 
-                T987CodCia,
-                T987NumTR,
-                T987Consecutivo,
-                T987CodTipoFuenteHid,
-                T987CodFuenteHid,
-                T987CodTramo,
-                T987CaudalCaptado,
-                T987AguaEnBloque,
-                T987ConsumoAcueducto,
-                T987CodUbicacion
+                T987CodCia,T987NumTR,T987Consecutivo,T987CodTipoFuenteHid,T987CodFuenteHid,T987CodTramo,T987CaudalCaptado,
+                T987AguaEnBloque,T987ConsumoAcueducto,T987CodUbicacion
             FROM 
                 T987TRVERTIMIENTO
         """
@@ -68,10 +44,7 @@ def consultar_tabla_mssql():
         
         select_query_986 = """
             SELECT 
-                T986CodCia,
-                T986NumTR,
-                T986CodActividadCIIU,
-                T986Descripcion
+                T986CodCia,T986NumTR,T986CodActividadCIIU,T986Descripcion
                 
             FROM 
                 T986TRACTIVIDAD
@@ -83,36 +56,10 @@ def consultar_tabla_mssql():
    # Consultar los datos de la tabla T985TR
         select_query_985 = """
             SELECT 
-                T985CodCia,
-                T985NumTR,
-                T985Agno,
-                T985Periodo,
-                T985NumFormulario,
-                T985CodTipoDeclaracion,
-                T985Aprobada,
-                T985FechaDiligenciamiento,
-                T985Fecha,
-                T985NumRadicadoEntrada,
-                T985FechaRadicadoEntrada,
-                T985Nit,
-                T985CodDpto,
-                T985CodMpio,
-                T985CodPostal,
-                T985Direccion,
-                T985Telefono,
-                T985CodTipoUsuario,
-                T985NitRepLegal,
-                T985CodUbicacion,
-                T985IdCobro,
-                T985Anulado,
-                T985Observacion,
-                T985NitElaboro,
-                T985CargoElaboro,
-                T985LugarElaboro,
-                T985NumFicha,
-                T985NumMatricula,
-                T985GeoUbicacion,
-                T985IdTramite
+                T985CodCia,T985NumTR,T985Agno,T985Periodo,T985NumFormulario,T985CodTipoDeclaracion,T985Aprobada,T985FechaDiligenciamiento,
+                T985Fecha,T985NumRadicadoEntrada,T985FechaRadicadoEntrada,T985Nit,T985CodDpto,T985CodMpio,T985CodPostal,T985Direccion,
+                T985Telefono,T985CodTipoUsuario,T985NitRepLegal,T985CodUbicacion,T985IdCobro,T985Anulado,T985Observacion,
+                T985NitElaboro,T985CargoElaboro,T985LugarElaboro,T985NumFicha,T985NumMatricula,T985GeoUbicacion,T985IdTramite
             FROM 
                 T985TR
         """
@@ -124,16 +71,7 @@ def consultar_tabla_mssql():
    # Consultar los datos de la tabla T982TUACAPTACION
         select_query_982 = """
         SELECT 
-        T982CodCia,
-        T982NumTUA,
-        T982Consecutivo,
-        T982CodTipoFuenteHid,
-        T982CodClaseUsoAgua,
-        T982CodFuenteHid,
-        T982CodTramo,
-        T982CodDpto,
-        T982CodMpio,
-        T982FactorRegional
+        T982CodCia,T982NumTUA,T982Consecutivo,T982CodTipoFuenteHid,T982CodClaseUsoAgua,T982CodFuenteHid,T982CodTramo,T982CodDpto,T982CodMpio,T982FactorRegional
     FROM 
         T982TUACAPTACION
         """
@@ -144,11 +82,7 @@ def consultar_tabla_mssql():
         # Consultar los datos de la tabla T982TUACAPTACION
         select_query_981 = """
         SELECT 
-        T981CodCia,
-        T981NumTUA,
-        T981CodActividadCIIU,
-        T981Descripcion
-
+        T981CodCia,T981NumTUA,T981CodActividadCIIU,T981Descripcion
     FROM 
         T981TUAACTIVIDAD
         """
@@ -160,31 +94,9 @@ def consultar_tabla_mssql():
         # Consultar los datos de la tabla T980TUA
         select_query_980 = """
         SELECT 
-        T980CodCia,
-        T980NumTUA,
-        T980Agno,
-        T980Periodo,
-        T980NumFormulario,
-        T980CodTipoDeclaracion,
-        T980Aprobada,
-        T980FechaDiligenciamiento,
-        T980Fecha,
-        T980NumRadicadoEntrada,
-        T980FechaRadicadoEntrada,
-        T980Nit,
-        T980CodDpto,
-        T980CodMpio,
-        T980CodPostal,
-        T980Direccion,
-        T980Telefono,
-        T980CodTipoUsuario,
-        T980NitRepLegal,
-        T980CodUbicacion,
-        T980IdCobro,
-        T980Anulado,
-        T980Observacion,
-        T980IdTramite
-
+        T980CodCia,T980NumTUA,T980Agno,T980Periodo,T980NumFormulario,T980CodTipoDeclaracion,T980Aprobada,T980FechaDiligenciamiento,T980Fecha,
+        T980NumRadicadoEntrada,T980FechaRadicadoEntrada,T980Nit,T980CodDpto,T980CodMpio,T980CodPostal,T980Direccion,T980Telefono,T980CodTipoUsuario,
+        T980NitRepLegal,T980CodUbicacion,T980IdCobro,T980Anulado,T980Observacion,T980IdTramite
     FROM 
         T980TUA
         """
@@ -195,15 +107,7 @@ def consultar_tabla_mssql():
         # Consultar los datos de la tabla T956FUENTEHID
         select_query_956 = """
         SELECT 
-        T956CodCia,
-        T956CodFuenteHid,
-        T956Nombre,
-        T956Observacion,
-        T956GeoUbicacion,
-        T956AreaCuenca,
-        T956LongitudCauce,
-        T956Movimiento
-
+        T956CodCia,T956CodFuenteHid,T956Nombre,T956Observacion,T956GeoUbicacion,T956AreaCuenca,T956LongitudCauce,T956Movimiento
     FROM
         T956FUENTEHID
         """
@@ -214,11 +118,7 @@ def consultar_tabla_mssql():
         # Consultar los datos de la tabla T904RENTACTABANCO
         select_query_904 = """
         SELECT 
-        T904CodCia,
-        T904CodTipoRenta,
-        T904CodCtaBanco 
-        
-
+        T904CodCia,T904CodTipoRenta,T904CodCtaBanco 
     FROM
         T904RENTACTABANCO 
         """
@@ -229,22 +129,8 @@ def consultar_tabla_mssql():
     # Consultar los datos de la tabla T914DISTRIBUCION
         select_query_914 = """
         SELECT 
-        T914CodCia,
-        T914CodTipoRenta,
-        T914NumDistribucion,
-        T914Agno,
-        T914CodTipoDoc,
-        T914NumeroDoc,
-        T914CodCtaBanco,
-        T914CodGrupoRec,
-        T914Fecha,
-        T914NumOrigen,
-        T914CodOrigen,
-        T914AbonarLiq,
-        T914Anulado,
-        T914NumeroDocRnt
-        
-
+        T914CodCia,T914CodTipoRenta,T914NumDistribucion,T914Agno,T914CodTipoDoc,T914NumeroDoc,T914CodCtaBanco,T914CodGrupoRec,
+        T914Fecha,T914NumOrigen,T914CodOrigen,T914AbonarLiq,T914Anulado,T914NumeroDocRnt
     FROM
         T914DISTRIBUCION  
         """
@@ -255,26 +141,8 @@ def consultar_tabla_mssql():
          # Consultar los datos de la tabla T914DISTRIBUCION
         select_query_913 = """
         SELECT 
-        T913CodCia,
-        T913CodTipoRenta,
-        T913NumRecaudo,
-        T913Agno,
-        T913CodTipoDoc,
-        T913CodCtaBanco,
-        T913CodGrupoRec,
-        T913Nit,
-        T913Fecha,
-        T913FechaReal,
-        T913Valor,
-        T913TipoDistribucion,
-        T913CodTipoFormulario,
-        T913NumFormulario,
-        T913NumFormularioPago,
-        T913Anulado,
-        T913NumAnulacion,
-        T913CodFormaPago,
-        T913NumDocPago
-
+        T913CodCia,T913CodTipoRenta,T913NumRecaudo,T913Agno,T913CodTipoDoc,T913CodCtaBanco,T913CodGrupoRec,T913Nit,T913Fecha,T913FechaReal,T913Valor,
+        T913TipoDistribucion,T913CodTipoFormulario,T913NumFormulario,T913NumFormularioPago,T913Anulado,T913NumAnulacion,T913CodFormaPago,T913NumDocPago
     FROM
         T913RECAUDO  
         """
@@ -284,14 +152,7 @@ def consultar_tabla_mssql():
         # Consultar los datos de la tabla T915DISTRIBUCIONLIQ 
         select_query_915 = """
         SELECT 
-        T915CodCia,
-        T915CodTipoRenta,
-        T915NumDistribucion,
-        T915NumLiquidacion,
-        T915CodConcepto,
-        T915ValorPagado,
-        T915ValorPrescripcion,
-        T915ValorPagadoDet 
+        T915CodCia,T915CodTipoRenta,T915NumDistribucion,T915NumLiquidacion,T915CodConcepto,T915ValorPagado,T915ValorPrescripcion,T915ValorPagadoDet 
         
 
     FROM
@@ -301,22 +162,10 @@ def consultar_tabla_mssql():
         column_data_915 = cursor.fetchall()
 
 
-        # Consultar los datos de la tabla T915DISTRIBUCIONLIQ 
+
         select_query_916 = """
         SELECT 
-        T916CodCia,
-        T916CodTipoRenta,
-        T916NumDistribucion,
-        T916NumLiquidacion,
-        T916NumCuota,
-        T916ValorCapital,
-        T916ValorInteres,
-        T916FechaIniInt,
-        T916ValorInt1066,
-        T916ValorPrescripcion
-     
-        
-
+        T916CodCia,T916CodTipoRenta,T916NumDistribucion,T916NumLiquidacion,T916NumCuota,T916ValorCapital,T916ValorInteres,T916FechaIniInt,T916ValorInt1066,T916ValorPrescripcion
     FROM
         T916DISTRIBUCIONCUOT    
         """
@@ -324,47 +173,29 @@ def consultar_tabla_mssql():
         column_data_916 = cursor.fetchall()
 
 
-   # Consultar los datos 
         select_query_954 = """
         SELECT 
-        T954CodCia,
-        T954IdCobro,
-        T954CodTipoRenta,
-        T954CodTipoCobro,
-        T954Nit,
-        T954Liquidado,
-        T954NumLiquidacion,
-        T954SeCobra,
-        T954CodOrigenCobro,
-        T954NumOrigenCobro,
-        T954IdPaso,
-        T954ConsecPaso,
-        T954NumNotificacion,
-        T954Anulado,
-        T954TUATM,
-        T954TUAFR,
-        T954TUAVALORTUA,
-        T954TRTMDBO,
-        T954TRTMSST,
-        T954TRFRDBO,
-        T954TRFRSST,
-        T954TRVALORTRDBO,
-        T954TRVALORTRSST,
-        T954TRCANTPERANIDBO,
-        T954TRCANTPERANISST,
-        T954TRTIENEPSMV,
-        T954TUAPORCDCTO,
-        T954TUANORMADCTO,
-        T954TUAUSARVMANUAL,
-        T954REPLEGALIMPORTAD,
-        T954TSETVB,
-        T954TRAPLICADCTO465
+        T954CodCia,T954IdCobro,T954CodTipoRenta,T954CodTipoCobro,T954Nit,T954Liquidado,T954NumLiquidacion,T954SeCobra,T954CodOrigenCobro,T954NumOrigenCobro,
+        T954IdPaso,T954ConsecPaso,T954NumNotificacion,T954Anulado,T954TUATM,T954TUAFR,T954TUAVALORTUA,T954TRTMDBO,T954TRTMSST,T954TRFRDBO,T954TRFRSST,
+        T954TRVALORTRDBO,T954TRVALORTRSST,T954TRCANTPERANIDBO,T954TRCANTPERANISST,T954TRTIENEPSMV,T954TUAPORCDCTO,T954TUANORMADCTO,T954TUAUSARVMANUAL,
+        T954REPLEGALIMPORTAD,T954TSETVB,T954TRAPLICADCTO465
 
     FROM
         T954COBRO    
         """
         cursor.execute(select_query_954)
         column_data_954 = cursor.fetchall()
+
+
+
+
+
+
+
+
+
+
+
 
 
    # Consultar los datos 
@@ -557,7 +388,7 @@ def consultar_tabla_mssql():
         column_data_919 = cursor.fetchall()
 
 
-
+        
 
         select_query_901 = """
         SELECT 
@@ -684,12 +515,6 @@ def consultar_tabla_mssql():
 
 
 
-        
-
-
-
-
-        
 
 
 
@@ -702,16 +527,72 @@ def consultar_tabla_mssql():
 
 
 
-        #aca_voyyyyy
-
-        
 
 
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         # #Mostrar los datos obtenidos
-        # print("Datos obtenidos de la tabla column_data_17 en MS SQL Server:")
-        # for row in column_data_17:
+        # print("Datos obtenidos de la tabla T970TRAMITE en MS SQL Server:")
+        # for row in column_data_970:
         #     print(row)
+
+
 
 
         # Cerrar la conexión a MS SQL Server
@@ -737,11 +618,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
           database=os.environ['BIA_DB_NAME'], 
           user=os.environ['BIA_DB_USER'],
           password=os.environ['BIA_DB_PASSWORD']
-        )
+)
+
         print("Conexión PostgreSQL exitosa!")
-
         cursor = conn_postgresql.cursor()
-
 
         # Eliminar datos existentes de las tablas
         cursor.execute("DELETE FROM rt954cobro")
@@ -752,33 +632,25 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         cursor.execute("DELETE FROM rt10tiporetenrango")
 
 
-
-
-
-
-
-
-        cursor.execute("SELECT  t970codcia,t970idtramite,t970agno,t970codtipotramite,t970codexpediente,t970coddepen,t970numradicadoentrada,t970fecharadicadoentrada,t970descripcion,t970idtramiteref,t970observacion,t970codestadotram,t970tuafechainiperm,t970tuamesesplazo,t970tuafechafinperm,t970numresolperm,t970fecharesperm,t970tuacaudalconcesi,t970tuapredio,t970verifico_fun FROM rt970tramite")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_970 for dato_970 in data_970 if tuple(dato_970) not in existing_records_set]
+        # cursor.execute("SELECT  t970codcia,t970idtramite,t970agno,t970codtipotramite,t970codexpediente,t970coddepen,t970numradicadoentrada,t970fecharadicadoentrada,t970descripcion,t970idtramiteref,t970observacion,t970codestadotram,t970tuafechainiperm,t970tuamesesplazo,t970tuafechafinperm,t970numresolperm,t970fecharesperm,t970tuacaudalconcesi,t970tuapredio,t970verifico_fun FROM rt970tramite")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_970 for dato_970 in data_970 if tuple(dato_970) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt970tramite:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt970tramite:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_970 = """
-            INSERT INTO rt970tramite   (
-            t970codcia,t970idtramite,t970agno,t970codtipotramite,t970codexpediente,t970coddepen,t970numradicadoentrada,t970fecharadicadoentrada,t970descripcion,t970idtramiteref,t970observacion,t970codestadotram,t970tuafechainiperm,t970tuamesesplazo,t970tuafechafinperm,t970numresolperm,t970fecharesperm,t970tuacaudalconcesi,t970tuapredio,t970verifico_fun    
-            )VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_970 in nuevos_registros:
-                dato_970 = tuple(None if val is None else val for val in dato_970)
-                cursor.execute(insert_query_970, dato_970)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt970tramite.")
-
-
+        #     insert_query_970 = """
+        #     INSERT INTO rt970tramite   (
+        #     t970codcia,t970idtramite,t970agno,t970codtipotramite,t970codexpediente,t970coddepen,t970numradicadoentrada,t970fecharadicadoentrada,t970descripcion,t970idtramiteref,t970observacion,t970codestadotram,t970tuafechainiperm,t970tuamesesplazo,t970tuafechafinperm,t970numresolperm,t970fecharesperm,t970tuacaudalconcesi,t970tuapredio,t970verifico_fun    
+        #     )VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        #     for dato_970 in nuevos_registros:
+        #         dato_970 = tuple(None if val is None else val for val in dato_970)
+        #         cursor.execute(insert_query_970, dato_970)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt970tramite.")
 
 
 
@@ -788,12 +660,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_987 for dato_987 in data_987 if tuple(dato_987) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt987trvertimiento:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_987 = """
             INSERT INTO rt987trvertimiento   (
            t987codcia,t987numtr,t987consecutivo,t987codtipofuentehid,t987codfuentehid,t987codtramo,t987caudalcaptado,t987aguaenbloque,t987consumoacueducto,t987codubicacion)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -806,19 +676,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
         cursor.execute("SELECT t986codcia,t986numtr,t986codactividadciiu,t986descripcion FROM rt986tractividad")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_986 for dato_986 in data_986 if tuple(dato_986) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt986tractividad:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_986 = """
             INSERT INTO rt986tractividad   (
             t986codcia,t986numtr,t986codactividadciiu,t986descripcion)VALUES (%s,%s,%s,%s)"""
@@ -831,20 +696,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
-
         cursor.execute("SELECT  t985codcia,t985numtr,t985agno,t985periodo,t985numformulario,t985codtipodeclaracion,t985aprobada,t985fechadiligenciamiento,t985fecha,t985numradicadoentrada,t985fecharadicadoentrada,t985nit,t985coddpto,t985codmpio,t985codpostal,t985direccion,t985telefono,t985codtipousuario,t985nitreplegal,t985codubicacion,t985idcobro,t985anulado,t985observacion,t985nitelaboro,t985cargoelaboro,t985lugarelaboro,t985numficha,t985nummatricula,t985geoubicacion,t985idtramite FROM rt985tr")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_985 for dato_985 in data_985 if tuple(dato_985) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt985tr:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_985 = """
             INSERT INTO rt985tr   (
             t985codcia,t985numtr,t985agno,t985periodo,t985numformulario,t985codtipodeclaracion,t985aprobada,t985fechadiligenciamiento,t985fecha,t985numradicadoentrada,t985fecharadicadoentrada,t985nit,t985coddpto,t985codmpio,t985codpostal,t985direccion,t985telefono,t985codtipousuario,t985nitreplegal,t985codubicacion,t985idcobro,t985anulado,t985observacion,t985nitelaboro,t985cargoelaboro,t985lugarelaboro,t985numficha,t985nummatricula,t985geoubicacion,t985idtramite
@@ -859,19 +718,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
         cursor.execute("SELECT  t982codcia,t982numtua,t982consecutivo,t982codtipofuentehid,t982codclaseusoagua,t982codfuentehid,t982codtramo,t982coddpto,t982codmpio,t982factorregional FROM rt982tuacaptacion")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_982 for dato_982 in data_982 if tuple(dato_982) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt982tuacaptacion:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_982 = """
             INSERT INTO rt982tuacaptacion   (
              t982codcia,t982numtua,t982consecutivo,t982codtipofuentehid,t982codclaseusoagua,t982codfuentehid,t982codtramo,t982coddpto,t982codmpio,t982factorregional)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -885,19 +739,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
         cursor.execute("SELECT t981codcia,t981numtua,t981codactividadciiu,t981descripcion FROM rt981tuaactividad")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_981 for dato_981 in data_981 if tuple(dato_981) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt981tuaactividad:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_981 = """
             INSERT INTO rt981tuaactividad   (
              t981codcia,t981numtua,t981codactividadciiu,t981descripcion)VALUES (%s,%s,%s,%s)"""
@@ -911,20 +760,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-    
-   
-
         cursor.execute("SELECT t980codcia,t980numtua,t980agno,t980periodo,t980numformulario,t980codtipodeclaracion,t980aprobada,t980fechadiligenciamiento,t980fecha,t980numradicadoentrada,t980fecharadicadoentrada,t980nit,t980coddpto,t980codmpio,t980codpostal,t980direccion,t980telefono,t980codtipousuario,t980nitreplegal,t980codubicacion,t980idcobro,t980anulado,t980observacion,t980idtramite FROM rt980tua")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_980 for dato_980 in data_980 if tuple(dato_980) not in existing_records_set]
-        
+        nuevos_registros = [dato_980 for dato_980 in data_980 if tuple(dato_980) not in existing_records_set]      
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt980tua:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_980 = """
             INSERT INTO rt980tua   (
                 t980codcia,t980numtua,t980agno,t980periodo,t980numformulario,t980codtipodeclaracion,t980aprobada,t980fechadiligenciamiento,t980fecha,t980numradicadoentrada,t980fecharadicadoentrada,t980nit,t980coddpto,t980codmpio,t980codpostal,t980direccion,t980telefono,t980codtipousuario,t980nitreplegal,t980codubicacion,t980idcobro,t980anulado,t980observacion,t980idtramite)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -938,18 +781,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
     
-   
-
         cursor.execute("SELECT t956codcia,t956codfuentehid,t956nombre,t956observacion,t956geoubicacion,t956areacuenca,t956longitudcauce,t956movimiento FROM rt956fuentehid")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_956 for dato_956 in data_956 if tuple(dato_956) not in existing_records_set]
-        
+        nuevos_registros = [dato_956 for dato_956 in data_956 if tuple(dato_956) not in existing_records_set]      
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt956fuentehid:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_956 = """
             INSERT INTO rt956fuentehid   (
                 t956codcia,t956codfuentehid,t956nombre,t956observacion,t956geoubicacion,t956areacuenca,t956longitudcauce,t956movimiento)VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -963,19 +802,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-   
-
         cursor.execute("SELECT  t904codcia,t904codtiporenta,t904codctabanco FROM rt904rentactabanco")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_904 for dato_904 in data_904 if tuple(dato_904) not in existing_records_set]
-        
+        nuevos_registros = [dato_904 for dato_904 in data_904 if tuple(dato_904) not in existing_records_set]    
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt904rentactabanco:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_904 = """
             INSERT INTO rt904rentactabanco   (
                 t904codcia,t904codtiporenta,t904codctabanco)VALUES (%s,%s,%s)"""
@@ -996,13 +830,11 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         cursor.execute("SELECT t914codcia,t914codtiporenta,t914numdistribucion,t914agno,t914codtipodoc,t914numerodoc,t914codctabanco,t914codgruporec,t914fecha,t914numorigen,t914codorigen,t914abonarliq,t914anulado,t914numerodocrnt FROM rt914distribucion")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_914 for dato_914 in data_914 if tuple(dato_914) not in existing_records_set]
-        
+        nuevos_registros = [dato_914 for dato_914 in data_914 if tuple(dato_914) not in existing_records_set]    
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt914distribucion:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_914 = """
             INSERT INTO rt914distribucion   (
                 t914codcia,t914codtiporenta,t914numdistribucion,t914agno,t914codtipodoc,t914numerodoc,t914codctabanco,t914codgruporec,t914fecha,t914numorigen,t914codorigen,t914abonarliq,t914anulado,t914numerodocrnt)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -1016,17 +848,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
      
-
         cursor.execute("SELECT   t913codcia,t913codtiporenta,t913numrecaudo,t913agno,t913codtipodoc,t913codctabanco,t913codgruporec,t913nit,t913fecha,t913fechareal,t913valor,t913tipodistribucion,t913codtipoformulario,t913numformulario,t913numformulariopago,t913anulado,t913numanulacion,t913codformapago,t913numdocpago FROM rt913recaudo")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_913 for dato_913 in data_913 if tuple(dato_913) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt913recaudo:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_913 = """
             INSERT INTO rt913recaudo   (
                 t913codcia,t913codtiporenta,t913numrecaudo,t913agno,t913codtipodoc,t913codctabanco,t913codgruporec,t913nit,t913fecha,t913fechareal,t913valor,t913tipodistribucion,t913codtipoformulario,t913numformulario,t913numformulariopago,t913anulado,t913numanulacion,t913codformapago,t913numdocpago)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -1045,7 +874,6 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_915 for dato_915 in data_915 if tuple(dato_915) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt915distribucionliq:")
             for registro in nuevos_registros:
@@ -1068,12 +896,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_915 for dato_915 in data_915 if tuple(dato_915) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt915distribucionliq:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_915 = """
             INSERT INTO rt915distribucionliq   (
                 t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet)VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -1086,17 +912,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
         cursor.execute("SELECT  t916codcia,t916codtiporenta,t916numdistribucion,t916numliquidacion,t916numcuota,t916valorcapital,t916valorinteres,t916fechainiint,t916valorint1066,t916valorprescripcion FROM rt916distribucioncuot")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_916 for dato_916 in data_916 if tuple(dato_916) not in existing_records_set]
-        
+        nuevos_registros = [dato_916 for dato_916 in data_916 if tuple(dato_916) not in existing_records_set]   
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt916distribucioncuot:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_916 = """
             INSERT INTO rt916distribucioncuot   (
                t916codcia,t916codtiporenta,t916numdistribucion,t916numliquidacion,t916numcuota,t916valorcapital,t916valorinteres,t916fechainiint,t916valorint1066,t916valorprescripcion)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
@@ -1112,21 +935,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
-
-
         cursor.execute("SELECT   t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif FROM rt03tercero")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_03 for dato_03 in data_03 if tuple(dato_03) not in existing_records_set]
-        
+        nuevos_registros = [dato_03 for dato_03 in data_03 if tuple(dato_03) not in existing_records_set] 
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt03tercero:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_03 = """
             INSERT INTO rt03tercero   (
                t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif
@@ -1142,17 +958,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
         cursor.execute("SELECT  t912codcia, t912codtiporenta, t912numanulacionliq,t912numliquidacion, t912fecha, t912numerodoc, t912observacion FROM rt912anulliquidacion")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_912 for dato_912 in data_912 if tuple(dato_912) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt912anulliquidacion:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_912 = """
             INSERT INTO rt912anulliquidacion   (
                t912codcia, t912codtiporenta, t912numanulacionliq,t912numliquidacion, t912fecha, t912numerodoc, t912observacion)VALUES (%s, %s, %s, %s, %s, %s, %s)"""
@@ -1167,17 +980,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
         cursor.execute("SELECT   t920codcia, t920codexpediente, t920codtipoexpcorp,t920numexpedientesila, t920codexpedienterel, t920descripcion,t920codestadoexp, t920idtramiteppal FROM rt920expediente")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_920 for dato_920 in data_920 if tuple(dato_920) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt920expediente:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_920 = """
             INSERT INTO rt920expediente   (
                t920codcia, t920codexpediente, t920codtipoexpcorp,t920numexpedientesila, t920codexpedienterel, t920descripcion,t920codestadoexp, t920idtramiteppal)VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1192,20 +1002,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
-
         cursor.execute("SELECT t900codcia, t900codtiporenta, t900nombre, t900descripcion, t900codtipocalculoint,t900tramite, t900prescripcion, t900facilidadpago, t900delete, t900codean13, t900subcodaltean13,t900presfavor FROM rt900tiporenta")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_900 for dato_900 in data_900 if tuple(dato_900) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt900tiporenta:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_900 = """
             INSERT INTO rt900tiporenta   (
                 t900codcia, t900codtiporenta, t900nombre, t900descripcion, t900codtipocalculoint,t900tramite, t900prescripcion, t900facilidadpago, t900delete, t900codean13, t900subcodaltean13,t900presfavor)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1219,18 +1023,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
         cursor.execute("SELECT  t971codcia,t971idtramite,t971nit,t971codtramtipoter,t971observacion FROM rt971tramitetercero")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_971 for dato_971 in data_971 if tuple(dato_971) not in existing_records_set]
-        
+        nuevos_registros = [dato_971 for dato_971 in data_971 if tuple(dato_971) not in existing_records_set] 
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt971tramitetercero:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_971 = """
             INSERT INTO rt971tramitetercero   (
                 t971codcia,t971idtramite,t971nit,t971codtramtipoter,t971observacion)VALUES (%s, %s, %s, %s, %s)"""
@@ -1244,21 +1044,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
-
-
         cursor.execute("SELECT   t972codcia,t972idtramite,t972codubicacion,t972direccion,t972observacion FROM rt972tramiteubicacion")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_972 for dato_972 in data_972 if tuple(dato_972) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt972tramiteubicacion:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_972 = """
             INSERT INTO rt972tramiteubicacion   (
                  t972codcia,t972idtramite,t972codubicacion,t972direccion,t972observacion)VALUES (%s, %s, %s, %s, %s)"""
@@ -1271,18 +1064,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
     
-
-
         cursor.execute("SELECT  t973codcia,t973idtramite,t973consecutivo,t973codtipofuentehid,t973codfuentehid,t973codtramo FROM rt973tramiteftehidtra")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_973 for dato_973 in data_973 if tuple(dato_973) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt973tramiteftehidtra:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_973 = """
             INSERT INTO rt973tramiteftehidtra   (
                  t973codcia,t973idtramite,t973consecutivo,t973codtipofuentehid,t973codfuentehid,t973codtramo)VALUES (%s, %s, %s, %s, %s, %s)"""
@@ -1296,17 +1085,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
       
 
-
         cursor.execute("SELECT  t918codcia, t918codtipoexpcorp, t918nombre, t918observacion, t918delete, t918codserie FROM rt918tipoexpediente")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_918 for dato_918 in data_918 if tuple(dato_918) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt918tipoexpediente:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_919 = """
             INSERT INTO rt918tipoexpediente   (
                   t918codcia, t918codtipoexpcorp, t918nombre, t918observacion, t918delete, t918codserie)VALUES (%s, %s, %s, %s, %s, %s)"""
@@ -1322,17 +1108,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
         cursor.execute("SELECT t909codcia, t909codtiporenta, t909numliquidacion, t909codconcepto, t909valor,t909valorpagado, t909valorbasesancion, t909fechabasesancion, t909valorprescripcion,t909valordescbenef, t909valorpagoantbenef, t909valordeterioro, t909valorpagadodet FROM rt909liqconcepto")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_909 for dato_909 in data_909 if tuple(dato_909) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt909liqconcepto:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_909 = """
             INSERT INTO rt909liqconcepto   (
                   t909codcia, t909codtiporenta, t909numliquidacion, t909codconcepto, t909valor,t909valorpagado, t909valorbasesancion, t909fechabasesancion, t909valorprescripcion,t909valordescbenef, t909valorpagoantbenef, t909valordeterioro, t909valorpagadodet)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1349,12 +1132,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_919 for dato_919 in data_919 if tuple(dato_919) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt919estadoexpediente:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_919 = """
             INSERT INTO rt919estadoexpediente   (
                     t919codcia, t919codestadoexp, t919nombre, t919observacion, t919delete)VALUES (%s, %s, %s, %s, %s)"""
@@ -1368,20 +1149,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
-
         cursor.execute("SELECT   t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref FROM rt901periodo")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_901 for dato_901 in data_901 if tuple(dato_901) not in existing_records_set]
-        
+        nuevos_registros = [dato_901 for dato_901 in data_901 if tuple(dato_901) not in existing_records_set] 
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt901periodo:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_901 = """
             INSERT INTO rt901periodo   (
                      t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1396,18 +1171,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
         cursor.execute("SELECT   t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref FROM rt901periodo")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_901 for dato_901 in data_901 if tuple(dato_901) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt901periodo:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_901 = """
             INSERT INTO rt901periodo   (
                      t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1425,12 +1196,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_903 for dato_903 in data_903 if tuple(dato_903) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt903concepto:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_903 = """
             INSERT INTO rt903concepto   (
                        t903codcia, t903codtiporenta, t903codconcepto, t903nombre, t903etiqueta, t903tipooper, t903valorrango, t903observacion, t903codconceptodist)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1446,13 +1215,11 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         cursor.execute("SELECT   t906codcia, t906codtiporenta, t906agno, t906codconcepto, t906codtipoasiento, t906consecutivo, t906codcta, t906codcentro, t906nit, t906referencia, t906detalle, t906valorbase, t906valordebito, t906valorcredito FROM rt906conceptocontab")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_906 for dato_906 in data_906 if tuple(dato_906) not in existing_records_set]
-        
+        nuevos_registros = [dato_906 for dato_906 in data_906 if tuple(dato_906) not in existing_records_set]  
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt906conceptocontab:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_906 = """
             INSERT INTO rt906conceptocontab   (
                        t906codcia, t906codtiporenta, t906agno, t906codconcepto, t906codtipoasiento, t906consecutivo, t906codcta, t906codcentro, t906nit, t906referencia, t906detalle, t906valorbase, t906valordebito, t906valorcredito)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1467,18 +1234,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
         cursor.execute("SELECT   t993codcia, t993numtransfsectelect, t993agno, t993periodo, t993numformulario, t993codtipodeclaracion, t993aprobada, t993fechadiligenciamiento, t993fecha, t993numradicadoentrada, t993fecharadicadoentrada, t993nit, t993idcobro, t993anulado, t993observacion FROM rt993transfsectelect")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_993 for dato_993 in data_993 if tuple(dato_993) not in existing_records_set]
-        
+        nuevos_registros = [dato_993 for dato_993 in data_993 if tuple(dato_993) not in existing_records_set]  
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt993transfsectelect:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_993 = """
             INSERT INTO rt993transfsectelect   (
                        t993codcia, t993numtransfsectelect, t993agno, t993periodo, t993numformulario, t993codtipodeclaracion, t993aprobada, t993fechadiligenciamiento, t993fecha, t993numradicadoentrada, t993fecharadicadoentrada, t993nit, t993idcobro, t993anulado, t993observacion)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
@@ -1492,19 +1255,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-
         cursor.execute("SELECT   t05codtiposociedad, t05nombre, t05observacion, t05delete FROM rt05tiposociedad")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_05 for dato_05 in data_05 if tuple(dato_05) not in existing_records_set]
-        
+        nuevos_registros = [dato_05 for dato_05 in data_05 if tuple(dato_05) not in existing_records_set]   
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt27tipodocumid:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_05 = """
             INSERT INTO rt05tiposociedad   (
              t05codtiposociedad, t05nombre, t05observacion, t05delete
@@ -1522,12 +1280,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_25 for dato_25 in data_25 if tuple(dato_25) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt27tipodocumid:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_25 = """
             INSERT INTO rt25municipio   (
              t25coddpto, t25codmpio, t25nombre, t25observacion)VALUES (%s, %s, %s, %s)"""
@@ -1540,17 +1296,14 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
         cursor.execute("SELECT   t26codpais, t26nombre, t26observacion, t26delete, t26alfa2codpais, t26alfa3codpais, t26exogenacodpais FROM rt26pais")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
         nuevos_registros = [dato_26 for dato_26 in data_26 if tuple(dato_26) not in existing_records_set]
-        
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt27tipodocumid:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_27 = """
             INSERT INTO rt26pais  ( t26codpais, t26nombre, t26observacion, t26delete, t26alfa2codpais, t26alfa3codpais, t26exogenacodpais)
             VALUES (%s, %s, %s, %s, %s, %s, %s) """
@@ -1559,7 +1312,6 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
                 cursor.execute(insert_query_27, dato_26)
         else:
              print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt26pais.")
-
 
 
 
@@ -1573,7 +1325,6 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
             print("Nuevos registros a insertar en la tabla rt27tipodocumid:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_27 = """
             INSERT INTO rt27tipodocumid  (t27codtipodocumid, t27nombre, t27observacion, t27delete, t27alfa2codtipodocumid, t27alfa1codtipodocumid)
             VALUES (%s, %s, %s, %s, %s, %s) """
@@ -1589,13 +1340,11 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
         cursor.execute("SELECT t17codtiporegimen, t17nombre, t17observacion, t17delete FROM rt17tiporegimen")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_17 for dato_17 in data_17 if tuple(dato_17) not in existing_records_set]
-        
+        nuevos_registros = [dato_17 for dato_17 in data_17 if tuple(dato_17) not in existing_records_set]     
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt17tiporegimen:")
             for registro in nuevos_registros:
                 print(registro)
-
             insert_query_17 = """
                 INSERT INTO rt17tiporegimen (
                     t17codtiporegimen, t17nombre, t17observacion, t17delete
@@ -1734,6 +1483,40 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         # Confirmar la transacción
         conn_postgresql.commit()
         print("Datos insertados correctamente en PostgreSQL")
@@ -1746,6 +1529,10 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
             # Cerrar la conexión si está abierta
             conn_postgresql.close()
             print("Conexión PostgreSQL cerrada")
+
+
+
+
 def extraccion_pimisis_job():
     load_dotenv()
 
