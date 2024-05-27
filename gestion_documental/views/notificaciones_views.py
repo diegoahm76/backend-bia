@@ -608,6 +608,7 @@ class AnexosCreate(generics.CreateAPIView):
             data_anexos = {}
             data_anexos['id_notificacion_correspondecia'] = id_notificacion
             data_anexos['usuario_notificado'] = False
+            data_anexo['fecha_anexo'] = fecha_actual
             if anexo['uso_del_documento']:
                 data_anexos['uso_del_documento'] = 'IN'
             else:
