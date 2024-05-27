@@ -111,8 +111,8 @@ class TipoCobro(models.Model):
 class Variables(models.Model):
     id_variables = models.AutoField(primary_key=True, db_column='T443IdVariables')
     nombre = models.CharField(max_length=255, db_column='T443Nombre',unique=True)
-    tipo_cobro = models.ForeignKey(TipoCobro, on_delete=models.CASCADE, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
-    tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
+    tipo_cobro = models.ForeignKey(TipoCobro, on_delete=models.PROTECT, db_column='T443IdTipoCobro', related_name='variables_tipo_cobro')
+    tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.PROTECT, db_column='T443IdTipoRenta', related_name='variables_tipo_renta')
     numero_dias_variable = models.IntegerField(db_column='T443numero_dias_variable', null=True, default=None)
     class Meta:
         db_table = 'T443Variables'
