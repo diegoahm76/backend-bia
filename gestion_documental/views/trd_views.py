@@ -1,8 +1,10 @@
+import base64
 import hashlib
 import json
 import logging
 
 from django.http import JsonResponse
+import requests
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from docxtpl import DocxTemplate
 import os
@@ -3821,12 +3823,31 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             else:
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
+
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        
+                if not authorization_header:
+                    raise ValidationError("No se suministro un Token")
+
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                username = request.user.nombre_de_usuario
+                token_camunda = self.get_token_camunda(token)
+                #token_camunda = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE3MDEwNjcxLCJpYXQiOjE3MTY4Mzc4NzEsImp0aSI6ImQ3ZGFjZWQ2Y2VkMzRlZjZiMGFlZTQ3NWI5MWNjOGNlIiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY8OpbiIsIlJvbCBDb25zZXJ2YWNpw7NuIiwiUm9sIEdlc3RvciIsIlJvbCBSZWNhdWRvIiwiUm9sIFJlY3Vyc28iLCJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgU2VndWltaWVudG8gYSBwbGFuZXMiLCJ6Q2FtdW5kYSAtIFJvbCBULUNvbmNlc2nDs24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjacOzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1csOtZGljYS1Db29yZGluYWRvciBvIEzDrWRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIEp1csOtZGljbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0acOzbiBBbWJpZW50YWwtUHJvZmVzaW9uYWwgSnVyw61kaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTMOtZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUp1csOtZGljYSIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzacOzbiBkZSBBZ3VhcyBTdWJ0ZXJyw6FuZWFzIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIE9jdXBhY2nDs24gZGUgQ2F1Y2UiLCJ6Q2FtdW5kYSAtIFJvbCBULVBlcm1pc28gZGUgUHJvc3BlY2Npw7NuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1TdWJkaXJlY3RvcmEgUGxhbmVhY2nDs24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzacOzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXSwidHlwZVBlcnNvbiI6ImZ1bmNpb25hcmlvIiwicHJldmlvdXNUb2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUowYjJ0bGJsOTBlWEJsSWpvaVlXTmpaWE56SWl3aVpYaHdJam94TnpFM01ERXdOamN4TENKcFlYUWlPakUzTVRZNE16YzROekVzSW1wMGFTSTZJbVEzWkdGalpXUTJZMlZrTXpSbFpqWmlNR0ZsWlRRM05XSTVNV05qT0dObElpd2lkWE5sY2w5cFpDSTZNVEV5TENKcFpGOXdaWEp6YjI1aElqb3lNVFVzSW01dmJXSnlaVjlrWlY5MWMzVmhjbWx2SWpvaWMyVm5kWEpwWkdGa0lpd2ljbTlzWlhNaU9sc2lVbTlzSUZWemRXRnlhVzl6SUZkbFlpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGTmxaM1Z5YVdSaFpDSXNJbEp2YkNCQmJHMWhZMXgxTURCbE9XNGlMQ0pTYjJ3Z1EyOXVjMlZ5ZG1GamFWeDFNREJtTTI0aUxDSlNiMndnUjJWemRHOXlJaXdpVW05c0lGSmxZMkYxWkc4aUxDSlNiMndnVW1WamRYSnpieUlzSWxKdmJDQlVjbUZ1YzNabGNuTmhiQ0lzSWxKdmJDQlRaV2QxYVcxcFpXNTBieUJoSUhCc1lXNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRlF0UTI5dVkyVnphVngxTURCbU0yNGdaR1VnUVdkMVlYTWdVM1Z3WlhKbWFXTnBZV3hsY3lJc0lucERZVzExYm1SaElDMGdVbTlzSUZRdFJHVjBaWEp0YVc1aGJuUmxjeUJCYldKcFpXNTBZV3hsY3lCUWNtOXdhV1ZrWVdRZ1VISnBkbUZrWVNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVlZ6ZFdGeWFXOGlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxV1pXNTBZVzVwYkd4aElpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UkdseVpXTmphVngxTURCbU0yNGdSMlZ1WlhKaGJDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRUZuZFdGekxVTnZiM0prYVc1aFpHOXlJRzhnVEZ4MU1EQmxaR1JsY2lJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFRm5kV0Z6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1FXZDFZWE10VUhKdlptVnphVzl1WVd3aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QkJaM1ZoY3kxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFQyWnBZMmx1WVNCS2RYSmNkVEF3WldSa2FXTmhMVU52YjNKa2FXNWhaRzl5SUc4Z1RGeDFNREJsWkdSbGNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFU5bWFXTnBibUVnU25WeVhIVXdNR1ZrWkdsallTMVFjbTltWlhOcGIyNWhiQ0JLZFhKY2RUQXdaV1JrYVdOdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0VDJacFkybHVZU0JLZFhKY2RUQXdaV1JrYVdOaExWQnliMlpsYzJsdmJtRnNJR1JsSUVGd2IzbHZJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFUzVmlJRWRsYzNScFhIVXdNR1l6YmlCQmJXSnBaVzUwWVd3dFEyOXZjbVJwYm1Ga2IzSWlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxVGRXSWdSMlZ6ZEdsY2RUQXdaak51SUVGdFltbGxiblJoYkMxUWNtOW1aWE5wYjI1aGJDQktkWEpjZFRBd1pXUmthV052SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1QzSmtaVzVoYldsbGJuUnZJRlJsY25KcGRHOXlhV0ZzTFVOdmIzSmthVzVoWkc5eUlHOGdURngxTURCbFpHUmxjaUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUU5eVpHVnVZVzFwWlc1MGJ5QlVaWEp5YVhSdmNtbGhiQzFRY205bVpYTnBiMjVoYkNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFOXlaR1Z1WVcxcFpXNTBieUJVWlhKeWFYUnZjbWxoYkMxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFEYjI1alpYTnBYSFV3TUdZemJpQmtaU0JCWjNWaGN5QlRkV0owWlhKeVhIVXdNR1V4Ym1WaGN5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JQWTNWd1lXTnBYSFV3TUdZemJpQmtaU0JEWVhWalpTSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JRY205emNHVmpZMmxjZFRBd1pqTnVJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFRWlhKdGFYTnZJR1JsSUZabGNuUnBiV2xsYm5SdmN5QmhiQ0JUZFdWc2J5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVaMWJtTnBiMjVoY21sdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UVdSdGFXNXBjM1J5WVdSdmNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRTl5WkdWdVlXMXBaVzUwYnlCVVpYSnlhWFJ2Y21saGJDMUpibWRsYm1sbGNtOGdaR1VnVW1WMmFYTnBYSFV3TUdZemJpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFZOMVlpQkhaWE4wYVZ4MU1EQm1NMjRnUVcxaWFXVnVkR0ZzTFZOMVltUnBjbVZqZEc5eVlTQlFiR0Z1WldGamFWeDFNREJtTTI0aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QlRkV1ZzYjNNdFEyOXZjbVJwYm1Ga2IzSWdieUJNWEhVd01HVmtaR1Z5SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFZCeWIyWmxjMmx2Ym1Gc0lpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UjNKMWNHOGdVM1ZsYkc5ekxVcDFjbHgxTURCbFpHUnBZMkVpTENKNlEyRnRkVzVrWVNBdElISnZiR0Z6WkNJc0lucERZVzExYm1SaElDMGdVbTlzSUZCeWRXVmlZU0I2UXlJc0lsSnZiQ0JHZFc1amFXOXVZWEpwYnlJc0lsSnZiQ0JEYVhWa1lXUmhibThpTENKU2Iyd2dRV1J0YVc1cGMzUnlZV1J2Y2lJc0lsSnZiQ0JCWkcxdmJpSXNJbEp2YkNCT2IzUnBabWxqWVdOcGIyNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUVGbmRXRnpMVkJ5YjJabGMybHZibUZzTFZSbFkyNXBZMjhpTENKNlEyRnRkVzVrWVNBdElGSnZiQ0JCWTNSdmNpMUpiblJsY205d1pYSmhZbWxzYVdSaFpDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVsdWRHVnliM0JsY21GaWFXeHBaR0ZrSUZabGJuUmhibWxzYkdFaVhYMC5kWmw0XzU3VVk1b20wUzllRTBQYkNhMXlnVzdveEpzME05SUdoT2FxNEkwIiwiaWRQZXJzb24iOjIxNSwiZS1tYWlsIjoiYnJheWFuLmJhcnJhZ2FuQHVuaWxsYW5vcy5lZHUuY28ifQ."
+                data = self.get_firmas_funcionarios_sasoft(username,token_camunda)
+
+                #img = base64.b64decode(data['contentFile'])
+
+                if not data:
+                    raise ValidationError("Algo salio mal")
+
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+        
+    
     
     def DocumentoFinalizado(self, request, consecutivo_tipologia):
 
@@ -3849,6 +3870,61 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             consecutivo_tipologia.finalizado = True
             consecutivo_tipologia.save()
             return True
+        
+    def get_token_camunda(self,token):
+
+        auth_headers = {
+            "accept": "*/*",
+            "Content-Type": "application/json"
+        }   
+        #TOKEN PARA SASOFTCO
+        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+
+        payload={
+            "access": token
+        }
+
+        print(token)
+        
+        try:
+            response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            print("pase")
+            data = response.json()  # Convertimos los datos a JSON
+            print(data)
+            
+            if 'userinfo' in data:
+                if 'userinfo' in data['userinfo']:
+                    info = data['userinfo']['userinfo']
+
+                    token = info['tokens']['access']
+                    print(token)
+                    return token
+            return None
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
+
+
+    def get_firmas_funcionarios_sasoft(self,username,token):
+
+        print(username)
+        url = "https://backendclerkapi.sedeselectronicas.com/api/Documents/download-signature-by-username/"+username
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = requests.get(url,headers=headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()  # Convertimos los datos a JSON
+            
+            print(data)
+            return data
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
     
 
 class DocumentosFinalizadosList(generics.ListAPIView):
@@ -3863,3 +3939,47 @@ class DocumentosFinalizadosList(generics.ListAPIView):
         consecutivos = consecutivos.filter(finalizado= True)
         serializer = self.serializer_class(consecutivos, many=True)
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class SubirDocumentoAlGenerador(generics.CreateAPIView):
+    serializer_class = ConsecutivoTipologiaDocSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        archivos = request.FILES
+        fecha_actual = datetime.now()
+
+        for archivo in archivos:
+            #Guardar el archivo en la tabla T238
+            if archivo:
+                archivo_creado = self.crear_archivos(archivo, fecha_actual)
+            else:
+                raise ValidationError("No se puede crear anexos sin archivo adjunto")
+            
+    def crear_archivos(self, uploaded_file, fecha_creacion):
+        #Valida extensión del archivo
+        nombre=uploaded_file.name
+            
+        extension = os.path.splitext(nombre)
+        extension_sin_punto = extension[1][1:] if extension[1].startswith('.') else extension
+        if not extension_sin_punto:
+            raise ValidationError("No fue posible registrar el archivo")
+        
+        formatos=FormatosTiposMedio.objects.filter(nombre__iexact=extension_sin_punto,activo=True).first()
+        if not formatos:
+            raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = fecha_creacion.year
+        ruta = os.path.join("home", "BIA", "Otros", "GDEA", "Anexos_PQR", str(current_year))
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': False,
+            'ruta': ruta,
+        }
+        
+        archivos_Digitales = ArchivosDgitalesCreate()
+        archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
+        return archivo_creado

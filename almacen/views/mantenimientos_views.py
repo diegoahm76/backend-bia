@@ -216,7 +216,7 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
         if cod_tipo_activo:
             mantenimientos_programados = mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
         
-        mantenimientos_programados = mantenimientos_programados.values(
+        mantenimientos_programados = mantenimientos_programados.annotate(
             id_programacion_mantenimiento=F('id_programacion_mtto'),
             articulo=F('id_articulo'),
             tipo=F('cod_tipo_mantenimiento'),
@@ -224,7 +224,20 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
             placa=F('id_articulo__doc_identificador_nro'),
             marca=F('id_articulo__id_marca__nombre'),
             codigo_bien=F('id_articulo__codigo_bien'),
-            consecutivo=F('id_articulo__nro_elemento_bien')
+            consecutivo=F('id_articulo__nro_elemento_bien'),
+            motivo=F('motivo_mantenimiento'),
+            observacion=F('observaciones')
+        ).values(
+            'id_programacion_mantenimiento',
+            'articulo',
+            'tipo',
+            'fecha',
+            'placa',
+            'marca',
+            'codigo_bien',
+            'consecutivo',
+            'motivo',
+            'observacion'
         ).order_by('fecha')
         
         if mantenimientos_programados:

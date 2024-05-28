@@ -95,11 +95,7 @@ class ListaNotificacionesCorrespondencia(generics.ListAPIView):
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
-            tipo_documento_valido = ['OF', 'AC', 'AA', 'AI', 'OT']
-            if tipo_documento in tipo_documento_valido:
-                queryset = queryset.filter(cod_tipo_documento=tipo_documento)
-            else:
-                raise ValidationError(f'El tipo de documento {tipo_documento} no es válido.')
+            queryset = queryset.filter(cod_tipo_documento=tipo_documento)
         
 
         if grupo_solicitante:
@@ -191,11 +187,7 @@ class NotificacionesCorrespondenciaYTareasGet(generics.ListAPIView):
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
-            tipo_documento_valido = ['OF', 'AC', 'AA', 'AI', 'OT']
-            if tipo_documento in tipo_documento_valido:
-                queryset = queryset.filter(cod_tipo_documento=tipo_documento)
-            else:
-                raise ValidationError(f'El tipo de documento {tipo_documento} no es válido.')
+            queryset = queryset.filter(cod_tipo_documento=tipo_documento)
         
 
         if grupo_solicitante:
@@ -608,6 +600,7 @@ class AnexosCreate(generics.CreateAPIView):
             data_anexos = {}
             data_anexos['id_notificacion_correspondecia'] = id_notificacion
             data_anexos['usuario_notificado'] = False
+            data_anexo['fecha_anexo'] = fecha_actual
             if anexo['uso_del_documento']:
                 data_anexos['uso_del_documento'] = 'IN'
             else:
@@ -615,6 +608,8 @@ class AnexosCreate(generics.CreateAPIView):
             data_anexos['doc_entrada_salida'] = 'EN'
             if anexo['cod_tipo_documento']:
                 tipo_documento = TiposAnexosSoporte.objects.filter(id_tipo_anexo_soporte=anexo['cod_tipo_documento']).first()
+                if not tipo_documento:
+                    raise ValidationError("El tipo de anexo de soporte no existe")
                 data_anexos['cod_tipo_documento'] = tipo_documento.id_tipo_anexo_soporte
             data_anexos['doc_generado'] = 'MA'
             data_anexos['id_persona_anexa_documento'] = id_persona_recibe_solicitud.id_persona
@@ -1080,11 +1075,7 @@ class ListaTareasFuncionario(generics.ListAPIView):
 
         # Filtrar por tipo de documento si es válido
         if tipo_documento:
-            tipo_documento_valido = ['OF', 'AC', 'AA', 'AI', 'OT']
-            if tipo_documento in tipo_documento_valido:
-                queryset = queryset.filter(cod_tipo_documento=tipo_documento)
-            else:
-                raise ValidationError(f'El tipo de documento {tipo_documento} no es válido.')
+            queryset = queryset.filter(cod_tipo_documento=tipo_documento)
         
 
         if grupo_solicitante:
@@ -1552,7 +1543,7 @@ class AnexosSoporteCreate(generics.CreateAPIView):
             data_anexo_soporte['id_persona_anexa_documento'] = id_persona_recibe_solicitud.id_persona
             data_anexo_soporte['fecha_anexo'] = fecha_actual
             id_causa_o_anomalia = None
-            if anexo['id_causa_o_anomalia'] is not None:
+            if anexo['id_causa_o_anomalia']:
                 try:
                     causa_o_anomalia = CausasOAnomalias.objects.get(id_causa_o_anomalia=anexo['id_causa_o_anomalia'])
                 except CausasOAnomalias.DoesNotExist:
