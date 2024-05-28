@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from gestion_documental.models.bandeja_tareas_models import ReasignacionesTareas, TareasAsignadas
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp
 from gestion_documental.serializers.trd_serializers import ConsecutivoTipologiaDocSerializer
 
 from gestion_documental.models.radicados_models import AsignacionDocs, ConfigTiposRadicadoAgno, BandejaTareasPersona
@@ -10,6 +11,16 @@ from transversal.models.personas_models import Personas
 
 
 class AsignacionDocsGetSerializer(serializers.ModelSerializer):
+    persona_firmo = serializers.SerializerMethodField(default=None)
+
+    def get_persona_firmo(self, obj):
+        persona_firmo = None
+        if obj.firma:
+            doble_verificacion = DobleVerificacionTmp.objects.filter(id_persona_firma=obj.id_persona_asignada, id_consecutivo_tipologia=obj.id_consecutivo).first()
+            if doble_verificacion:
+                persona_firmo = True if doble_verificacion.verificacion_exitosa else False
+        return persona_firmo
+
     class Meta:
         model = AsignacionDocs
         fields = '__all__'
