@@ -3271,6 +3271,14 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     'data': data
                 }, status=status.HTTP_201_CREATED)
             
+            case 'AC':
+                data = self.ActualizarDocCargado(request, request.data.get('payload'), request.data.get('id_consecutivo'))
+                return Response({   
+                    'success': True,
+                    'detail': 'Se ha actualizado correctamente.',
+                    'data': data
+                }, status=status.HTTP_201_CREATED)
+            
             case 'N':
                 data = self.Notificaciones(request, current_date, persona)
                 return data
@@ -3589,8 +3597,9 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
 
                 archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=consecutivo.id_archivo_digital.id_archivo_digital)
-                
-                payload.update(consecutivo.variables)
+
+                if consecutivo.variables:    
+                    payload.update(consecutivo.variables)
                 documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
                 id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
                 consecutivo.id_archivo_digital = id_archivo_digital
@@ -3599,6 +3608,51 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
 
                 os.remove(ruta_archivo)
                 archivo_digital.delete()
+
+                serializer = self.serializer_class(consecutivo)
+              
+
+                return serializer.data
+
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+    
+    def ActualizarDocCargado(self, request, payload, id_consecutivo):
+        try:
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+            ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                if request.data.get('consecutivo'):
+                    consecutivo_generado = self.consecutivo(request, consecutivo.id_archivo_digital).data
+                    payload['consecutivo'] = consecutivo_generado['data']['consecutivo']
+                    consecutivo.delete()
+                    consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = consecutivo_generado['data']['id_consecutivo'])
+
+                if request.data.get('cod_tipo_radicado'):
+                    data_radicado = {
+                        "current_date": datetime.now(),
+                        "id_persona": request.user.persona.id_persona,
+                        "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+                    }
+                    radicado = self.GenerarRadicado(data_radicado)
+                    radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+                    consecutivo.id_radicado = radicado_instance
+                    consecutivo.fecha_radicado = radicado.get('fecha_radicado')
+                    payload['radicado'] = radicado.get('radicado')
+                    payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+
+
+                if consecutivo.variables:    
+                    payload.update(consecutivo.variables)
+                documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
+                id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
+                consecutivo.id_archivo_digital_copia = id_archivo_digital
+                consecutivo.variables = payload
+                consecutivo.save()
 
                 serializer = self.serializer_class(consecutivo)
               
