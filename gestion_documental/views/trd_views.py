@@ -3947,15 +3947,34 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        archivos = request.FILES
+        archivo = request.FILES.get('archivo')
+        data = json.loads(request.data.get('data'))
         fecha_actual = datetime.now()
+        persona = request.user.persona
 
-        for archivo in archivos:
-            #Guardar el archivo en la tabla T238
-            if archivo:
-                archivo_creado = self.crear_archivos(archivo, fecha_actual)
-            else:
-                raise ValidationError("No se puede crear anexos sin archivo adjunto")
+        plantilla = PlantillasDoc.objects.filter(id_plantilla_doc=data.get('id_plantilla')).first()
+
+        if archivo:
+            archivo_creado = self.crear_archivos(archivo, fecha_actual)
+            consecutivo_tipologia = ConsecutivoTipologia.create(
+                id_unidad_organizacional = persona.id_unidad_organizacional_actual,
+                id_plantilla_doc = plantilla,  
+                id_tipologia_doc = plantilla.id_tipologia_doc,
+                id_persona_genera= persona,
+                id_archivo_digital= archivo_creado,
+                fecha_creacion= fecha_actual,
+                finalizado= False
+            )
+
+            serializer = self.serializer_class(consecutivo_tipologia)
+
+            return Response({
+                'success': True,
+                'detail': 'Se ha generado el documento exitosamente.',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            raise ValidationError("No se puede crear anexos sin archivo adjunto")
             
     def crear_archivos(self, uploaded_file, fecha_creacion):
         #Valida extensión del archivo
