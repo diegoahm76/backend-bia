@@ -1,6 +1,5 @@
 from almacen.models.generics_models import UnidadesMedida
 from almacen.models.inventario_models import TiposEntradas
-from almacen.models.vehiculos_models import VehiculosArrendados
 from transversal.serializers.personas_serializers import PersonasSerializer
 from almacen.models.generics_models import Magnitudes
 from almacen.models.inventario_models import Inventario
@@ -18,18 +17,6 @@ class CatalogoBienesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model= CatalogoBienes
-        fields='__all__'
-
-class VehiculosArrendadosSerializer(serializers.ModelSerializer):
-    marca=serializers.ReadOnlyField(source='id_marca.nombre',default=None)
-    nombre_padre=serializers.ReadOnlyField(source='id_bien_padre.nombre',default=None)
-    unidad_medida=serializers.ReadOnlyField(source='id_unidad_medida.abreviatura',default=None)
-    unidad_medida_vida_util=serializers.ReadOnlyField(source='id_unidad_medida_vida_util.abreviatura',default=None)
-    porcentaje_iva=serializers.ReadOnlyField(source='id_porcentaje_iva.porcentaje',default=None)
-    tipo_bien = serializers.CharField(source='get_cod_tipo_bien_display',read_only=True,default=None)
-
-    class Meta:
-        model= VehiculosArrendados
         fields='__all__'
 
 # class CatalogoBienesCreateSerializer(serializers.ModelSerializer):

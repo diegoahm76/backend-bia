@@ -3238,8 +3238,9 @@ class CreateAutoInicio(generics.CreateAPIView):
             return respuesta_consecutivo
         data_consecutivo = respuesta_consecutivo.data['data']
         data_in['id_consec_por_nivel_tipologias_doc_agno'] = data_consecutivo['id_consecutivo']
+       
         numero_auto = data_consecutivo['consecutivo']
-
+        data_in['numero_acto_administrativo'] = numero_auto
         instancia_consecutivo = ConsecutivoTipologia.objects.filter(id_consecutivo_tipologia=data_consecutivo['id_consecutivo']).first()
 
         if not tramite.id_expediente:
@@ -3423,6 +3424,7 @@ class CreateAutoInicio(generics.CreateAPIView):
             raise NotFound("No se encontro el archivo")
         tramite.id_auto_inicio = instance
         tramite.fecha_inicio = datetime.now()
+        tramite.save()
         instancia_consecutivo.id_tramite=tramite
         instancia_consecutivo.variables=context_auto
         instancia_consecutivo.id_archivo_digital = instance_archivo
@@ -3566,8 +3568,11 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         
         # id_instancia = data['processInstanceId']
         #print(id_instancia)
-
-        tramite = self.buscar_tramite(radicado)
+        tramite=None
+        if 'id_solicitud_tramite' in data_in and data_in['id_solicitud_tramite']:
+            tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        else:
+            tramite = self.buscar_tramite(radicado)
 
         if not tramite:
             raise ValidationError("NO se encontro tramite asociado a este radicado")
@@ -3585,14 +3590,44 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         unidad = asignacion.id_und_org_seccion_asignada
 
-        #CON ASIGNACION BUSCAR UNIDAD ORGANIZACIONAL
+  
         #CON TRAMITE BUSCAR DOCUMENTO SOPORTE 
-        #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
+        auto = tramite.id_auto_inicio
 
-        # NumeroAuto 
-        # DocumentoAuto 
-        # NumeroPago 
+        expediente = tramite.id_expediente
+
+
+        #codigo_unidad_serie_subserie + codigo_expediente_agno + codigo_expediente _consecutivo por agno
+        if not auto:
+            raise NotFound("No se encontro auto")
+        
+        archivo = auto.id_archivo_acto_administrativo
+        if not archivo:
+            raise NotFound("No tiene archivo asignado")
+
+        pathToTemplate = str(settings.MEDIA_ROOT) + os.sep +str(archivo.ruta_archivo)
+    
+        print(pathToTemplate)
+        contenido =None
+        if   os.path.exists(pathToTemplate):
+                with open(pathToTemplate, 'r',encoding='latin-1') as file:
+                    contenido = file.read()
+        else:
+                print("ARCHIVO EN BLANCO ")
+        #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
+        print(contenido)
+        numero_auto = auto.numero_acto_administrativo
+   
+        documento_auto =pathToTemplate
+
+        # pago = tramite.id_pago_evaluacion
+
+        # if not pago:
+        #     raise ValidationError("No esta pago")
+        
+        # numero_pago = pago.id_liquidacion.num_liquidacion
         # SoportePago 
+
         # NumExp
         # GrupoFunTramite 
         # dateAutoStart  #FECHA AUTO

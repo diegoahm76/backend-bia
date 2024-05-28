@@ -406,6 +406,7 @@ class ArchivosDigitalesSerializer(serializers.ModelSerializer):
 
 class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
     archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    archivos_digitales_copia = ArchivosDigitalesSerializer(source='id_archivo_digital_copia', read_only=True)
     variables = serializers.SerializerMethodField()
     class Meta:
         model = ConsecutivoTipologia
