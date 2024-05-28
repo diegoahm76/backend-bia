@@ -215,7 +215,7 @@ class ConsecutivoTipologia(models.Model):
     fecha_radicado = models.DateTimeField(db_column='T319fechaRadicado', blank=True, null=True)
     finalizado = models.BooleanField(db_column='T319finalizado', default=False)
     variables  = models.JSONField(db_column='T319variables', blank=True, null=True)
-    id_archivo_digital_copia = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, db_column='T319Id_ArchivoDigital', related_name='T319Id_ArchivoDigitalCopia', blank=True, null=True)
+    id_archivo_digital_copia = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, db_column='T319Id_ArchivoDigitalCopia', related_name='T319Id_ArchivoDigitalCopia', blank=True, null=True)
     id_archivo_digital = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, db_column='T319Id_ArchivoDigital', related_name='T319Id_ArchivoDigital', blank=True, null=True)
     id_PQRSDF = models.ForeignKey('gestion_documental.PQRSDF', on_delete=models.SET_NULL, db_column='T319Id_PQRSDF', related_name='T319Id_PQRSDF', blank=True, null=True)
     id_tramite = models.ForeignKey('tramites.SolicitudesTramites', on_delete=models.SET_NULL, db_column='T319Id_Tramite', related_name='T319Id_Tramite', blank=True, null=True) 
