@@ -254,6 +254,58 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
             return Response({'status': True, 'detail': mantenimientos_programados}, status=status.HTTP_200_OK)
         else:
             raise NotFound('No existe ningún mantenimiento programado entre el rango de fechas ingresado')
+
+class GetMantenimientosProgramadosByFilters(generics.ListAPIView):
+    serializer_class = SerializerProgramacionMantenimientosGet
+    queryset = ProgramacionMantenimientos.objects.all()
+    
+    def get(self, request):
+        tipo_programacion = request.query_params.get('tipo_programacion')
+        
+        if not tipo_programacion:
+            raise ValidationError('No se ingresó el tipo de programación')
+        
+        cod_tipo_activo = request.query_params.get('cod_tipo_activo')
+        rango_inicial_fecha = request.query_params.get('rango-inicial-fecha')
+        rango_final_fecha = request.query_params.get('rango-final-fecha')
+        rango_inicial_kilometraje = request.query_params.get('rango-inicial-kilometraje')
+        rango_final_kilometraje = request.query_params.get('rango-final-kilometraje')
+
+        mantenimientos_programados = None
+        
+        if cod_tipo_activo and cod_tipo_activo == 'Veh':
+            mantenimientos_programados = ProgramacionMantenimientos.objects.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
+        else:
+            raise ValidationError('El codigo de tipo activo acepta solo Vehiculos')
+        
+        if tipo_programacion == 'F':
+            if rango_inicial_fecha and rango_final_fecha:
+                try:
+                    start_date = datetime.strptime(rango_inicial_fecha, '%d-%m-%Y').replace(tzinfo=get_current_timezone())
+                    end_date = datetime.strptime(rango_final_fecha, '%d-%m-%Y').replace(hour=23, minute=59, second=59, tzinfo=get_current_timezone())
+                
+                    mantenimientos_programados = mantenimientos_programados.filter(
+                        fecha_programada__range=[start_date, end_date], ejecutado=False, fecha_anulacion=None
+                    )
+                except ValueError:
+                    raise ValidationError('Formato de fecha inválido. Use DD-MM-YYYY.')
+            else:
+                mantenimientos_programados = mantenimientos_programados.exclude(fecha_programada=None)
+        else:
+            if rango_inicial_kilometraje and rango_final_kilometraje:
+                mantenimientos_programados = mantenimientos_programados.filter(
+                        kilometraje_programado__range=[rango_inicial_kilometraje, rango_final_kilometraje], ejecutado=False, fecha_anulacion=None
+                    )
+            else:
+                mantenimientos_programados = mantenimientos_programados.exclude(kilometraje_programado=None)
+        
+        mantenimientos_programados = mantenimientos_programados.order_by('fecha_programada')
+        
+        if mantenimientos_programados:
+            serializer = self.serializer_class(mantenimientos_programados, many=True)
+            return Response({'status': True, 'detail': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise NotFound('No existe ningún mantenimiento programado con los parámetros ingresado')
         
 class GetMantenimientosEjecutadosFiveList(generics.ListAPIView):
     serializer_class=SerializerRegistroMantenimientos

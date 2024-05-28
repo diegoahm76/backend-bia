@@ -10,11 +10,14 @@ urlpatterns = [
     path('computadores/get-by-id-bien/<str:id_bien>/',views.GetHojaDeVidaComputadoresByIdBien.as_view(),name='hdv-computadores-get-bien'),
     
     # HOJAS DE VIDA VEHICULOS
+    path('vehiculos/get-by-nombre-nroidentificador/',views.SearchArticulosByNombreDocIdentificadorHV.as_view(),name='get-by-nombre-nroidentificador'),
+    path('vehiculos/get-by-nro-identificador/',views.SearchArticuloByDocIdentificadorHV.as_view(),name='get-by-nroidentificador'),
     path('vehiculos/create/',views.CreateHojaDeVidaVehiculos.as_view(),name='hdv-vehiculos-create'),
     path('vehiculos/update/<str:pk>/',views.UpdateHojaDeVidaVehiculos.as_view(),name='hdv-vehiculos-update'),
     path('vehiculos/delete/<str:pk>/',views.DeleteHojaDeVidaVehiculos.as_view(),name='hdv-vehiculos-delete'),
     path('vehiculos/get-by-id/<str:pk>/',views.GetHojaDeVidaVehiculosById.as_view(),name='hdv-vehiculos-get'),
     path('vehiculos/get-by-id-bien/<str:id_bien>/',views.GetHojaDeVidaVehiculosByIdBien.as_view(),name='hdv-vehiculos-get-bien'),
+    path('vehiculos/get-by-id-vehiculo/<str:id_vehiculo_arrendado>/',views.GetHojaDeVidaVehiculosByIdVehiculoArrendado.as_view(),name='hdv-vehiculos-get-vehiculo'),
     
     # HOJAS DE VIDA OTROS ACTIVOS
     path('otros/create/',views.CreateHojaDeVidaOtros.as_view(),name='hdv-otros-create'),

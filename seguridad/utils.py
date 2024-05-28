@@ -4,6 +4,7 @@ from transversal.models.personas_models import Personas
 from transversal.models.base_models import ClasesTercero
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import User, Modulos, Permisos, Auditorias
@@ -17,6 +18,14 @@ from seguridad.lists.fields_abrv_list import fields_abrv_LIST
 import os
 from email.mime.application import MIMEApplication
 class Util:
+
+    @staticmethod
+    def send_email_file(data,file=None):
+        email = EmailMessage('Sujet de l\'email', 'Corps de l\'email', 'expediteur@example.com', ['destinataire@example.com'])
+        email.attach_file('/chemin/vers/fichier.pdf')
+        response = email.send(fail_silently=True)
+        return response
+
 
     @staticmethod
     def send_email_file(data,file=None):
