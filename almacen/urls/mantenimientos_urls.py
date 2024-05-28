@@ -8,6 +8,7 @@ urlpatterns = [
     path('programados/get-five-list/<str:id_articulo>/',views.GetMantenimientosProgramadosFiveList.as_view(),name='mantenimientos-programados-five-get'),
     path('programados/anular/<str:id_programacion_mtto>/',views.AnularMantenimientoProgramado.as_view(),name='mantenimientos-programados-anular'),
     path('programados/get-by-fechas/',views.GetMantenimientosProgramadosByFechas.as_view(),name='mantenimientos-programados-fechas-get'),
+    path('programados/vehiculos/get-by-filters/',views.GetMantenimientosProgramadosByFilters.as_view(),name='mantenimientos-programados-fechas-get'),
     path('programados/update/<str:id_mantenimiento>/',views.UpdateMantenimientoProgramado.as_view(),name='mantenimientos-programados-update'),
     path('programados/create/',views.CreateProgramacionMantenimiento.as_view(),name='mantenimientos-programados-create'),
     path('programados/validar-fechas/',views.ValidarFechasProgramacion.as_view(),name='validar-fechas'),

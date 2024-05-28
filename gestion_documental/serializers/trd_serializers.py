@@ -406,6 +406,7 @@ class ArchivosDigitalesSerializer(serializers.ModelSerializer):
 
 class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
     archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    archivos_digitales_copia = ArchivosDigitalesSerializer(source='id_archivo_digital_copia', read_only=True)
     variables = serializers.SerializerMethodField()
     class Meta:
         model = ConsecutivoTipologia
@@ -424,4 +425,21 @@ class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
 class VerificacionFirmasSerializer(serializers.ModelSerializer):
     class Meta:
         model = DobleVerificacionTmp
+        fields = '__all__'
+
+class ConsecutivoTipologiaDocFinalizadosSerializer(serializers.ModelSerializer):
+    archivos_digitales = serializers.SerializerMethodField()
+
+    def get_archivos_digitales(self, obj):
+        archivos_digitales = obj.id_archivo_digital
+        serializer = ArchivosDigitalesSerializer(archivos_digitales)
+        serializer_data = serializer.data
+        if obj.CatalogosSeriesUnidad:
+            serializer_data['nombre_de_Guardado'] = f"{obj.id_plantilla_doc.nombre} {obj.prefijo_consecutivo or ''}{obj.id_unidad_organizacional.codigo}{obj.CatalogosSeriesUnidad.id_catalogo_serie.id_serie_doc.codigo}{obj.CatalogosSeriesUnidad.id_catalogo_serie.id_subserie_doc.codigo if obj.CatalogosSeriesUnidad.id_catalogo_serie.id_subserie_doc else ''}{obj.agno_consecutivo or ''}{obj.nro_consecutivo or ''}"
+        else:
+            serializer_data['nombre_de_Guardado'] = f"{obj.id_plantilla_doc.nombre} {obj.prefijo_consecutivo or ''}{obj.id_unidad_organizacional.codigo}{obj.agno_consecutivo or ''}{obj.nro_consecutivo or ''}"
+        return serializer_data
+
+    class Meta:
+        model = ConsecutivoTipologia
         fields = '__all__'

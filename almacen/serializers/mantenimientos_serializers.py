@@ -26,6 +26,13 @@ class SerializerProgramacionMantenimientosGet(serializers.ModelSerializer):
     tipo = serializers.ReadOnlyField(source='cod_tipo_mantenimiento', default=None)
     tipo_descripcion = serializers.CharField(source='get_cod_tipo_mantenimiento_display', default=None)
     fecha = serializers.ReadOnlyField(source='fecha_programada', default=None)
+    articulo = serializers.ReadOnlyField(source='id_articulo.id_bien', default=None)
+    placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
+    marca = serializers.ReadOnlyField(source='id_articulo.id_marca.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
+    motivo = serializers.ReadOnlyField(source='motivo_mantenimiento', default=None)
+    observacion = serializers.ReadOnlyField(source='observaciones', default=None)
     responsable = serializers.SerializerMethodField()
     estado = serializers.SerializerMethodField()
 
@@ -57,9 +64,16 @@ class SerializerProgramacionMantenimientosGet(serializers.ModelSerializer):
         model=ProgramacionMantenimientos
         fields=[
             'id_programacion_mantenimiento',
+            'articulo',
             'tipo',
             'kilometraje_programado',
             'fecha',
+            'placa',
+            'marca',
+            'codigo_bien',
+            'consecutivo',
+            'motivo',
+            'observacion',
             'estado',
             'responsable',
             'tipo_descripcion'
