@@ -4,6 +4,7 @@ import json
 import logging
 
 from django.http import JsonResponse
+# import pypandoc
 import requests
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from docxtpl import DocxTemplate
@@ -43,6 +44,7 @@ from gestion_documental.serializers.trd_serializers import (
     BusquedaTRDNombreVersionSerializer,
     ConfigTipologiasDocAgnoSerializer,
     ConsecPorNivelesTipologiasDocAgnoSerializer,
+    ConsecutivoTipologiaDocFinalizadosSerializer,
     CrearTipologiaDocumentalSerializer,
     GetHistoricoTRDSerializer,
     ModificarTRDNombreVersionSerializer,
@@ -3897,6 +3899,18 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
+            # # CONVERTIR DOC A PDF
+            # documento_path = consecutivo_tipologia.id_archivo_digital.ruta_archivo.path
+            # documento_path_split = documento_path.split('.')
+            
+            # pypandoc.convert_file(documento_path, 'pdf', outputfile=documento_path_split[0]+'.pdf')
+
+            # new_file = consecutivo_tipologia.id_archivo_digital.ruta_archivo.name
+            # new_file = new_file.split('.')
+            
+            # consecutivo_tipologia.id_archivo_digital.ruta_archivo.name = new_file[0]+'.pdf'
+            # consecutivo_tipologia.id_archivo_digital.save()
+            
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
@@ -3982,7 +3996,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
     
 
 class DocumentosFinalizadosList(generics.ListAPIView):
-    serializer_class = ConsecutivoTipologiaDocSerializer
+    serializer_class = ConsecutivoTipologiaDocFinalizadosSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

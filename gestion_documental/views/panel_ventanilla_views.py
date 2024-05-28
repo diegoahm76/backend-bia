@@ -13,11 +13,11 @@ from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas,
 from gestion_documental.models.ccd_models import CatalogosSeriesUnidad,CatalogosSeriesUnidad,SeriesDoc,SubseriesDoc,CuadrosClasificacionDocumental
 from gestion_documental.models.conf__tipos_exp_models import ConfiguracionTipoExpedienteAgno
 from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.expedientes_models import ExpedientesDocumentales, IndicesElectronicosExp
+from gestion_documental.models.expedientes_models import ArchivosDigitales, ExpedientesDocumentales, IndicesElectronicosExp
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.plantillas_models import PlantillasDoc
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
-from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, TipologiasDoc
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, ConsecutivoTipologia, TipologiasDoc
 from gestion_documental.serializers.expedientes_serializers import AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ActosAdministrativosCreateSerializer, AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, RespuestasRequerimientosOpaGetSerializer, RespuestasRequerimientosPutGetSerializer, RespuestasRequerimientosPutSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer,CatalogosSeriesUnidadGetSerializer
@@ -3139,7 +3139,7 @@ class CreateAutoInicio(generics.CreateAPIView):
             #radicado = obj.id_solicitud_tramite.id_radicado
             instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
             numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+            cadena= radicado.prefijo_radicado+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
         
             return cadena
         return ""
@@ -3232,11 +3232,15 @@ class CreateAutoInicio(generics.CreateAPIView):
             raise ValidationError("No se encontro el tramite")
         instance_radicado = tramite.id_radicado
         respuesta_consecutivo = vista_consecutivo_trd.consecutivo(ConsecutivoTipologiaDoc,request,None)
+        print(respuesta_consecutivo)
 
+        if respuesta_consecutivo.status_code != status.HTTP_201_CREATED:
+            return respuesta_consecutivo
         data_consecutivo = respuesta_consecutivo.data['data']
         data_in['id_consec_por_nivel_tipologias_doc_agno'] = data_consecutivo['id_consecutivo']
         numero_auto = data_consecutivo['consecutivo']
 
+        instancia_consecutivo = ConsecutivoTipologia.objects.filter(id_consecutivo_tipologia=data_consecutivo['id_consecutivo']).first()
 
         if not tramite.id_expediente:
             raise ValidationError("Este tramite no tiene expediente asociado")
@@ -3414,10 +3418,17 @@ class CreateAutoInicio(generics.CreateAPIView):
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-
+        instance_archivo = ArchivosDigitales.objects.filter(id_archivo_digital=data_archivo['id_archivo_digital']).first()
+        if not instance_archivo:
+            raise NotFound("No se encontro el archivo")
         tramite.id_auto_inicio = instance
         tramite.fecha_inicio = datetime.now()
-        return Response({'success': True, 'detail':'Se creo el auto de inicio','data':{'auto':serializer.data,'archivo':data_archivo}}, status=status.HTTP_200_OK)
+        instancia_consecutivo.id_tramite=tramite
+        instancia_consecutivo.variables=context_auto
+        instancia_consecutivo.id_archivo_digital = instance_archivo
+        instancia_consecutivo.save()
+
+        return Response({'success': True, 'detail':'Se creo el auto de inicio','data':{'auto':serializer.data,'archivo':data_archivo,'cosecutivo_tipologia':data_consecutivo}}, status=status.HTTP_200_OK)
 
 
 
