@@ -1,7 +1,9 @@
+import os
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSeriesUnidad
+from docxtpl import DocxTemplate
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.tca_models import TablasControlAcceso
@@ -404,9 +406,19 @@ class ArchivosDigitalesSerializer(serializers.ModelSerializer):
 
 class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
     archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    variables = serializers.SerializerMethodField()
     class Meta:
         model = ConsecutivoTipologia
         fields = '__all__'
+
+    def get_variables(self, obj):
+        ruta_archivo = obj.id_archivo_digital.ruta_archivo.path if obj.id_archivo_digital else None
+        if ruta_archivo and os.path.exists(ruta_archivo):
+            doc = DocxTemplate(ruta_archivo)
+            variables = doc.get_undeclared_template_variables()
+            return variables
+        else:
+            return None
 
 
 class VerificacionFirmasSerializer(serializers.ModelSerializer):
