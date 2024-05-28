@@ -3952,17 +3952,21 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
         fecha_actual = datetime.now()
         persona = request.user.persona
 
-        plantilla = PlantillasDoc.objects.filter(id_plantilla_doc=data.get('id_plantilla')).first()
+        plantilla = PlantillasDoc.objects.filter(id_plantilla_doc=data.get('plantilla')).first()
+        if not plantilla:
+            raise ValidationError('No se encontró la plantilla ingresada')
+        
 
         if archivo:
-            archivo_creado = self.crear_archivos(archivo, fecha_actual)
-            consecutivo_tipologia = ConsecutivoTipologia.create(
+            archivo_creado = self.crear_archivos(archivo, fecha_actual).data
+            print(archivo_creado)
+            archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=archivo_creado['data']['id_archivo_digital'])
+            consecutivo_tipologia = ConsecutivoTipologia.objects.create(
                 id_unidad_organizacional = persona.id_unidad_organizacional_actual,
                 id_plantilla_doc = plantilla,  
-                id_tipologia_doc = plantilla.id_tipologia_doc,
+                id_tipologia_doc = plantilla.id_tipologia_doc_trd,
                 id_persona_genera= persona,
-                id_archivo_digital= archivo_creado,
-                fecha_creacion= fecha_actual,
+                id_archivo_digital= archivo_digital,
                 finalizado= False
             )
 
