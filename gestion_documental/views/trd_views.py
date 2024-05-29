@@ -2,11 +2,13 @@ import base64
 import hashlib
 import json
 import logging
+import subprocess
 
 from django.http import JsonResponse
 # import pypandoc
 import requests
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
+from backend.settings.base import MEDIA_ROOT
 from docxtpl import DocxTemplate
 import os
 import secrets
@@ -3874,6 +3876,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             raise NotFound('No se encontró el consecutivo ingresado')
         
         doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        print(doble_verificacion)
         if not doble_verificacion:
             raise ValidationError('No se encuentra un código para el índice ingresado')
         
@@ -3902,31 +3905,63 @@ class ValidacionCodigoView(generics.UpdateAPIView):
 
                 # if not data:
                 #     raise ValidationError("Algo salio mal")
-
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
-            # # CONVERTIR DOC A PDF
-            # documento_path = consecutivo_tipologia.id_archivo_digital.ruta_archivo.path
-            # documento_path_split = documento_path.split('.')
-            
-            # pypandoc.convert_file(documento_path, 'pdf', outputfile=documento_path_split[0]+'.pdf')
-
-            # new_file = consecutivo_tipologia.id_archivo_digital.ruta_archivo.name
-            # new_file = new_file.split('.')
-            
-            # consecutivo_tipologia.id_archivo_digital.ruta_archivo.name = new_file[0]+'.pdf'
-            # consecutivo_tipologia.id_archivo_digital.save()
+            ruta = r'{}{}{}'.format(MEDIA_ROOT, os.sep, consecutivo_tipologia.id_archivo_digital.ruta_archivo.name)#r'C:\Users\stive\OneDrive\Documents\Brayan\macarenia\backendlocal\backend-bia\backend-bia\static\media\home\BIA\Otros\Documentos\9f27e8deb5f100441fc1.docx'#r'{}{}{}'.format(MEDIA_ROOT, os.sep, consecutivo_tipologia.id_archivo_digital.ruta_archivo.name).replace('\\', '\\\\')
+            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            print(pdf)
             
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
         
     
+
+    def convert_word_to_pdf(self, word_file_path, consecutivo_tipologia):
+        # Command to convert Word to PDF using LibreOffice
+        ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
+
+        command = ['soffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+
+        try:
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            if result.returncode != 0:
+                raise Exception('Error converting Word to PDF: {}'.format(result.stderr.decode('utf-8')))
+            
+            print(result.returncode)
+
+            # Get the name of the PDF file
+            pdf_file_name = '{}.pdf'.format(os.path.splitext(os.path.basename(word_file_path))[0])
+
+            print(pdf_file_name)
+
+            # Get the path of the PDF file
+            pdf_file_path = os.path.join(r'home{}BIA{}Otros{}Documentos'.format(os.sep, os.sep, os.sep), pdf_file_name)
+
+            print(pdf_file_path)
+
+            archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=consecutivo_tipologia.id_archivo_digital.id_archivo_digital)
+            archivo_digital.ruta_archivo = pdf_file_path
+            archivo_digital.formato = 'pdf'
+            archivo_digital.save()
+
+            # Read the PDF file
+            # with open(pdf_file_path, 'rb') as file:
+            #     print("Aqui")
+            #     pdf_file_data = file.read()
+
+            return result 
+        except FileNotFoundError:
+            raise ValidationError('LibreOffice is not installed')
+        except Exception as e:
+            raise ValidationError('Error converting Word to PDF: {}'.format(str(e)))
     
     def DocumentoFinalizado(self, request, consecutivo_tipologia):
 
         asignaciones = get_list_or_404(AsignacionDocs, id_consecutivo=consecutivo_tipologia.id_consecutivo_tipologia)
+        print("es aqui") 
 
         validar = []    
         for asignacion in asignaciones:
@@ -4081,3 +4116,5 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
         archivos_Digitales = ArchivosDgitalesCreate()
         archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
         return archivo_creado
+    
+
