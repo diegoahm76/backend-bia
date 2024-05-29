@@ -1,6 +1,8 @@
 import os
 from io import BytesIO
 import requests
+import base64
+
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -3238,8 +3240,9 @@ class CreateAutoInicio(generics.CreateAPIView):
             return respuesta_consecutivo
         data_consecutivo = respuesta_consecutivo.data['data']
         data_in['id_consec_por_nivel_tipologias_doc_agno'] = data_consecutivo['id_consecutivo']
+       
         numero_auto = data_consecutivo['consecutivo']
-
+        data_in['numero_acto_administrativo'] = numero_auto
         instancia_consecutivo = ConsecutivoTipologia.objects.filter(id_consecutivo_tipologia=data_consecutivo['id_consecutivo']).first()
 
         if not tramite.id_expediente:
@@ -3247,7 +3250,7 @@ class CreateAutoInicio(generics.CreateAPIView):
 
             
         data_expediente = AperturaExpedienteComplejoSerializer(tramite.id_expediente).data
-
+        num_exp=tramite.id_expediente.codigo_exp_und_serie_subserie +'-'+str(tramite.id_expediente.codigo_exp_Agno) +'-'+str(tramite.id_expediente.codigo_exp_consec_por_agno)
 
         plantilla = PlantillasDoc.objects.filter(id_plantilla_doc=data_in['id_plantilla']).first()
         if not plantilla:
@@ -3264,7 +3267,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         context_auto={}
         
         context_auto['Auto'] = numero_auto
-        context_auto['Expediente'] = data_expediente['codigo_exp_consec_por_agno']
+        context_auto['Expediente'] = num_exp
         titular = tramite.id_persona_titular
         nombre_usuario = self.nombre_persona(titular)
         context_auto['NombreTitular'] = nombre_usuario
@@ -3423,6 +3426,7 @@ class CreateAutoInicio(generics.CreateAPIView):
             raise NotFound("No se encontro el archivo")
         tramite.id_auto_inicio = instance
         tramite.fecha_inicio = datetime.now()
+        tramite.save()
         instancia_consecutivo.id_tramite=tramite
         instancia_consecutivo.variables=context_auto
         instancia_consecutivo.id_archivo_digital = instance_archivo
@@ -3556,8 +3560,9 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         #token_camunda = self.get_token_camunda(token)
         
         #data = self.get_tramite_ventanilla_sasoft(radicado,token_camunda)
-        # data = self.get_tramite_ventanilla_sasoft(radicado,data_in['access'])
-
+        data = self.get_tramite_ventanilla_sasoft(radicado,data_in['access'])
+        #UNICO-2024-00232
+        print(data)
         # if not data:
         #     raise ValidationError("Algo salio mal")
         
@@ -3566,8 +3571,11 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         
         # id_instancia = data['processInstanceId']
         #print(id_instancia)
-
-        tramite = self.buscar_tramite(radicado)
+        tramite=None
+        if 'id_solicitud_tramite' in data_in and data_in['id_solicitud_tramite']:
+            tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
+        else:
+            tramite = self.buscar_tramite(radicado)
 
         if not tramite:
             raise ValidationError("NO se encontro tramite asociado a este radicado")
@@ -3579,31 +3587,148 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=tramite,cod_estado_asignacion='Ac').first()
         if not asignacion:
             raise ValidationError("El tramite no a sigo aceptado por la unidad organizacional")
-        print("EL TRAMITE ES ")
-        print(asignacion.id_solicitud_tramite)
+
 
 
         unidad = asignacion.id_und_org_seccion_asignada
 
-        #CON ASIGNACION BUSCAR UNIDAD ORGANIZACIONAL
+  
         #CON TRAMITE BUSCAR DOCUMENTO SOPORTE 
-        #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
+        auto = tramite.id_auto_inicio
 
-        # NumeroAuto 
-        # DocumentoAuto 
-        # NumeroPago 
+        expediente = tramite.id_expediente
+
+        if not expediente:
+            raise NotFound("El tramite no tiene expediente asociado")
+        
+
+        num_exp=expediente.codigo_exp_und_serie_subserie +'-'+str(expediente.codigo_exp_Agno) +'-'+str(expediente.codigo_exp_consec_por_agno)
+        if not auto:
+            raise NotFound("No se encontro auto")
+        
+        archivo = auto.id_archivo_acto_administrativo
+        if not archivo:
+            raise NotFound("No tiene archivo asignado")
+        directorio_raiz = str(settings.MEDIA_ROOT)
+
+        pathToTemplate = directorio_raiz + os.sep +str(archivo.ruta_archivo)
+
+        contenido =None
+        contenido_base64=None
+        if   os.path.exists(pathToTemplate):
+                print("EXISTE")
+                with open(pathToTemplate, 'rb') as file:
+                    contenido = file.read()
+                    contenido_base64 = base64.b64encode(contenido)
+        else:
+            raise ValidationError(" No se encontro el documento del auto")
+            # print('NO EXISTE')
+            # auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
+            # data_auto = auto_consecutivo.variables
+            # respuesta_archivo_blanco= UtilsGestor.generar_archivo_blanco(data_auto)
+                
+            # if respuesta_archivo_blanco.status_code != status.HTTP_201_CREATED:
+            #     return respuesta_archivo_blanco
+            # ruta_archivo_blanco = respuesta_archivo_blanco.data['data']['ruta_archivo']
+            # ruta_archivo_blanco = ruta_archivo_blanco.lstrip("/\\")
+
+            # print("RUTA RAIZ ES: "+directorio_raiz)
+            # print("RUTA DEL ARCHIVO: "+ruta_archivo_blanco)
+            # if ruta_archivo_blanco.startswith("media" + os.sep):
+            #     ruta_archivo_blanco = ruta_archivo_blanco[len("media" + os.sep):]
+            # raise ValidationError(os.path.join(directorio_raiz, ruta_archivo_blanco))
+            # full_ruta = os.path.normpath(os.path.join(directorio_raiz, ruta_archivo_blanco))
+            # print("FULL RUTA: " + full_ruta)
+            # with open(full_ruta, 'rb') as file:
+            #         contenido = file.read()
+            #         contenido_base64 = base64.b64encode(contenido)
+                
+        #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
+        print(type(contenido))
+        numero_auto = auto.numero_acto_administrativo
+
+        data_respuesta={}
+        data_respuesta['NumeroAuto']={
+            "type": "String",
+            "value": numero_auto,
+            "valueInfo": {}
+        }
+        data_respuesta['Auto'] = {
+
+
+            "type": "File",
+            "value": contenido_base64,
+            "valueInfo": {
+            "encoding": "latin-1",
+            "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
+            }
+        }
+
+
+        pago = tramite.id_pago_evaluacion
+
+        if not pago:
+            
+            data_respuesta['NumeroPago']={
+
+            "type": "String",
+            "value": '00000',
+            "valueInfo": {}
+            }
+
+            data_respuesta['SoportePago'] = {
+            "type": "File",
+            "value": contenido_base64,
+            "valueInfo": {
+            "encoding": "latin-1",
+            "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
+            }
+            }
+            
+        # numero_pago = pago.id_liquidacion.num_liquidacion
         # SoportePago 
+
         # NumExp
+
+        data_respuesta['NumExp']={
+            "type": "String",
+            "value": num_exp,
+            "valueInfo": {}
+        }
+
         # GrupoFunTramite 
+
+        data_respuesta['GrupoFunTramite']={
+            "type": "String",
+            "value": unidad.nombre,
+            "valueInfo": {}
+        }
+        
         # dateAutoStart  #FECHA AUTO
-        # FNAuto #FECHA NOTIFICACION 
+        data_respuesta['dateAutoStart']={
+            "type": "String",
+            "value": auto.fecha_acto_administrativo,
+            "valueInfo": {}
+        }
+        # FNAuto #FECHA NOTIFICACION
+        data_respuesta['FNAuto']={
+            "type": "String",
+            "value": auto.fecha_acto_administrativo,
+            "valueInfo": {}
+        }
+         
         # priorityProject #PRIORITARIO O NO
+        data_respuesta['priorityProject']={
+            "type": "Boolean",
+            "value": False,
+            "valueInfo": {}
+        }
         # prioritario 
 
 
 
 
-        return Response('data', status=status.HTTP_201_CREATED)
+        return Response(data_respuesta, status=status.HTTP_201_CREATED)
     
 
 class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
