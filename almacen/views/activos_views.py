@@ -3105,10 +3105,21 @@ class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
             item_despacho_data = {
                 'id_item_despacho_activo': item_despacho.id_item_despacho_activo,
                 'id_despacho_activo': item_despacho.id_despacho_activo.id_despacho_activo,
+                ##############################################################################################################################
                 'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado else None,
                 'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado else None,
+                'cod_tipo_bien_solicitado': item_despacho.id_bien_solicitado.cod_tipo_bien if item_despacho.id_bien_solicitado else None,
+                'doc_identificador_nro_bien_solicitado': item_despacho.id_bien_solicitado.doc_identificador_nro if item_despacho.id_bien_solicitado else None,
+                'descripcion_bien_solicitado': item_despacho.id_bien_solicitado.descripcion if item_despacho.id_bien_solicitado else None,
+                'marca_bien_solicitado': item_despacho.id_bien_solicitado.id_marca.nombre if (item_despacho.id_bien_solicitado and item_despacho.id_bien_solicitado.id_marca) else None,
+                ##############################################################################################################################
                 'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado else None,
                 'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado else None,
+                'cod_tipo_bien_despachado': item_despacho.id_bien_despachado.cod_tipo_bien if item_despacho.id_bien_despachado else None,
+                'doc_identificador_nro_bien_despachado': item_despacho.id_bien_despachado.doc_identificador_nro if item_despacho.id_bien_despachado else None,
+                'descripcion_bien_despachado': item_despacho.id_bien_despachado.descripcion if item_despacho.id_bien_despachado else None,
+                'marca_bien_despachado': item_despacho.id_bien_despachado.id_marca.nombre if (item_despacho.id_bien_despachado and item_despacho.id_bien_despachado.id_marca) else None,
+                ##############################################################################################################################
                 'id_entrada_alma': item_despacho.id_entrada_alma.id_entrada_almacen if item_despacho.id_entrada_alma else None,
                 'id_bodega': item_despacho.id_bodega.id_bodega if item_despacho.id_bodega else None,
                 'nombre_bodega': item_despacho.id_bodega.nombre if item_despacho.id_bodega else None,
@@ -3163,13 +3174,17 @@ class ResumenDespachosGeneralActivosView(generics.RetrieveAPIView):
                 item_data = {
                     'id_item_solicitud_activo': item.id_item_solicitud_activo,
                     'id_solicitud_activo': item.id_solicitud_activo.id_solicitud_activo,
-                    'id_bien': item.id_bien.id_bien,  
-                    'nombre_bien': item.id_bien.nombre,  
-                    'codigo_bien': item.id_bien.codigo_bien,  
+                    'id_bien': item.id_bien.id_bien if item.id_bien else None,
+                    'nombre_bien': item.id_bien.nombre if item.id_bien else None,
+                    'codigo_bien': item.id_bien.codigo_bien if item.id_bien else None,
+                    'cod_tipo_bien': item.id_bien.cod_tipo_bien if item.id_bien else None,
+                    'doc_identificador_nro': item.id_bien.doc_identificador_nro if item.id_bien else None,
+                    'descripcion': item.id_bien.descripcion if item.id_bien else None,
+                    'marca': item.id_bien.id_marca.nombre if (item.id_bien and item.id_bien.id_marca) else None,
                     'cantidad': item.cantidad,
-                    'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
-                    'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
-                    'nombre_unidad_medida': item.id_unidad_medida.nombre,
+                    'id_unidad_medida': item.id_unidad_medida.id_unidad_medida if item.id_unidad_medida else None,
+                    'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura if item.id_unidad_medida else None,
+                    'nombre_unidad_medida': item.id_unidad_medida.nombre if item.id_unidad_medida else None,
                     'observacion': item.observacion,
                     'nro_posicion': item.nro_posicion
                 }
