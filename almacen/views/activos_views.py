@@ -1282,7 +1282,7 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
 
             for item in items_entrada:
                 # Filtrar el inventario por id_bien y realizo_salida=True
-                inventario = Inventario.objects.filter(id_bien=item.id_bien.id_bien, realizo_salida=False).first()
+                inventario = Inventario.objects.filter(id_bien=item.id_bien.id_bien).filter(Q(realizo_salida=False) | Q(realizo_salida__isnull=True)).first()
                 if inventario:
                     # Consultar el registro en el modelo CatalogoBienes
                     bien = item.id_bien
@@ -1294,9 +1294,9 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
 
                     # Crear un diccionario con la información necesaria
                     data = {
-                        'id_item_entrada_almacen': item.id_item_entrada_almacen,  # Pk de ItemEntradaAlmacen
-                        'id_entrada_almacen': item.id_entrada_almacen.id_entrada_almacen,  # Fk de EntradaAlmacen
-                        'id_bien': bien.id_bien,  # Pk de CatalogoBienes
+                        'id_item_entrada_almacen': item.id_item_entrada_almacen,  
+                        'id_entrada_almacen': item.id_entrada_almacen.id_entrada_almacen,
+                        'id_bien': bien.id_bien,  
                         'codigo': bien.codigo_bien,
                         'serial_placa': bien.doc_identificador_nro,
                         'nombre': bien.nombre,
