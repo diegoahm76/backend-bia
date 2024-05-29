@@ -106,7 +106,7 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                         filter['id_entrada_almacen__fecha_entrada__lte'] = value
             elif key == 'categoria':
                 if value != '':
-                    filter['id_bien__cod_tipo_activo__cod_tipo_activo'] = value
+                    filter['id_bien__cod_tipo_bien'] = value
             else:
                 if value != '':
                     filter[key] = value
@@ -167,6 +167,7 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                 data_output.append(items_data)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
+
 
 class MantenimientosRealizadosGetView(generics.ListAPIView):
     serializer_class=MantenimientosRealizadosGetSerializer
