@@ -2392,6 +2392,10 @@ class BusquedaArticulosSubView(generics.ListAPIView):
             item_data = {
                 'id_bien_despachado': bien.id_bien,
                 'codigo_bien_espachado': bien.codigo_bien,
+                'cod_tipo_bien': bien.cod_tipo_bien,
+                'doc_identificador_nro': bien.doc_identificador_nro,
+                'descripcion': bien.descripcion,
+                'marca': bien.id_marca.nombre,
                 'nombre_bien_espachado': bien.nombre,
                 'cantidad_despachada': cantidad_despachada,
                 'observaciones': observaciones,
