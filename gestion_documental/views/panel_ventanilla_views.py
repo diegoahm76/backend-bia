@@ -25,7 +25,7 @@ from gestion_documental.serializers.permisos_serializers import DenegacionPermis
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ActosAdministrativosCreateSerializer, AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, RespuestasRequerimientosOpaGetSerializer, RespuestasRequerimientosPutGetSerializer, RespuestasRequerimientosPutSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer,CatalogosSeriesUnidadGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
-
+from django.core.files.base import ContentFile
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
 from recaudo.models.liquidaciones_models import LiquidacionesBase
 from seguridad.permissions.permissions_gestor import PermisoActualizarResponderRequerimientoOPA, PermisoCrearAsignacionSubseccion, PermisoCrearResponderRequerimientoOPA, PermisoCrearSolicitudComplementoPQRSDF
@@ -46,7 +46,8 @@ from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertaEventoInmediadoCreate
 from docxtpl import DocxTemplate
-
+from reportlab.pdfgen import canvas
+from io import BytesIO
 #from gestion_documental.views.trd_views import ConsecutivoTipologiaDoc
 
 
@@ -3474,6 +3475,31 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
     serializer_class = None
     queryset = None
 
+
+    def archivo_temporal(self,data):
+            buffer = BytesIO()
+
+            p = canvas.Canvas(buffer)
+            p.drawString(100, 800, 'Archivo No Digitalizado Solo Almacenado en Fisico (Buscar en Carpeta Física)')  # Agregar contenido al PDF, puedes omitir esto si todo el contenido está en el HTML
+        
+            y_position = 780  
+
+            for key, value in data.items():
+            
+                p.drawString(100, y_position, f"{key}: {value}")
+                y_position -= 20  
+            
+
+            p.showPage()
+            p.save()
+
+    
+            pdf_bytes = buffer.getvalue()
+            nombre_archivo='auto.pdf'
+            pdf_content_file = ContentFile(pdf_bytes,name=nombre_archivo)
+
+            return pdf_content_file
+
     def get_token_camunda(self,token):
 
 
@@ -3615,13 +3641,16 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         contenido =None
         contenido_base64=None
-        if   os.path.exists(pathToTemplate):
+        if not  os.path.exists(pathToTemplate):
                 print("EXISTE")
                 with open(pathToTemplate, 'rb') as file:
                     contenido = file.read()
                     contenido_base64 = base64.b64encode(contenido)
         else:
             raise ValidationError(" No se encontro el documento del auto")
+
+            archivo = self.archivo_temporal({"clave":"valor"})
+            print(archivo)
             # print('NO EXISTE')
             # auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
             # data_auto = auto_consecutivo.variables
