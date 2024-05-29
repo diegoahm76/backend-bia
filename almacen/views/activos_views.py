@@ -569,23 +569,31 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
 
 class EditarSolicitudActivosView(generics.UpdateAPIView):
     serializer_class = SolicitudesActivosSerializer
-    queryset = SolicitudesActivos.objects.filter(estado_solicitud__in=["SR","S"])
+    queryset = SolicitudesActivos.objects.filter(estado_solicitud__in=["SR", "S"])
     items_serializer_class = ItemsSolicitudActivosSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
 
     def update(self, request, pk):
         instance = self.queryset.filter(id_solicitud_activo=pk).first()
         if not instance:
-            raise NotFound ("No se encontro la solicitud activo.")
+            raise NotFound("No se encontró la solicitud de activo.")
         data = request.data
         current_date = datetime.now()
 
+        try:
+            with transaction.atomic():
+                # Obtener instancias de Personas si se proporciona un nuevo ID
+                id_funcionario_resp_unidad_id = data.get('id_funcionario_resp_unidad')
+                id_funcionario_resp_unidad = Personas.objects.get(id_persona=id_funcionario_resp_unidad_id) if id_funcionario_resp_unidad_id else instance.id_funcionario_resp_unidad
 
-        # try:
-        with transaction.atomic():
+                id_persona_operario_id = data.get('id_persona_operario')
+                id_persona_operario = Personas.objects.get(id_persona=id_persona_operario_id) if id_persona_operario_id else instance.id_persona_operario
+
                 # Actualizar los campos de la solicitud
                 instance.fecha_solicitud = current_date
                 instance.estado_solicitud = 'S'
+                instance.id_funcionario_resp_unidad = id_funcionario_resp_unidad
+                instance.id_persona_operario = id_persona_operario
                 instance.motivo = data.get('motivo', instance.motivo)
                 instance.observacion = data.get('observacion', instance.observacion)
                 instance.solicitud_prestamo = data.get('solicitud_prestamo', instance.solicitud_prestamo)
@@ -618,7 +626,10 @@ class EditarSolicitudActivosView(generics.UpdateAPIView):
                         item_serializer.is_valid(raise_exception=True)
                         item_serializer.save()
 
-        return Response({'success': True, 'detail': 'Solicitud de activos editada correctamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Solicitud de activos editada correctamente'}, status=status.HTTP_200_OK)
+
+        except Personas.DoesNotExist:
+            return Response({'error': 'Persona no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
         # except Exception as e:
         #     return Response({'success': False, 'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
