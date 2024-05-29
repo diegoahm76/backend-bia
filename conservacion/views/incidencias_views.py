@@ -2,8 +2,10 @@ import copy
 from datetime import datetime,timedelta
 import json
 
-from conservacion.serializers.incidencias_serializers import ActualizacionIncidenciaSerializer
+from conservacion.serializers.incidencias_serializers import ActualizacionIncidenciaSerializer, IncidenciaGetSerializer
 
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarRegistroIncidenciasMaterialVegetal, PermisoAnularRegistroIncidenciasMaterialVegetal, PermisoCrearRegistroIncidenciasMaterialVegetal
 from seguridad.utils import Util
 
@@ -117,9 +119,7 @@ class GuardarIncidencia(generics.CreateAPIView):
         data_incidencia =  json.loads(data['data_incidencia'])
         items_detalles = json.loads(data['items_detalle'])
         
-        file = request.FILES.get('ruta_archivos_soporte')
-
-        data_incidencia['ruta_archivos_soporte'] = file
+        archivo_soporte = request.FILES.get('ruta_archivos_soporte')
         
         data_incidencia['id_vivero'] = id_vivero
         
@@ -225,6 +225,13 @@ class GuardarIncidencia(generics.CreateAPIView):
         else:
             nombre = 'Distribución'
         
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "IncidenciasMatVegetal")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_incidencia['ruta_archivos_soporte'] = archivo_creado_instance.id_archivo_digital
+
         #GUARDADO DE INCIDENCIA
         serializador = self.serializer_class(data=data_incidencia,many = False)
         serializador.is_valid(raise_exception=True)
@@ -468,9 +475,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
         data_incidencia =  json.loads(data['data_incidencia'])
         items_detalles = json.loads(data['items_detalle'])
         
-        file = request.FILES.get('ruta_archivos_soporte')
-
-        data_incidencia['ruta_archivos_soporte'] = file
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         
         incidencia = self.queryset.all().filter(id_incidencias_mat_vegetal=id_incidencias_mat_vegetal,incidencia_anulacion=False).first()
         
@@ -634,6 +639,20 @@ class ActualizacionIncidencia(generics.ListAPIView):
             serializador.is_valid(raise_exception=True)
             serializador.save()
             
+            # ACTUALIZAR ARCHIVO
+            if archivo_soporte:
+                if incidencia.ruta_archivos_soporte:
+                    incidencia.ruta_archivos_soporte.ruta_archivo.delete()
+                    incidencia.ruta_archivos_soporte.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "IncidenciasMatVegetal")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data_incidencia['ruta_archivos_soporte'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and incidencia.ruta_archivos_soporte:
+            #     incidencia.ruta_archivos_soporte.ruta_archivo.delete()
+            #     incidencia.ruta_archivos_soporte.delete()
+
             #ACTUALIZACION  DE MAESTRO
             serializador = self.serializer_class(incidencia,data = data_incidencia)
             serializador.is_valid(raise_exception=True)
@@ -686,7 +705,7 @@ class ActualizacionIncidencia(generics.ListAPIView):
             raise ValidationError('No existe incidenia')
 
 class GetIncidenciasByVivero (generics.ListAPIView):
-    serializer_class = IncidenciaSerializer
+    serializer_class = IncidenciaGetSerializer
     queryset = IncidenciasMatVegetal.objects.all()
     permission_classes = [IsAuthenticated]
     

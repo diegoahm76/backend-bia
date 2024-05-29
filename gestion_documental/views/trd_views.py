@@ -1,7 +1,20 @@
+import base64
+import hashlib
 import json
 import logging
+import subprocess
 
 from django.http import JsonResponse
+# import pypandoc
+import requests
+from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
+from backend.settings.base import MEDIA_ROOT
+from docxtpl import DocxTemplate
+import os
+import secrets
+import uuid
+from gestion_documental.utils import UtilsGestor
+from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
@@ -9,11 +22,14 @@ from rest_framework import status
 from django.core.serializers import serialize
 from django.shortcuts import get_list_or_404
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+from gestion_documental.views.pqr_views import RadicadoCreate
+from gestion_documental.models.radicados_models import T262Radicados, AsignacionDocs
 from django.db.models import Q
 import copy
 from django.db import transaction
 from datetime import datetime
 from django.utils import timezone
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp
 from rest_framework import generics
 from rest_framework.response import Response
 from gestion_documental.models.plantillas_models import PlantillasDoc
@@ -21,13 +37,16 @@ from gestion_documental.models.tca_models import TablasControlAcceso
 from seguridad.utils import Util
 from transversal.models.personas_models import Personas
 from rest_framework.permissions import IsAuthenticated
+from gestion_documental.views.notificaciones_views import AnexosSistemaCreate
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from gestion_documental.views.bandeja_tareas_tramites_views import ActaInicioCreate
 from gestion_documental.serializers.trd_serializers import (
     BuscarTipologiaSerializer,
     BusquedaTRDNombreVersionSerializer,
     ConfigTipologiasDocAgnoSerializer,
     ConsecPorNivelesTipologiasDocAgnoSerializer,
+    ConsecutivoTipologiaDocFinalizadosSerializer,
     CrearTipologiaDocumentalSerializer,
     GetHistoricoTRDSerializer,
     ModificarTRDNombreVersionSerializer,
@@ -46,7 +65,8 @@ from gestion_documental.serializers.trd_serializers import (
     TipologiasDocumentalesPutSerializer,
     GetSeriesSubSUnidadOrgTRDSerializer,
     TipologiasSeriesSubSUnidadOrgTRDSerializer,
-    ConsecutivoTipologiaDocSerializer
+    ConsecutivoTipologiaDocSerializer,
+    VerificacionFirmasSerializer
 )
 from gestion_documental.serializers.ccd_serializers import (
     CCDSerializer
@@ -476,6 +496,7 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 
     def put(self, request, id_serie_subs_unidadorg_trd):
         data_entrante = request.data
+        data_entrante._mutable=True
         persona_usuario_logeado = request.user.persona
         serie_subs_unidadorg_trd = CatSeriesUnidadOrgCCDTRD.objects.filter(id_catserie_unidadorg=id_serie_subs_unidadorg_trd).first()
         previous = copy.copy(serie_subs_unidadorg_trd)
@@ -580,6 +601,18 @@ class UpdateSerieSubSeriesUnidadesOrgTRD(generics.UpdateAPIView):
 
             # SI LA TRD A MODIFICAR ES LA ACTUAL, GENERA HISTORICOS Y ASIGNA NUEVAS TIPOLOGIAS
             elif serie_subs_unidadorg_trd.id_trd.actual == True:
+                archivo_soporte = request.FILES.get('ruta_archivo_cambio')
+
+                # ACTUALIZAR ARCHIVO
+                if archivo_soporte:
+                    archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CatalogoTRD")
+                    archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                    
+                    data_entrante['ruta_archivo_cambio'] = archivo_creado_instance.id_archivo_digital
+                # elif not archivo_soporte and serie_subs_unidadorg_trd.ruta_archivo_cambio:
+                #     serie_subs_unidadorg_trd.ruta_archivo_cambio.ruta_archivo.delete()
+                #     serie_subs_unidadorg_trd.ruta_archivo_cambio.delete()
+
                 serializador = self.serializer_class(serie_subs_unidadorg_trd, data=data_entrante, many=False)
                 serializador.is_valid(raise_exception=True)
 
@@ -3214,11 +3247,52 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        variable = request.data.get('variable')
+        persona = request.user.persona
+        current_date = datetime.now()
+
+        match variable:
+            case 'C':
+                data = self.consecutivo(request, None)
+                return data
+            
+            case 'B':
+                data = self.BorradorDocumento(request)
+                return data
+            
+            case 'DC':
+                data = self.DocumentoConsecutivo(request)
+                return data
+            case 'DCR':
+                data = self.DocumentoConsecutivoRadicado(request, current_date, persona)
+                return data
+            
+            case 'A':
+                data = self.ActualizarDoc(request, request.data.get('payload'), request.data.get('id_consecutivo'))
+                return Response({
+                    'success': True,
+                    'detail': 'Se ha actualizado correctamente.',
+                    'data': data
+                }, status=status.HTTP_201_CREATED)
+            
+            case 'AC':
+                data = self.ActualizarDocCargado(request, request.data.get('payload'), request.data.get('id_consecutivo'))
+                return Response({   
+                    'success': True,
+                    'detail': 'Se ha actualizado correctamente.',
+                    'data': data
+                }, status=status.HTTP_201_CREATED)
+            
+            case 'N':
+                data = self.Notificaciones(request, current_date, persona)
+                return data
+            
+            # case 'SD':
+            #     data = self.SubirDocumento(request, archivo, current_date, persona)
+
+    def consecutivo(self, request, id_archivo_digital):
         try:
-            # Obtener los datos enviados por el usuario
-            unidad_organizacional = request.data.get('unidad_organizacional')
-            if not unidad_organizacional:
-                raise ValidationError('Debe especificar la unidad organizacional.')
+            unidad_organizacional = request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional
             
             unidad_organizacional = get_object_or_404(UnidadesOrganizacionales, id_unidad_organizacional=unidad_organizacional)
             tipologias_doc = request.data.get('tipologias_doc')
@@ -3271,19 +3345,19 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     
                     # Formatear el consecutivo actual con ceros a la izquierda
                     nro_consecutivo = str(consecutivo.consecutivo_actual + 1).zfill(consecutivo.cantidad_digitos)
-                    
+        
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
+                        id_plantilla_doc = plantilla,
                         id_tipologia_doc = plantilla.id_tipologia_doc_trd,
                         CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
-                        agno_consecutivo = current_date.year,
+                        agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
                         nro_consecutivo = nro_consecutivo,
                         prefijo_consecutivo = consecutivo.prefijo_consecutivo,
                         fecha_consecutivo = current_date,
                         id_persona_genera = request.user.persona,
-                        id_archivo_digital = None,
+                        id_archivo_digital = id_archivo_digital if id_archivo_digital else None,
                     )
-
 
                     # Actualizar el consecutivo actual
                     consecutivo.consecutivo_actual += 1
@@ -3295,6 +3369,8 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
 
                     data = {
                         "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{cod_series}.{cod_subseries}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
+                        "id_consecutivo": generar_consecutivo.id_consecutivo_tipologia,
+                        "catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_cat_serie_und,
                     }
 
                     return Response({
@@ -3304,8 +3380,6 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     }, status=status.HTTP_201_CREATED)
 
                 else:
-
-
                     # Obtener la configuración de consecutivo por unidad organizacional
                     consecutivo = ConsecPorNivelesTipologiasDocAgno.objects.filter(
                         id_config_tipologia_doc_agno=config_tipologia,
@@ -3317,18 +3391,6 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     
                     # Formatear el consecutivo actual con ceros a la izquierda
                     nro_consecutivo = str(consecutivo.consecutivo_actual + 1).zfill(consecutivo.cantidad_digitos)
-                    
-                    generar_consecutivo = ConsecutivoTipologia.objects.create(
-                        id_unidad_organizacional = unidad_organizacional,
-                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
-                        agno_consecutivo = current_date.year,
-                        nro_consecutivo = nro_consecutivo,
-                        prefijo_consecutivo = consecutivo.prefijo_consecutivo,
-                        fecha_consecutivo = current_date,
-                        id_persona_genera = request.user.persona,
-                        id_archivo_digital = None,
-                    )
-
 
                     # Actualizar el consecutivo actual
                     consecutivo.consecutivo_actual += 1
@@ -3337,9 +3399,23 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     if not consecutivo.item_ya_usado:
                         consecutivo.item_ya_usado = True
                     consecutivo.save()
+                
+                    generar_consecutivo = ConsecutivoTipologia.objects.create(
+                        id_unidad_organizacional = unidad_organizacional,
+                        id_plantilla_doc = plantilla,
+                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
+                        nro_consecutivo = nro_consecutivo,
+                        prefijo_consecutivo = consecutivo.prefijo_consecutivo,
+                        fecha_consecutivo = current_date,
+                        id_persona_genera = request.user.persona,
+                        id_archivo_digital = id_archivo_digital if id_archivo_digital else None,
+                    )
 
                     data = {
                         "consecutivo": f"{generar_consecutivo.prefijo_consecutivo}.{generar_consecutivo.id_unidad_organizacional.codigo}.{generar_consecutivo.agno_consecutivo}.{generar_consecutivo.nro_consecutivo}",
+                        "id_consecutivo": generar_consecutivo.id_consecutivo_tipologia,
+                        #"catalogo": catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und.id_cat_serie_und,
                     }
 
                     return Response({
@@ -3347,9 +3423,698 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                         'detail': 'Consecutivo creado exitosamente.',
                         'data': data
                     }, status=status.HTTP_201_CREATED)
+                
 
         except ValidationError as e:
             return Response({
                 'success': False,
                 'detail': e.detail,
             }, status=status.HTTP_404_NOT_FOUND)
+        
+    def GenerarRadicado(self, data):
+        data_radicar = {}
+        data_radicar['fecha_actual'] = data['current_date']
+        data_radicar['id_persona'] = data['id_persona']
+        data_radicar['tipo_radicado'] = data['cod_tipo_radicado']
+        data_radicar['modulo_radica'] = "Generador de Documentos"
+        
+        radicado_class = RadicadoCreate()
+        radicado_response = radicado_class.post(data_radicar)
+
+        print(radicado_response)
+        
+        id_radicado = radicado_response.get('id_radicado')
+        radicado_nuevo = radicado_response.get('radicado_nuevo')
+        radicado = T262Radicados.objects.filter(id_radicado=id_radicado).first()
+        
+        data_response = {
+            "radicado": radicado_nuevo,
+            "id_radicado": radicado.id_radicado,
+            "fecha_radicado": radicado.fecha_radicado,
+            "tipo_radicado": radicado.cod_tipo_radicado
+        }
+
+        return data_response
+        
+        
+    def GenerarDocumento(self, payload, plantilla):
+        try:
+          
+            auto = ActaInicioCreate()
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
+            ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
+            print(ruta_archivo)
+            print(os.path.exists(ruta_archivo))
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                doc = DocxTemplate(ruta_archivo)
+
+                doc.render(payload)
+
+                file_uuid = uuid.uuid4()
+
+                extension = os.path.splitext(ruta_archivo)[1]
+                new_filename = f"{file_uuid}{extension}"
+
+                # Guardar el documento resultante con el nuevo nombre
+                os.makedirs("/home/BIA/Otros/DocsTemp", exist_ok=True)
+                doc.save(f"/home/BIA/Otros/DocsTemp/{new_filename}")
+                memoria = auto.document_to_inmemory_uploadedfile(doc)
+                # Crear el archivo digital
+                ruta = os.path.join("home", "BIA", "Otros", "Documentos")
+
+                md5_hash = hashlib.md5()
+                with open(f"/home/BIA/Otros/DocsTemp/{new_filename}", 'rb') as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        md5_hash.update(chunk)
+                
+                md5_value = md5_hash.hexdigest()
+
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
+                    
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo,  memoria)
+                return respuesta
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+    def DocumentoConsecutivo(self, request):
+        payload = request.data.get('payload') 
+        data = self.consecutivo(request, None).data
+        if data['success']:
+            payload['consecutivo'] = data['data']['consecutivo']
+            documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+            print(documento)
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+            archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.id_archivo_digital = archivo_digital
+            consecutivo.variables = payload
+            consecutivo.save()
+            serializer = self.serializer_class(consecutivo)
+            return Response({
+                'success': True,
+                'detail': 'Se ha generado el documento exitosamente.',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED) 
+        else:
+            return Response({
+                'success': False,
+                'detail': 'No se ha podido generar el documento.',
+                'data': data
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+
+    def BorradorDocumento(self, request):
+        data = self.GenerarDocumento(request.data.get('payload'), request.data.get('plantilla'))
+        platnilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
+        data = data.data
+        generar_consecutivo = {
+            "id_unidad_organizacional": request.user.persona.id_unidad_organizacional_actual.id_unidad_organizacional,
+            "id_plantilla_doc": platnilla.id_plantilla_doc,
+            "id_tipologia_doc": platnilla.id_tipologia_doc_trd.id_tipologia_documental,
+            "id_persona_genera": request.user.persona.id_persona,
+            "id_archivo_digital": data['data']['id_archivo_digital'],
+        }
+        serializer = self.serializer_class(data=generar_consecutivo)
+        serializer.is_valid(raise_exception=True)
+        instance=serializer.save()
+
+        return Response({
+            'success': True,
+            'detail': 'Se ha generado el documento exitosamente.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
+    
+    def DocumentoConsecutivoRadicado(self, request, current_date, persona):
+        payload = request.data.get('payload')
+        data = self.consecutivo(request, None).data
+        print(f"dataaaaaaa: {data}")
+        data_radicado = {
+            "current_date": current_date,
+            "id_persona": persona.id_persona,
+            "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+        }
+        radicado = self.GenerarRadicado(data_radicado)
+        radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+
+        consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+        consecutivo.id_radicado_salida = radicado_instance
+        consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
+
+        payload['radicado'] = radicado.get('radicado')
+        payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+        payload['consecutivo'] = data['data']['consecutivo']
+        documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+        print(f"documento: {documento}")
+        archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+        consecutivo.id_archivo_digital = archivo_digital
+        consecutivo.variables = payload
+        consecutivo.save() 
+        serializer = self.serializer_class(consecutivo)
+        return Response({
+            'success': True,
+            'detail': 'Se ha generado el documento exitosamente.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)
+        
+    def ActualizarDoc(self, request, payload, id_consecutivo):
+        try:
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+            ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                if request.data.get('cod_tipo_radicado'):
+                    data_radicado = {
+                        "current_date": datetime.now(),
+                        "id_persona": request.user.persona.id_persona,
+                        "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+                    }
+                    radicado = self.GenerarRadicado(data_radicado)
+                    radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+                    consecutivo.id_radicado = radicado_instance
+                    consecutivo.fecha_radicado = radicado.get('fecha_radicado')
+                    payload['radicado'] = radicado.get('radicado')
+                    payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+
+                archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=consecutivo.id_archivo_digital.id_archivo_digital)
+
+                if consecutivo.variables:    
+                    payload.update(consecutivo.variables)
+                documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
+                id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
+                consecutivo.id_archivo_digital = id_archivo_digital
+                consecutivo.variables = payload
+                consecutivo.save()
+
+                os.remove(ruta_archivo)
+                archivo_digital.delete()
+
+                serializer = self.serializer_class(consecutivo)
+              
+
+                return serializer.data
+
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+    
+    def ActualizarDocCargado(self, request, payload, id_consecutivo):
+        try:
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+            ruta_archivo = consecutivo.id_archivo_digital.ruta_archivo.path if consecutivo.id_archivo_digital else None
+            print(ruta_archivo)
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                if request.data.get('consecutivo'):
+                    request.data['plantilla'] = consecutivo.id_plantilla_doc.id_plantilla_doc
+                    consecutivo_generado = self.consecutivo(request, consecutivo.id_archivo_digital).data
+                    print(consecutivo_generado)
+                    payload['consecutivo'] = consecutivo_generado['data']['consecutivo']
+                    consecutivo.delete()
+                    consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = consecutivo_generado['data']['id_consecutivo'])
+
+                if request.data.get('cod_tipo_radicado'):
+                    data_radicado = {
+                        "current_date": datetime.now(),
+                        "id_persona": request.user.persona.id_persona,
+                        "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+                    }
+                    radicado = self.GenerarRadicado(data_radicado)
+                    radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+                    consecutivo.id_radicado = radicado_instance
+                    consecutivo.fecha_radicado = radicado.get('fecha_radicado')
+                    payload['radicado'] = radicado.get('radicado')
+                    payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+
+
+                if consecutivo.variables:    
+                    payload.update(consecutivo.variables)
+
+                print(consecutivo.id_plantilla_doc.id_plantilla_doc)
+                documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
+                id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
+                consecutivo.id_archivo_digital_copia = id_archivo_digital
+                consecutivo.variables = payload
+                consecutivo.save()
+
+                serializer = self.serializer_class(consecutivo)
+              
+
+                return serializer.data
+
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+        
+    def Notificaciones(self, request, current_date, persona):
+        payload = request.data.get('payload')
+        data_radicado = {
+            "current_date": current_date,
+            "id_persona": persona.id_persona,
+            "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+        }
+        consecutivo = None
+        if request.data.get('consecutivo'):
+            data = self.consecutivo(request, None).data
+            payload['consecutivo'] = data['data']['consecutivo']
+            consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data['data']['id_consecutivo'])
+
+            if request.data.get('radicado'):
+                radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+                consecutivo.id_radicado = radicado_instance
+                consecutivo.fecha_radicado = radicado_instance.fecha_radicado
+                payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+            consecutivo.variables = payload
+            documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+            consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.save()
+            print("holiiiiii")
+
+            if not data['success']:
+                raise ValidationError('No se ha podido generar el consecutivo.')
+            
+        else:
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.data.get('plantilla'))
+            consecutivo = ConsecutivoTipologia.objects.create(
+                id_unidad_organizacional = request.user.persona.id_unidad_organizacional_actual,
+                id_plantilla_doc = plantilla,
+                id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                id_persona_genera = request.user.persona,
+                fecha_consecutivo = current_date,  
+            )
+
+            if request.data.get('radicado'):
+                radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+
+                consecutivo.id_radicado = radicado_instance
+                consecutivo.fecha_radicado = radicado.get('fecha_radicado')
+
+                payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
+            documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
+            consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.variables = payload
+            consecutivo.save()    
+        serializer = self.serializer_class(consecutivo)
+        return Response({
+            'success': True,
+            'detail': 'Se ha generado el documento exitosamente.',
+            'data': serializer.data
+        }, status=status.HTTP_201_CREATED)   
+        
+            
+        
+    def SubirDocumento(self, request, archivo, current_date, persona):
+        try:
+          
+            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=request.get('plantilla'))
+            ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+
+                payload = request.get('payload')
+
+                # Crear el archivo digital
+                ruta = os.path.join("home", "BIA", "Otros", "Documentos")
+
+                md5_hash = hashlib.md5()
+                for chunk in archivo.chunks():
+                    md5_hash.update(chunk)
+                
+                md5_value = md5_hash.hexdigest()
+
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
+                    
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo,  archivo)
+
+                data_consecutivo = self.consecutivo(request, respuesta.get('id_archivo_digital')).data
+                payload['consecutivo'] = data_consecutivo['data']['consecutivo']
+
+                #Radicado
+                data_radicado = {
+                    "current_date": current_date,
+                    "id_persona": persona.id_persona,
+                    "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
+                }
+                radicado = self.GenerarRadicado(data_radicado)
+                radicado_instance = get_object_or_404(T262Radicados, id_radicado = radicado.get('id_radicado'))
+
+                consecutivo = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia = data_consecutivo['data']['id_consecutivo'])
+                consecutivo.id_radicado_salida = radicado_instance
+                consecutivo.fecha_radicado_salida = radicado.get('fecha_radicado')
+                consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = respuesta.get('id_archivo_digital'))
+                consecutivo.variables = payload
+
+                payload['radicado'] = radicado.get('radicado')
+                payload['fecha_radicado'] = radicado.get('fecha_radicado')
+
+                doc = DocxTemplate(respuesta.get('ruta_archivo'))
+                doc.render(payload)
+
+               
+                serializer = self.serializer_class(consecutivo)
+
+                return Response({
+                    'success': True,
+                    'detail': 'Se ha generado el documento exitosamente.',
+                    'data': serializer.data
+                }, status=status.HTTP_201_CREATED)
+                return respuesta
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+        
+
+    #def GenerarDocsNotificaciones(self, request):      
+class ValidarFirmaCreate(generics.CreateAPIView):
+    serializer_class = VerificacionFirmasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        persona = request.user.persona
+        
+        consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=request.data.get('id_consecutivo'))
+        if not consecutivo_tipologia:
+            raise NotFound('No se encontró el consecutivo ingresado')
+        
+        
+        verification_code = secrets.randbelow(10**6)
+        verification_code_str = f'{verification_code:06}'
+        
+        # GUARDAR O ACTUALIZAR REGISTRO EN T270
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        
+        if doble_verificacion:
+            segundos = (datetime.now() - doble_verificacion.fecha_hora_codigo).total_seconds()
+            if segundos < 60:
+                raise ValidationError('Debe esperar un minuto antes de solicitar otro código')
+            doble_verificacion.codigo_generado = verification_code_str
+            doble_verificacion.fecha_hora_codigo = datetime.now()
+            doble_verificacion.save()
+        else:
+            DobleVerificacionTmp.objects.create(
+                id_persona_firma=persona,
+                id_consecutivo_tipologia=consecutivo_tipologia,
+                codigo_generado=verification_code_str,
+                fecha_hora_codigo=datetime.now()
+            )
+        
+        # ENVIAR SMS Y/O EMAIL
+        
+        if persona.telefono_celular:
+            sms = f'Ingrese el siguiente código para continuar con el cierre del índice electrónico: {verification_code_str}'
+            Util.send_sms(persona.telefono_celular, sms)
+        
+        if persona.email:
+            subject = "Código de Verificación - "
+            template = "codigo-verificacion-firma.html"
+            print(request.user.nombre_de_usuario)
+            Util.notificacion(persona,subject,template,nombre_de_usuario=request.user.nombre_de_usuario,verification_code_str=verification_code_str)
+        
+        # serializer = self.serializer_class(indice_electronico_exp)
+        return Response({'success':True, 'detail':'Se ha realizado el envío del código de verificación'}, status=status.HTTP_200_OK)
+            
+
+class ValidacionCodigoView(generics.UpdateAPIView):
+    serializer_class = VerificacionFirmasSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request):
+        id_consecutivo = request.data.get('id_consecutivo')
+        codigo = request.data.get('codigo')
+        
+        if not id_consecutivo or not codigo:
+            raise ValidationError('Debe enviar el consecutivo y el código')
+        
+        persona = request.user.persona
+        print(persona.id_persona)
+        current_time = datetime.now()
+        
+        consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
+        if not consecutivo_tipologia:
+            raise NotFound('No se encontró el consecutivo ingresado')
+        
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        print(doble_verificacion)
+        if not doble_verificacion:
+            raise ValidationError('No se encuentra un código para el índice ingresado')
+        
+        minutos = (current_time - doble_verificacion.fecha_hora_codigo).total_seconds() / 60.0
+        if minutos > 5:
+            raise ValidationError('El código ingresado ha expirado')
+        else:
+            if doble_verificacion.codigo_generado != codigo:
+                raise ValidationError('El código es inválido. Intente nuevamente')
+            else:
+                doble_verificacion.verificacion_exitosa = True
+                doble_verificacion.save()
+
+                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        
+                # if not authorization_header:
+                #     raise ValidationError("No se suministro un Token")
+
+                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                # username = request.user.nombre_de_usuario
+                # #token_camunda = self.get_token_camunda(token)
+                # #token_camunda = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE3MDEwNjcxLCJpYXQiOjE3MTY4Mzc4NzEsImp0aSI6ImQ3ZGFjZWQ2Y2VkMzRlZjZiMGFlZTQ3NWI5MWNjOGNlIiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY8OpbiIsIlJvbCBDb25zZXJ2YWNpw7NuIiwiUm9sIEdlc3RvciIsIlJvbCBSZWNhdWRvIiwiUm9sIFJlY3Vyc28iLCJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgU2VndWltaWVudG8gYSBwbGFuZXMiLCJ6Q2FtdW5kYSAtIFJvbCBULUNvbmNlc2nDs24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjacOzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1csOtZGljYS1Db29yZGluYWRvciBvIEzDrWRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIEp1csOtZGljbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0acOzbiBBbWJpZW50YWwtUHJvZmVzaW9uYWwgSnVyw61kaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTMOtZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUp1csOtZGljYSIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzacOzbiBkZSBBZ3VhcyBTdWJ0ZXJyw6FuZWFzIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIE9jdXBhY2nDs24gZGUgQ2F1Y2UiLCJ6Q2FtdW5kYSAtIFJvbCBULVBlcm1pc28gZGUgUHJvc3BlY2Npw7NuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1TdWJkaXJlY3RvcmEgUGxhbmVhY2nDs24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzacOzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXSwidHlwZVBlcnNvbiI6ImZ1bmNpb25hcmlvIiwicHJldmlvdXNUb2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUowYjJ0bGJsOTBlWEJsSWpvaVlXTmpaWE56SWl3aVpYaHdJam94TnpFM01ERXdOamN4TENKcFlYUWlPakUzTVRZNE16YzROekVzSW1wMGFTSTZJbVEzWkdGalpXUTJZMlZrTXpSbFpqWmlNR0ZsWlRRM05XSTVNV05qT0dObElpd2lkWE5sY2w5cFpDSTZNVEV5TENKcFpGOXdaWEp6YjI1aElqb3lNVFVzSW01dmJXSnlaVjlrWlY5MWMzVmhjbWx2SWpvaWMyVm5kWEpwWkdGa0lpd2ljbTlzWlhNaU9sc2lVbTlzSUZWemRXRnlhVzl6SUZkbFlpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGTmxaM1Z5YVdSaFpDSXNJbEp2YkNCQmJHMWhZMXgxTURCbE9XNGlMQ0pTYjJ3Z1EyOXVjMlZ5ZG1GamFWeDFNREJtTTI0aUxDSlNiMndnUjJWemRHOXlJaXdpVW05c0lGSmxZMkYxWkc4aUxDSlNiMndnVW1WamRYSnpieUlzSWxKdmJDQlVjbUZ1YzNabGNuTmhiQ0lzSWxKdmJDQlRaV2QxYVcxcFpXNTBieUJoSUhCc1lXNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRlF0UTI5dVkyVnphVngxTURCbU0yNGdaR1VnUVdkMVlYTWdVM1Z3WlhKbWFXTnBZV3hsY3lJc0lucERZVzExYm1SaElDMGdVbTlzSUZRdFJHVjBaWEp0YVc1aGJuUmxjeUJCYldKcFpXNTBZV3hsY3lCUWNtOXdhV1ZrWVdRZ1VISnBkbUZrWVNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVlZ6ZFdGeWFXOGlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxV1pXNTBZVzVwYkd4aElpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UkdseVpXTmphVngxTURCbU0yNGdSMlZ1WlhKaGJDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRUZuZFdGekxVTnZiM0prYVc1aFpHOXlJRzhnVEZ4MU1EQmxaR1JsY2lJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFRm5kV0Z6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1FXZDFZWE10VUhKdlptVnphVzl1WVd3aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QkJaM1ZoY3kxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFQyWnBZMmx1WVNCS2RYSmNkVEF3WldSa2FXTmhMVU52YjNKa2FXNWhaRzl5SUc4Z1RGeDFNREJsWkdSbGNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFU5bWFXTnBibUVnU25WeVhIVXdNR1ZrWkdsallTMVFjbTltWlhOcGIyNWhiQ0JLZFhKY2RUQXdaV1JrYVdOdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0VDJacFkybHVZU0JLZFhKY2RUQXdaV1JrYVdOaExWQnliMlpsYzJsdmJtRnNJR1JsSUVGd2IzbHZJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFUzVmlJRWRsYzNScFhIVXdNR1l6YmlCQmJXSnBaVzUwWVd3dFEyOXZjbVJwYm1Ga2IzSWlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxVGRXSWdSMlZ6ZEdsY2RUQXdaak51SUVGdFltbGxiblJoYkMxUWNtOW1aWE5wYjI1aGJDQktkWEpjZFRBd1pXUmthV052SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1QzSmtaVzVoYldsbGJuUnZJRlJsY25KcGRHOXlhV0ZzTFVOdmIzSmthVzVoWkc5eUlHOGdURngxTURCbFpHUmxjaUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUU5eVpHVnVZVzFwWlc1MGJ5QlVaWEp5YVhSdmNtbGhiQzFRY205bVpYTnBiMjVoYkNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFOXlaR1Z1WVcxcFpXNTBieUJVWlhKeWFYUnZjbWxoYkMxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFEYjI1alpYTnBYSFV3TUdZemJpQmtaU0JCWjNWaGN5QlRkV0owWlhKeVhIVXdNR1V4Ym1WaGN5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JQWTNWd1lXTnBYSFV3TUdZemJpQmtaU0JEWVhWalpTSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JRY205emNHVmpZMmxjZFRBd1pqTnVJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFRWlhKdGFYTnZJR1JsSUZabGNuUnBiV2xsYm5SdmN5QmhiQ0JUZFdWc2J5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVaMWJtTnBiMjVoY21sdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UVdSdGFXNXBjM1J5WVdSdmNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRTl5WkdWdVlXMXBaVzUwYnlCVVpYSnlhWFJ2Y21saGJDMUpibWRsYm1sbGNtOGdaR1VnVW1WMmFYTnBYSFV3TUdZemJpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFZOMVlpQkhaWE4wYVZ4MU1EQm1NMjRnUVcxaWFXVnVkR0ZzTFZOMVltUnBjbVZqZEc5eVlTQlFiR0Z1WldGamFWeDFNREJtTTI0aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QlRkV1ZzYjNNdFEyOXZjbVJwYm1Ga2IzSWdieUJNWEhVd01HVmtaR1Z5SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFZCeWIyWmxjMmx2Ym1Gc0lpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UjNKMWNHOGdVM1ZsYkc5ekxVcDFjbHgxTURCbFpHUnBZMkVpTENKNlEyRnRkVzVrWVNBdElISnZiR0Z6WkNJc0lucERZVzExYm1SaElDMGdVbTlzSUZCeWRXVmlZU0I2UXlJc0lsSnZiQ0JHZFc1amFXOXVZWEpwYnlJc0lsSnZiQ0JEYVhWa1lXUmhibThpTENKU2Iyd2dRV1J0YVc1cGMzUnlZV1J2Y2lJc0lsSnZiQ0JCWkcxdmJpSXNJbEp2YkNCT2IzUnBabWxqWVdOcGIyNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUVGbmRXRnpMVkJ5YjJabGMybHZibUZzTFZSbFkyNXBZMjhpTENKNlEyRnRkVzVrWVNBdElGSnZiQ0JCWTNSdmNpMUpiblJsY205d1pYSmhZbWxzYVdSaFpDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVsdWRHVnliM0JsY21GaWFXeHBaR0ZrSUZabGJuUmhibWxzYkdFaVhYMC5kWmw0XzU3VVk1b20wUzllRTBQYkNhMXlnVzdveEpzME05SUdoT2FxNEkwIiwiaWRQZXJzb24iOjIxNSwiZS1tYWlsIjoiYnJheWFuLmJhcnJhZ2FuQHVuaWxsYW5vcy5lZHUuY28ifQ."
+                # data = self.get_firmas_funcionarios_sasoft(username,token_camunda)
+
+                # #img = base64.b64decode(data['contentFile'])
+
+                # if not data:
+                #     raise ValidationError("Algo salio mal")
+                finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
+            
+        if finalizo:
+            ruta = r'{}{}{}'.format(MEDIA_ROOT, os.sep, consecutivo_tipologia.id_archivo_digital.ruta_archivo.name)#r'C:\Users\stive\OneDrive\Documents\Brayan\macarenia\backendlocal\backend-bia\backend-bia\static\media\home\BIA\Otros\Documentos\9f27e8deb5f100441fc1.docx'#r'{}{}{}'.format(MEDIA_ROOT, os.sep, consecutivo_tipologia.id_archivo_digital.ruta_archivo.name).replace('\\', '\\\\')
+            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            print(pdf)
+            
+            return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
+        else:
+            return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
+        
+    
+
+    def convert_word_to_pdf(self, word_file_path, consecutivo_tipologia):
+        # Command to convert Word to PDF using LibreOffice
+        ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
+
+        command = ['soffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+
+        try:
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            if result.returncode != 0:
+                raise Exception('Error converting Word to PDF: {}'.format(result.stderr.decode('utf-8')))
+            
+            print(result.returncode)
+
+            # Get the name of the PDF file
+            pdf_file_name = '{}.pdf'.format(os.path.splitext(os.path.basename(word_file_path))[0])
+
+            print(pdf_file_name)
+
+            # Get the path of the PDF file
+            pdf_file_path = os.path.join(r'home{}BIA{}Otros{}Documentos'.format(os.sep, os.sep, os.sep), pdf_file_name)
+
+            print(pdf_file_path)
+
+            archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=consecutivo_tipologia.id_archivo_digital.id_archivo_digital)
+            archivo_digital.ruta_archivo = pdf_file_path
+            archivo_digital.formato = 'pdf'
+            archivo_digital.save()
+
+            # Read the PDF file
+            # with open(pdf_file_path, 'rb') as file:
+            #     print("Aqui")
+            #     pdf_file_data = file.read()
+
+            return result 
+        except FileNotFoundError:
+            raise ValidationError('LibreOffice is not installed')
+        except Exception as e:
+            raise ValidationError('Error converting Word to PDF: {}'.format(str(e)))
+    
+    def DocumentoFinalizado(self, request, consecutivo_tipologia):
+
+        asignaciones = get_list_or_404(AsignacionDocs, id_consecutivo=consecutivo_tipologia.id_consecutivo_tipologia)
+        print("es aqui") 
+
+        validar = []    
+        for asignacion in asignaciones:
+            if asignacion.firma:
+                persona_firma = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=asignacion.id_persona_asignada.id_persona).first()
+                if persona_firma:
+                    if persona_firma.verificacion_exitosa:
+                        validar.append(True)
+                    else:
+                        validar.append(False)
+                else:
+                    validar.append(False)
+        if False in validar:
+            return False
+        else:
+            consecutivo_tipologia.finalizado = True
+            consecutivo_tipologia.save()
+            return True
+        
+    def get_token_camunda(self,token):
+
+        auth_headers = {
+            "accept": "*/*",
+            "Content-Type": "application/json"
+        }   
+        #TOKEN PARA SASOFTCO
+        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+
+        payload={
+            "access": token
+        }
+
+        print(token)
+        
+        try:
+            response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            print("pase")
+            data = response.json()  # Convertimos los datos a JSON
+            print(data)
+            
+            if 'userinfo' in data:
+                if 'userinfo' in data['userinfo']:
+                    info = data['userinfo']['userinfo']
+
+                    token = info['tokens']['access']
+                    print(token)
+                    return token
+            return None
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
+
+
+    def get_firmas_funcionarios_sasoft(self,username,token):
+
+        print(username)
+        url = "https://backendclerkapi.sedeselectronicas.com/api/Documents/download-signature-by-username/"+username
+        headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+
+        try:
+            response = requests.get(url,headers=headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()  # Convertimos los datos a JSON
+            
+            print(data)
+            return data
+        except requests.RequestException as e:
+            print(f"Error en la solicitud: {e}")
+            return None  # Manejo de errores de solicitud
+    
+
+class DocumentosFinalizadosList(generics.ListAPIView):
+    serializer_class = ConsecutivoTipologiaDocFinalizadosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        persona = request.user.persona
+        print(persona.id_persona)
+        consecutivos = ConsecutivoTipologia.objects.all()
+        consecutivos = consecutivos.filter(id_persona_genera=persona.id_persona)
+        consecutivos = consecutivos.filter(finalizado= True)
+        serializer = self.serializer_class(consecutivos, many=True)
+        return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class SubirDocumentoAlGenerador(generics.CreateAPIView):
+    serializer_class = ConsecutivoTipologiaDocSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        archivo = request.FILES.get('archivo')
+        data = json.loads(request.data.get('data'))
+        fecha_actual = datetime.now()
+        persona = request.user.persona
+
+        plantilla = PlantillasDoc.objects.filter(id_plantilla_doc=data.get('plantilla')).first()
+        if not plantilla:
+            raise ValidationError('No se encontró la plantilla ingresada')
+        
+
+        if archivo:
+            archivo_creado = self.crear_archivos(archivo, fecha_actual).data
+            print(archivo_creado)
+            archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=archivo_creado['data']['id_archivo_digital'])
+            consecutivo_tipologia = ConsecutivoTipologia.objects.create(
+                id_unidad_organizacional = persona.id_unidad_organizacional_actual,
+                id_plantilla_doc = plantilla,  
+                id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                id_persona_genera= persona,
+                id_archivo_digital= archivo_digital,
+                finalizado= False
+            )
+
+            serializer = self.serializer_class(consecutivo_tipologia)
+
+            return Response({
+                'success': True,
+                'detail': 'Se ha generado el documento exitosamente.',
+                'data': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            raise ValidationError("No se puede crear anexos sin archivo adjunto")
+            
+    def crear_archivos(self, uploaded_file, fecha_creacion):
+        #Valida extensión del archivo
+        nombre=uploaded_file.name
+            
+        extension = os.path.splitext(nombre)
+        extension_sin_punto = extension[1][1:] if extension[1].startswith('.') else extension
+        if not extension_sin_punto:
+            raise ValidationError("No fue posible registrar el archivo")
+        
+        formatos=FormatosTiposMedio.objects.filter(nombre__iexact=extension_sin_punto,activo=True).first()
+        if not formatos:
+            raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = fecha_creacion.year
+        ruta = os.path.join("home", "BIA", "Otros", "GDEA", "Anexos_PQR", str(current_year))
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': False,
+            'ruta': ruta,
+        }
+        
+        archivos_Digitales = ArchivosDgitalesCreate()
+        archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
+        return archivo_creado
+    
+

@@ -120,6 +120,11 @@ class PQRSDFPanelSerializer(serializers.ModelSerializer):
     denuncia = serializers.SerializerMethodField()
     anexos = serializers.SerializerMethodField()
     tipo_pqrsdf_descripcion = serializers.SerializerMethodField()
+    info_persona_titular = serializers.SerializerMethodField()
+
+    def get_info_persona_titular(self, obj):
+        persona = Personas.objects.filter(id_persona = obj.id_persona_titular_id).first()
+        return PersonaSerializerGet(persona).data
 
 
     def get_denuncia(self, obj):
@@ -162,6 +167,7 @@ class PQRSDFPanelSerializer(serializers.ModelSerializer):
             'cod_tipo_PQRSDF': representation['cod_tipo_PQRSDF'],
             'tipo_pqrsdf_descripcion': representation['tipo_pqrsdf_descripcion'],  # Nueva línea
             'id_persona_titular': representation['id_persona_titular'],
+            'info_persona_titular': representation['info_persona_titular'],  # Nueva línea
             'id_persona_interpone': representation['id_persona_interpone'],
             'cod_relacion_con_el_titular': representation['cod_relacion_con_el_titular'],
             'es_anonima': representation['es_anonima'],
@@ -538,6 +544,11 @@ class PersonaSerializer(serializers.ModelSerializer):
             'primer_nombre',
             'primer_apellido'
         ]
+
+class PersonaSerializerGet(serializers.ModelSerializer):
+    class Meta:
+        model = Personas
+        fields = '__all__'
 
 
 class UnidadOrganizacionalSerializer(serializers.ModelSerializer):

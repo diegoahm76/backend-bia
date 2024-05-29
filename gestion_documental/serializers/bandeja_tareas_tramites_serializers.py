@@ -10,7 +10,7 @@ from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQ
 from datetime import timedelta
 from datetime import datetime
 from gestion_documental.serializers.bandeja_tareas_serializers import UnidadOrganizacionalBandejaTareasSerializer
-from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, SolicitudesTramites
+from tramites.models.tramites_models import ActosAdministrativos, PermisosAmbSolicitudesTramite, SolicitudesTramites
 from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -349,6 +349,11 @@ class ReasignacionesTareasTramitesCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReasignacionesTareas
         fields = '__all__'
+
+class ActosAdministrativosCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActosAdministrativos
+        fields ='__all__'
 
 
 class ReasignacionesTareasgetTramitesByIdSerializer(serializers.ModelSerializer):

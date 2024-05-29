@@ -1,6 +1,8 @@
 from conservacion.utils import UtilConservacion
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarCierreSolicitudesViverosNoDisponibilidad, PermisoActualizarSolicitudesPlantasInsumosViveros, PermisoAnularSolicitudesPlantasInsumosViveros, PermisoCrearCierreSolicitudesViverosNoDisponibilidad, PermisoCrearSolicitudesPlantasInsumosViveros
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
@@ -185,7 +187,7 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
         #ASIGNACIÓN DE INFORMACIÓN EN JSON Y EN VARIABLES CORRESPONDIENTES
         data_solicitud = json.loads(request.data['data_solicitud'])
         data_items_solicitud = json.loads(request.data['data_items_solicitados'])
-        data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_tecnico')
+        archivo_soporte = request.FILES.get('ruta_archivo_tecnico')
         data_solicitud['id_persona_solicita'] = persona_logeada.id_persona
         data_solicitud['id_unidad_org_del_solicitante'] = persona_logeada.id_unidad_organizacional_actual.id_unidad_organizacional
         data_solicitud['fecha_solicitud'] = datetime.now()
@@ -281,6 +283,13 @@ class CreateSolicitudViverosView(generics.CreateAPIView):
                 bien.saldo_disponible = UtilConservacion.get_saldo_disponible_solicitud_viveros(bien_in_inventario)    
                 if not bien.saldo_disponible > 0:
                     raise PermissionDenied (f'El bien {bien.nombre} de tipo insumo no tiene cantidades disponibles para solicitar')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "SolicitudesViveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_solicitud['ruta_archivo_info_tecnico'] = archivo_creado_instance.id_archivo_digital
 
         serializer = self.serializer_class(data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)
@@ -531,7 +540,7 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
 
     def update_maestro(self, request, id_solicitud):
         data_solicitud = json.loads(request.data['data_solicitud'])
-        data_solicitud['ruta_archivo_info_tecnico'] = request.FILES.get('ruta_archivo_info_tecnico')
+        archivo_soporte = request.FILES.get('ruta_archivo_info_tecnico')
 
         #VALIDACIÓN QUE LA PERSONA QUE HACE LA SOLICITUD TENGA UNIDAD ORGANIZACIONAL Y SEA USUARIO INTERNO
         usuario_logeado = request.user
@@ -577,6 +586,20 @@ class UpdateSolicitudesView(generics.UpdateAPIView):
         if solicitud_act.fecha_retiro_material != fecha_strp:
             if solicitud_act.fecha_retiro_material > fecha_strp:
                 raise PermissionDenied('La fecha seleccionada no es superior a la existente')
+            
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if solicitud_act.ruta_archivo_info_tecnico:
+                solicitud_act.ruta_archivo_info_tecnico.ruta_archivo.delete()
+                solicitud_act.ruta_archivo_info_tecnico.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "SolicitudesViveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_solicitud['ruta_archivo_info_tecnico'] = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and solicitud_act.ruta_archivo_info_tecnico:
+        #     solicitud_act.ruta_archivo_info_tecnico.ruta_archivo.delete()
+        #     solicitud_act.ruta_archivo_info_tecnico.delete()
 
         serializer = self.serializer_class(solicitud_act, data=data_solicitud, many=False)
         serializer.is_valid(raise_exception=True)

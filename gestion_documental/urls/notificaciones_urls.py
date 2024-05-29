@@ -15,6 +15,8 @@ urlpatterns = [
     path('get-notificacion/<int:id_notificacion_correspondencia>/', views.GetNotificacionesCorrespondeciaAnexos.as_view(),name='get-notificaion'),
     path('get-tarear-funcionario/', views.ListaTareasFuncionario.as_view(),name='get-tareas-funcionario'),
     path('update-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaCorrespondenciaUpdate.as_view(),name='update-tarea'),
+    path('update-estado-tarea/<int:pk>/', views.RegistrosNotificacionesCorrespondenciaEstadoUpdate.as_view(),name='update-tarea-estado'),
+    path('update-estado-notificacion/<int:pk>/', views.SolicitudNotificacionesCorrespondenciaEstadoUpdate.as_view(),name='update-solicitud-estado'),
 
     path('cancelar-asignacion-notificacion/<int:pk>/', views.CancelarAsignacionNotificacion.as_view(),name='cancelar-asignacion-notificacion'),
     path('cancelar-asignacion-tarea/<int:pk>/', views.CancelarAsignacionTarea.as_view(),name='cancelar-asignacion-tarea'),
@@ -56,7 +58,8 @@ urlpatterns = [
 
     # Pagina Gaceta
     path('get-datos-notificacion-gaceta/<int:id_registro_notificacion>/', views.DatosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-gaceta'),
-    path('get-datos-notificacion-anexos-gaceta/<int:id_registro_notificacion>/', views.AnexosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-anexos-gaceta'),
+    path('get-datos-notificacion-anexos-gaceta/<int:id_notificacion>/', views.AnexosNotificacionGacetaGet.as_view(),name='get-datos-notificacion-anexos-gaceta'),
+    path('get-datos-notificacion-anexos-registro/<int:id_registro_notificacion>/', views.AnexosNotificacionRegistroGet.as_view(),name='get-datos-notificacion-anexos-registro'),
     path('get-tipos-anexos-gaceta/<int:id_tipo_notificacion>/', views.TipoAnexosSoporteGacetaGet.as_view(),name='get-tipos-anexos-gaceta'),
     path('get-causas-o-anomalias-gaceta/<int:id_tipo_notificacion>/', views.CausasOAnomaliasGacetaGet.as_view(),name='get-causas-o-anomalias-gaceta'),
     path('create-soportes-anexos-gaceta/', views.AnexosSoporteGacetaCreate.as_view(),name='create-soportes-anexos-gaceta'),

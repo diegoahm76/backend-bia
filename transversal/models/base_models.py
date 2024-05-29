@@ -237,7 +237,7 @@ class HistoricoCambiosIDPersonas (models.Model):
     id_persona = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T024Id_Persona')
     nombre_campo_cambiado = models.CharField(max_length=255, db_column='T024nombreCampoCambiado')
     valor_campo_cambiado = models.CharField(max_length=255, db_column='T024valorCampoCambiado')
-    ruta_archivo_soporte = models.FileField(upload_to='transversal/modificacion_campos_restringidos/', max_length=255, blank=True, null=True, db_column='T024rutaArchivoSoporte')
+    ruta_archivo_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T024rutaArchivoSoporte')
     fecha_cambio = models.DateTimeField(auto_now=True, db_column='T024fechaCambio')
     justificacion_cambio = models.CharField(max_length=255, db_column='T024justificacionCambio') 
 

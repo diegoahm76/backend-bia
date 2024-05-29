@@ -22,6 +22,8 @@ from conservacion.utils import UtilConservacion
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarCambioEtapaMaterialVegetal, PermisoAnularCambioEtapaMaterialVegetal, PermisoCrearCambioEtapaMaterialVegetal
 
 class FiltroMaterialVegetal(generics.ListAPIView):
@@ -65,6 +67,7 @@ class GuardarCambioEtapa(generics.CreateAPIView):
     def post(self,request):
         data = request.data
         data._mutable = True
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         
         data['consec_por_lote_etapa'] = 0
         serializador = self.serializer_class(data=data)
@@ -186,6 +189,13 @@ class GuardarCambioEtapa(generics.CreateAPIView):
                 consec_por_lote_etapa_p = cambio_etapa_p.consec_por_lote_etapa + 1
             
             data['consec_por_lote_etapa'] = consec_por_lote_etapa_p
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CambiosDeEtapa")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
             
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
@@ -254,6 +264,8 @@ class ActualizarCambioEtapa(generics.UpdateAPIView):
     
     def put(self,request,pk):
         data = request.data
+        data._mutable=True
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         cambio_etapa = self.queryset.all().filter(id_cambio_de_etapa=pk).first()
         if cambio_etapa:
             # VALIDAR ANTIGUEDAD POSIBLE DE FECHA CAMBIO
@@ -330,6 +342,20 @@ class ActualizarCambioEtapa(generics.UpdateAPIView):
                     
                     inventario_vivero_etapa_nueva.cantidad_entrante = inventario_vivero_etapa_nueva.cantidad_entrante - cantidad_disminuida if inventario_vivero_etapa_nueva.cantidad_entrante else 0
                     inventario_vivero_etapa_nueva.save()
+
+            # ACTUALIZAR ARCHIVO
+            if archivo_soporte:
+                if cambio_etapa.ruta_archivo_soporte:
+                    cambio_etapa.ruta_archivo_soporte.ruta_archivo.delete()
+                    cambio_etapa.ruta_archivo_soporte.delete()
+
+                archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "CambiosDeEtapa")
+                archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+                
+                data['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
+            # elif not archivo_soporte and cambio_etapa.ruta_archivo_soporte:
+            #     cambio_etapa.ruta_archivo_soporte.ruta_archivo.delete()
+            #     cambio_etapa.ruta_archivo_soporte.delete()
             
             serializador = self.serializer_class(cambio_etapa, data=data)
             serializador.is_valid(raise_exception=True)

@@ -1,5 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarDespachoViveros, PermisoActualizarRecepcionDistribucionDespachosEntrantesVivero, PermisoAnularDespachoViveros, PermisoCrearDespachoViveros, PermisoCrearRecepcionDistribucionDespachosEntrantesVivero
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
@@ -259,7 +261,7 @@ class CreateDespacho(generics.UpdateAPIView):
         user_logeado = request.user
         info_despacho = json.loads(datos_ingresados['info_despacho'])
         items_despacho = json.loads(datos_ingresados['items_despacho'])
-        info_despacho['ruta_archivo_con_recibido'] = request.FILES.get('ruta_archivo_con_recibido')
+        archivo_soporte = request.FILES.get('ruta_archivo_con_recibido')
         queryset = self.queryset.all()
         
         #Validaciones de la solicitud
@@ -417,6 +419,13 @@ class CreateDespacho(generics.UpdateAPIView):
             "nro_posicion_en_despacho" : None
             })
         
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "DespachoViveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            info_despacho['ruta_archivo_con_recibido'] = archivo_creado_instance.id_archivo_digital
+
         serializer = self.serializer_class(data=info_despacho)
         serializer.is_valid(raise_exception=True)
         aux_ultimo = serializer.save()
@@ -474,19 +483,15 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
     
     def put(self, request):
         datos_ingresados = request.data
-        user_logeado = request.user
         info_despacho = json.loads(datos_ingresados['info_despacho'])
         items_despacho = json.loads(datos_ingresados['items_despacho'])
-        info_despacho['ruta_archivo_con_recibido'] = request.FILES.get('ruta_archivo_con_recibido')
-        queryset = self.queryset.all()
+        archivo_soporte = request.FILES.get('ruta_archivo_con_recibido')
      
         items_nuevos = []
         items_actualizar = []
         items_eliminar = []
         valores_eliminados_detalles = []
         valores_actualizados_detalles = []
-        aux_valores_repetidos = []
-        aux_nro_posicion = []
 
         instancia_despacho = DespachoViveros.objects.filter(id_despacho_viveros=info_despacho['id_despacho_viveros']).first()
 
@@ -596,10 +601,7 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
         aux_cantidad_total = {}
 
         aux_validacion_bienes_despachados_repetidos = [[i.id_bien.id_bien, i.agno_lote, i.nro_lote, i.agno_lote] for i in items_existentes]
-        aux_nro_posicion = []
-        aux_valores_repetidos = []
-        valores_creados_detalles = [] 
-        aux_nro_posicion = [i.nro_posicion_en_despacho for i in items_existentes]   
+        valores_creados_detalles = []
         for i in items_nuevos:
             # SE VALIDA QUE EL BIEN A DESPACHAR SE ENCUENTRE DENTRO DE LA SOLICITUD
             bien_despachado = i.get('id_bien')
@@ -757,6 +759,20 @@ class UpdatePreparacionMezclas(generics.UpdateAPIView):
                     instancia_bien_vivero.save()
 
 #----------------------------------------------------> SE GUARDAN LOS VALORES DEL MAESTRO Y SE INSERTAN Y/O ACTUALIZAN Y/O ELIMININAN LOS ITEMS <----------------------------#
+
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if instancia_despacho.ruta_archivo_con_recibido:
+                instancia_despacho.ruta_archivo_con_recibido.ruta_archivo.delete()
+                instancia_despacho.ruta_archivo_con_recibido.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "DespachoViveros")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            instancia_despacho.ruta_archivo_con_recibido = archivo_creado_instance.id_archivo_digital
+        # elif not archivo_soporte and instancia_despacho.ruta_archivo_con_recibido:
+        #     instancia_despacho.ruta_archivo_con_recibido.ruta_archivo.delete()
+        #     instancia_despacho.ruta_archivo_con_recibido.delete()
 
         # SE GUARDAN LOS DATOS ACTUALIZADOS DEL MAESTRO DE LA PREPARACIÓN
         instancia_despacho.motivo = info_despacho['motivo']

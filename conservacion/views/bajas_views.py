@@ -1,5 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarBajasHerramientasInsumosSemillas, PermisoAnularBajasHerramientasInsumosSemillas, PermisoCrearBajasHerramientasInsumosSemillas
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
@@ -48,7 +50,7 @@ class CreateBajasVivero(generics.UpdateAPIView):
         datos_ingresados = request.data
         info_baja = json.loads(datos_ingresados['info_baja'])
         items_baja = json.loads(datos_ingresados['items_baja'])
-        info_baja['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         user_logeado = request.user
         
         # SE OBTIENE EL ÚLTIMO NÚMERO DE TRASLADO DISPONIBLE
@@ -126,6 +128,13 @@ class CreateBajasVivero(generics.UpdateAPIView):
             aux_nro_posicion.append(i['nro_posicion'])
             aux_valores_repetidos.append(i['id_bien'])
             valores_creados_detalles.append({'nombre' : instancia_bien.nombre})
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "BajasVivero")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            info_baja['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
         
         # SE CREA EL REGISTRO EN LA TABLA TRASLADOS
         serializer_crear = self.serializer_class(data=info_baja, many=False)
@@ -177,8 +186,7 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
         datos_ingresados = request.data
         info_baja = json.loads(datos_ingresados['info_baja'])
         items_baja = json.loads(datos_ingresados['items_baja'])
-        info_baja['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
-        user_logeado = request.user
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         items_nuevos = []
         items_actualizar = []
         items_eliminar = []
@@ -312,9 +320,22 @@ class ActualizarBajasVivero(generics.UpdateAPIView):
             serializer_crear_items.save()
             valores_actualizados_detalles.append({'descripcion': {'nombre' : instancia_item_baja.id_bien.nombre},'previous':previous_instancia_item,'current':instancia_item_baja})
 
+        # ACTUALIZAR ARCHIVO
+        if archivo_soporte:
+            if instancia_baja.ruta_archivo_soporte:
+                instancia_baja.ruta_archivo_soporte.ruta_archivo.delete()
+                instancia_baja.ruta_archivo_soporte.delete()
+
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "BajasVivero")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            instancia_baja.ruta_archivo_soporte = archivo_creado_instance
+        # elif not archivo_soporte and instancia_baja.ruta_archivo_soporte:
+        #     instancia_baja.ruta_archivo_soporte.ruta_archivo.delete()
+        #     instancia_baja.ruta_archivo_soporte.delete()
+
         # SE ACTUALIZA EL REGISTRO EN LA TABLA TRASLADOS
         instancia_baja.motivo = info_baja['motivo']
-        instancia_baja.ruta_archivo_soporte = info_baja['ruta_archivo_soporte']
         instancia_baja.save()
         # SE ASIGNA EL ID TRASLADO A LOS ITEMS A TRASLADAR
         for i in items_nuevos:

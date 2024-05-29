@@ -46,9 +46,21 @@ class EntradasInventarioGetView(generics.ListAPIView):
         data_output = []
         
         if items_entradas:
-            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "responsable_bodega"))
+            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", 
+                                                                                 "nombre_bodega", 
+                                                                                 "id_bien", 
+                                                                                 "nombre_bien", 
+                                                                                 "codigo_bien", 
+                                                                                 "responsable_bodega",
+                                                                                 "nombre_proveedor"))
                 
-            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "responsable_bodega")):
+            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", 
+                                                                                                "nombre_bodega", 
+                                                                                                "id_bien", 
+                                                                                                "nombre_bien", 
+                                                                                                "codigo_bien", 
+                                                                                                "responsable_bodega",
+                                                                                                "nombre_proveedor")):
                 detalles = list(items)
                 
                 for detalle in detalles:
@@ -58,6 +70,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
                     del detalle['nombre_bien']
                     del detalle['codigo_bien']
                     del detalle['responsable_bodega']
+                    del detalle['nombre_proveedor']
                     
                 items_data = {
                     "id_bodega": entrada[0],
@@ -67,6 +80,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
                     "codigo_bien": entrada[4],
                     "cantidad_ingresada_total": sum(item['cantidad'] for item in detalles),
                     "responsable_bodega": entrada[5],
+                    "nombre_proveedor": entrada[6],
                     "detalle": detalles
                 }
                 
@@ -92,7 +106,7 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                         filter['id_entrada_almacen__fecha_entrada__lte'] = value
             elif key == 'categoria':
                 if value != '':
-                    filter['id_bien__cod_tipo_activo__cod_tipo_activo'] = value
+                    filter['id_bien__cod_tipo_bien'] = value
             else:
                 if value != '':
                     filter[key] = value
@@ -104,9 +118,33 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
         data_output = []
 
         if items_entradas:
-            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo","codigo_activo_nombre",'codigo_activo'))
+            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", 
+                                                                                 "nombre_bodega", 
+                                                                                 "id_bien", 
+                                                                                 "nombre_bien", 
+                                                                                 "codigo_bien", 
+                                                                                 "tipo_activo",
+                                                                                 "codigo_activo_nombre",
+                                                                                 'codigo_activo',
+                                                                                 "cod_estado",
+                                                                                 "codigo_estado_nombre",
+                                                                                 'id_responsable',
+                                                                                 "nombre_responsable",
+                                                                                 "apellido_responsable"))
 
-            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", "nombre_bodega", "id_bien", "nombre_bien", "codigo_bien", "tipo_activo","codigo_activo_nombre",'codigo_activo')):
+            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega",
+                                                                                                 "nombre_bodega", 
+                                                                                                 "id_bien", 
+                                                                                                 "nombre_bien", 
+                                                                                                 "codigo_bien", 
+                                                                                                 "tipo_activo",
+                                                                                                 "codigo_activo_nombre",
+                                                                                                 'codigo_activo',
+                                                                                                 "cod_estado",
+                                                                                                 "codigo_estado_nombre",
+                                                                                                 'id_responsable',
+                                                                                                 "nombre_responsable",
+                                                                                                 "apellido_responsable")):
                 items_list = list(items)
 
                 items_data = {
@@ -118,12 +156,18 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     "tipo_activo": entrada[5],
                     "codigo_activo_nombre": entrada[6],
                     "codigo_activo": entrada[7],
+                    "codigo_estado": entrada[8],
+                    "codigo_estado_nombre": entrada[9],
+                    "id_responsable": entrada[10],
+                    "nombre_responsable": entrada[11],
+                    "apellido_responsable": entrada[12],
                     "cantidad_ingresada": sum(item['cantidad'] for item in items_list)
                 }
 
                 data_output.append(items_data)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
+
 
 class MantenimientosRealizadosGetView(generics.ListAPIView):
     serializer_class=MantenimientosRealizadosGetSerializer
@@ -154,6 +198,7 @@ class MantenimientosRealizadosGetView(generics.ListAPIView):
 
 class BusquedaGeneralInventario(generics.ListAPIView):
     serializer_class = InventarioSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Inventario.objects.all()
@@ -189,6 +234,7 @@ class BusquedaGeneralInventario(generics.ListAPIView):
 
 class BusquedaVehiculos(generics.ListAPIView):
     serializer_class = HojaDeVidaVehiculosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
@@ -236,6 +282,7 @@ class BusquedaVehiculos(generics.ListAPIView):
 
 class BusquedaViajesAgendados(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Obtener el parámetro id_hoja_vida_vehiculo de la URL
@@ -261,6 +308,7 @@ class BusquedaViajesAgendados(generics.ListAPIView):
 
 class HistoricoTodosViajesAgendados(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Obtener los parámetros de los filtros adicionales
@@ -315,6 +363,7 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
 
 class BusquedaGeneralInventarioActivos(generics.ListAPIView):
     serializer_class = InventarioReporteSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = Inventario.objects.filter(ubicacion_prestado=True)
@@ -346,6 +395,7 @@ class BusquedaGeneralInventarioActivos(generics.ListAPIView):
 
 class BusquedaGeneralDespachosConsumo(generics.ListAPIView):
     serializer_class = ItemDespachoConsumoSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = ItemDespachoConsumo.objects.all()

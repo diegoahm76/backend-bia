@@ -26,7 +26,7 @@ class IncidenciasMatVegetal (models.Model):
     justificacion_anulacion = models.CharField(max_length=255, blank=True, null=True, db_column='T171justificacionAnulacion')
     fecha_anulacion = models.DateTimeField(blank=True, null=True, db_column='T171fechaAnulacion')
     id_persona_anula = models.ForeignKey(Personas, on_delete=models.SET_NULL, blank=True, null=True, db_column='T171Id_PersonaAnula', related_name='id_persona_anula_incidencias')
-    ruta_archivos_soporte = models.FileField(blank=True, null=True, max_length=255, upload_to='conservacion/incidencias/', db_column='T171rutaArchivoSoporte')
+    ruta_archivos_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, null=True, blank=True, db_column='T171rutaArchivoSoporte')
     
     def __str__(self):
         return str(self.id_incidencias_mat_vegetal)

@@ -79,6 +79,33 @@ class LiquidacionesTramitePostSerializer(serializers.ModelSerializer):
             'id_solicitud_tramite': {'required': True, 'allow_null': False}
         }
 
+class LiquidacionesTramiteGetSerializer(serializers.ModelSerializer):
+    id_archivo_ruta = serializers.ReadOnlyField(source='id_archivo.ruta_archivo.url', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
+    detalles = serializers.SerializerMethodField()
+    persona_liquida = serializers.SerializerMethodField()
+
+    def get_detalles(self, obj):
+        detalles = DetalleLiquidacionBase.objects.filter(id_liquidacion=obj.id)
+        serializer_detalles = DetallesLiquidacionBasePostSerializer(detalles, many=True)
+        return serializer_detalles.data
+
+    def get_persona_liquida(self, obj):
+        nombre_persona_liquida = None
+        if obj.id_persona_liquida:
+            if obj.id_persona_liquida.tipo_persona == 'J':
+                nombre_persona_liquida = obj.id_persona_liquida.razon_social
+            else:
+                nombre_list = [obj.id_persona_liquida.primer_nombre, obj.id_persona_liquida.segundo_nombre,
+                                obj.id_persona_liquida.primer_apellido, obj.id_persona_liquida.segundo_apellido]
+                nombre_persona_liquida = ' '.join(item for item in nombre_list if item is not None)
+                nombre_persona_liquida = nombre_persona_liquida if nombre_persona_liquida != "" else None
+        return nombre_persona_liquida
+
+    class Meta:
+        model = LiquidacionesBase
+        fields = '__all__'
+
 class LiquidacionesTramiteAnularSerializer(serializers.ModelSerializer):
 
     class Meta:

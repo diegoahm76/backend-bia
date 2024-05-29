@@ -3,5 +3,6 @@ TIPOS_TAREA_CHOICES = [
         ('Rtra', 'RESPONDER TRÁMITE'),
         ('ROpa', 'RESPONDER OPA'),
         ('ROtro', 'RESPONDER OTRO'),
+        ('RDocs', 'Responder Documentos'),
         # Agrega otros tipos según sea necesario
     ]

@@ -2,6 +2,8 @@ from django.db import transaction
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status
 from rest_framework.views import APIView
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_conservacion import PermisoActualizarAdministracionCamasGerminacion, PermisoActualizarSiembraSemillas, PermisoBorrarAdministracionCamasGerminacion, PermisoBorrarSiembraSemillas, PermisoCrearAdministracionCamasGerminacion, PermisoCrearSiembraSemillas
 from seguridad.utils import Util  
 from django.db.models import Q, F, Sum
@@ -222,7 +224,7 @@ class CreateSiembraView(generics.CreateAPIView):
     
     def create_maestro(self, request):
         data_siembra = json.loads(request.data['data_siembra'])
-        data_siembra['ruta_archivo_soporte'] = request.FILES.get('ruta_archivo_soporte')
+        archivo_soporte = request.FILES.get('ruta_archivo_soporte')
         
         #VALIDAR QUE NO SEA UNA FECHA SUPERIOR A HOY
         fecha_siembra = data_siembra.get('fecha_siembra')
@@ -283,6 +285,13 @@ class CreateSiembraView(generics.CreateAPIView):
             registro_cama = cama_item.camasgerminacionviverosiembra_set.all()
             if registro_cama:
                 raise ValidationError('la cama de germinacion '+cama_item.nombre+' no está libre')
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "Siembras")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_siembra['ruta_archivo_soporte'] = archivo_creado_instance.id_archivo_digital
 
         #CREACIÓN SIEMBRA
         siembra_dict = {
@@ -1062,6 +1071,11 @@ class DeleteSiembraView(generics.RetrieveDestroyAPIView):
         consumos_siembra.delete()
         siembra_in_inventario.delete()
         camas_siembra.delete()
+
+        if siembra.ruta_archivo_soporte:
+            siembra.ruta_archivo_soporte.ruta_archivo.delete()
+            siembra.ruta_archivo_soporte.delete()
+
         siembra.delete()
 
         return Response({'success': True, 'detail': 'Siembra eliminada exitosamente'}, status=status.HTTP_200_OK)
