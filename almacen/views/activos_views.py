@@ -2952,7 +2952,6 @@ class CrearReasginacionResponsableView(generics.CreateAPIView):
             # Obtener el ID del bien despachado
             id_bien_despachado = bien_despachado.get('id_bien_despachado')
             
-            print(bien_despachado)
             # Obtener el ID de la entrada del almacén del bien
             entrada_almacen_del_bien_id = None
             if id_bien_despachado:
@@ -2987,6 +2986,15 @@ class CrearReasginacionResponsableView(generics.CreateAPIView):
             item_despacho_serializer = ItemsDespachoActivosSerializer(data=item_despacho_data)
             item_despacho_serializer.is_valid(raise_exception=True)
             item_despacho_serializer.save()
+            
+            for activo in bienes_despachados:
+                print(activo)
+                inventario = Inventario.objects.get(id_bien = activo['id_bien_despachado'])
+                print(funcionario_resp_asignado)
+                inventario.id_persona_responsable = funcionario_resp_asignado
+                inventario.tipo_doc_ultimo_movimiento = 'REAS'
+                inventario.fecha_ultimo_movimiento = current_date
+                inventario.save()
 
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
