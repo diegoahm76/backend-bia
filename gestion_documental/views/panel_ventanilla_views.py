@@ -1,6 +1,8 @@
 import os
 from io import BytesIO
 import requests
+import base64
+
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
@@ -3558,8 +3560,9 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         #token_camunda = self.get_token_camunda(token)
         
         #data = self.get_tramite_ventanilla_sasoft(radicado,token_camunda)
-        # data = self.get_tramite_ventanilla_sasoft(radicado,data_in['access'])
-
+        data = self.get_tramite_ventanilla_sasoft(radicado,data_in['access'])
+        #UNICO-2024-00232
+        print(data)
         # if not data:
         #     raise ValidationError("Algo salio mal")
         
@@ -3596,8 +3599,11 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         expediente = tramite.id_expediente
 
+        if not expediente:
+            raise NotFound("El tramite no tiene expediente asociado")
+        
 
-        #codigo_unidad_serie_subserie + codigo_expediente_agno + codigo_expediente _consecutivo por agno
+        num_exp=expediente.codigo_exp_und_serie_subserie +'-'+str(expediente.codigo_exp_Agno) +'-'+str(expediente.codigo_exp_consec_por_agno)
         if not auto:
             raise NotFound("No se encontro auto")
         
@@ -3609,36 +3615,112 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
     
         print(pathToTemplate)
         contenido =None
-        if   os.path.exists(pathToTemplate):
-                with open(pathToTemplate, 'r',encoding='latin-1') as file:
+        contenido_base64=None
+        if not  os.path.exists(pathToTemplate):
+                print("EXISTE")
+                with open(pathToTemplate, 'rb') as file:
                     contenido = file.read()
+                    contenido_base64 = base64.b64encode(contenido)
         else:
-                print("ARCHIVO EN BLANCO ")
+            print('NO EXISTE')
+            auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
+            data_auto = auto_consecutivo.variables
+            respuesta_archivo_blanco= UtilsGestor.generar_archivo_blanco(data_auto)
+                
+            if respuesta_archivo_blanco.status_code != status.HTTP_201_CREATED:
+                return respuesta_archivo_blanco
+            ruta_archivo_blanco = respuesta_archivo_blanco.data['data']['ruta_archivo']
+            pathToTemplate =  str(settings.MEDIA_ROOT) + os.sep +str(ruta_archivo_blanco)
+            with open(pathToTemplate, 'rb') as file:
+                    contenido = file.read()
+                    contenido_base64 = base64.b64encode(contenido)
+                
         #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
-        print(contenido)
+        print(type(contenido))
         numero_auto = auto.numero_acto_administrativo
-   
-        documento_auto =pathToTemplate
 
-        # pago = tramite.id_pago_evaluacion
+        data_respuesta={}
+        data_respuesta['NumeroAuto']={
+            "type": "String",
+            "value": numero_auto,
+            "valueInfo": {}
+        }
+        data_respuesta['Auto'] = {
 
-        # if not pago:
-        #     raise ValidationError("No esta pago")
-        
+
+            "type": "File",
+            "value": contenido_base64,
+            "valueInfo": {
+            "encoding": "latin-1",
+            "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
+            }
+        }
+
+
+        pago = tramite.id_pago_evaluacion
+
+        if not pago:
+            
+            data_respuesta['NumeroPago']={
+
+            "type": "String",
+            "value": '00000',
+            "valueInfo": {}
+            }
+
+            data_respuesta['SoportePago'] = {
+            "type": "File",
+            "value": contenido_base64,
+            "valueInfo": {
+            "encoding": "latin-1",
+            "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
+            }
+            }
+            
         # numero_pago = pago.id_liquidacion.num_liquidacion
         # SoportePago 
 
         # NumExp
+
+        data_respuesta['NumExp']={
+            "type": "String",
+            "value": num_exp,
+            "valueInfo": {}
+        }
+
         # GrupoFunTramite 
+
+        data_respuesta['GrupoFunTramite']={
+            "type": "String",
+            "value": unidad.nombre,
+            "valueInfo": {}
+        }
+        
         # dateAutoStart  #FECHA AUTO
-        # FNAuto #FECHA NOTIFICACION 
+        data_respuesta['dateAutoStart']={
+            "type": "String",
+            "value": auto.fecha_acto_administrativo,
+            "valueInfo": {}
+        }
+        # FNAuto #FECHA NOTIFICACION
+        data_respuesta['FNAuto']={
+            "type": "String",
+            "value": auto.fecha_acto_administrativo,
+            "valueInfo": {}
+        }
+         
         # priorityProject #PRIORITARIO O NO
+        data_respuesta['priorityProject']={
+            "type": "Boolean",
+            "value": False,
+            "valueInfo": {}
+        }
         # prioritario 
 
 
 
 
-        return Response('data', status=status.HTTP_201_CREATED)
+        return Response(data_respuesta, status=status.HTTP_201_CREATED)
     
 
 class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
