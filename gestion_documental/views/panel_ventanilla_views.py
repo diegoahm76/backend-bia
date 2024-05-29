@@ -3250,7 +3250,7 @@ class CreateAutoInicio(generics.CreateAPIView):
 
             
         data_expediente = AperturaExpedienteComplejoSerializer(tramite.id_expediente).data
-
+        num_exp=tramite.id_expediente.codigo_exp_und_serie_subserie +'-'+str(tramite.id_expediente.codigo_exp_Agno) +'-'+str(tramite.id_expediente.codigo_exp_consec_por_agno)
 
         plantilla = PlantillasDoc.objects.filter(id_plantilla_doc=data_in['id_plantilla']).first()
         if not plantilla:
@@ -3267,7 +3267,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         context_auto={}
         
         context_auto['Auto'] = numero_auto
-        context_auto['Expediente'] = data_expediente['codigo_exp_consec_por_agno']
+        context_auto['Expediente'] = num_exp
         titular = tramite.id_persona_titular
         nombre_usuario = self.nombre_persona(titular)
         context_auto['NombreTitular'] = nombre_usuario
@@ -3587,8 +3587,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=tramite,cod_estado_asignacion='Ac').first()
         if not asignacion:
             raise ValidationError("El tramite no a sigo aceptado por la unidad organizacional")
-        print("EL TRAMITE ES ")
-        print(asignacion.id_solicitud_tramite)
+
 
 
         unidad = asignacion.id_und_org_seccion_asignada
@@ -3610,30 +3609,39 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         archivo = auto.id_archivo_acto_administrativo
         if not archivo:
             raise NotFound("No tiene archivo asignado")
+        directorio_raiz = str(settings.MEDIA_ROOT)
 
-        pathToTemplate = str(settings.MEDIA_ROOT) + os.sep +str(archivo.ruta_archivo)
-    
-        print(pathToTemplate)
+        pathToTemplate = directorio_raiz + os.sep +str(archivo.ruta_archivo)
+
         contenido =None
         contenido_base64=None
-        if not  os.path.exists(pathToTemplate):
+        if   os.path.exists(pathToTemplate):
                 print("EXISTE")
                 with open(pathToTemplate, 'rb') as file:
                     contenido = file.read()
                     contenido_base64 = base64.b64encode(contenido)
         else:
-            print('NO EXISTE')
-            auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
-            data_auto = auto_consecutivo.variables
-            respuesta_archivo_blanco= UtilsGestor.generar_archivo_blanco(data_auto)
+            raise ValidationError(" No se encontro el documento del auto")
+            # print('NO EXISTE')
+            # auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
+            # data_auto = auto_consecutivo.variables
+            # respuesta_archivo_blanco= UtilsGestor.generar_archivo_blanco(data_auto)
                 
-            if respuesta_archivo_blanco.status_code != status.HTTP_201_CREATED:
-                return respuesta_archivo_blanco
-            ruta_archivo_blanco = respuesta_archivo_blanco.data['data']['ruta_archivo']
-            pathToTemplate =  str(settings.MEDIA_ROOT) + os.sep +str(ruta_archivo_blanco)
-            with open(pathToTemplate, 'rb') as file:
-                    contenido = file.read()
-                    contenido_base64 = base64.b64encode(contenido)
+            # if respuesta_archivo_blanco.status_code != status.HTTP_201_CREATED:
+            #     return respuesta_archivo_blanco
+            # ruta_archivo_blanco = respuesta_archivo_blanco.data['data']['ruta_archivo']
+            # ruta_archivo_blanco = ruta_archivo_blanco.lstrip("/\\")
+
+            # print("RUTA RAIZ ES: "+directorio_raiz)
+            # print("RUTA DEL ARCHIVO: "+ruta_archivo_blanco)
+            # if ruta_archivo_blanco.startswith("media" + os.sep):
+            #     ruta_archivo_blanco = ruta_archivo_blanco[len("media" + os.sep):]
+            # raise ValidationError(os.path.join(directorio_raiz, ruta_archivo_blanco))
+            # full_ruta = os.path.normpath(os.path.join(directorio_raiz, ruta_archivo_blanco))
+            # print("FULL RUTA: " + full_ruta)
+            # with open(full_ruta, 'rb') as file:
+            #         contenido = file.read()
+            #         contenido_base64 = base64.b64encode(contenido)
                 
         #CON AUTO BUSCAR NUERO DE AUTO Y DOCUMENTO
         print(type(contenido))

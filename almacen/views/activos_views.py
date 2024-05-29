@@ -1282,7 +1282,7 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
 
             for item in items_entrada:
                 # Filtrar el inventario por id_bien y realizo_salida=True
-                inventario = Inventario.objects.filter(id_bien=item.id_bien.id_bien, realizo_salida=False).first()
+                inventario = Inventario.objects.filter(id_bien=item.id_bien.id_bien).filter(Q(realizo_salida=False) | Q(realizo_salida__isnull=True)).first()
                 if inventario:
                     # Consultar el registro en el modelo CatalogoBienes
                     bien = item.id_bien
@@ -1294,9 +1294,9 @@ class ActivosAsociadosDetailView(generics.ListAPIView):
 
                     # Crear un diccionario con la información necesaria
                     data = {
-                        'id_item_entrada_almacen': item.id_item_entrada_almacen,  # Pk de ItemEntradaAlmacen
-                        'id_entrada_almacen': item.id_entrada_almacen.id_entrada_almacen,  # Fk de EntradaAlmacen
-                        'id_bien': bien.id_bien,  # Pk de CatalogoBienes
+                        'id_item_entrada_almacen': item.id_item_entrada_almacen,  
+                        'id_entrada_almacen': item.id_entrada_almacen.id_entrada_almacen,
+                        'id_bien': bien.id_bien,  
                         'codigo': bien.codigo_bien,
                         'serial_placa': bien.doc_identificador_nro,
                         'nombre': bien.nombre,
@@ -2952,7 +2952,6 @@ class CrearReasginacionResponsableView(generics.CreateAPIView):
             # Obtener el ID del bien despachado
             id_bien_despachado = bien_despachado.get('id_bien_despachado')
             
-            print(bien_despachado)
             # Obtener el ID de la entrada del almacén del bien
             entrada_almacen_del_bien_id = None
             if id_bien_despachado:
@@ -2987,6 +2986,15 @@ class CrearReasginacionResponsableView(generics.CreateAPIView):
             item_despacho_serializer = ItemsDespachoActivosSerializer(data=item_despacho_data)
             item_despacho_serializer.is_valid(raise_exception=True)
             item_despacho_serializer.save()
+            
+            for activo in bienes_despachados:
+                print(activo)
+                inventario = Inventario.objects.get(id_bien = activo['id_bien_despachado'])
+                print(funcionario_resp_asignado)
+                inventario.id_persona_responsable = funcionario_resp_asignado
+                inventario.tipo_doc_ultimo_movimiento = 'REAS'
+                inventario.fecha_ultimo_movimiento = current_date
+                inventario.save()
 
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
