@@ -127,6 +127,15 @@ class SearchArticulosByNombreDocIdentificadorHV(generics.ListAPIView):
 
         bien = CatalogoBienes.objects.filter(**filter).filter(nivel_jerarquico=5).exclude(nro_elemento_bien=None)
         vehiculos_arrendados = VehiculosArrendados.objects.filter(**filter_vehiculos)
+
+        data_serializado = []
+
+        if not bien and not vehiculos_arrendados:
+            try:
+                raise NotFound('No se encontró elementos')
+            except NotFound as e:
+                return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+
         if bien:
             serializer = self.serializer_class(bien, many=True)
             data_serializado = serializer.data
@@ -141,17 +150,14 @@ class SearchArticulosByNombreDocIdentificadorHV(generics.ListAPIView):
                     id_bien=item['id_bien']).first()
                 estado = inventario_instance.cod_estado_activo if inventario_instance else None
                 item['estado'] = diccionario_cod_estado_activo[estado.cod_estado] if estado else None
-
+        
+        if vehiculos_arrendados:
             # Añadir vehiculos arrendados si se encuentran
             if vehiculos_arrendados:
                 serializer_vehiculos = self.serializer_vehiculos_class(vehiculos_arrendados, many=True)
                 data_serializado.extend(serializer_vehiculos.data)
 
-            return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
-        try:
-            raise NotFound('No se encontró elementos')
-        except NotFound as e:
-            return Response({'success':False, 'detail':'No se encontró elementos', 'data': bien}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
 
 class SearchArticuloByDocIdentificadorHV(generics.ListAPIView):
     serializer_class = CatalogoBienesGetVehSerializer
@@ -188,7 +194,7 @@ class SearchArticuloByDocIdentificadorHV(generics.ListAPIView):
             # transforma un choices en un diccionario
             diccionario_cod_estado_activo = dict(
                 (x, y) for x, y in estados_articulo_CHOICES)
-            estado = diccionario_cod_estado_activo[inventario.cod_estado_activo.cod_estado]
+            estado = diccionario_cod_estado_activo[inventario.cod_estado_activo.cod_estado] if inventario else None
             data_serializado['estado'] = estado
             return Response({'success':True, 'detail':'Se encontraron elementos', 'Elementos': data_serializado}, status=status.HTTP_200_OK)
         elif vehiculo_arrendado:
