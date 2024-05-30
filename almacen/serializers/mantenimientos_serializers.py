@@ -35,6 +35,27 @@ class SerializerProgramacionMantenimientosGet(serializers.ModelSerializer):
     observacion = serializers.ReadOnlyField(source='observaciones', default=None)
     responsable = serializers.SerializerMethodField()
     estado = serializers.SerializerMethodField()
+    fecha_ejecutado = serializers.SerializerMethodField()
+    persona_realiza = serializers.SerializerMethodField()
+    persona_diligencia = serializers.SerializerMethodField()
+
+    def get_fecha_ejecutado(self, obj):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_programacion_mtto=obj.id_programacion_mtto).first()
+        if registro_mantenimiento:
+            return registro_mantenimiento.fecha_ejecutado
+        return None
+    
+    def get_persona_realiza(self, obj):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_programacion_mtto=obj.id_programacion_mtto).first()
+        if registro_mantenimiento:
+            return registro_mantenimiento.id_persona_realiza.__str__()
+        return None
+    
+    def get_persona_diligencia(self, obj):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_programacion_mtto=obj.id_programacion_mtto).first()
+        if registro_mantenimiento:
+            return registro_mantenimiento.id_persona_diligencia.__str__()
+        return None
 
     def get_responsable(self, obj):
         nombre_completo_reponsable = None
