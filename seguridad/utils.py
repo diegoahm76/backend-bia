@@ -5,6 +5,7 @@ from transversal.models.base_models import ClasesTercero
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.core.mail import EmailMultiAlternatives
 from django.core.mail import EmailMessage
+from backend.settings.base import MEDIA_ROOT
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import User, Modulos, Permisos, Auditorias
@@ -20,9 +21,11 @@ from email.mime.application import MIMEApplication
 class Util:
 
     @staticmethod
-    def send_email_file(data,file=None):
-        email = EmailMessage('Sujet de l\'email', 'Corps de l\'email', 'expediteur@example.com', ['destinataire@example.com'])
-        email.attach_file('/chemin/vers/fichier.pdf')
+    def send_email_files(data,path_files=None):
+        email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
+        email.content_subtype ='html'
+        for path_file in path_files:
+            email.attach_file(path_file['ruta_archivo'])
         response = email.send(fail_silently=True)
         return response
 
