@@ -89,7 +89,7 @@ class GetMantenimientosProgramadosList(generics.ListAPIView):
 class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
     serializer_class = AnularMantenimientoProgramadoSerializer
     queryset = ProgramacionMantenimientos.objects.all()
-    permission_classes = [IsAuthenticated, (PermisoAnularProgramacionMantenimientoComputadores|PermisoAnularProgramacionMantenimientoVehiculos|PermisoAnularProgramacionMantenimientoOtrosActivos)]
+    permission_classes = [IsAuthenticated, (PermisoAnularProgramacionMantenimientoComputadores | PermisoAnularProgramacionMantenimientoVehiculos | PermisoAnularProgramacionMantenimientoOtrosActivos)]
     lookup_field = 'id_programacion_mtto'
 
     def patch(self, request, id_programacion_mtto):
@@ -98,32 +98,37 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
         mantenimiento = ProgramacionMantenimientos.objects.filter(id_programacion_mtto=id_programacion_mtto).first()
         if mantenimiento:
             mantenimiento_previous = copy.copy(mantenimiento)
-            if mantenimiento.ejecutado == True:
+            if mantenimiento.ejecutado:
                 raise PermissionDenied('No puede anular un mantenimiento que ya fue ejecutado')
-            if mantenimiento.fecha_anulacion != None:
+            if mantenimiento.fecha_anulacion:
                 raise PermissionDenied('No puede anular un mantenimiento que ya fue anulado')
+
+            # Validate and save the serializer
             serializador = self.serializer_class(mantenimiento, data=request.data, many=False)
             serializador.is_valid(raise_exception=True)
+            justificacion_anulacion = serializador.validated_data.get('justificacion_anulacion')
+
             mantenimiento.fecha_anulacion = datetime.now(pytz.timezone('America/Bogota'))
             mantenimiento.id_persona_anula = persona_instance
-            serializador.save()
+            mantenimiento.justificacion_anulacion = justificacion_anulacion
+            serializador.save() 
             mantenimiento.save()
-            
+
             # Auditoria
             bien = CatalogoBienes.objects.filter(id_bien=mantenimiento.id_articulo.id_bien).first()
             usuario = request.user.id_usuario
             descripcion = {"nombre": str(bien.nombre), "serial": str(bien.doc_identificador_nro)}
-            direccion=Util.get_client_ip(request)
-            valores_actualizados={'previous':mantenimiento_previous, 'current':mantenimiento}
+            direccion = Util.get_client_ip(request)
+            valores_actualizados = {'previous': mantenimiento_previous, 'current': mantenimiento}
             id_modulo = 0
-            
+
             if bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Com':
                 id_modulo = 21
             elif bien.cod_tipo_activo and bien.cod_tipo_activo.cod_tipo_activo == 'Veh':
                 id_modulo = 22
             else:
                 id_modulo = 23
-            
+
             auditoria_data = {
                 'id_usuario': usuario,
                 'id_modulo': id_modulo,
@@ -135,7 +140,7 @@ class AnularMantenimientoProgramado(generics.RetrieveUpdateAPIView):
             }
             Util.save_auditoria(auditoria_data)
 
-            return Response({'success':True, 'detail':'Anulación exitosa'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Anulación exitosa'}, status=status.HTTP_201_CREATED)
         else:
             raise NotFound('No existe ningún mantenimiento con el parámetro ingresado')
         
