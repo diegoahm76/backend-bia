@@ -204,6 +204,7 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
         cod_tipo_activo = request.query_params.get('cod_tipo_activo')
         rango_inicial_fecha = request.query_params.get('rango-inicial-fecha')
         rango_final_fecha = request.query_params.get('rango-final-fecha')
+        serial = request.query_params.get('serial') 
         
         if rango_inicial_fecha is None or rango_final_fecha is None:
             raise ValidationError('No se ingresaron parámetros de fecha')
@@ -220,6 +221,9 @@ class GetMantenimientosProgramadosByFechas(generics.ListAPIView):
         
         if cod_tipo_activo:
             mantenimientos_programados = mantenimientos_programados.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
+        
+        if serial:  
+            mantenimientos_programados = mantenimientos_programados.filter(id_articulo__doc_identificador_nro__icontains=serial)
         
         mantenimientos_programados = mantenimientos_programados.annotate(
             id_programacion_mantenimiento=F('id_programacion_mtto'),
