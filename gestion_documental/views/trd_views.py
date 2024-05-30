@@ -13,6 +13,9 @@ from docxtpl import DocxTemplate
 import os
 import secrets
 import uuid
+from gestion_documental.models.notificaciones_models import Anexos_NotificacionesCorrespondencia
+from gestion_documental.serializers.notificaciones_serializers import AnexosNotificacionPostSerializer
+from gestion_documental.serializers.pqr_serializers import AnexosSerializer, MetadatosSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
@@ -3244,6 +3247,9 @@ class ConfiguracionAnioSiguienteSeccionSubseccion(generics.UpdateAPIView):
     
 class ConsecutivoTipologiaDoc(generics.CreateAPIView):
     serializer_class = ConsecutivoTipologiaDocSerializer
+    serializer_anexos_notif_class = AnexosNotificacionPostSerializer
+    serializer_anexos_class = AnexosSerializer
+    serializer_metadatos_class = MetadatosSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -3685,6 +3691,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             "cod_tipo_radicado": request.data.get('cod_tipo_radicado')
         }
         consecutivo = None
+        archivo_digital_instance = None
         if request.data.get('consecutivo'):
             data = self.consecutivo(request, None).data
             payload['consecutivo'] = data['data']['consecutivo']
@@ -3699,7 +3706,8 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
             consecutivo.variables = payload
             documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
-            consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            archivo_digital_instance = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.id_archivo_digital = archivo_digital_instance
             consecutivo.save()
             print("holiiiiii")
 
@@ -3726,10 +3734,51 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 payload['radicado'] = radicado.get('radicado')
                 payload['fecha_radicado'] = radicado.get('fecha_radicado').isoformat()
             documento = self.GenerarDocumento(payload, request.data.get('plantilla')).data
-            consecutivo.id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            archivo_digital_instance = get_object_or_404(ArchivosDigitales, id_archivo_digital = documento['data']['id_archivo_digital'])
+            consecutivo.id_archivo_digital = archivo_digital_instance
             consecutivo.variables = payload
             consecutivo.save()    
         serializer = self.serializer_class(consecutivo)
+
+        # GUARDAR EN T258
+        data_anexo = {
+            'nombre_anexo': archivo_digital_instance.nombre_de_Guardado,
+            'orden_anexo_doc': 1,
+            'cod_medio_almacenamiento': 'Na',
+            'numero_folios': 0,
+            'ya_digitalizado': False
+        }
+        serializer_anexo = self.serializer_anexos_class(data=data_anexo)
+        serializer_anexo.is_valid(raise_exception=True)
+        anexo_creado = serializer_anexo.save()
+            
+        # CREAR ANEXO EN T260
+        data_metadatos = {
+            'id_anexo': anexo_creado.id_anexo,
+            'nombre_original_archivo': archivo_digital_instance.nombre_de_Guardado,
+            'fecha_creacion_doc': current_date,
+            'id_archivo_sistema': archivo_digital_instance.id_archivo_digital
+        }
+        serializer_metadatos = self.serializer_metadatos_class(data=data_metadatos)
+        serializer_metadatos.is_valid(raise_exception=True)
+        serializer_metadatos.save()
+
+        # GUARDAR EN T353
+        data_anexo_notif = {
+            'id_notificacion_correspondecia': request.data.get('id_solicitud_notificacion'),
+            'doc_entrada_salida': 'EN',
+            'uso_del_documento': 'IN',
+            'cod_tipo_documento': 3,
+            'doc_generado': 'SI',
+            'id_persona_anexa_documento': persona.id_persona,
+            'fecha_anexo': current_date,
+            'usuario_notificado': False,
+            'id_anexo': anexo_creado.id_anexo
+        }
+        serializer_anexo_notif = self.serializer_anexos_notif_class(data=data_anexo_notif)
+        serializer_anexo_notif.is_valid(raise_exception=True)
+        serializer_anexo_notif.save()
+
         return Response({
             'success': True,
             'detail': 'Se ha generado el documento exitosamente.',
