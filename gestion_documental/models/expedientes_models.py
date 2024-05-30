@@ -116,7 +116,7 @@ class DocumentosDeArchivoExpediente(models.Model):
     cantidad_anexos	= models.SmallIntegerField(blank=True, null=True,db_column='T237cantidadDeAnexos')
     id_archivo_sistema	= models.ForeignKey(ArchivosDigitales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_ArchivoEnSistema')#falta clase (oskitar)
     palabras_clave_documento = models.CharField(max_length=255,blank=True,null=True , db_column='T237palabrasClaveDocumento')
-    sub_sistema_incorporacion = models.CharField(max_length=4, choices=tipo_subsistema_creado_CHOICES, db_column='T237subSistemaDeIncorporacion')
+    sub_sistema_incorporacion = models.CharField(max_length=4, choices=tipo_subsistema_creado_CHOICES, db_column='T237subSistemaDeIncorporacion', blank=True, null=True)
     cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES,blank=True, null=True, db_column='T237codTipoRadicado')
     codigo_radicado_prefijo	 = models.CharField(max_length=10,blank=True,null=True ,db_column='T237codigoRadicado_Prefijo')
     codigo_radicado_agno = models.SmallIntegerField(blank=True,null=True ,db_column='T237codigoRadicado_Agno')
