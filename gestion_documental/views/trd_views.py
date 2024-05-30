@@ -3510,6 +3510,54 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             error_message = {'error': e.detail}
             raise ValidationError(e.detail)
         
+    def generarDocCopia(self, payload, plantilla):
+        try:
+          
+            auto = ActaInicioCreate()
+            ruta_archivo = plantilla.id_archivo_digital.ruta_archivo.path if plantilla.id_archivo_digital else None
+            print(ruta_archivo)
+            print(os.path.exists(ruta_archivo))
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                doc = DocxTemplate(ruta_archivo)
+
+                doc.render(payload)
+
+                file_uuid = uuid.uuid4()
+
+                extension = os.path.splitext(ruta_archivo)[1]
+                new_filename = f"{file_uuid}{extension}"
+
+                # Guardar el documento resultante con el nuevo nombre
+                os.makedirs("/home/BIA/Otros/DocsTemp", exist_ok=True)
+                doc.save(f"/home/BIA/Otros/DocsTemp/{new_filename}")
+                memoria = auto.document_to_inmemory_uploadedfile(doc)
+                # Crear el archivo digital
+                ruta = os.path.join("home", "BIA", "Otros", "Documentos")
+
+                md5_hash = hashlib.md5()
+                with open(f"/home/BIA/Otros/DocsTemp/{new_filename}", 'rb') as f:
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        md5_hash.update(chunk)
+                
+                md5_value = md5_hash.hexdigest()
+
+                data_archivo = {
+                    'es_Doc_elec_archivo': True,
+                    'ruta': ruta,
+                    'md5_hash': md5_value
+                }
+                    
+                archivo_class = ArchivosDgitalesCreate()
+                respuesta = archivo_class.crear_archivo(data_archivo,  memoria)
+                return respuesta
+            else:
+                raise ValidationError('La plantilla no tiene un archivo digital asociado.')
+        except ValidationError as e:
+            error_message = {'error': e.detail}
+            raise ValidationError(e.detail)
+        
+
+        
     def DocumentoConsecutivo(self, request):
         payload = request.data.get('payload') 
         data = self.consecutivo(request, None).data
@@ -3676,7 +3724,9 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     payload.update(consecutivo.variables)
 
                 print(consecutivo.id_plantilla_doc.id_plantilla_doc)
-                documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
+                #documento = self.GenerarDocumento(payload, consecutivo.id_plantilla_doc.id_plantilla_doc).data
+                documento = self.generarDocCopia(payload, consecutivo).data
+                
                 id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
                 consecutivo.id_archivo_digital_copia = id_archivo_digital
                 consecutivo.variables = payload
@@ -3953,8 +4003,10 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
-            ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
-            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            # ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
+            # print(ruta)
+            # pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            # print(pdf)
             
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
@@ -3966,10 +4018,12 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         # Command to convert Word to PDF using LibreOffice
         ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
 
-        command = ['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+        command = ['soffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
 
         try:
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            print(result)
 
             if result.returncode != 0:
                 raise Exception('Error converting Word to PDF: {}'.format(result.stderr.decode('utf-8')))
