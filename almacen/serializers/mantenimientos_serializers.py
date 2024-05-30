@@ -62,22 +62,7 @@ class SerializerProgramacionMantenimientosGet(serializers.ModelSerializer):
 
     class Meta:
         model=ProgramacionMantenimientos
-        fields=[
-            'id_programacion_mantenimiento',
-            'articulo',
-            'tipo',
-            'kilometraje_programado',
-            'fecha',
-            'placa',
-            'marca',
-            'codigo_bien',
-            'consecutivo',
-            'motivo',
-            'observacion',
-            'estado',
-            'responsable',
-            'tipo_descripcion'
-        ]
+        fields= '__all__'
 
 class AnularMantenimientoProgramadoSerializer(serializers.ModelSerializer):
     justificacion_anulacion = serializers.CharField(max_length=255, min_length=10)
