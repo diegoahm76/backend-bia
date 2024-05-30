@@ -85,7 +85,8 @@ def update_tramites_bia(radicado):
 		nro_radicado = radicado_split[2].strip("0")
 
 		tramite_bia = SolicitudesTramites.objects.filter(id_radicado__prefijo_radicado=prefijo_radicado, id_radicado__agno_radicado=agno_radicado, id_radicado__nro_radicado=nro_radicado).first()
-		if tramite_bia:
+		permiso_ambiental_tramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tramite_bia.id_solicitud_tramite)
+		if tramite_bia and not permiso_ambiental_tramite:
 			str_permiso_ambiental = organized_data.get('typeRequest')
 			direccion = organized_data.get('Direccion')
 			municipio_id = organized_data.get('Municipio_value')
