@@ -4003,10 +4003,10 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
-            # ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
-            # print(ruta)
-            # pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
-            # print(pdf)
+            ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
+            print(ruta)
+            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            print(pdf)
             
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
@@ -4018,7 +4018,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         # Command to convert Word to PDF using LibreOffice
         ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
 
-        command = ['soffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+        command = ['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
 
         try:
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
