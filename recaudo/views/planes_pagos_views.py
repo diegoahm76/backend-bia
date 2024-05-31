@@ -456,7 +456,17 @@ class PlanPagosCreateView(generics.CreateAPIView):
             cuota_creada = instance_cuota.crear_plan_pagos_cuotas(data_cuota)
             cuota_ant = cuota_creada.id
             plan_cuotas.append(instance_cuota.serializer_class(cuota_creada).data)
-            persona = Personas.objects.filter(numero_documento=facilidad_pago.id_deudor.identificacion).first()
+            
+            try:
+                persona = Personas.objects.get(numero_documento=facilidad_pago.id_deudor.identificacion)
+                id_persona_implicada=persona.id_persona
+            except Personas.DoesNotExist:
+                persona = None  
+                id_persona_implicada=None
+
+            
+
+
             mensaje = '<p>'+ f'{facilidad_pago.id_deudor.nombres} {facilidad_pago.id_deudor.apellidos}'+' la cuota # '+str(cuota_creada.nro_cuota)+' esta por un valor a pagar: '+str(cuota_creada.monto_cuota)+' y la fecha de pago es: '+str(cuota_creada.fecha_vencimiento)+'</p>'
 
             
@@ -469,7 +479,7 @@ class PlanPagosCreateView(generics.CreateAPIView):
                 'age_cumplimiento':fecha_plan.year,
                 'complemento_mensaje':mensaje,
                 'id_elemento_implicado':cuota_creada.id,
-                'id_persona_implicada':persona.id_persona,
+                'id_persona_implicada':id_persona_implicada,
                 "tiene_implicado":True
                 }
             
@@ -480,7 +490,6 @@ class PlanPagosCreateView(generics.CreateAPIView):
 
         plan_pagos_data = serializer.data
         plan_pagos_data['cuotas'] = plan_cuotas
-
 
         return plan_pagos_data
     
