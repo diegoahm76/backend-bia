@@ -37,6 +37,7 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
     serializer_class = InicioTramiteCreateSerializer
     serializer_anexos_class = AnexosUpdateSerializer
     serializer_get_tramite_class = GeneralTramitesGetSerializer
+    serializer_permisos_class = OPASSerializer
     permission_classes = [IsAuthenticated]
     
     def create(self, request):
@@ -57,6 +58,28 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
         serializer = self.serializer_class(data=data_tramite)
         serializer.is_valid(raise_exception=True)
         tramite_creado = serializer.save()
+
+        # DATOS INTERMEDIOS
+        tipo_tramite = data_tramite.get('tipo_tramite')
+        cod_municipio = data_tramite.get('cod_municipio')
+        direccion = data_tramite.get('direccion')
+        coordenada_x = data_tramite.get('coordenada_x')
+        coordenada_y = data_tramite.get('coordenada_y')
+
+        if tipo_tramite and cod_municipio and direccion:
+            tipo_tramite_instance = PermisosAmbientales.objects.filter(nombre=tipo_tramite).first()
+            municipio = Municipio.objects.filter(cod_municipio=cod_municipio).first()
+
+            if tipo_tramite_instance:
+                # Insertar en T280
+                PermisosAmbSolicitudesTramite.objects.create(
+                    id_permiso_ambiental = tipo_tramite_instance,
+                    id_solicitud_tramite = tramite_creado,
+                    coordenada_x = coordenada_x,
+                    coordenada_y = coordenada_y,
+                    cod_municipio = municipio,
+                    direccion = direccion
+                )
         
         # Insertar en T255 con estado PENDIENTE POR RADICAR
         estado_solicitud_instance = EstadosSolicitudes.objects.filter(id_estado_solicitud=13).first()
@@ -171,6 +194,22 @@ class GeneralTramitesCreateView(generics.CreateAPIView):
             scheduler.add_job(update_tramites_bia, args=[radicado_nuevo], trigger='date', run_date=execution_time)
         
         return Response({'success': True, 'detail':'Se realizó la creación del del trámite correctamente', 'data': serializer_tramite_data}, status=status.HTTP_201_CREATED)   
+
+class GeneralTramitesUpdateView(generics.UpdateAPIView):
+    serializer_class = GeneralTramitesGetSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def update(self, request, id_solicitud_tramite):
+        data = request.data
+        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not tramite:
+            raise NotFound('No se encontró el trámite ingresado')
+        
+        serializer = self.serializer_class(tramite, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        return Response({'success': True, 'detail':'Se realizó la actualización del del trámite correctamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)   
 
 class ListTramitesGetView(generics.ListAPIView):
     serializer_class = ListTramitesGetSerializer

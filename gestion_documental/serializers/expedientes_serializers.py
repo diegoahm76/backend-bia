@@ -812,6 +812,7 @@ class IndexarDocumentosCreateSerializer(serializers.ModelSerializer):
             'codigo_radicado_agno',
             'codigo_radicado_consecutivo',
             'es_un_archivo_anexo',
+            'sub_sistema_incorporacion',
             'id_doc_de_arch_del_cual_es_anexo',
             'anexo_corresp_a_lista_chequeo',
             'id_archivo_sistema',

@@ -3,6 +3,7 @@ import ast
 import copy
 from datetime import datetime, timedelta, timezone
 import json
+from django.urls import path
 from django.utils.timezone import now
 import os
 import io
@@ -1257,7 +1258,9 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
                         tarea_padre.save()
                 print("antes de enviar el correo")
                 archivo = request.FILES.get('archivo-create-Nombre anexo')
-                correo_enviado = self.enviar_correo(pqrsdf, archivo)
+
+                correo_enviado = self.correo(pqrsdf, valores_creados_detalles)#self.enviar_correo(pqrsdf, archivo)
+                
                 print(correo_enviado)
                 return Response({'success': True, 'detail': 'Se creó el PQRSDF correctamente', 'data': data_respuesta_PQRSDF_creado}, status=status.HTTP_201_CREATED)
 
@@ -1271,6 +1274,28 @@ class RespuestaPQRSDFCreate(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return serializer.data
+    
+    def correo(self, PQRSDF, archivo):
+        template = "respuesta_PQRSDF.html"
+        instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=PQRSDF.id_radicado.agno_radicado,cod_tipo_radicado=PQRSDF.id_radicado.cod_tipo_radicado).first()
+        numero_con_ceros = str(PQRSDF.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+        cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+        print(cadena)
+        context = {
+            'nombre_titular':f"{PQRSDF.id_persona_titular.primer_nombre} {PQRSDF.id_persona_titular.segundo_apellido} {PQRSDF.id_persona_titular.primer_apellido} {PQRSDF.id_persona_titular.segundo_apellido}",
+            'tipo_solicitud': f"{PQRSDF.get_cod_tipo_PQRSDF_display()}",
+            "radicado": cadena
+        }
+        print(context)
+        template = render_to_string((template), context)
+        if PQRSDF.id_persona_titular.email:
+            print(PQRSDF.id_persona_titular.email)
+            email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':PQRSDF.id_persona_titular.email}
+            correo = Util.send_email_files(email_data, archivo)
+            print("Correo enviado")
+            return correo
+        else:
+            raise ValidationError("No se puede enviar el correo porque no se encontró el correo del titular")
     
     def enviar_correo(self, PQRSDF, archivo):
         template = "respuesta_PQRSDF.html"
@@ -1499,8 +1524,8 @@ class AnexosRespuestaCreate(generics.CreateAPIView):
             data_metadatos['id_archivo_digital'] = archivo_creado.data.get('data').get('id_archivo_digital')
             metadatosRespuestaPQRCreate = MetadatosRespuestaPQRCreate()
             metadatosRespuestaPQRCreate.create_metadatos_respuesta_pqr(data_metadatos)
-
-            nombres_anexos_auditoria.append({'NombreAnexo': anexo['nombre_anexo']})
+            archivo = ArchivosDigitales.objects.filter(id_archivo_digital = archivo_creado.data.get('data').get('id_archivo_digital')).first()
+            nombres_anexos_auditoria.append({'NombreAnexo': anexo['nombre_anexo'], 'ruta_archivo': archivo.ruta_archivo.path})
         return nombres_anexos_auditoria
 
     def crear_anexo(self, request):
