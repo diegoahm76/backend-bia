@@ -208,6 +208,7 @@ class ConsecutivoTipologia(models.Model):
     CatalogosSeriesUnidad = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T329Id_CatalogoSeriesUnidad',related_name='T319Id_CatalogoSeriesUnidad')
     agno_consecutivo = models.SmallIntegerField(db_column='T319agnoConsecutivo', null=True, blank=True)
     nro_consecutivo = models.CharField(max_length=20, db_column='T319nroConsecutivo', null=True, blank=True)
+    atributo = models.CharField(max_length=255, db_column='T319atributo', null=True, blank=True)
     prefijo_consecutivo = models.CharField(max_length=10, db_column='T319prefijoConsecutivo', null=True, blank=True)
     fecha_consecutivo = models.DateTimeField(db_column='T319fechaConsecutivo', null=True, blank=True)
     id_persona_genera = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T319Id_PersonaGenera')
