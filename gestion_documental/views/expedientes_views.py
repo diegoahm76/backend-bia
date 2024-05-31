@@ -1694,6 +1694,7 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             data['nombre_original_del_archivo'] = archivo.name
             data['es_version_original'] = True
             data['es_un_archivo_anexo'] = True if str(data['orden_en_expediente']) != '1' else False
+            data['sub_sistema_incorporacion'] = 'GEST'
             data['id_doc_de_arch_del_cual_es_anexo'] = None if not documento_principal else documento_principal.id_documento_de_archivo_exped
             data['anexo_corresp_a_lista_chequeo'] = False
             data['id_archivo_sistema'] = respuesta.data.get('data').get('id_archivo_digital')

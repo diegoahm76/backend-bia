@@ -94,6 +94,7 @@ urlpatterns = [
     path('tramites/complementos/get/<str:id_solicitud_tramite>/', views.TramitesCompletementosGet.as_view(),name='listar-complementos-tramites'),
     path('tramites/complementos/digitalizacion/create/',views.TramitesSolicitudDeDigitalizacionComplementoCreate.as_view(),name='crear-solicitud-complemento-tramites'),
     path('tramites/complementos/asignar/create/',views.AsignacionComplementoTramitesCreate.as_view(),name='crear-asignacion-grupo-tramites'),
+    path('tramites/solicitud_juridica/create/',views.SolicitudJuridicaTramitesCreate.as_view(),name='crear-solicitud-juridica-tramites'),
     
     #ASIGNACION_DE_OPAS
     path('asginar-opas/seccion-subseccion/get/',views.SeccionSubseccionAsignacionGet.as_view(),name='listar-unidades'),
@@ -116,6 +117,10 @@ urlpatterns = [
     path('serie-subserie-unidad/get/<str:uni>/', views.SerieSubserioUnidadGet.as_view(), name='listar-serie-subserio-unidad'),
     
 
+    #CREAR AUTO DE INICIO
+    path('crear-auto-inicio/',views.CreateAutoInicio.as_view(),name='crear-auto initio'),
+    path('validar-tarea/',views.CreateValidacionTareaTramite.as_view(),name='validar-tarea'),
+    path('crear-expediente/',views.CrearExpediente.as_view(),name="Crear-Expediente-Ventanilla")
 
 
 

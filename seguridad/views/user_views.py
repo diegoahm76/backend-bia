@@ -898,11 +898,12 @@ class RegisterExternoView(generics.CreateAPIView):
 
         # relativeLink= reverse('verify')
         # absurl= 'http://'+ current_site + relativeLink + "?token="+ str(token) + '&redirect-url=' + redirect_url
-        
-        subject = "Usuario registrado exitosamente"
-        template = "email-verified.html"
 
-        Util.notificacion(persona,subject,template)
+        subject = "Registro exitoso"
+        template = "verificacion-cuenta.html"
+        absurl = FRONTEND_URL+"#/auth/login"
+
+        Util.notificacion(persona,subject,template,absurl=absurl)
     
         return Response({'success':True, 'detail':'Usuario creado exitosamente, se ha enviado un correo', 'data':user_data}, status=status.HTTP_201_CREATED)
 

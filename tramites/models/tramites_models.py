@@ -1,7 +1,6 @@
 from django.db import models
 from gestion_documental.models.expedientes_models import ArchivosDigitales, ExpedientesDocumentales
 from gestion_documental.models.radicados_models import Anexos, EstadosSolicitudes, MediosSolicitud, T262Radicados
-from gestion_documental.models.trd_models import ConsecPorNivelesTipologiasDocAgno
 from transversal.models.base_models import Municipio, TipoDocumento
 from transversal.models.entidades_models import SucursalesEmpresas
 from tramites.choices.cod_tipo_operacion_tramite_choices import cod_tipo_operacion_tramite_CHOICES
@@ -27,7 +26,7 @@ class SolicitudesTramites(models.Model):
     nombre_proyecto = models.CharField(max_length=255, db_column='T273nombreProyecto')
     costo_proyecto = models.DecimalField(max_digits=12, decimal_places=2, db_column='T273costoProyecto')
     pago = models.BooleanField(default=False, db_column='T273pago')
-    id_pago_evaluacion = models.IntegerField(null=True, blank=True, db_column='T273Id_PagoEvaluacion')
+    id_pago_evaluacion = models.ForeignKey('recaudo.Pagos', on_delete=models.SET_NULL, null=True, blank=True, db_column='T273Id_PagoEvaluacion')
     id_medio_solicitud = models.ForeignKey(MediosSolicitud, on_delete=models.CASCADE, db_column='T273Id_MedioSolicitud')
     fecha_registro = models.DateTimeField(auto_now_add=True, blank=True, db_column='T273fechaRegistro')
     fecha_envio_solicitud = models.DateTimeField(null=True, blank=True, db_column='T273fechaEnvioSolicitud')
@@ -373,15 +372,15 @@ class ActosAdministrativos(models.Model):
     id_tipo_acto_administrativo = models.ForeignKey('TiposActosAdministrativos', on_delete=models.CASCADE, db_column='T294Id_TipoActoAdministrativo')
     numero_acto_administrativo = models.CharField(null=True, blank=True, max_length=50, db_column='T294numeroActoAdministrativo')
     fecha_acto_administrativo = models.DateTimeField(null=True, blank=True, db_column='T294fechaActoAdministrativo')
-    id_consec_por_nivel_tipologias_doc_agno = models.ForeignKey(ConsecPorNivelesTipologiasDocAgno, on_delete=models.CASCADE, db_column='T294Id_ConsecPorNivel_TipologiasDocAgno')
-    id_notificacion = models.IntegerField(db_column='T294Id_Notificacion')
-    fecha_notificacion = models.DateTimeField(db_column='T294fechaNotificacion')
+    id_consec_por_nivel_tipologias_doc_agno = models.ForeignKey('gestion_documental.ConsecutivoTipologia', on_delete=models.CASCADE, db_column='T294Id_ConsecPorNivel_TipologiasDocAgno')
+    id_notificacion = models.ForeignKey('gestion_documental.NotificacionesCorrespondencia',on_delete=models.SET_NULL,db_column='T294Id_Notificacion',null=True)
+    fecha_notificacion = models.DateTimeField(db_column='T294fechaNotificacion',null=True)
     procede_reposicion = models.BooleanField(null=True, blank=True, db_column='T294procedeReposicion')
     fecha_limite_reposicion = models.DateTimeField(null=True, blank=True, db_column='T294fechaLimiteReposicion')
     id_archivo_acto_administrativo = models.ForeignKey(ArchivosDigitales, on_delete=models.CASCADE, db_column='T294Id_ArchivoActoAdministrativo')
-    id_persona_publica_acto = models.ForeignKey(Personas, on_delete=models.CASCADE, db_column='T294Id_PersonaPublicaActo')
-    estado_actual = models.IntegerField(db_column='T294estadoActual')
-
+    id_persona_publica_acto = models.ForeignKey(Personas, on_delete=models.SET_NULL, db_column='T294Id_PersonaPublicaActo',null=True)
+    estado_actual = models.IntegerField(db_column='T294estadoActual',null=True)
+    
     def __str__(self):
         return str(self.id_acto_administrativo)
 

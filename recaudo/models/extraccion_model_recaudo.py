@@ -556,3 +556,196 @@ class T919EstadoExpediente(models.Model):
 
     class Meta:
         db_table = 'rt919estadoexpediente'
+
+
+from django.db import models
+
+class Rt901Periodo(models.Model):
+    t901codcia = models.CharField(max_length=5)
+    t901codtiporenta = models.CharField(max_length=5)
+    t901agno = models.SmallIntegerField()
+    t901periodo = models.SmallIntegerField()
+    t901descripcion = models.CharField(max_length=100)
+    t901fechainicial = models.DateTimeField()
+    t901fechafinal = models.DateTimeField()
+    t901codtipocalcfacilidad = models.CharField(max_length=5)
+    t901codactividadciiupref = models.CharField(max_length=10)
+
+    class Meta:
+        db_table = 'rt901periodo'
+
+
+
+class Rt903Concepto(models.Model):
+    t903codcia = models.CharField(max_length=5, null=True)
+    t903codtiporenta = models.CharField(max_length=5, null=True)
+    t903codconcepto = models.CharField(max_length=5, null=True)
+    t903nombre = models.CharField(max_length=20, null=True)
+    t903etiqueta = models.CharField(max_length=255, null=True)
+    t903tipooper = models.CharField(max_length=1, null=True)
+    t903valorrango = models.CharField(max_length=255, null=True)
+    t903observacion = models.CharField(max_length=255, null=True)
+    t903codconceptodist = models.CharField(max_length=5, null=True)
+
+    class Meta:
+        db_table = 'rt903concepto'
+
+
+class Rt906ConceptoContab(models.Model):
+    t906codcia = models.CharField(max_length=5, null=True)
+    t906codtiporenta = models.CharField(max_length=5, null=True)
+    t906agno = models.SmallIntegerField(null=True)
+    t906codconcepto = models.CharField(max_length=5, null=True)
+    t906codtipoasiento = models.CharField(max_length=5, null=True)
+    t906consecutivo = models.SmallIntegerField(null=True)
+    t906codcta = models.CharField(max_length=255, null=True)
+    t906codcentro = models.CharField(max_length=255, null=True)
+    t906nit = models.CharField(max_length=255, null=True)
+    t906referencia = models.CharField(max_length=255, null=True)
+    t906detalle = models.CharField(max_length=255, null=True)
+    t906valorbase = models.CharField(max_length=255, null=True)
+    t906valordebito = models.CharField(max_length=255, null=True)
+    t906valorcredito = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        db_table = 'rt906conceptocontab'
+
+
+
+class Rt993TransfSectelect(models.Model):
+    t993codcia = models.CharField(max_length=5, null=True)
+    t993numtransfsectelect = models.IntegerField(null=True)
+    t993agno = models.SmallIntegerField(null=True)
+    t993periodo = models.SmallIntegerField(null=True)
+    t993numformulario = models.CharField(max_length=20, null=True)
+    t993codtipodeclaracion = models.CharField(max_length=5, null=True)
+    t993aprobada = models.CharField(max_length=1, null=True)
+    t993fechadiligenciamiento = models.DateTimeField(null=True)
+    t993fecha = models.DateTimeField(null=True)
+    t993numradicadoentrada = models.CharField(max_length=30, null=True)
+    t993fecharadicadoentrada = models.DateTimeField(null=True)
+    t993nit = models.CharField(max_length=15, null=True)
+    t993idcobro = models.IntegerField(null=True)
+    t993anulado = models.CharField(max_length=1, null=True)
+    t993observacion = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        db_table = 'rt993transfsectelect'
+
+
+
+class Rt994Notificacion(models.Model):
+    t994codcia = models.CharField(max_length=15, null=True)
+    t994numnotificacion = models.IntegerField(null=True)
+    t994codmodonotificacion = models.CharField(max_length=15, null=True)
+    t994fechaenviocorreocert = models.DateTimeField(null=True)
+    t994fecharptarecibidocorreocert = models.DateTimeField(null=True)
+    t994codmotivodevolcorreocert = models.CharField(max_length=5, null=True)
+    t994nit = models.CharField(max_length=15, null=True)
+    t994coddpto = models.CharField(max_length=5, null=True)
+    t994codmpio = models.CharField(max_length=5, null=True)
+    t994direccion = models.CharField(max_length=150, null=True)
+    t994codpostal = models.CharField(max_length=20, null=True)
+    t994telefono = models.CharField(max_length=100, null=True)
+    t994email = models.CharField(max_length=100, null=True)
+    t994codtiporptenotif = models.CharField(max_length=5, null=True)
+    t994nitrptenotif = models.CharField(max_length=15, null=True)
+    t994nombrerptenotif = models.CharField(max_length=100, null=True)
+    t994fechanotificacion = models.DateTimeField(null=True)
+    t994docnotifpersonal = models.BinaryField(null=True)
+    t994observacion = models.CharField(max_length=255, null=True)
+    t994doccitacion = models.BinaryField(null=True)
+    t994fechaenviocitacion = models.DateTimeField(null=True)
+    t994codmotivodevolcitacion = models.CharField(max_length=5, null=True)
+    t994docnorecibecitacion = models.BinaryField(null=True)
+    t994docaviso = models.BinaryField(null=True)
+    t994fechaenvioaviso = models.DateTimeField(null=True)
+    t994codmotivodevolaviso = models.CharField(max_length=5, null=True)
+    t994fecharecibidoaviso = models.DateTimeField(null=True)
+    t994aplicacodigonuevo = models.CharField(max_length=1, null=True)
+    t994fechaedicto = models.DateTimeField(null=True)
+    t994fechaenfirme = models.DateTimeField(null=True)
+    t994codorigennotif = models.CharField(max_length=5, null=True)
+    t994fechainterpusorecurso = models.DateTimeField(null=True)
+    t994anulado = models.CharField(max_length=1, null=True)
+    t994fechaanulacion = models.DateTimeField(null=True)
+    t994motivoanulacion = models.CharField(max_length=255, null=True)
+    t994fechainicio = models.DateTimeField(null=True)
+    t994fecharecibidocitacion = models.DateTimeField(null=True)
+    t994timestamp = models.CharField(max_length=100, null=True)
+    t994fechaavisoweb = models.DateTimeField(null=True)
+    t994fechapublicacitacion = models.DateTimeField(null=True)
+    t994docavisoconst = models.BinaryField(null=True)
+    t994docedicto = models.BinaryField(null=True)
+    t994docfijaaviso = models.BinaryField(null=True)
+    t994docpublicacitacion = models.BinaryField(null=True)
+
+    class Meta:
+        db_table = 'rt994notificacion'
+
+class Rt05TipoSociedad(models.Model):
+    t05codtiposociedad = models.CharField(max_length=5, null=True)
+    t05nombre = models.CharField(max_length=30, null=True)
+    t05observacion = models.CharField(max_length=100, null=True)
+    t05delete = models.CharField(max_length=1, null=True)
+
+    class Meta:
+        db_table = 'rt05tiposociedad'
+
+
+class Rt25Municipio(models.Model):
+    t25coddpto = models.CharField(max_length=5, null=True)
+    t25codmpio = models.CharField(max_length=5, null=True)
+    t25nombre = models.CharField(max_length=50, null=True)
+    t25observacion = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        db_table = 'rt25municipio'
+
+
+class Rt26Pais(models.Model):
+    t26codpais = models.CharField(max_length=5, null=True)
+    t26nombre = models.CharField(max_length=100, null=True)
+    t26observacion = models.CharField(max_length=255, null=True)
+    t26delete = models.CharField(max_length=1, null=True)
+    t26alfa2codpais = models.CharField(max_length=2, null=True)
+    t26alfa3codpais = models.CharField(max_length=3, null=True)
+    t26exogenacodpais = models.CharField(max_length=3, null=True)
+
+    class Meta:
+        db_table = 'rt26pais'
+
+
+class Rt27TipoDocumId(models.Model):
+    t27codtipodocumid = models.CharField(max_length=5, null=True)
+    t27nombre = models.CharField(max_length=100, null=True)
+    t27observacion = models.CharField(max_length=255, null=True)
+    t27delete = models.CharField(max_length=1, null=True)
+    t27alfa2codtipodocumid = models.CharField(max_length=2, null=True)
+    t27alfa1codtipodocumid = models.CharField(max_length=1, null=True)
+
+    class Meta:
+        db_table = 'rt27tipodocumid'
+
+
+class Rt10TipoRetenRango(models.Model):
+    t10codcia = models.CharField(max_length=5, null=True)
+    t10agno = models.SmallIntegerField(null=True)
+    t10codtiporet = models.CharField(max_length=5, null=True)
+    t10rangodesde = models.DecimalField(null=True, max_digits=20, decimal_places=6)
+    t10rangohasta = models.DecimalField(null=True, max_digits=20, decimal_places=6)
+    t10porcentaje = models.FloatField(null=True)
+    t10valor = models.DecimalField(null=True, max_digits=20, decimal_places=6)
+    t10valoruvtadic = models.DecimalField(null=True, max_digits=20, decimal_places=6)
+
+    class Meta:
+        db_table = 'rt10tiporetenrango'
+
+class Rt17TipoRegimen(models.Model):
+    t17codtiporegimen = models.CharField(max_length=5, null=True)
+    t17nombre = models.CharField(max_length=100, null=True)
+    t17observacion = models.CharField(max_length=100, null=True)
+    t17delete = models.CharField(max_length=1, null=True)
+
+    class Meta:
+        db_table = 'rt17tiporegimen'

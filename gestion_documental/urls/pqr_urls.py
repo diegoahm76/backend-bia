@@ -50,6 +50,8 @@ urlpatterns = [
      path('indicadores/indicador-reclamos-contestadas-oportunamente/', views.IndicadorReclamosContestadosOportunamente.as_view(), name='indicador-reclamos-contestadas-oportunamente'),
      path('indicadores/indicador-denuncias-contestadas-oportunamente/', views.IndicadorDenunciasContestadasOportunamente.as_view(), name='indicador-denuncias-contestadas-oportunamente'),
      path('indicadores/indicador-pqrsdf-vencidas/', views.IndicadorVencimientoPQRSDF.as_view(), name='indicador-pqrsdf-vencidas'),
+     path('indicadores/indicador-pqrsdf-vencidas-contestadas/', views.IndicadorPQRSDFVencidasContestadas.as_view(), name='indicador-pqrsdf-vencidas-contestadas'),
+
        
     #Radicacion_Email_118
      path('radicacion-email/login-email/', views.ObtenerCorreosView.as_view(), name='login-radicacion-email'),

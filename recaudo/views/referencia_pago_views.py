@@ -474,7 +474,8 @@ class RefEjemGetView(generics.ListAPIView):
         age = hoy.year
         instance = ConfigReferenciaPagoAgno.objects.filter(agno_ref=age).first()
 
-
+        if not instance:
+            raise NotFound('No existe registro')
         
 
         cod_se_sub = ""
@@ -497,8 +498,7 @@ class RefEjemGetView(generics.ListAPIView):
         
         
         
-        if not instance:
-            raise NotFound('No existe registro')
+
         
         serializer = self.serializer_class(instance)
         
@@ -543,7 +543,7 @@ class ConsecutivoGetView(generics.ListAPIView):
 
             if key == 'id_persona':
                 if value != '':
-                    filter['id_id_persona_solicita'] = value
+                    filter['id_persona_solicita'] = value
         instance = self.get_queryset().filter(**filter).order_by('fecha_consecutivo')
         
         consecutivo_value = request.query_params.get('consecutivo')

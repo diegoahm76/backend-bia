@@ -57,7 +57,7 @@ class ConsultarDatosFecha(generics.ListAPIView):
 
         # Filtrar los datos por fecha si se especificaron los parámetros de consulta
         if fecha_inicial and fecha_final and pk:
-            queryset = Datos.objects.filter(fecha_registro__range=[
+            queryset = Datos.objects.filter(fecha_registro__date__range=[
                                        fecha_inicial, fecha_final], id_estacion=pk).using("bia-estaciones").values(
                 'id_data','fecha_registro','id_estacion','temperatura_ambiente','humedad_ambiente',
                 'presion_barometrica','velocidad_viento','direccion_viento','precipitacion',
@@ -95,7 +95,7 @@ class ConsultarDatosReportes(generics.ListAPIView):
         except ValueError:
             return Response({'success': False, 'detail': 'El mes debe estar en el formato YYYY-MM'}, status=status.HTTP_400_BAD_REQUEST)
 
-        datos = Datos.objects.filter(fecha_registro__range=[
+        datos = Datos.objects.filter(fecha_registro__date__range=[
                                      fecha_inicio, fecha_fin], id_estacion=pk).values(
                 'id_data','fecha_registro','id_estacion','temperatura_ambiente','humedad_ambiente',
                 'presion_barometrica','velocidad_viento','direccion_viento','precipitacion',

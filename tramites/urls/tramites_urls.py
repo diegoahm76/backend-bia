@@ -4,6 +4,7 @@ from tramites.views import tramites_views as views
 urlpatterns = [
     # TRAMITES
     path('general/create/', views.GeneralTramitesCreateView.as_view(), name='general-tramites-create'),
+    path('general/update/<str:id_solicitud_tramite>/', views.GeneralTramitesUpdateView.as_view(), name='general-tramites-update'),
     #Tramites Pivot Table T318
     path('general/get/', views.TramitesPivotGetView.as_view(), name='general-tramites-pivot-get'),
     

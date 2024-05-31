@@ -1,8 +1,11 @@
+import os
 from rest_framework import serializers
 from rest_framework.serializers import ReadOnlyField
 from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 from gestion_documental.models.ccd_models import CatalogosSeries, CatalogosSeriesUnidad
+from docxtpl import DocxTemplate
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.models.tca_models import TablasControlAcceso
 from gestion_documental.models.trd_models import (
     ConfigTipologiasDocAgno,
@@ -16,6 +19,8 @@ from gestion_documental.models.trd_models import (
     FormatosTiposMedioTipoDoc,
     ConsecutivoTipologia
 )
+
+from gestion_documental.models.expedientes_models import DobleVerificacionTmp
 from gestion_documental.choices.tipos_medios_formato_choices import tipos_medios_formato_CHOICES
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
@@ -394,9 +399,47 @@ class ConsecPorNivelesTipologiasDocAgnoSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConsecPorNivelesTipologiasDocAgno
         fields = '__all__'
-
+class ArchivosDigitalesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ArchivosDigitales
+        fields = '__all__'
 
 class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
+    archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    archivos_digitales_copia = ArchivosDigitalesSerializer(source='id_archivo_digital_copia', read_only=True)
+    variables = serializers.SerializerMethodField()
+    class Meta:
+        model = ConsecutivoTipologia
+        fields = '__all__'
+
+    def get_variables(self, obj):
+        ruta_archivo = obj.id_archivo_digital.ruta_archivo.path if obj.id_archivo_digital else None
+        if ruta_archivo and os.path.exists(ruta_archivo):
+            doc = DocxTemplate(ruta_archivo)
+            variables = doc.get_undeclared_template_variables()
+            return variables
+        else:
+            return None
+
+
+class VerificacionFirmasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DobleVerificacionTmp
+        fields = '__all__'
+
+class ConsecutivoTipologiaDocFinalizadosSerializer(serializers.ModelSerializer):
+    archivos_digitales = serializers.SerializerMethodField()
+
+    def get_archivos_digitales(self, obj):
+        archivos_digitales = obj.id_archivo_digital
+        serializer = ArchivosDigitalesSerializer(archivos_digitales)
+        serializer_data = serializer.data
+        if obj.CatalogosSeriesUnidad:
+            serializer_data['nombre_de_Guardado'] = f"{obj.id_plantilla_doc.nombre} {obj.prefijo_consecutivo or ''}{obj.id_unidad_organizacional.codigo}{obj.CatalogosSeriesUnidad.id_catalogo_serie.id_serie_doc.codigo}{obj.CatalogosSeriesUnidad.id_catalogo_serie.id_subserie_doc.codigo if obj.CatalogosSeriesUnidad.id_catalogo_serie.id_subserie_doc else ''}{obj.agno_consecutivo or ''}{obj.nro_consecutivo or ''}"
+        else:
+            serializer_data['nombre_de_Guardado'] = f"{obj.id_plantilla_doc.nombre} {obj.prefijo_consecutivo or ''}{obj.id_unidad_organizacional.codigo}{obj.agno_consecutivo or ''}{obj.nro_consecutivo or ''}"
+        return serializer_data
+
     class Meta:
         model = ConsecutivoTipologia
         fields = '__all__'

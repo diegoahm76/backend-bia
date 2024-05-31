@@ -4,6 +4,8 @@ from transversal.models.personas_models import Personas
 from transversal.models.base_models import ClasesTercero
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage
+from backend.settings.base import MEDIA_ROOT
 from email_validator import validate_email, EmailNotValidError, EmailUndeliverableError, EmailSyntaxError
 from backend.settings.base import EMAIL_HOST_USER, AUTHENTICATION_360_NRS
 from seguridad.models import User, Modulos, Permisos, Auditorias
@@ -17,6 +19,16 @@ from seguridad.lists.fields_abrv_list import fields_abrv_LIST
 import os
 from email.mime.application import MIMEApplication
 class Util:
+
+    @staticmethod
+    def send_email_files(data,path_files=None):
+        email = EmailMessage(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
+        email.content_subtype ='html'
+        for path_file in path_files:
+            email.attach_file(path_file['ruta_archivo'])
+        response = email.send(fail_silently=True)
+        return response
+
 
     @staticmethod
     def send_email_file(data,file=None):
@@ -37,7 +49,7 @@ class Util:
         email = EmailMultiAlternatives(subject= data['email_subject'], body=data['template'], to=[data['to_email']], from_email=EMAIL_HOST_USER)
         
         email.content_subtype ='html'
-        response = email.send(fail_silently=True)
+        response = email.send(fail_silently=False)
         return response
 
         # url = "https://dashboard.360nrs.com/api/rest/mailing"

@@ -6,6 +6,7 @@ from gestion_documental.views import bandeja_tareas_views as views
 from gestion_documental.views import bandeja_tareas_otros_views as views_otros
 from gestion_documental.views import bandeja_tareas_tramites_views as views_tramites
 from gestion_documental.views import bandeja_tareas_opas_views as views_opas
+from gestion_documental.views import bandeja_tareas_documentos_views as views_docs
 from pathlib import Path
 
 urlpatterns = [
@@ -69,6 +70,7 @@ urlpatterns = [
     path('tareas-asignadas/tramites/complemento/documento/digital/get/<str:pk>/', views_tramites.ComplementoTramitesAnexoDocumentoDigitalGet.as_view(), name='get-archivo-complemento'),
     path('tareas-asignadas/tramites/respuesta/detalle/get/<str:pk>/', views_tramites.DetalleRespuestaTramitesByIdGet.as_view(), name='get-detalle-respuesta-tramites-by-id'),
 
+    
     #BANDEJA DE TAREAS DE OPAS
     path('tareas-asignadas/opas/get-by-persona/<str:id>/', views_opas.TareasAsignadasGetOpasByPersona.as_view(), name='get-tareas-asignadas-opas-by-persona'),
     path('detalle-opas/get/<str:id>/', views_opas.DetalleOpaGetbyId.as_view(), name='get-detalle-opas-by-id'),
@@ -103,5 +105,8 @@ urlpatterns = [
     #acta_inicio
     path('4 ', views_opas.ActaInicioCreate.as_view(), name='crear-acta-inicio'),
 
-    
+    #Generador de Documentos
+    path('tareas-asignadas/docs/get-by-persona/<str:id>/', views_docs.TareasAsignadasDocsGet.as_view(), name='get-tareas-asignadas-docs-by-persona'),
+    path('asginacion/documentos/create/', views_docs.AsignacionDocCreate.as_view(), name='asignacion-documentos'),
+    path('persona/bandeja/tareas/', views_docs.ObtenerPersonasConBandejaTareas.as_view(), name='get-personas-bandeja-tareas'),
 ]

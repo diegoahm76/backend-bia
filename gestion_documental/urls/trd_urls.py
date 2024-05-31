@@ -66,10 +66,10 @@ urlpatterns = [
 
     #Consecutivos Tipologias Documentales
     path('consecutivo-tipologia-doc/', views.ConsecutivoTipologiaDoc.as_view(), name='consecutivo-tipologia-doc'),
-    
+    path('codigo-verificacion-create/', views.ValidarFirmaCreate.as_view(), name='codigo-verificacion-create'),
+    path('codigo-verificacion-validacion/', views.ValidacionCodigoView.as_view(), name='codigo-verificacion-validacion'),
+    path('documentos-finalizados-get/', views.DocumentosFinalizadosList.as_view(), name='documentos-finalizados-get'),
+    path('crear-documento-cargado/', views.SubirDocumentoAlGenerador.as_view(), name='crear-documento-cargado'),
 
-
-    
-
-    
+ 
 ]

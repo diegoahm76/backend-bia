@@ -13,9 +13,77 @@ from almacen.models.mantenimientos_models import (
 class SerializerProgramacionMantenimientos(serializers.ModelSerializer):
     id_persona_solicita = PersonasSerializer(read_only=True)
     id_persona_anula = PersonasSerializer(read_only=True)
+    placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
+
     class Meta:
         model=ProgramacionMantenimientos
-        fields=('__all__')
+        fields='__all__'
+        
+class SerializerProgramacionMantenimientosGet(serializers.ModelSerializer):
+    id_programacion_mantenimiento = serializers.ReadOnlyField(source='id_programacion_mtto', default=None)
+    tipo = serializers.ReadOnlyField(source='cod_tipo_mantenimiento', default=None)
+    tipo_descripcion = serializers.CharField(source='get_cod_tipo_mantenimiento_display', default=None)
+    fecha = serializers.ReadOnlyField(source='fecha_programada', default=None)
+    articulo = serializers.ReadOnlyField(source='id_articulo.id_bien', default=None)
+    placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
+    marca = serializers.ReadOnlyField(source='id_articulo.id_marca.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
+    motivo = serializers.ReadOnlyField(source='motivo_mantenimiento', default=None)
+    observacion = serializers.ReadOnlyField(source='observaciones', default=None)
+    responsable = serializers.SerializerMethodField()
+    estado = serializers.SerializerMethodField()
+    fecha_ejecutado = serializers.SerializerMethodField()
+    persona_realiza = serializers.SerializerMethodField()
+    persona_diligencia = serializers.SerializerMethodField()
+
+    def get_fecha_ejecutado(self, obj):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_programacion_mtto=obj.id_programacion_mtto).first()
+        if registro_mantenimiento:
+            return registro_mantenimiento.fecha_ejecutado
+        return None
+    
+    def get_persona_realiza(self, obj):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_programacion_mtto=obj.id_programacion_mtto).first()
+        if registro_mantenimiento:
+            return registro_mantenimiento.id_persona_realiza.__str__()
+        return None
+    
+    def get_persona_diligencia(self, obj):
+        registro_mantenimiento = RegistroMantenimientos.objects.filter(id_programacion_mtto=obj.id_programacion_mtto).first()
+        if registro_mantenimiento:
+            return registro_mantenimiento.id_persona_diligencia.__str__()
+        return None
+
+    def get_responsable(self, obj):
+        nombre_completo_reponsable = None
+        if obj.id_persona_solicita:
+            if obj.id_persona_solicita.tipo_persona == 'J':
+                nombre_completo_reponsable = obj.id_persona_solicita.razon_social
+            else:
+                nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                                obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+                nombre_completo_reponsable = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_reponsable = nombre_completo_reponsable if nombre_completo_reponsable != "" else None
+        return nombre_completo_reponsable
+
+    def get_estado(self, obj):
+        estado = None
+        if obj.fecha_programada:
+            estado = 'Vencido' if obj.fecha_programada < datetime.now().date() else 'Programado'
+        else:
+            hdv_vehiculo = HojaDeVidaVehiculos.objects.filter(id_articulo=obj.id_articulo).first()
+            if hdv_vehiculo and hdv_vehiculo.ultimo_kilometraje:
+                estado = 'Vencido' if obj.kilometraje_programado < hdv_vehiculo.ultimo_kilometraje else 'Programado'
+            else:
+                estado = 'Programado'
+        return estado
+
+    class Meta:
+        model=ProgramacionMantenimientos
+        fields= '__all__'
 
 class AnularMantenimientoProgramadoSerializer(serializers.ModelSerializer):
     justificacion_anulacion = serializers.CharField(max_length=255, min_length=10)

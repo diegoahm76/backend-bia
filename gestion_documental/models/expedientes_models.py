@@ -116,7 +116,7 @@ class DocumentosDeArchivoExpediente(models.Model):
     cantidad_anexos	= models.SmallIntegerField(blank=True, null=True,db_column='T237cantidadDeAnexos')
     id_archivo_sistema	= models.ForeignKey(ArchivosDigitales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T237Id_ArchivoEnSistema')#falta clase (oskitar)
     palabras_clave_documento = models.CharField(max_length=255,blank=True,null=True , db_column='T237palabrasClaveDocumento')
-    sub_sistema_incorporacion = models.CharField(max_length=4, choices=tipo_subsistema_creado_CHOICES, db_column='T237subSistemaDeIncorporacion')
+    sub_sistema_incorporacion = models.CharField(max_length=4, choices=tipo_subsistema_creado_CHOICES, db_column='T237subSistemaDeIncorporacion', blank=True, null=True)
     cod_tipo_radicado = models.CharField(max_length=1, choices=TIPOS_RADICADO_CHOICES,blank=True, null=True, db_column='T237codTipoRadicado')
     codigo_radicado_prefijo	 = models.CharField(max_length=10,blank=True,null=True ,db_column='T237codigoRadicado_Prefijo')
     codigo_radicado_agno = models.SmallIntegerField(blank=True,null=True ,db_column='T237codigoRadicado_Agno')
@@ -230,9 +230,11 @@ class ArchivosSoporte_CierreReapertura(models.Model):
         
 class DobleVerificacionTmp(models.Model):
     id_doble_verificacion = models.AutoField(primary_key=True, db_column='T270IdDobleVerificacion')
-    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T270Id_Expediente')
+    id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.SET_NULL, null=True, blank=True, db_column='T270Id_Expediente')
+    id_consecutivo_tipologia = models.ForeignKey('gestion_documental.ConsecutivoTipologia', on_delete=models.SET_NULL, null=True, blank=True, db_column='T270Id_ConsecutivoTipologia')
     id_persona_firma = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T270Id_PersonaFirma')
     codigo_generado = models.CharField(max_length=6, db_column='T270codigoGenerado')
+    verificacion_exitosa = models.BooleanField(db_column='T270verificacionExitosa', null=True, blank=True)
     fecha_hora_codigo = models.DateTimeField(auto_now_add=True, db_column="T270fechaHoraCodigo")
 
     class Meta:

@@ -26,6 +26,7 @@ from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 from gestion_documental.choices.origen_archivo_choices import origen_archivo_CHOICES
 from gestion_documental.choices.codigo_relacion_titular_choices import cod_relacion_persona_titular_CHOICES
 from gestion_documental.choices.codigo_forma_presentacion_choices import cod_forma_presentacion_CHOICES
+from gestion_documental.models.trd_models import ConsecutivoTipologia
 
 class ConfigTiposRadicadoAgno(models.Model):
 
@@ -443,3 +444,23 @@ class Anexos_PQR(models.Model):
         unique_together = [("id_anexo",)]
         db_table = 'T259Anexos_PQR_Otros'
 
+class AsignacionDocs(models.Model):
+    id_asignacion_doc = models.AutoField(primary_key=True,db_column='T320IdAsignacion_Doc')
+    id_consecutivo = models.ForeignKey('ConsecutivoTipologia',on_delete=models.CASCADE,db_column='T320Id_Consecutivo')
+    consecutivo_asign_x_doc = models.SmallIntegerField(db_column='T320consecutivoAsignXDoc')
+    firma = models.BooleanField(db_column='T320firma')
+    fecha_asignacion = models.DateTimeField(db_column='T320fechaAsignacion')
+    id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T320Id_PersonaAsigna',related_name='persona_asigna_docs')
+    id_persona_asignada = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T320Id_PersonaAsignada',related_name='persona_asignada_docs')
+    cod_estado_asignacion = models.CharField(max_length=2,
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')],
+                                             db_column='T320codEstadoAsignacion',null=True,blank=True)
+    fecha_eleccion_estado = models.DateTimeField(db_column='T320fechaEleccionEstado',null=True,blank=True)
+    justificacion_rechazo = models.CharField(max_length=250,null=True,blank=True,db_column='T320justificacionRechazo')
+    asignacion_de_ventanilla = models.BooleanField(db_column='T320asignacionDeVentanilla')
+    id_und_org_seccion_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,null=True,blank=True,db_column='T320Id_UndOrgSeccion_Asignada',related_name='unidad_asignada_docs')
+    id_und_org_oficina_asignada = models.ForeignKey(UnidadesOrganizacionales,on_delete=models.CASCADE,null=True,blank=True,db_column='T320Id_UndOrgOficina_Asignada')
+
+    class Meta:
+        db_table = 'T320Asignacion_Docs'
+        unique_together = (('id_consecutivo', 'consecutivo_asign_x_doc'), )

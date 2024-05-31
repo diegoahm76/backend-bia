@@ -279,10 +279,20 @@ class ArchivosInstrumento(models.Model):
         verbose_name_plural = 'archivos instrumento'
         unique_together = ('id_instrumento', 'nombre_archivo',)
 
+class TiposAccionesCorrectivas(models.Model):
+    id_tipo_accion = models.AutoField(primary_key=True, db_column='T627IdTipoAccion')
+    nombre_tipo_accion = models.CharField(max_length=255, db_column='T627nombreTipoAccion')
+    descripcion = models.CharField(max_length=255, db_column='T627descripcion')
+    fecha_creacion = models.DateTimeField(db_column='T627fechaCreacion')
+    item_ya_usado = models.BooleanField(default=False, db_column='T627itemYaUsado')
+    class Meta:
+        db_table = 'T627TiposAccionesCorrectivas'
+        verbose_name = 'tipo de accion correctiva'
+        verbose_name_plural = 'tipos de acciones correctivas'
+
 class AccionesCorrectivas(models.Model):
     id_accion = models.AutoField(primary_key=True, db_column='T626IdAccion')
-    nombre_accion = models.CharField(max_length=255, db_column='T626nombreAccion')
-    descripcion = models.CharField(max_length=255, db_column='T626descripcion')
+    id_tipo_accion = models.ForeignKey(TiposAccionesCorrectivas, on_delete=models.CASCADE, db_column='T626Id_TipoAccion')
     observacion_accion = models.CharField(max_length=255, db_column='T626observacionAccion')
     id_expediente = models.ForeignKey(ExpedientesDocumentales, on_delete=models.CASCADE, db_column='T626Id_Expediente')
     id_tramite = models.ForeignKey(SolicitudesTramites, on_delete=models.CASCADE, db_column='T626Id_Tramite')

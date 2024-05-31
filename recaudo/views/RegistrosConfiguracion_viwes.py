@@ -338,6 +338,8 @@ class Borrar_ValoresVariables(generics.DestroyAPIView):
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
+            if instance.usada:
+                return  Response({'success': False, 'detail': 'No se puede eliminar un registro que ya ha sido usado.'},status=status.HTTP_400_BAD_REQUEST)
             self.perform_destroy(instance)
             return Response({'success': True, 'detail': 'Registro eliminado correctamente'},
                             status=status.HTTP_200_OK)
