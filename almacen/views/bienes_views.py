@@ -1239,7 +1239,7 @@ class SearchArticulosPagination(PageNumberPagination):
 class SearchArticulos(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = SearchArticulosPagination  # Clase de paginación
+    pagination_class = SearchArticulosPagination  
 
     def get_queryset(self):
         queryset = CatalogoBienes.objects.all()
@@ -1273,7 +1273,7 @@ class SearchArticulos(generics.ListAPIView):
 
         if page is not None:
             serializer = self.serializer_class(page, many=True)
-            total_pages = self.get_total_pages(queryset)  # Calcular el número total de páginas
+            total_pages = self.get_total_pages(queryset) 
             return self.get_paginated_response(serializer.data, self.paginator.page.number, total_pages,total_elements)
 
         serializer = self.serializer_class(queryset, many=True)
