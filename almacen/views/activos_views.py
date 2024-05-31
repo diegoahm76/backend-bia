@@ -2366,14 +2366,21 @@ class BusquedaArticulosSubView(generics.ListAPIView):
     def get_queryset(self):
         id_bien = self.kwargs['id_bien']  # Suponiendo que pasas el ID del bien como parte de la URL
 
-        # Obtener el ID de la solicitud de activos filtrando por el ID del bien
-        solicitud_id = ItemsSolicitudActivos.objects.filter(id_bien=id_bien).first().id_solicitud_activo
+        # # Obtener el ID de la solicitud de activos filtrando por el ID del bien
+        # solicitud_id = ItemsSolicitudActivos.objects.filter(id_bien=id_bien).first().id_solicitud_activo
 
-        # Obtener el ID del bien solicitado de la tabla ItemsSolicitudActivos
-        id_bien_solicitado = ItemsSolicitudActivos.objects.filter(id_solicitud_activo=solicitud_id).values_list('id_bien', flat=True)
+        # # Obtener el ID del bien solicitado de la tabla ItemsSolicitudActivos
+        # id_bien_solicitado = ItemsSolicitudActivos.objects.filter(id_solicitud_activo=solicitud_id).values_list('id_bien', flat=True)
 
         # Filtrar los registros de CatalogoBienes que tengan id_bien_padre igual al ID del bien solicitado
-        bienes_coincidentes = CatalogoBienes.objects.filter(id_bien_padre__in=id_bien_solicitado)
+
+        # VALIDAR SI ESTO QUE AÑADÍ ESTÁ BIEN, ES PARA CONTROLAR QUE NO SE DESPACHEN BIENES YA DESPACHADOS ANTES
+        bienes_coincidentes = CatalogoBienes.objects.filter(id_bien_padre=id_bien)
+        bienes_coincidentes_values = bienes_coincidentes.values_list('id_bien', flat=True)
+        items_despachos_activos = ItemsDespachoActivos.objects.filter(id_bien_despachado__in=bienes_coincidentes_values, id_despacho_activo__despacho_anulado=False)
+        items_despachos_activos_values = items_despachos_activos.values_list('id_bien_despachado', flat=True)
+
+        bienes_coincidentes = bienes_coincidentes.exclude(id_bien__in=items_despachos_activos_values)
 
         # Inicializar una lista para almacenar los datos que serán serializados
         queryset = []
@@ -2383,8 +2390,8 @@ class BusquedaArticulosSubView(generics.ListAPIView):
             # Obtener la cantidad de artículos despachados (siempre será 1)
             cantidad_despachada = 1
 
-            # Obtener las observaciones del item
-            observaciones = ItemsSolicitudActivos.objects.filter(id_bien=bien.id_bien, id_solicitud_activo=solicitud_id).values_list('observacion', flat=True).first()
+            # # Obtener las observaciones del item
+            # observaciones = ItemsSolicitudActivos.objects.filter(id_bien=bien.id_bien, id_solicitud_activo=solicitud_id).values_list('observacion', flat=True).first()
 
             # Obtener el nombre de la bodega desde el modelo Inventario
             nombre_bodega = Inventario.objects.filter(id_bien=bien.id_bien).values_list('id_bodega__nombre', flat=True).first()
@@ -2402,7 +2409,7 @@ class BusquedaArticulosSubView(generics.ListAPIView):
                 'marca': bien.id_marca.nombre,
                 'nombre_bien_espachado': bien.nombre,
                 'cantidad_despachada': cantidad_despachada,
-                'observaciones': observaciones,
+                'observaciones': None,
                 'id_bodega': id_bodega,
                 'nombre_bodega': nombre_bodega
             }
