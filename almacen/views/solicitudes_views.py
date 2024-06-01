@@ -296,6 +296,10 @@ class CreateSolicitud(generics.UpdateAPIView):
         info_solicitud['solicitud_abierta'] = True
         solicitudes_existentes = SolicitudesConsumibles.objects.all()
         bienes_repetidos = [i['id_bien'] for i in items_solicitud]
+
+        if not info_solicitud.get('id_unidad_para_la_que_solicita'):
+            raise NotFound('Debe ingresar la unidad organizacional para la que solicita')
+        
         unidad_para_la_que_solicita = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional = info_solicitud['id_unidad_para_la_que_solicita']).values().first()
         if info_solicitud['id_funcionario_responsable_unidad'] != None and info_solicitud['id_funcionario_responsable_unidad'] != '':
             funcionario_responsable = Personas.objects.filter(id_persona = info_solicitud['id_funcionario_responsable_unidad']).first()
