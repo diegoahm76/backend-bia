@@ -4003,7 +4003,11 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
-            ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
+            #Para Windows
+            #ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
+
+            #Para Linux
+            ruta =  f'{consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
             pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
             print(pdf)
@@ -4016,9 +4020,17 @@ class ValidacionCodigoView(generics.UpdateAPIView):
 
     def convert_word_to_pdf(self, word_file_path, consecutivo_tipologia):
         # Command to convert Word to PDF using LibreOffice
-        ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
+        #Para Windows
+        #ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
 
-        command = ['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+        #Para Linux
+        ruta_output = f'{MEDIA_ROOT}{os.sep}home{os.sep}BIA{os.sep}Otros{os.sep}Documentos'
+
+        #Para Windows
+        #command = ['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+
+        #Para Linux
+        command = ['libreoffice', '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', ruta_output, word_file_path]
 
         try:
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
