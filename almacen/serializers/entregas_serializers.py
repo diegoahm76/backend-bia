@@ -17,6 +17,7 @@ class GetNumeroEntregas(serializers.ModelSerializer):
 class GetEntregasSerializer(serializers.ModelSerializer):
     cod_tipo_entrada = serializers.ReadOnlyField(source='id_entrada_almacen_cv.id_tipo_entrada.cod_tipo_entrada', default=None)
     tipo_entrada = serializers.ReadOnlyField(source='id_entrada_almacen_cv.id_tipo_entrada.nombre', default=None)
+    ruta_archivo_doc_con_recibido = serializers.ReadOnlyField(source='ruta_archivo_doc_con_recibido.ruta_archivo.url', default=None)
     
     class Meta:
         model = DespachoConsumo

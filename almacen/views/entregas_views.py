@@ -1,5 +1,7 @@
 from rest_framework import generics,status
 from rest_framework.response import Response
+from gestion_documental.models.expedientes_models import ArchivosDigitales
+from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_almacen import PermisoActualizarEntregaDonacionesResarcimientosCompensacionesViveros, PermisoAnularEntregaDonacionesResarcimientosCompensacionesViveros, PermisoCrearEntregaDonacionesResarcimientosCompensacionesViveros
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
@@ -97,7 +99,7 @@ class CrearEntregaView(generics.CreateAPIView):
         data_entrega = json.loads(request.data['data_entrega'])
         data_items_entrega = json.loads(request.data['data_items_entrega'])
 
-        data_entrega['ruta_archivo_doc_con_recibido'] = request.FILES.get('ruta_archivo_doc_con_recibido')
+        archivo_soporte = request.FILES.get('ruta_archivo_doc_con_recibido')
         persona_logeada = request.user.persona.id_persona
         data_entrega['id_persona_despacha'] = persona_logeada
         data_entrega['es_despacho_conservacion'] = True
@@ -246,10 +248,22 @@ class CrearEntregaView(generics.CreateAPIView):
             except ValidationError as e:
                 return Response({'success':False, 'detail':'No se puede realizar una entrega si alguno de los bienes enviados a despachar no tiene cantidades disponibles en bodega', 'Items que no tienen cantidades disponibles en bodega': items_con_cantidad_no_disponible_en_bodega}, status=status.HTTP_400_BAD_REQUEST)
 
+        archivo_creado_instance = None
+
+        # CREAR ARCHIVO EN T238
+        if archivo_soporte:
+            archivo_creado = UtilsGestor.create_archivo_digital(archivo_soporte, "AlmacenEntrega")
+            archivo_creado_instance = ArchivosDigitales.objects.filter(id_archivo_digital=archivo_creado.get('id_archivo_digital')).first()
+            
+            data_entrega['ruta_archivo_doc_con_recibido'] = archivo_creado_instance.id_archivo_digital
+
         #CREACIÓN DE ENTREGA MAESTRO
         serializer = self.serializer_class(data=data_entrega, many=False)
         serializer.is_valid(raise_exception=True)
         serializador = serializer.save()
+
+        entrega_output = serializer.data
+        entrega_output['ruta_archivo_doc_con_recibido'] = archivo_creado_instance.ruta_archivo.url if archivo_creado_instance else None
 
         #CREACIÓN DE ENTREGA DETALLE
         for item in data_items_entrega:
@@ -311,7 +325,7 @@ class CrearEntregaView(generics.CreateAPIView):
             }
         Util.save_auditoria_maestro_detalle(auditoria_data)
 
-        return Response({'success':True, 'detail':'Entrega creada exitosamente', 'Entrega creada': serializer.data, 'Items entregados': items_serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success':True, 'detail':'Entrega creada exitosamente', 'Entrega creada': entrega_output, 'Items entregados': items_serializer.data}, status=status.HTTP_200_OK)
 
 
 class AnularEntregaView(generics.RetrieveUpdateAPIView):
