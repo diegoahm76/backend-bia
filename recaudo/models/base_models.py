@@ -99,7 +99,7 @@ class TipoRenta(models.Model):
 class TipoCobro(models.Model):
     id_tipo_cobro = models.AutoField(primary_key=True, db_column='T441IdTipoCobro')  
     nombre_tipo_cobro = models.CharField(max_length=255, db_column='T441NombreTipoCobro',unique=True)
-    tipo_renta_asociado = models.ForeignKey(TipoRenta, on_delete=models.CASCADE, db_column='T442IdTipoAsociado', related_name='tiporenta_tipo_cobro')
+    tipo_renta_asociado = models.ForeignKey(TipoRenta, on_delete=models.PROTECT, db_column='T442IdTipoAsociado', related_name='tiporenta_tipo_cobro')
 
 
 
