@@ -31,7 +31,7 @@ urlpatterns = [
         path('variables/put/<str:pk>/', viwes.Actualizar_Variables.as_view(), name='registros-variables'),
         path('variables/delete/<str:pk>/', viwes.Borrar_Variables.as_view(), name='registros-variables'),
 
-
+        path('valoresvariables/<int:id_valores_variables>/', viwes.ValoresVariablesPorIdView.as_view(), name='valores-variables-por-id'),
         path('valoresvariables/get/', viwes.Vista_ValoresVariables.as_view(), name='registros-valoresvariables'),
         path('valoresvariables/post/', viwes.Crear_ValoresVariables.as_view(), name='registros-valoresvariables'),
         path('valoresvariables/put/<str:pk>/', viwes.Actualizar_ValoresVariables.as_view(), name='registros-valoresvariables'),
