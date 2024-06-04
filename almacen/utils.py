@@ -118,7 +118,7 @@ class UtilAlmacen:
         entrada = EntradasAlmacen.objects.filter(id_entrada_almacen=id_entrada).first()
         inventario = Inventario.objects.filter(id_bien=id_bien, id_bodega=id_bodega).first()
 
-        saldo_actual = inventario.cantidad_entrante_consumo - inventario.cantidad_saliente_consumo
+        saldo_actual = inventario.cantidad_entrante_consumo - inventario.cantidad_saliente_consumo if inventario.cantidad_saliente_consumo else inventario.cantidad_entrante_consumo
         
         # HALLAR REGISTROS DE ENTRADAS POSTERIORES
         entradas_posteriores = EntradasAlmacen.objects.filter(fecha_entrada__gte=entrada.fecha_entrada, entrada_anulada=None)

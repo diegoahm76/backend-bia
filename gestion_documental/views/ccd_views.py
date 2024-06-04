@@ -4,6 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db.models import Q
 from django.db import transaction
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.utils import UtilsGestor
 from seguridad.permissions.permissions_gestor import PermisoActualizarAsignacionSeccionesResponsablesCCD, PermisoActualizarCCD, PermisoActualizarDelegacionOficinasResponsablesExpedientes, PermisoActualizarHomologacionSeccionesPersistentesCCD, PermisoCrearAsignacionSeccionesResponsablesCCD, PermisoCrearCCD, PermisoCrearDelegacionOficinasResponsablesExpedientes, PermisoCrearHomologacionSeccionesPersistentesCCD
@@ -340,7 +342,10 @@ class CreateSeriesDoc(generics.CreateAPIView):
         serie = self.queryset.all().filter(id_ccd=data['id_ccd'], codigo=int(data['codigo'])).first()
         if serie:
             # ACOMODAR CODIGOS DE SERIES POSTERIORES
-            series_posteriores = [serie_instance for serie_instance in self.queryset.all().filter(id_ccd=data['id_ccd']) if int(serie_instance.codigo) >= int(data['codigo'])]
+            series_posteriores = self.queryset.all().filter(id_ccd=data['id_ccd']).annotate(
+                codigo_int=Cast('codigo', IntegerField())
+            ).filter(codigo_int__gte=int(data['codigo'])).order_by('-codigo_int')
+            
             for serie_posterior in series_posteriores:
                 serie_posterior.codigo = int(serie_posterior.codigo) + ccd.valor_aumento_serie
                 serie_posterior.save()
@@ -466,7 +471,9 @@ class DeleteSeriesDoc(generics.DestroyAPIView):
             serie.delete()
             
             # ACOMODAR CODIGOS DE SERIES POSTERIORES
-            series_posteriores = self.queryset.all().filter(id_ccd=id_ccd,codigo__gt=codigo_serie).order_by('codigo')
+            series_posteriores = self.queryset.all().filter(id_ccd=id_ccd).annotate(
+                codigo_int=Cast('codigo', IntegerField())
+            ).filter(codigo_int__gt=int(codigo_serie)).order_by('codigo_int')
             
             for serie_posterior in series_posteriores:
                 serie_posterior.codigo = codigo_serie

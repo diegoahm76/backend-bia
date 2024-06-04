@@ -808,7 +808,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
          
 
             conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=cod_alerta).first()
-            if conf :
+            if conf and instance.fecha_programada:
                 crear_alerta=AlertasProgramadasCreate()
 
                 data_alerta = {
