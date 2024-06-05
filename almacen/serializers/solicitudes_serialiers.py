@@ -12,10 +12,19 @@ from transversal.serializers.personas_serializers import PersonasFilterSerialize
 
 class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
     nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
-    
+    persona_solicita = serializers.SerializerMethodField()
+
     class Meta:
         model = SolicitudesConsumibles
         exclude = ['id_vivero_solicita']
+
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
 
 class GetListSolicitudesSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()
