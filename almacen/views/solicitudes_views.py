@@ -31,6 +31,7 @@ from django.db.models import Q
 from rest_framework.response import Response
 from datetime import datetime, date
 from almacen.serializers.solicitudes_serialiers import ( 
+    CrearSolicitudesPostNewSerializer,
     CrearSolicitudesPostSerializer,
     CrearItemsSolicitudConsumiblePostSerializer,
     GetListSolicitudesSerializer,
@@ -558,7 +559,7 @@ class GetSolicitudesNoAprobadas(generics.ListAPIView):
 
 class GetSolicitudesById_Solicitudes(generics.ListAPIView):
     # ESTA FUNCIONALIDAD PERMITE CONSULTAR SOLICITUDES DE BIENES DE CONSUMO POR ID_SOLICITUDES
-    serializer_class = CrearSolicitudesPostSerializer
+    serializer_class = CrearSolicitudesPostNewSerializer
     queryset=SolicitudesConsumibles.objects.all()
     serializer_item_solicitud = CrearItemsSolicitudConsumiblePostSerializer
     
@@ -617,12 +618,28 @@ class RevisionSolicitudBienConsumosPorSupervisor(generics.UpdateAPIView):
     
 class SolicitudesPendientesDespachar(generics.ListAPIView):
     serializer_class = SolicitudesPendientesAprobarSerializer
-    queryset=SolicitudesConsumibles.objects.all()
-    
+    queryset = SolicitudesConsumibles.objects.all()
+
     def get(self, request):
-        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(Q(estado_aprobacion_responsable='A') & Q(gestionada_almacen=False)).exclude(solicitud_anulada_solicitante=True)
+        # Obtener el parámetro de nro_solicitud_por_tipo de la solicitud (si se proporciona)
+        nro_solicitud_por_tipo = request.query_params.get('nro_solicitud_por_tipo')
+
+        # Crear la consulta inicial
+        pendientes_por_despachar = SolicitudesConsumibles.objects.filter(
+            Q(estado_aprobacion_responsable='A') & 
+            Q(gestionada_almacen=False)
+        ).exclude(solicitud_anulada_solicitante=True)
+
+        # Aplicar el filtro de nro_solicitud_por_tipo si se proporciona
+        if nro_solicitud_por_tipo:
+            pendientes_por_despachar = pendientes_por_despachar.filter(nro_solicitud_por_tipo=nro_solicitud_por_tipo)
+
+        # Serializar los datos
         serializer = self.serializer_class(pendientes_por_despachar, many=True)
-        return Response({'success':True,'Solicitudes pendientes por despahcar':serializer.data, },status=status.HTTP_200_OK)
+
+        # Devolver la respuesta
+        return Response({'success': True, 'Solicitudes pendientes por despachar': serializer.data}, status=status.HTTP_200_OK)
+
 
 class RechazoSolicitudesBienesAlmacen(generics.UpdateAPIView):
     serializer_class = CrearSolicitudesPostSerializer
