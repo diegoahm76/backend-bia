@@ -4000,30 +4000,34 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
 
-                authorization_header = request.META.get('HTTP_AUTHORIZATION')
-                data_in = request.data
-                if not authorization_header:
-                    raise ValidationError("No se suministro un Token")
+                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                # data_in = request.data
+                # if not authorization_header:
+                #     raise ValidationError("No se suministro un Token")
 
-                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
-                token_camunda=None
+                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                # token_camunda=None
         
-                if 'access' in data_in:
+                # if 'access' in data_in:
                     
-                    token_camunda=data_in['access']
+                #     token_camunda=data_in['access']
                     
-                else:
-                    token_camunda = self.get_token_camunda(token)
+                # else:
+                #     token_camunda = self.get_token_camunda(token)
 
-                print(token_camunda)
+                # print(token_camunda)
 
-                img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
-                print(img)
+                # img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
+                # print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
-            ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
+            #Para Windows
+            #ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
+
+            #Para Linux
+            ruta =  f'{consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
             pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
             print(pdf)
@@ -4036,9 +4040,13 @@ class ValidacionCodigoView(generics.UpdateAPIView):
 
     def convert_word_to_pdf(self, word_file_path, consecutivo_tipologia):
         # Command to convert Word to PDF using LibreOffice
-        ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
+        #Para Windows
+        #ruta_output = r'{}{}{}{}{}{}{}{}{}'.format(MEDIA_ROOT, os.sep, 'home', os.sep, 'BIA', os.sep, 'Otros', os.sep, 'Documentos')
 
-        command = ['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
+        #Para Linux
+        ruta_output = f'{MEDIA_ROOT}{os.sep}home{os.sep}BIA{os.sep}Otros{os.sep}Documentos'
+
+        command = ['libreoffice', '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', ruta_output, word_file_path]
 
         try:
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
