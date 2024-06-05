@@ -1402,7 +1402,7 @@ class DeleteTiposTramitesView(generics.DestroyAPIView):
         
 class GetTiposTramitesSasoftcoGetView(generics.ListAPIView):
     serializer_class = GetTiposTramitesSerializer
-    queryset = PermisosAmbientales.objects.filter(id_permiso_ambiental__gte=15, id_permiso_ambiental__lte=46)
+    queryset = PermisosAmbientales.objects.filter(id_permiso_ambiental__gte=15, id_permiso_ambiental__lte=40)
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
