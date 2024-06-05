@@ -1778,6 +1778,17 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
 
         #T096ActivosDevolucionados
         activos_devolucionados_data = data.get('activos_devolucionados', [])
+        despacho_tipo = False
+        despacho_activo = DespachoActivos.objects.get(id_despacho_activo = id_despacho_activo)
+        if not despacho_activo.despacho_sin_solicitud:
+            solicitud_activo = SolicitudesActivos.objects.get(id_solicitud_activo=despacho_activo.id_solicitud_activo.id_solicitud_activo)
+            if solicitud_activo.solicitud_prestamo:
+                despacho_tipo = True 
+            else:
+                despacho_tipo = False
+        else:
+            despacho_tipo = False
+
         for activo_devolucionado_data in activos_devolucionados_data:
             activo_devolucionado_data['id_devolucion_activo'] = devolucion_obj.id_devolucion_activos
             activo_devolucionado_serializer = ActivosDevolucionadosSerializer(data=activo_devolucionado_data)
@@ -1827,7 +1838,7 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
                 inventario_obj.cod_estado_activo = activo_devolucionado_obj.cod_estado_activo_devolucion
                 inventario_obj.ubicacion_en_bodega = True
                 inventario_obj.fecha_ultimo_movimiento = current_date
-                inventario_obj.tipo_doc_ultimo_movimiento = 'DEV'
+                inventario_obj.tipo_doc_ultimo_movimiento = 'DEV_P' if despacho_tipo else 'DEV_A'
                 inventario_obj.id_registro_doc_ultimo_movimiento = None
                 inventario_obj.save()
         #raise ValidationError("PERE")
