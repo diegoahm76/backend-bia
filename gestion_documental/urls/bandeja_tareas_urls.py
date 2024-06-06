@@ -111,5 +111,7 @@ urlpatterns = [
     path('persona/bandeja/tareas/', views_docs.ObtenerPersonasConBandejaTareas.as_view(), name='get-personas-bandeja-tareas'),
     path('aceptar/tarea/docs/<str:pk>/', views_docs.TareasAsignadasAceptarDocsUpdate.as_view(), name='update-aceptar-tarea-docs'),
     path('rechazar/tarea/docs/<str:pk>/', views_docs.TareasAsignadasDocsRechazarUpdate.as_view(), name='update-rechazar-tarea-docs'),
+    path('asignaciones/docs/', views_docs.ObternerAsignacionesDocumentos.as_view(), name='asignaciones-docs'),
+    path('cancelar/asignaciones/docs/<str:pk>/', views_docs.CancelarAsignacionDocumentos.as_view(), name='cancelar-asignacion-docs'),
     
 ]
