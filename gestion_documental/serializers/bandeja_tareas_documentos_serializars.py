@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from gestion_documental.models.bandeja_tareas_models import ReasignacionesTareas, TareasAsignadas
 from gestion_documental.models.expedientes_models import DobleVerificacionTmp
-from gestion_documental.serializers.trd_serializers import ConsecutivoTipologiaDocSerializer
+from gestion_documental.serializers.trd_serializers import ConsecutivoTipologiaDocTareasSerializer
 
 from gestion_documental.models.radicados_models import AsignacionDocs, ConfigTiposRadicadoAgno, BandejaTareasPersona
 from transversal.models.base_models import Departamento
@@ -102,7 +102,7 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
                     break
         if not documento:
             return None
-        return ConsecutivoTipologiaDocSerializer(documento).data
+        return ConsecutivoTipologiaDocTareasSerializer(documento).data
     
     def get_consecutivo(self,obj):
         tarea = obj

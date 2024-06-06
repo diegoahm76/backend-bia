@@ -423,6 +423,14 @@ class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
                 return variables
             else:
                 return None
+            
+class ConsecutivoTipologiaDocTareasSerializer(serializers.ModelSerializer):
+    archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
+    archivos_digitales_copia = ArchivosDigitalesSerializer(source='id_archivo_digital_copia', read_only=True)
+    class Meta:
+        model = ConsecutivoTipologia
+        fields = '__all__'
+
 
 
 class VerificacionFirmasSerializer(serializers.ModelSerializer):

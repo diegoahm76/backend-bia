@@ -177,8 +177,12 @@ class ListadoDeudoresViews(generics.ListAPIView):
             response_data = instancia_obligaciones.obligaciones_deudor(data['identificacion'])
             if response_data['obligaciones']:
                 data['obligaciones'] = True
+                data['monto_total'] = response_data.get('monto_total')
+                data['monto_total_con_intereses'] = response_data.get('monto_total_con_intereses')
             else:
                 data['obligaciones'] = False
+                data['monto_total'] = None
+                data['monto_total_con_intereses'] = None
 
         return data_deudores
   
