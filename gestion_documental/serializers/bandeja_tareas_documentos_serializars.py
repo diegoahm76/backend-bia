@@ -41,9 +41,6 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
     estado_asignacion_tarea = serializers.ReadOnlyField(source='get_cod_estado_asignacion_display',default=None)#cod_estado_solicitud
     documento = serializers.SerializerMethodField(default=None)
     # respondida_por = serializers.ReadOnlyField(source='nombre_persona_que_responde',default=None)
-    tarea_reasignada_a = serializers.SerializerMethodField(default=None)
-    unidad_org_destino = serializers.SerializerMethodField(default=None)
-    estado_reasignacion_tarea = serializers.SerializerMethodField(default=None)
 
     class Meta:#
         model = TareasAsignadas
@@ -131,63 +128,6 @@ class TareasAsignadasDocsGetSerializer(serializers.ModelSerializer):
         return cadena
     
     
-    def get_tarea_reasignada_a(self,obj):
-
-        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).order_by('-fecha_reasignacion').first()
-
-        #print(reasignacion)
-        if not reasignacion:
-            return None
-        persona = None
-
-        if reasignacion.id_persona_a_quien_se_reasigna:
-            persona = reasignacion.id_persona_a_quien_se_reasigna
-        else:
-            return None
-        
-        nombre_completo = None
-        nombre_list = [persona.primer_nombre, persona.segundo_nombre,
-                        persona.primer_apellido, persona.segundo_apellido]
-        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
-        nombre_completo = nombre_completo if nombre_completo != "" else None
-        return nombre_completo
-
-
-
-    #     return None
-    def get_estado_reasignacion_tarea(self,obj):
-        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).order_by('-fecha_reasignacion').first()
-        if not reasignacion:
-            return None
-        
-        if reasignacion.cod_estado_reasignacion == 'Re':
-            return reasignacion.get_cod_estado_reasignacion_display() +" "+reasignacion.justificacion_reasignacion_rechazada
-        return reasignacion.get_cod_estado_reasignacion_display()
-        
-    
-    def get_unidad_org_destino(self,obj):
-
-        reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada=obj.id_tarea_asignada).order_by('-fecha_reasignacion').first()
-
-        #print(reasignacion)
-        if not reasignacion:
-            return None
-        persona = None
-
-        if reasignacion.id_persona_a_quien_se_reasigna:
-            persona = reasignacion.id_persona_a_quien_se_reasigna
-        else:
-            return None
-        
-        unidad_actual = persona.id_unidad_organizacional_actual
-        if not unidad_actual:
-            return None
-        cadena = ''
-        if unidad_actual.cod_agrupacion_documental:
-            cadena = unidad_actual.codigo+' ' + ' '+unidad_actual.nombre+' '+unidad_actual.cod_agrupacion_documental 
-        else:
-             cadena = unidad_actual.codigo+' ' + ' '+unidad_actual.nombre
-        return cadena
     def get_asignado_por(self,obj):
         #buscamos la asignacion
         tarea = obj
@@ -318,9 +258,31 @@ class TareasAsignadasOotrosUpdateSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AsignacionDocsPostSerializer(serializers.ModelSerializer):
+    persona_asginada = serializers.SerializerMethodField()
+    persona_asigna = serializers.SerializerMethodField()
+    unidad_organizacional_asignada = serializers.ReadOnlyField(source='id_persona_asignada.id_unidad_organizacional_actual.nombre',default=None)
     class Meta:
         model = AsignacionDocs
         fields = '__all__'
+
+    def get_persona_asginada(self,obj):
+        persona = obj.id_persona_asignada
+        nombre_completo = None
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                        persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+    
+    def get_persona_asigna(self,obj):
+        persona = obj.id_persona_asigna
+        nombre_completo = None
+        nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                        persona.primer_apellido, persona.segundo_apellido]
+        nombre_completo = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo = nombre_completo if nombre_completo != "" else None
+        return nombre_completo
+    
 
 class PersonasBandejaSerializer(serializers.ModelSerializer):
     nombre_unidad_organizacional_actual=serializers.ReadOnlyField(source='id_unidad_organizacional_actual.nombre',default=None)

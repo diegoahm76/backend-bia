@@ -240,24 +240,6 @@ class TareasAsignadasDocsRechazarUpdate(generics.UpdateAPIView):
 
 
 
-class TareasAsignadasOtroJusTarea(generics.UpdateAPIView):
-
-    serializer_class = TareasAsignadasGetJustificacionSerializer
-    queryset = TareasAsignadas.objects.all()
-    permission_classes = [IsAuthenticated]
-    def get(self, request,pk):
-        
-        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
-        
-        if not tarea:
-            raise NotFound('No se encontro la tarea')
-        if  tarea.cod_estado_asignacion == 'Ac':
-            raise NotFound('Esta tarea fue aceptada')
-        
-        serializer = self.serializer_class(tarea)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
-
-
 
 class AsignacionDocCreate(generics.CreateAPIView):
     serializer_class = AsignacionDocsPostSerializer
@@ -272,7 +254,7 @@ class AsignacionDocCreate(generics.CreateAPIView):
         if not 'firma' in data_in:
             raise ValidationError("No se envio la firma del documento")
         
-        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'], id_persona_asiganada = data_in['id_persona_asignada']).first()
+        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'], id_persona_asignada = data_in['id_persona_asignada']).first()
         #for asignacion in instance:
             #print(asignacion)
         if instance.cod_estado_asignacion == 'Ac':
@@ -384,6 +366,57 @@ class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         data = [bandeja for bandeja in serializer.data if bandeja['tiene_usuario']]
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data}, status=status.HTTP_200_OK)
+    
+class ObternerAsignacionesDocumentos(generics.ListAPIView):
+    serializer_class = AsignacionDocsPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = AsignacionDocs.objects.all()
+        
+        consecutivo = request.query_params.get('id_consecutivo')
+        if not consecutivo:
+            raise ValidationError("No se envio el consecutivo")
+
+        queryset = queryset.filter(id_consecutivo=consecutivo)
+        
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class CancelarAsignacionDocumentos(generics.UpdateAPIView):
+    serializer_class = AsignacionDocsPostSerializer
+    permission_classes = [IsAuthenticated]
+    vista_asignacion = TareaBandejaTareasPersonaUpdate()
+
+    def put(self, request, pk):
+        instance = AsignacionDocs.objects.get(id_asignacion_doc=pk)
+        current_date = datetime.now()
+        if not instance:
+            raise NotFound("No se encontro la asignacion")
+        data = request.data
+
+        data['cod_estado_asignacion'] = 'Ca'
+        data['fecha_eleccion_estado'] = current_date
+        serializer = self.serializer_class(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        tarea = TareasAsignadas.objects.get(id_asignacion=instance.id_asignacion_doc, cod_tipo_tarea='RDocs')
+        tarea.cod_estado_solicitud = 'Ca'
+        tarea.cod_estado_asignacion = 'Ca'
+        tarea.save()
+
+        data_asignacion={}
+
+ 
+        data_asignacion['fecha_leida'] = current_date
+        data_asignacion['leida'] = True
+        respuesta_asignacion_tarea = self.vista_asignacion.actualizacion_asignacion_tarea(data_asignacion,tarea.id_tarea_asignada)
+
+        if respuesta_asignacion_tarea.status_code != status.HTTP_200_OK:
+            return respuesta_asignacion_tarea
+
+        return Response({'success': True, 'detail': 'Se cancelo la asignacion correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 
