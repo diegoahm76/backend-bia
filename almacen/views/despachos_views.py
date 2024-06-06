@@ -740,27 +740,41 @@ class CerrarSolicitudDebidoInexistenciaView(generics.RetrieveUpdateAPIView):
         
     
 class SearchSolicitudesAprobadasYAbiertos(generics.ListAPIView):
-    serializer_class=SerializersSolicitudesConsumibles
-    queryset=SolicitudesConsumibles.objects.all()
+    serializer_class = SerializersSolicitudesConsumibles
+    queryset = SolicitudesConsumibles.objects.all()
     permission_classes = [IsAuthenticated]
     
-    def get(self,request):
-        filter = {}
-        fecha_despacho=request.query_params.get('fecha_despacho')
-       
-        if not fecha_despacho:
-            raise ValidationError('Ingresa el parametro de fecha de despacho')
+    def get(self, request):
+        filter = {
+            'estado_aprobacion_responsable': 'A',
+            'solicitud_abierta': True
+        }
+        fecha_despacho_desde = request.query_params.get('fecha_despacho_desde')
+        fecha_despacho_hasta = request.query_params.get('fecha_despacho_hasta')
         
-        filter['estado_aprobacion_responsable'] = "A"
-        filter['solicitud_abierta'] = True
-        fecha_despacho_strptime = datetime.strptime(
-                fecha_despacho, '%Y-%m-%d %H:%M:%S')
-        solicitudes=SolicitudesConsumibles.objects.filter(**filter).filter(fecha_aprobacion_responsable__lte=fecha_despacho_strptime)
-        if solicitudes:
-            serializador=self.serializer_class(solicitudes,many = True)
-            return Response({'success':True, 'detail':'Se encontraron solicitudes aprobadas y abiertas','data':serializador.data},status = status.HTTP_200_OK)
+        try:
+            if fecha_despacho_desde:
+                fecha_despacho_desde_strptime = datetime.strptime(fecha_despacho_desde, '%Y-%m-%d %H:%M:%S')
+            if fecha_despacho_hasta:
+                fecha_despacho_hasta_strptime = datetime.strptime(fecha_despacho_hasta, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            raise ValidationError('Formato de fecha incorrecto. Debe ser YYYY-MM-DD HH:MM:SS')
+        
+        solicitudes = SolicitudesConsumibles.objects.filter(**filter)
+        
+        if fecha_despacho_desde:
+            solicitudes = solicitudes.filter(fecha_aprobacion_responsable__gte=fecha_despacho_desde_strptime)
+        if fecha_despacho_hasta:
+            solicitudes = solicitudes.filter(fecha_aprobacion_responsable__lte=fecha_despacho_hasta_strptime)
+
+        if solicitudes.exists():
+            serializador = self.serializer_class(solicitudes, many=True)
+            return Response({'success': True, 'detail': 'Se encontraron solicitudes aprobadas y abiertas', 'data': serializador.data}, status=status.HTTP_200_OK)
         else:
-            raise NotFound('No se encontraron solicitudes') 
+            raise NotFound('No se encontraron solicitudes')
+
+
+
         
 class GetDespachoConsumoByNumeroDespacho(generics.ListAPIView):
     serializer_class= SerializersDespachoConsumoConItems
