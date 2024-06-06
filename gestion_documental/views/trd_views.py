@@ -4000,6 +4000,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
 
+                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                # data_in = request.data
+                # if not authorization_header:
+                #     raise ValidationError("No se suministro un Token")
+
+                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                # token_camunda=None
+        
+                # if 'access' in data_in:
+                    
+                #     token_camunda=data_in['access']
+                    
+                # else:
+                #     token_camunda = self.get_token_camunda(token)
+
+                # print(token_camunda)
+
+                # img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
+                # print(img)
+
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
@@ -4026,10 +4046,6 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         #Para Linux
         ruta_output = f'{MEDIA_ROOT}{os.sep}home{os.sep}BIA{os.sep}Otros{os.sep}Documentos'
 
-        #Para Windows
-        #command = ['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', ruta_output]
-
-        #Para Linux
         command = ['libreoffice', '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', ruta_output, word_file_path]
 
         try:
@@ -4099,6 +4115,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         
         try:
             response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            print(response.url)
             response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
             print("pase")
             data = response.json()  # Convertimos los datos a JSON

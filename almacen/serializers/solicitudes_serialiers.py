@@ -12,10 +12,61 @@ from transversal.serializers.personas_serializers import PersonasFilterSerialize
 
 class CrearSolicitudesPostSerializer(serializers.ModelSerializer):
     nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
-    
+    persona_solicita = serializers.SerializerMethodField()
+    persona_responsable = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_solicitante = serializers.ReadOnlyField(source='id_unidad_org_del_solicitante.nombre', default=None)
+    nombre_unidad_organizacional_responsable = serializers.ReadOnlyField(source='id_unidad_org_del_responsable.nombre', default=None)
+    nombre_unidad_organizacional_solicita = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+
     class Meta:
         model = SolicitudesConsumibles
         exclude = ['id_vivero_solicita']
+
+    def get_persona_responsable(self, obj):
+        nombre_completo_reponsable = None
+        nombre_list = [obj.id_funcionario_responsable_unidad.primer_nombre, obj.id_funcionario_responsable_unidad.segundo_nombre,
+                        obj.id_funcionario_responsable_unidad.primer_apellido, obj.id_funcionario_responsable_unidad.segundo_apellido]
+        nombre_completo_reponsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_reponsable = nombre_completo_reponsable if nombre_completo_reponsable != "" else None
+        return nombre_completo_reponsable
+        
+
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
+    
+class CrearSolicitudesPostNewSerializer(serializers.ModelSerializer):
+    nombre_vivero_solicita = serializers.ReadOnlyField(source='id_vivero_solicita.nombre', default=None)
+    persona_solicita = serializers.SerializerMethodField()
+    persona_responsable = serializers.SerializerMethodField()
+    nombre_unidad_organizacional_solicitante = serializers.ReadOnlyField(source='id_unidad_org_del_solicitante.nombre', default=None)
+    nombre_unidad_organizacional_responsable = serializers.ReadOnlyField(source='id_unidad_org_del_responsable.nombre', default=None)
+    nombre_unidad_organizacional_solicita = serializers.ReadOnlyField(source='id_unidad_para_la_que_solicita.nombre', default=None)
+
+    class Meta:
+        model = SolicitudesConsumibles
+        fields = '__all__'
+
+    def get_persona_responsable(self, obj):
+        nombre_completo_reponsable = None
+        nombre_list = [obj.id_funcionario_responsable_unidad.primer_nombre, obj.id_funcionario_responsable_unidad.segundo_nombre,
+                        obj.id_funcionario_responsable_unidad.primer_apellido, obj.id_funcionario_responsable_unidad.segundo_apellido]
+        nombre_completo_reponsable = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_reponsable = nombre_completo_reponsable if nombre_completo_reponsable != "" else None
+        return nombre_completo_reponsable
+        
+
+    def get_persona_solicita(self, obj):
+        nombre_completo_solicita = None
+        nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                        obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+        nombre_completo_solicita = ' '.join(item for item in nombre_list if item is not None)
+        nombre_completo_solicita = nombre_completo_solicita if nombre_completo_solicita != "" else None
+        return nombre_completo_solicita
 
 class GetListSolicitudesSerializer(serializers.ModelSerializer):
     persona_solicita = serializers.SerializerMethodField()

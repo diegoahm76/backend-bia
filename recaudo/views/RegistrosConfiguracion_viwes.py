@@ -293,7 +293,21 @@ class Actualizar_Variables(generics.UpdateAPIView):
 # nuevas Tablas ValoresVariables
 
 
+class ValoresVariablesPorIdView(generics.RetrieveUpdateAPIView):
+    queryset = ValoresVariables.objects.all()
+    serializer_class = ValoresVariablesSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id_valores_variables'
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.usada = True
+        instance.estado = True
+        instance.save()
+        serializer = self.serializer_class(instance)
+        return Response({'success': True, 'detail': 'Se encontró el siguiente registro', 'data': serializer.data},
+                        status=status.HTTP_200_OK)
+    
 class Vista_ValoresVariables(generics.ListAPIView):
     queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
