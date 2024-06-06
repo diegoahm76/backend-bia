@@ -121,7 +121,7 @@ class TareasAsignadasDocsGet(generics.ListAPIView):
 
 
 #PENDIENTE
-class TareasAsignadasAceptarOtroUpdate(generics.UpdateAPIView):
+class TareasAsignadasAceptarDocsUpdate(generics.UpdateAPIView):
     serializer_class = TareasAsignadasOotrosUpdateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
@@ -165,29 +165,8 @@ class TareasAsignadasAceptarOtroUpdate(generics.UpdateAPIView):
             tarea = instance
             if tarea.id_asignacion:
                     id_asignacion = tarea.id_asignacion
-
-            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
-                while not  tarea.id_asignacion:
-                    tarea = tarea.id_tarea_asignada_padre_inmediata
-                    print(tarea.id_asignacion)
-                    if tarea.id_asignacion:
-                        id_asignacion = tarea.id_asignacion
-                        #print(id_asignacion)
-                        tarea.cod_estado_solicitud = 'De'
-                        tarea.save()
-                        #raise ValidationError(str(tarea))
-                        break
-                
-                ##CAMBIAMOS EL ESTADO DE LA TAREA PADRE A DELEGADA
-
-
-                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
-                if reasignacion:
-                    reasignacion.cod_estado_reasignacion = 'Ac'
-                    reasignacion.save()
-
         else:
-            asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=id_asignacion,cod_estado_asignacion__isnull=True).first()
+            asignacion = AsignacionDocs.objects.filter(id_asignacion_doc=id_asignacion,cod_estado_asignacion__isnull=True).first()
             #asignacion = AsignacionPQR.objects.filter(id_asignacion_pqr=id_asignacion,cod_estado_asignacion__isnull=True).first()
         
     
@@ -196,14 +175,14 @@ class TareasAsignadasAceptarOtroUpdate(generics.UpdateAPIView):
             asignacion.cod_estado_asignacion = 'Ac'
             asignacion.save()
             
-            print(asignacion.id_otros)
+            print(asignacion.id_consecutivo)
 
         return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 
 
-class TareasAsignadasOtrosRechazarUpdate(generics.UpdateAPIView):
+class TareasAsignadasDocsRechazarUpdate(generics.UpdateAPIView):
     serializer_class = TareasAsignadasOotrosUpdateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
@@ -219,8 +198,8 @@ class TareasAsignadasOtrosRechazarUpdate(generics.UpdateAPIView):
         if not instance:
             raise NotFound("No se existe un registro con este codigo.")
         
-        if instance.cod_tipo_tarea != 'ROtro':
-            raise ValidationError("No se puede rechazar una tarea sino es otro")
+        if instance.cod_tipo_tarea != 'RDocs':
+            raise ValidationError("No se puede rechazar una tarea que no es de tipo documentos")
         data_in['cod_estado_asignacion'] = 'Re'
 
         id_tarea =instance.id_tarea_asignada
@@ -246,23 +225,9 @@ class TareasAsignadasOtrosRechazarUpdate(generics.UpdateAPIView):
             
             tarea = instance
             if tarea.id_asignacion:
-                    id_asignacion = tarea.id_asignacion
-
-            else:#QUIERE DECIR QUE ESTA TAREA FUE REASIGNADA
-                while not  tarea.id_asignacion:
-                    tarea = tarea.id_tarea_asignada_padre_inmediata
-                   
-                    if tarea.id_asignacion:
-                
-                        break
                 id_asignacion = tarea.id_asignacion
-                reasignacion = ReasignacionesTareas.objects.filter(id_tarea_asignada = tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
-                if reasignacion:
-                    reasignacion.cod_estado_reasignacion = 'Re'
-                    reasignacion.justificacion_reasignacion_rechazada = data_in['justificacion_rechazo']
-                    reasignacion.save()
         else:
-            asignacion = AsignacionOtros.objects.filter(id_asignacion_otros=id_asignacion,cod_estado_asignacion__isnull=True).first()
+            asignacion = AsignacionDocs.objects.filter(id_asignacion_doc=id_asignacion,cod_estado_asignacion__isnull=True).first()
                 # raise ValidationError(asignacion.id_pqrsdf)
             if not asignacion:
                 raise NotFound("No se encontro la asignacion")
@@ -307,13 +272,13 @@ class AsignacionDocCreate(generics.CreateAPIView):
         if not 'firma' in data_in:
             raise ValidationError("No se envio la firma del documento")
         
-        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'])
+        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'], id_persona_asiganada = data_in['id_persona_asignada']).first()
         #for asignacion in instance:
             #print(asignacion)
-            # if asignacion.cod_estado_asignacion == 'Ac':
-            #     raise ValidationError("La solicitud  ya fue Aceptada.")
-            # if  not asignacion.cod_estado_asignacion:
-            #     raise ValidationError("La solicitud esta pendiente por respuesta.")
+        if instance.cod_estado_asignacion == 'Ac':
+            raise ValidationError("La solicitud  ya fue Aceptada.")
+        if  not instance.cod_estado_asignacion:
+            raise ValidationError("La solicitud esta pendiente por respuesta.")
         max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo']).aggregate(Max('consecutivo_asign_x_doc'))
 
         if max_consecutivo['consecutivo_asign_x_doc__max'] == None:
