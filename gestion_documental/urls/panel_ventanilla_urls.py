@@ -118,8 +118,9 @@ urlpatterns = [
     #CREAR AUTO DE INICIO
     path('crear-auto-inicio/',views.CreateAutoInicio.as_view(),name='crear-auto initio'),
     path('validar-tarea/',views.CreateValidacionTareaTramite.as_view(),name='validar-tarea'),
-    path('crear-expediente/',views.CrearExpediente.as_view(),name="Crear-Expediente-Ventanilla")
-
+    path('crear-expediente/',views.CrearExpediente.as_view(),name="Crear-Expediente-Ventanilla"),
+    path('lista-plantillas/',views.BusquedaAvanzadaPlantillasConfiguradas.as_view(),name="busqueda de plantillas"),
+    path('listar-auto/<str:pk>/',views.listadoActos.as_view(),name="listar-auto-tramite")
 
 
 ]

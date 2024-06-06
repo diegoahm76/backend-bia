@@ -20,9 +20,10 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales, Expe
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.plantillas_models import PlantillasDoc
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
-from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, ConsecutivoTipologia, TipologiasDoc
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, ConfigTipologiasDocAgno, ConsecutivoTipologia, TipologiasDoc
 from gestion_documental.serializers.expedientes_serializers import AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
+from gestion_documental.serializers.plantillas_serializers import PlantillasDocBusquedaAvanzadaSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ActosAdministrativosCreateSerializer, AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, RespuestasRequerimientosOpaGetSerializer, RespuestasRequerimientosPutGetSerializer, RespuestasRequerimientosPutSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer,CatalogosSeriesUnidadGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
@@ -3236,8 +3237,10 @@ class CreateAutoInicio(generics.CreateAPIView):
             raise ValidationError("No se encontro el tramite")
         instance_radicado = tramite.id_radicado
         respuesta_consecutivo = vista_consecutivo_trd.consecutivo(ConsecutivoTipologiaDoc,request,None)
-        print(respuesta_consecutivo)
-
+        
+        if not respuesta_consecutivo:
+            raise ValidationError("No se pudo crear el numero de auto")
+        
         if respuesta_consecutivo.status_code != status.HTTP_201_CREATED:
             return respuesta_consecutivo
         data_consecutivo = respuesta_consecutivo.data['data']
@@ -3454,6 +3457,9 @@ class CrearExpediente(generics.CreateAPIView):
         if not tramite:
             raise ValidationError('No se encontro Tramite asociado')
         
+        # if tramite.id_expediente:    #DESCOMENTAR AL FINALIZAR LAS PRUEBAS
+        #     raise ValidationError("Ya existe un expediente asociado ")
+        
         request.data['id_persona_titular_exp_complejo'] = tramite.id_persona_titular.id_persona
         respuesta = vista_creadora_expediente.create(request)
         
@@ -3467,9 +3473,9 @@ class CrearExpediente(generics.CreateAPIView):
         tramite.id_expediente = expediente
         tramite.fecha_expediente = respuesta_expediente['fecha_apertura_expediente']
         tramite.save()
-
+        num_exp=tramite.id_expediente.codigo_exp_und_serie_subserie +'-'+str(tramite.id_expediente.codigo_exp_Agno) +'-'+str(tramite.id_expediente.codigo_exp_consec_por_agno)
         
-        return Response({'success': True, 'detail':'Se creo el Expediente','data':respuesta_expediente}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail':'Se creo el Expediente','data':{**respuesta_expediente,'numero_expediente':num_exp}}, status=status.HTTP_201_CREATED)
 
 class CreateValidacionTareaTramite(generics.CreateAPIView):
     
@@ -3841,7 +3847,52 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
 
         return Response(data_respuesta, status=status.HTTP_201_CREATED)
+
+
+class BusquedaAvanzadaPlantillasConfiguradas(generics.ListAPIView):
+    serializer_class = PlantillasDocBusquedaAvanzadaSerializer
+    queryset = PlantillasDoc.objects.all()
+    permission_classes = [IsAuthenticated]
     
+    def get(self,request):
+        filter={}
+        usuario = request.user.persona
+
+        for key, value in request.query_params.items():
+
+            if key == 'nombre':
+                if value !='':
+                    filter['nombre__icontains'] = value
+            if key =='descripcion':
+                if value != '':
+                    filter['descripcion__icontains'] = value    
+            if key =='tipologia':
+                if value != '':
+                    filter['id_tipologia_doc_trd__nombre__icontains'] = value
+            if key =='disponibilidad':
+                if value != '':
+                    filter['cod_tipo_acceso__icontains'] = value
+            if key =='extension':
+                if value != '':
+                    filter['id_archivo_digital__formato__icontains'] = value                 
+                
+        filter['activa']=True
+
+
+        
+        agno_actual = datetime.now().year
+
+        plantilla = self.queryset.all().filter(**filter)
+        plantillas_tipologia_configurada=[]
+        for data in plantilla:
+            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=data.id_tipologia_doc_trd, agno_tipologia = agno_actual).first()
+            if config_tipologia:
+                plantillas_tipologia_configurada.append(data)
+        serializador = self.serializer_class(plantillas_tipologia_configurada,many=True)
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
+        
+
 
 class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
     serializer_class = SolicitudJuridicaOPACreateSerializer
@@ -3898,6 +3949,30 @@ class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
         instance = serializer.save()
 
         return Response({'succes': True, 'detail':'Se creo la solicitud de jurídica', 'data':serializer.data, 'estados':data_respuesta_estado_asociado}, status=status.HTTP_201_CREATED)
+
+
+class listadoActos(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset = SolicitudesTramites.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance = SolicitudesTramites.objects.filter(id_solicitud_tramite=pk).first()
+        if not instance:
+            raise ValidationError("No existe tramite asociado")
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        acto = ActosAdministrativos.objects.filter(id_solicitud_tramite=instance).first()
+        if not acto:
+            raise NotFound("No existen registros")
+        archivo = acto.id_archivo_acto_administrativo
+        serializer= self.serializer_class(archivo)
+        data_acto =ActosAdministrativosCreateSerializer(acto)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'acto':data_acto.data,'archivo':serializer.data},}, status=status.HTTP_200_OK)
 
 
  
