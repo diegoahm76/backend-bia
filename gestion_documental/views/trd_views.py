@@ -4242,7 +4242,7 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
     
 
 class ActualizarDocumentos(generics.UpdateAPIView):
-    serializer_class = ConsecutivoTipologiaDocSerializer
+    serializer_class = ConsecutivoTipologiaDocTareasSerializer
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
@@ -4262,7 +4262,13 @@ class ActualizarDocumentos(generics.UpdateAPIView):
             archivo_creado = self.crear_archivos(archivo, fecha_actual).data
             print(archivo_creado)
             archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=archivo_creado['data']['id_archivo_digital'])
+            ruta_archivo = archivo_digital.ruta_archivo.path if archivo_digital else None
+            if ruta_archivo and os.path.exists(ruta_archivo):
+                doc = DocxTemplate(ruta_archivo)
+                variables = doc.get_undeclared_template_variables()
+                return variables
             consecutivo.id_archivo_digital = archivo_digital
+            consecutivo.variables.update(variables)
             consecutivo.save()
 
             serializer = self.serializer_class(consecutivo)
