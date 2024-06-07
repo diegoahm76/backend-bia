@@ -4266,7 +4266,6 @@ class ActualizarDocumentos(generics.UpdateAPIView):
             if ruta_archivo and os.path.exists(ruta_archivo):
                 doc = DocxTemplate(ruta_archivo)
                 variables = doc.get_undeclared_template_variables()
-                return variables
             consecutivo.id_archivo_digital = archivo_digital
             consecutivo.variables.update(variables)
             consecutivo.save()
