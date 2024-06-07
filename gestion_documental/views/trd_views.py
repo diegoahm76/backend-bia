@@ -3734,7 +3734,9 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 
                 id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
                 consecutivo.id_archivo_digital_copia = id_archivo_digital
+                print(consecutivo.variables)
                 consecutivo.variables = payload
+                print(consecutivo.variables)
                 consecutivo.save()
 
                 serializer = self.serializer_class(consecutivo)
@@ -4270,9 +4272,10 @@ class ActualizarDocumentos(generics.UpdateAPIView):
             variables = {elem: '' for elem in variables}
             if consecutivo.variables:
                 claves_a_mantener = {'consecutivo', 'radicado', 'fecha_radicado'}
-                diccionario = {clave: valor for clave, valor in variables.items() if clave in claves_a_mantener}
+                diccionario = {clave: valor for clave, valor in consecutivo.variables.items() if clave in claves_a_mantener}
 
-                consecutivo.variables.update(diccionario if diccionario else {})
+                variables.update(diccionario if diccionario else {})
+                consecutivo.variables = variables if variables else {}
             else:
                 consecutivo.variables = variables if variables else {}
             consecutivo.save()

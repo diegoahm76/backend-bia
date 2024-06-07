@@ -323,6 +323,8 @@ class AsignacionDocCreate(generics.CreateAPIView):
         print("no entre")
         print(type(data_in['id_persona_asignada']))
         print(type(consecutivo.id_persona_genera))
+        data = serializer.data
+        data_asignacion = data_tarea_respuesta
 
         if data_in['id_persona_asignada'] == consecutivo.id_persona_genera.id_persona:
             aceptar = TareasAsignadasAceptarDocsUpdate()
@@ -333,8 +335,10 @@ class AsignacionDocCreate(generics.CreateAPIView):
                 raise ValidationError("No se pudo aceptar la tarea")
 
             acepta = acepta.data
+            data = acepta['data']
+            data_asignacion = acepta['data_asignacion']
 
-        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':acepta['data'],'tarea':acepta['data_asignacion']}, status=status.HTTP_201_CREATED)
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':data,'tarea':data_asignacion}, status=status.HTTP_201_CREATED)
 
 
 class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
