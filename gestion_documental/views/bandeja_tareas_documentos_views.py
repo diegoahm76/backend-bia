@@ -10,26 +10,17 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Max
 
-from gestion_documental.choices.tipo_archivo_choices import tipo_archivo_CHOICES
 
 from transversal.serializers.personas_serializers import PersonasSerializer
 from transversal.models.personas_models import Personas
 
-from gestion_documental.models.bandeja_tareas_models import AdicionalesDeTareas, ReasignacionesTareas, TareasAsignadas
-from gestion_documental.models.configuracion_tiempos_respuesta_models import ConfiguracionTiemposRespuesta
-from gestion_documental.models.radicados_models import AsignacionDocs, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, BandejaTareasPersona, ComplementosUsu_PQR, Estados_PQR, MetadatosAnexosTmp, Otros, RespuestaPQR, SolicitudAlUsuarioSobrePQRSDF, TareaBandejaTareasPersona
-from gestion_documental.models.trd_models import TipologiasDoc
-from gestion_documental.serializers.bandeja_tareas_otros_serializers import AnexosOtrosGetSerializer, DetalleOtrosGetSerializer, MetadatosAnexosOtrosTmpSerializerGet, TareasAsignadasOotrosUpdateSerializer, TareasAsignadasOtrosGetSerializer
-from gestion_documental.serializers.bandeja_tareas_serializers import ReasignacionesTareasOtrosCreateSerializer, ReasignacionesTareasgetOtrosByIdSerializer, TareasAsignadasGetJustificacionSerializer
-from gestion_documental.serializers.bandeja_tareas_documentos_serializars import TareasAsignadasDocsGetSerializer
+from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
+from gestion_documental.models.radicados_models import AsignacionDocs, BandejaTareasPersona, TareaBandejaTareasPersona
+from gestion_documental.serializers.bandeja_tareas_otros_serializers import TareasAsignadasOotrosUpdateSerializer
+from gestion_documental.serializers.bandeja_tareas_documentos_serializars import TareasAsignadasDocsGetSerializer, TareasAsignadasDocsUpdateSerializer
 from gestion_documental.serializers.bandeja_tareas_documentos_serializars import AsignacionDocsPostSerializer
 
-from gestion_documental.serializers.ventanilla_pqrs_serializers import Anexos_PQRAnexosGetSerializer, AnexosCreateSerializer, Estados_PQRPostSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, PQRSDFGetSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer
-from gestion_documental.utils import UtilsGestor
-from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPersonaCreate, TareaBandejaTareasPersonaUpdate, TareasAsignadasCreate
-from seguridad.utils import Util
-from transversal.models.lideres_models import LideresUnidadesOrg
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 
 from transversal.models.personas_models import Personas
@@ -37,21 +28,9 @@ from rest_framework.exceptions import ValidationError,NotFound
 
 from transversal.views.alertas_views import AlertaEventoInmediadoCreate
 
+from gestion_documental.models.trd_models import ConsecutivoTipologia
 
 
-class DetalleOtrosGet(generics.ListAPIView):
-
-    serializer_class = DetalleOtrosGetSerializer
-    queryset = Otros.objects.all()
-
-
-    def get(self, request, id):
-
-        instance = self.get_queryset().filter(id_otros=id).first()
-        if not instance:
-            raise NotFound('No se encontro el otro')
-        serializer = self.serializer_class(instance)
-        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
 
 
 class TareasAsignadasDocsGet(generics.ListAPIView):
@@ -122,7 +101,7 @@ class TareasAsignadasDocsGet(generics.ListAPIView):
 
 #PENDIENTE
 class TareasAsignadasAceptarDocsUpdate(generics.UpdateAPIView):
-    serializer_class = TareasAsignadasOotrosUpdateSerializer
+    serializer_class = TareasAsignadasDocsUpdateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
@@ -173,17 +152,18 @@ class TareasAsignadasAceptarDocsUpdate(generics.UpdateAPIView):
             if not asignacion:
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Ac'
+            asignacion.fecha_eleccion_estado = datetime.now()
             asignacion.save()
             
             print(asignacion.id_consecutivo)
 
-        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':"Se acepto el documento Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_201_CREATED)
     
 
 
 
 class TareasAsignadasDocsRechazarUpdate(generics.UpdateAPIView):
-    serializer_class = TareasAsignadasOotrosUpdateSerializer
+    serializer_class = TareasAsignadasDocsUpdateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
@@ -233,29 +213,12 @@ class TareasAsignadasDocsRechazarUpdate(generics.UpdateAPIView):
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Re'
             asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
+            asignacion.firma = False
             asignacion.save()
 
         
         return Response({'success':True,'detail':"Se actualizo la actividad Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
 
-
-
-class TareasAsignadasOtroJusTarea(generics.UpdateAPIView):
-
-    serializer_class = TareasAsignadasGetJustificacionSerializer
-    queryset = TareasAsignadas.objects.all()
-    permission_classes = [IsAuthenticated]
-    def get(self, request,pk):
-        
-        tarea = TareasAsignadas.objects.filter(id_tarea_asignada=pk).first()
-        
-        if not tarea:
-            raise NotFound('No se encontro la tarea')
-        if  tarea.cod_estado_asignacion == 'Ac':
-            raise NotFound('Esta tarea fue aceptada')
-        
-        serializer = self.serializer_class(tarea)
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data,}, status=status.HTTP_200_OK)
 
 
 
@@ -272,13 +235,14 @@ class AsignacionDocCreate(generics.CreateAPIView):
         if not 'firma' in data_in:
             raise ValidationError("No se envio la firma del documento")
         
-        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'], id_persona_asiganada = data_in['id_persona_asignada']).first()
+        instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'], id_persona_asignada = data_in['id_persona_asignada']).first()
         #for asignacion in instance:
             #print(asignacion)
-        if instance.cod_estado_asignacion == 'Ac':
-            raise ValidationError("La solicitud  ya fue Aceptada.")
-        if  not instance.cod_estado_asignacion:
-            raise ValidationError("La solicitud esta pendiente por respuesta.")
+        if instance:
+            if instance.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud  ya fue Aceptada.")
+            if  not instance.cod_estado_asignacion:
+                raise ValidationError("La solicitud esta pendiente por respuesta.")
         max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo']).aggregate(Max('consecutivo_asign_x_doc'))
 
         if max_consecutivo['consecutivo_asign_x_doc__max'] == None:
@@ -354,9 +318,23 @@ class AsignacionDocCreate(generics.CreateAPIView):
         respuesta_alerta = vista_alertas_programadas.crear_alerta_evento_inmediato(data_alerta)
         if respuesta_alerta.status_code != status.HTTP_200_OK:
             return respuesta_alerta
+        
+        consecutivo = ConsecutivoTipologia.objects.get(id_consecutivo_tipologia=data_in['id_consecutivo'])
+        print("no entre")
+        print(type(data_in['id_persona_asignada']))
+        print(type(consecutivo.id_persona_genera))
 
+        if data_in['id_persona_asignada'] == consecutivo.id_persona_genera.id_persona:
+            aceptar = TareasAsignadasAceptarDocsUpdate()
+            print("aqui")
+            acepta =  aceptar.put(request,data_tarea_respuesta['id_tarea_asignada'])
+            print(acepta)
+            if acepta.status_code != status.HTTP_201_CREATED:
+                raise ValidationError("No se pudo aceptar la tarea")
 
-        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
+            acepta = acepta.data
+
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':acepta['data'],'tarea':acepta['data_asignacion']}, status=status.HTTP_201_CREATED)
 
 
 class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
@@ -384,75 +362,55 @@ class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
         data = [bandeja for bandeja in serializer.data if bandeja['tiene_usuario']]
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data}, status=status.HTTP_200_OK)
-
-
-
-
-
-# class ReasignacionesTareasOtroCreate(generics.CreateAPIView):
-#     serializer_class = ReasignacionesTareasOtrosCreateSerializer
-#     queryset = ReasignacionesTareas.objects.all()
-#     vista_tareas = TareasAsignadasCreate()
-#     permission_classes = [IsAuthenticated]
-#     def post(self, request):
-
-
-#         data_in = request.data
-#         data_in['fecha_reasignacion'] = datetime.now()
-#         data_in['cod_estado_reasignacion'] = 'Ep'
-
-#         tarea = TareasAsignadas.objects.filter(id_tarea_asignada=data_in['id_tarea_asignada']).first()
-#         if not tarea:
-#             raise NotFound("No existen registros de tareas")
-        
-#         if tarea.cod_estado_asignacion == 'Re':
-#             raise ValidationError("Esta tarea fue Rechazada ")
-#         tarea.cod_estado_solicitud = 'De'
-
-#         reasignadas = ReasignacionesTareas.objects.filter(id_tarea_asignada=tarea.id_tarea_asignada, cod_estado_reasignacion='Ep').first()
-
-#         if reasignadas:
-#             raise ValidationError("La tarea tiene una reasignacion pendiente por responder.")
-#         tarea.save()
-#         serializer = self.serializer_class(data=data_in)
-#         serializer.is_valid(raise_exception=True)
-#         serializer.save()
-#         ##CREAR NUEVO REGISTRO DE REASIGNACION DE TAREA T316
-#         data_tarea = {}
-#         data_tarea['cod_tipo_tarea'] = 'ROtro'
-#         data_tarea['id_asignacion'] = None
-#         data_tarea['fecha_asignacion'] = datetime.now()
-#         data_tarea['cod_estado_solicitud'] = 'Ep'
-#         data_tarea['id_tarea_asignada_padre_inmediata'] = tarea.id_tarea_asignada
-#         data_tarea['comentario_asignacion'] = data_in['comentario_reasignacion']
-#         respuesta_tareas = self.vista_tareas.crear_asignacion_tarea(data_tarea)
-#         if respuesta_tareas.status_code != status.HTTP_201_CREATED:
-#             return respuesta_tareas
-
-#         data_tarea_respuesta =respuesta_tareas.data['data']
-
-#         #ASIGNO LA NUEVA TAREA A LA BANDEJA DE LA PERSONA 
-#         vista_asignar_tarea =TareaBandejaTareasPersonaCreate()
-#         data_tarea_bandeja_asignacion = {}
-#         data_tarea_bandeja_asignacion['id_persona'] = data_in['id_persona_a_quien_se_reasigna']
-#         data_tarea_bandeja_asignacion['id_tarea_asignada'] = data_tarea_respuesta['id_tarea_asignada']
-#         data_tarea_bandeja_asignacion['es_responsable_ppal'] = False
-#         respuesta_relacion = vista_asignar_tarea.crear_tarea(data_tarea_bandeja_asignacion)
-#         if respuesta_relacion.status_code != status.HTTP_201_CREATED:
-#             return respuesta_relacion
-
-   
-#         return Response({'succes': True, 'detail':'Se crearon los siguientes registros', 'data':serializer.data,'data_tarea_respuesta':data_tarea_respuesta}, status=status.HTTP_200_OK)
     
+class ObternerAsignacionesDocumentos(generics.ListAPIView):
+    serializer_class = AsignacionDocsPostSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        queryset = AsignacionDocs.objects.all()
+        
+        consecutivo = request.query_params.get('id_consecutivo')
+        if not consecutivo:
+            raise ValidationError("No se envio el consecutivo")
 
-# class ReasignacionesOtrosTareasgetById(generics.ListAPIView):
-#     serializer_class = ReasignacionesTareasgetOtrosByIdSerializer
-#     queryset = ReasignacionesTareas.objects.all()
-#     permission_classes = [IsAuthenticated]
-#     def get(self, request,pk):
-#         instance = self.get_queryset().filter(id_tarea_asignada=pk)
-#         if not instance:
-#             raise NotFound("No existen registros")
-#         serializer = self.serializer_class(instance,many=True)
-#         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data}, status=status.HTTP_200_OK)
+        queryset = queryset.filter(id_consecutivo=consecutivo)
+        
+        serializer = self.serializer_class(queryset, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class CancelarAsignacionDocumentos(generics.UpdateAPIView):
+    serializer_class = AsignacionDocsPostSerializer
+    permission_classes = [IsAuthenticated]
+    vista_asignacion = TareaBandejaTareasPersonaUpdate()
+
+    def put(self, request, pk):
+        instance = AsignacionDocs.objects.get(id_asignacion_doc=pk)
+        current_date = datetime.now()
+        if not instance:
+            raise NotFound("No se encontro la asignacion")
+        data = request.data
+
+        data['cod_estado_asignacion'] = 'Ca'
+        data['fecha_eleccion_estado'] = current_date
+        data['firma'] = False
+        serializer = self.serializer_class(instance, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        tarea = TareasAsignadas.objects.get(id_asignacion=instance.id_asignacion_doc, cod_tipo_tarea='RDocs')
+        tarea.cod_estado_solicitud = 'Ca'
+        tarea.cod_estado_asignacion = 'Ca'
+        tarea.save()
+
+        data_asignacion={}
+
+ 
+        data_asignacion['fecha_leida'] = current_date
+        data_asignacion['leida'] = True
+        respuesta_asignacion_tarea = self.vista_asignacion.actualizacion_asignacion_tarea(data_asignacion,tarea.id_tarea_asignada)
+
+        if respuesta_asignacion_tarea.status_code != status.HTTP_200_OK:
+            return respuesta_asignacion_tarea
+
+        return Response({'success': True, 'detail': 'Se cancelo la asignacion correctamente', 'data': serializer.data}, status=status.HTTP_200_OK)
