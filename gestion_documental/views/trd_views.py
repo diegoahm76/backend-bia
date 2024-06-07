@@ -3673,7 +3673,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                 documento = self.GenerarDocumento(consecutivo.variables, consecutivo.id_plantilla_doc.id_plantilla_doc).data
                 id_archivo_digital = get_object_or_404(ArchivosDigitales, id_archivo_digital=documento['data']['id_archivo_digital'])
                 consecutivo.id_archivo_digital = id_archivo_digital
-                consecutivo.variables = payload
+                #consecutivo.variables = payload
                 consecutivo.save()
 
                 os.remove(ruta_archivo)
@@ -4228,7 +4228,7 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
 
         # Obtiene el año actual para determinar la carpeta de destino
         current_year = fecha_creacion.year
-        ruta = os.path.join("home", "BIA", "Otros", "GDEA", "Anexos_PQR", str(current_year))
+        ruta = os.path.join("home", "BIA", "Otros", "Documentos", str(current_year))
 
         # Crea el archivo digital y obtiene su ID
         data_archivo = {
@@ -4241,11 +4241,11 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
         return archivo_creado
     
 
-class ActualizarDocumentos(generics.CreateAPIView):
+class ActualizarDocumentos(generics.UpdateAPIView):
     serializer_class = ConsecutivoTipologiaDocSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
+    def put(self, request):
         archivo = request.FILES.get('archivo')
         data = json.loads(request.data.get('data'))
         fecha_actual = datetime.now()
@@ -4257,6 +4257,8 @@ class ActualizarDocumentos(generics.CreateAPIView):
         
 
         if archivo:
+            #archivo = SubirDocumentoAlGenerador()
+            #archivo_creado = archivo.crear_archivos(archivo, fecha_actual).data
             archivo_creado = self.crear_archivos(archivo, fecha_actual).data
             print(archivo_creado)
             archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=archivo_creado['data']['id_archivo_digital'])
@@ -4272,3 +4274,30 @@ class ActualizarDocumentos(generics.CreateAPIView):
             }, status=status.HTTP_201_CREATED)
         else:
             raise ValidationError("No se puede crear anexos sin archivo adjunto")
+        
+    def crear_archivos(self, uploaded_file, fecha_creacion):
+        #Valida extensión del archivo
+        nombre=uploaded_file.name
+            
+        extension = os.path.splitext(nombre)
+        extension_sin_punto = extension[1][1:] if extension[1].startswith('.') else extension
+        if not extension_sin_punto:
+            raise ValidationError("No fue posible registrar el archivo")
+        
+        formatos=FormatosTiposMedio.objects.filter(nombre__iexact=extension_sin_punto,activo=True).first()
+        if not formatos:
+            raise ValidationError("Este formato "+str(extension_sin_punto)+" de archivo no esta permitido")
+
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = fecha_creacion.year
+        ruta = os.path.join("home", "BIA", "Otros", "Documentos", str(current_year))
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': False,
+            'ruta': ruta,
+        }
+        
+        archivos_Digitales = ArchivosDgitalesCreate()
+        archivo_creado = archivos_Digitales.crear_archivo(data_archivo, uploaded_file)
+        return archivo_creado

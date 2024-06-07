@@ -3279,6 +3279,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         context_auto['TipoDocTitular'] = titular.tipo_documento.nombre
         context_auto['NumDocTitular'] = titular.numero_documento
         context_auto['RadicadoTramite'] = cadena_radicado
+        context_auto['FechaRadicadoTramite'] = UtilsGestor.get_desc_fecha(instance_radicado.fecha_radicado.date())
         context_auto['EmailTitular'] = titular.email
         #CORRESPONDENCIA
         context_auto['NumOficioReque '] ='{{NumOficioReque }}'
@@ -3304,8 +3305,13 @@ class CreateAutoInicio(generics.CreateAPIView):
             context_auto['FechaReferenciaPago']  = '{{FechaReferenciaPago}}'
         
         #PARA CONSTANCIA DE PAGO
-        context_auto['NumRadicadoPago'] ='{{NumRadicadoPago}}'
-        context_auto['FechaNumRadicadoPago'] = '{{FechaNumRadicadoPago }}'
+        pago = liquidacion_tramite.id_solicitud_tramite.id_pago_evaluacion if liquidacion_tramite else None
+        if pago and pago.estado_pago == "1":
+            context_auto['NumRadicadoPago'] = pago.id_pago
+            context_auto['FechaNumRadicadoPago'] = UtilsGestor.get_desc_fecha(pago.fecha_pago.date())
+        else:
+            context_auto['NumRadicadoPago'] ='{{NumRadicadoPago}}'
+            context_auto['FechaNumRadicadoPago'] = '{{FechaNumRadicadoPago }}'
 
 
         #PARA  CONCESION DE AGUAS SUPERFICIALES 
@@ -3409,6 +3415,22 @@ class CreateAutoInicio(generics.CreateAPIView):
 
         #AUTO INICIO APROVECHAMIENTO FORESTAL PERSISTENTE
         context_auto['NormativaAprocechamientoForestalPersistente'] = '{{NormativaAprocechamientoForestalPersistente }}'#?????
+
+        #AUTO INICIO DETERMINANTES AMBIENTALES
+        if 'CCatas' in detalle_tramite_data:
+                context_auto['NumCedulaCatastral'] = detalle_tramite_data['CCatas']
+        else:
+                context_auto['NumCedulaCatastral'] = '{{NumCedulaCatastral}}'
+        # VALIDAR ESTOS CAMPOS
+        if 'Name_propietario' in detalle_tramite_data:
+                context_auto['NombrePropietarioPredio'] = detalle_tramite_data['Name_propietario']
+        else:
+                context_auto['NombrePropietarioPredio'] = '{{NombrePropietarioPredio}}'
+        if 'Area' in detalle_tramite_data:
+                context_auto['AreaTotal'] = detalle_tramite_data['Area']
+        else:
+                context_auto['AreaTotal'] = '{{AreaTotal}}'
+
         dato = self.acta_inicio(context_auto,plantilla.id_archivo_digital.ruta_archivo)
 
         memoria = self.document_to_inmemory_uploadedfile(dato)
