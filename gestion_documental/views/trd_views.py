@@ -4268,6 +4268,7 @@ class ActualizarDocumentos(generics.UpdateAPIView):
                 variables = doc.get_undeclared_template_variables()
             consecutivo.id_archivo_digital = archivo_digital
             if consecutivo.variables:
+                variables = {elem: '' for elem in variables}
                 consecutivo.variables.update(variables if variables else {})
             else:
                 consecutivo.variables = variables if variables else {}
