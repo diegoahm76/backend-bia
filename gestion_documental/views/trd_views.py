@@ -4267,8 +4267,10 @@ class ActualizarDocumentos(generics.UpdateAPIView):
                 doc = DocxTemplate(ruta_archivo)
                 variables = doc.get_undeclared_template_variables()
             consecutivo.id_archivo_digital = archivo_digital
-            if variables:
-                consecutivo.variables.update(variables)
+            if consecutivo.variables:
+                consecutivo.variables.update(variables if variables else {})
+            else:
+                consecutivo.variables = variables if variables else {}
             consecutivo.save()
 
             serializer = self.serializer_class(consecutivo)
