@@ -177,7 +177,7 @@ class TareasAsignadasAceptarDocsUpdate(generics.UpdateAPIView):
             
             print(asignacion.id_consecutivo)
 
-        return Response({'success':True,'detail':"Se acepto la pqrsdf Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':"Se acepto el documento Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 
@@ -233,6 +233,7 @@ class TareasAsignadasDocsRechazarUpdate(generics.UpdateAPIView):
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Re'
             asignacion.justificacion_rechazo = data_in['justificacion_rechazo']
+            asignacion.firma = False
             asignacion.save()
 
         
@@ -257,10 +258,11 @@ class AsignacionDocCreate(generics.CreateAPIView):
         instance= AsignacionDocs.objects.filter(id_consecutivo = data_in['id_consecutivo'], id_persona_asignada = data_in['id_persona_asignada']).first()
         #for asignacion in instance:
             #print(asignacion)
-        if instance.cod_estado_asignacion == 'Ac':
-            raise ValidationError("La solicitud  ya fue Aceptada.")
-        if  not instance.cod_estado_asignacion:
-            raise ValidationError("La solicitud esta pendiente por respuesta.")
+        if instance:
+            if instance.cod_estado_asignacion == 'Ac':
+                raise ValidationError("La solicitud  ya fue Aceptada.")
+            if  not instance.cod_estado_asignacion:
+                raise ValidationError("La solicitud esta pendiente por respuesta.")
         max_consecutivo = AsignacionDocs.objects.filter(id_consecutivo=data_in['id_consecutivo']).aggregate(Max('consecutivo_asign_x_doc'))
 
         if max_consecutivo['consecutivo_asign_x_doc__max'] == None:
@@ -397,6 +399,7 @@ class CancelarAsignacionDocumentos(generics.UpdateAPIView):
 
         data['cod_estado_asignacion'] = 'Ca'
         data['fecha_eleccion_estado'] = current_date
+        data['firma'] = False
         serializer = self.serializer_class(instance, data=data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
