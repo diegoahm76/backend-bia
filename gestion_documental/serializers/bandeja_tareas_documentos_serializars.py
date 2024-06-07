@@ -352,3 +352,13 @@ class PersonasBandejaSerializer(serializers.ModelSerializer):
         model = Personas
         fields = '__all__'
         fields = ['id', 'tien_bandeja']
+
+class TareasAsignadasDocsUpdateSerializer(serializers.ModelSerializer):
+    asignacion = serializers.SerializerMethodField()
+    class Meta:
+        model = TareasAsignadas
+        fields = '__all__'
+
+    def get_asignacion(self,obj):
+        asignacion = AsignacionDocs.objects.filter(id_asignacion_doc=obj.id_asignacion).first()
+        return AsignacionDocsGetSerializer(asignacion).data

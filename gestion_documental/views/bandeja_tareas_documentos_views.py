@@ -17,7 +17,7 @@ from transversal.models.personas_models import Personas
 from gestion_documental.models.bandeja_tareas_models import TareasAsignadas
 from gestion_documental.models.radicados_models import AsignacionDocs, BandejaTareasPersona, TareaBandejaTareasPersona
 from gestion_documental.serializers.bandeja_tareas_otros_serializers import TareasAsignadasOotrosUpdateSerializer
-from gestion_documental.serializers.bandeja_tareas_documentos_serializars import TareasAsignadasDocsGetSerializer
+from gestion_documental.serializers.bandeja_tareas_documentos_serializars import TareasAsignadasDocsGetSerializer, TareasAsignadasDocsUpdateSerializer
 from gestion_documental.serializers.bandeja_tareas_documentos_serializars import AsignacionDocsPostSerializer
 
 from gestion_documental.views.bandeja_tareas_views import TareaBandejaTareasPersonaCreate, TareaBandejaTareasPersonaUpdate, TareasAsignadasCreate
@@ -101,7 +101,7 @@ class TareasAsignadasDocsGet(generics.ListAPIView):
 
 #PENDIENTE
 class TareasAsignadasAceptarDocsUpdate(generics.UpdateAPIView):
-    serializer_class = TareasAsignadasOotrosUpdateSerializer
+    serializer_class = TareasAsignadasDocsUpdateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
@@ -152,17 +152,18 @@ class TareasAsignadasAceptarDocsUpdate(generics.UpdateAPIView):
             if not asignacion:
                 raise NotFound("No se encontro la asignacion")
             asignacion.cod_estado_asignacion = 'Ac'
+            asignacion.fecha_eleccion_estado = datetime.now()
             asignacion.save()
             
             print(asignacion.id_consecutivo)
 
-        return Response({'success':True,'detail':"Se acepto el documento Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':"Se acepto el documento Correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_201_CREATED)
     
 
 
 
 class TareasAsignadasDocsRechazarUpdate(generics.UpdateAPIView):
-    serializer_class = TareasAsignadasOotrosUpdateSerializer
+    serializer_class = TareasAsignadasDocsUpdateSerializer
     queryset = TareasAsignadas.objects.all()
     permission_classes = [IsAuthenticated]
     vista_asignacion = TareaBandejaTareasPersonaUpdate()
@@ -319,15 +320,21 @@ class AsignacionDocCreate(generics.CreateAPIView):
             return respuesta_alerta
         
         consecutivo = ConsecutivoTipologia.objects.get(id_consecutivo_tipologia=data_in['id_consecutivo'])
+        print("no entre")
+        print(type(data_in['id_persona_asignada']))
+        print(type(consecutivo.id_persona_genera))
 
-        if data_in['id_persona_asignada'] == consecutivo.id_persona_genera:
+        if data_in['id_persona_asignada'] == consecutivo.id_persona_genera.id_persona:
             aceptar = TareasAsignadasAceptarDocsUpdate()
-            aceptar.put(request,data_tarea_respuesta['id_tarea_asignada'])
-            if not respuesta_tareas.status_code != status.HTTP_201_CREATED:
+            print("aqui")
+            acepta =  aceptar.put(request,data_tarea_respuesta['id_tarea_asignada'])
+            print(acepta)
+            if acepta.status_code != status.HTTP_201_CREATED:
                 raise ValidationError("No se pudo aceptar la tarea")
 
+            acepta = acepta.data
 
-        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':serializer.data,'tarea':respuesta_relacion.data['data']}, status=status.HTTP_200_OK)
+        return Response({'succes': True, 'detail':'Se creo la solicitud de digitalizacion', 'data':acepta['data'],'tarea':acepta['data_asignacion']}, status=status.HTTP_201_CREATED)
 
 
 class ObtenerPersonasConBandejaTareas(generics.ListAPIView):
