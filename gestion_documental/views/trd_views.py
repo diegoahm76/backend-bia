@@ -3594,6 +3594,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             "id_tipologia_doc": platnilla.id_tipologia_doc_trd.id_tipologia_documental,
             "id_persona_genera": request.user.persona.id_persona,
             "id_archivo_digital": data['data']['id_archivo_digital'],
+            "variables": request.data.get('payload'),
         }
         serializer = self.serializer_class(data=generar_consecutivo)
         serializer.is_valid(raise_exception=True)
