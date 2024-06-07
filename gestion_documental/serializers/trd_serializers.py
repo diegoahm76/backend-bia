@@ -427,9 +427,21 @@ class ConsecutivoTipologiaDocSerializer(serializers.ModelSerializer):
 class ConsecutivoTipologiaDocTareasSerializer(serializers.ModelSerializer):
     archivos_digitales = ArchivosDigitalesSerializer(source='id_archivo_digital', read_only=True)
     archivos_digitales_copia = ArchivosDigitalesSerializer(source='id_archivo_digital_copia', read_only=True)
+    variables = serializers.SerializerMethodField()
     class Meta:
         model = ConsecutivoTipologia
         fields = '__all__'
+
+    def get_variables(self, obj):
+        ruta_archivo = obj.id_archivo_digital.ruta_archivo.path if obj.id_archivo_digital else None
+        if ruta_archivo and os.path.exists(ruta_archivo):
+            doc = DocxTemplate(ruta_archivo)
+            variables = doc.get_undeclared_template_variables()
+            
+            if variables:
+                variables.update(obj.variables)
+                return variables
+            else: return obj.variables
 
 
 
