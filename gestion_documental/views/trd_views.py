@@ -4267,9 +4267,12 @@ class ActualizarDocumentos(generics.UpdateAPIView):
                 doc = DocxTemplate(ruta_archivo)
                 variables = doc.get_undeclared_template_variables()
             consecutivo.id_archivo_digital = archivo_digital
+            variables = {elem: '' for elem in variables}
             if consecutivo.variables:
-                variables = {elem: '' for elem in variables}
-                consecutivo.variables.update(variables if variables else {})
+                claves_a_mantener = {'consecutivo', 'radicado', 'fecha_radicado'}
+                diccionario = {clave: valor for clave, valor in variables.items() if clave in claves_a_mantener}
+
+                consecutivo.variables.update(diccionario if diccionario else {})
             else:
                 consecutivo.variables = variables if variables else {}
             consecutivo.save()
