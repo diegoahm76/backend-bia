@@ -991,6 +991,7 @@ class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
         codigo_bien = self.request.query_params.get('codigo_bien')
         cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
         serial_placa = self.request.query_params.get('serial_placa')
+        consecutivo = self.request.query_params.get('consecutivo')
 
         if id_persona_solicita:
             queryset = queryset.filter(id_persona_solicita=id_persona_solicita)
@@ -1006,6 +1007,9 @@ class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
         
         if codigo_bien:
             queryset = queryset.filter(id_articulo__codigo_bien__icontains=codigo_bien)
+        
+        if consecutivo:
+            queryset = queryset.filter(id_articulo__nro_elemento_bien=consecutivo)
         
         if cod_tipo_activo:
             queryset = queryset.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)

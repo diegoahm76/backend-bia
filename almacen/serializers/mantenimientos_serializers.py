@@ -133,6 +133,7 @@ class SerializerRegistroMantenimientosPost(serializers.ModelSerializer):
 class ControlMantenimientosProgramadosGetListSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_articulo.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
     cod_tipo_activo = serializers.ReadOnlyField(source='id_articulo.cod_tipo_activo.cod_tipo_activo', default=None)
     tipo_activo = serializers.ReadOnlyField(source='id_articulo.cod_tipo_activo.nombre', default=None)
     serial_placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
