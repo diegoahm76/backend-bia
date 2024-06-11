@@ -7,6 +7,8 @@ from almacen.models.solicitudes_models import ItemDespachoConsumo
 from almacen.serializers.generics_serializers import (
     SerializersMarca
     )   
+from django.db.models.functions import Concat
+from django.db.models import F, Sum, Value
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -329,47 +331,66 @@ class ControlBienesConsumoGetListView(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
 
 class ControlConsumoBienesGetListView(generics.ListAPIView):
-    serializer_class=ControlConsumoBienesGetListSerializer
-    queryset=ItemDespachoConsumo.objects.all()
+    serializer_class = ControlConsumoBienesGetListSerializer
+    queryset = ItemDespachoConsumo.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        filter={}
+    def get(self, request):
+        filter = {}
         no_discriminar = request.query_params.get('no_discriminar', '')
         no_discriminar = True if no_discriminar.lower() == 'true' else False
-        
-        for key,value in request.query_params.items():
-            if key in ['es_despacho_conservacion','id_bien','id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta']:
+
+        for key, value in request.query_params.items():
+            if key in ['es_despacho_conservacion', 'id_bien', 'id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula']:
                 if key == 'es_despacho_conservacion':
                     if value != '':
-                        filter['id_despacho_consumo__es_despacho_conservacion']=True if value.lower() == 'true' else False
+                        filter['id_despacho_consumo__es_despacho_conservacion'] = True if value.lower() == 'true' else False
                 elif key == 'id_unidad_para_la_que_solicita':
                     if value != '':
-                        filter['id_despacho_consumo__id_unidad_para_la_que_solicita']=value
+                        filter['id_despacho_consumo__id_unidad_para_la_que_solicita'] = value
                 elif key == 'id_bien':
                     if value != '':
-                        filter['id_bien_despachado']=value
+                        filter['id_bien_despachado'] = value
                 elif key == 'fecha_desde':
                     if value != '':
-                        filter['id_despacho_consumo__fecha_despacho__gte']=value
+                        filter['id_despacho_consumo__fecha_despacho__gte'] = value
                 elif key == 'fecha_hasta':
                     if value != '':
-                        filter['id_despacho_consumo__fecha_despacho__lte']=value
-                else:
+                        filter['id_despacho_consumo__fecha_despacho__lte'] = value
+                elif key == 'id_bodega_reporte':
                     if value != '':
-                        filter[key]=value
-        
+                        filter['id_bodega'] = value
+                elif key == 'id_funcionario_responsable':
+                    if value != '':
+                        filter['id_despacho_consumo__id_funcionario_responsable_unidad'] = value
+                elif key == 'id_persona_solicita':
+                    if value != '':
+                        filter['id_despacho_consumo__id_persona_solicita'] = value
+                elif key == 'id_persona_despacha':
+                    if value != '':
+                        filter['id_despacho_consumo__id_persona_despacha'] = value
+                elif key == 'id_persona_anula':
+                    if value != '':
+                        filter['id_despacho_consumo__id_persona_anula'] = value
+                else:
+                
+                    if value != '':
+                        filter[key] = value
+
         items_despacho_consumo = self.queryset.filter(**filter)
 
         data_output = []
-        
+
         if no_discriminar:
             data_output = items_despacho_consumo.values(
                 'id_bien_despachado',
                 nombre_bien_despachado=F('id_bien_despachado__nombre'),
                 codigo_bien_despachado=F('id_bien_despachado__codigo_bien'),
                 id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
-                unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura')
+                unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura'),
+                id_bodega_reporte=F('id_bodega'),
+                nombre_bodega=F('id_bodega__nombre'),
+                observacion_reporte=F('observacion'),
             ).annotate(
                 cantidad_despachada_unidad=Sum('cantidad_despachada')
             )
@@ -381,16 +402,67 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 nombre_bien_despachado=F('id_bien_despachado__nombre'),
                 codigo_bien_despachado=F('id_bien_despachado__codigo_bien'),
                 id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
-                unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura')
+                unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura'),
+                id_bodega_reporte=F('id_bodega'),
+                nombre_bodega=F('id_bodega__nombre'),
+                fecha_solicitud=F('id_despacho_consumo__fecha_solicitud'),
+                fecha_despacho=F('id_despacho_consumo__fecha_despacho'),
+                fecha_anulacion=F('id_despacho_consumo__fecha_anulacion'),
+                justificacion_anulacion=F('id_despacho_consumo__justificacion_anulacion'),
+                observacion_reporte=F('observacion'),
+                motivo=F('id_despacho_consumo__motivo'),
+                id_funcionario_responsable=F('id_despacho_consumo__id_funcionario_responsable_unidad'),
+                nombre_completo_funcionario_responsable=Concat(
+                    F('id_despacho_consumo__id_funcionario_responsable_unidad__primer_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_funcionario_responsable_unidad__segundo_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_funcionario_responsable_unidad__primer_apellido'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_funcionario_responsable_unidad__segundo_apellido')
+                ),
+                id_persona_solicita=F('id_despacho_consumo__id_persona_solicita'),
+                nombre_completo_persona_solicita=Concat(
+                    F('id_despacho_consumo__id_persona_solicita__primer_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_solicita__segundo_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_solicita__primer_apellido'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_solicita__segundo_apellido')
+                ),
+                id_persona_despacha=F('id_despacho_consumo__id_persona_despacha'),
+                nombre_completo_persona_despacha=Concat(
+                    F('id_despacho_consumo__id_persona_despacha__primer_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_despacha__segundo_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_despacha__primer_apellido'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_despacha__segundo_apellido')
+                ),
+                id_persona_anula=F('id_despacho_consumo__id_persona_anula'),
+                nombre_completo_persona_anula=Concat(
+                    F('id_despacho_consumo__id_persona_anula__primer_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_anula__segundo_nombre'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_anula__primer_apellido'), 
+                    Value(' '), 
+                    F('id_despacho_consumo__id_persona_anula__segundo_apellido')
+                ),
             ).annotate(
                 cantidad_despachada_unidad=Sum('cantidad_despachada')
             )
-            
+
             for item in data_output:
                 if not item['id_unidad_para_la_que_solicita']:
                     item['nombre_unidad_para_la_que_solicita'] = 'Entrega a Viveros'
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
+    
+
+
 
 class ControlStockGetView(generics.ListAPIView):
     serializer_class=ControlStockGetSerializer
