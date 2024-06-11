@@ -2,6 +2,7 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 import pymssql
+from datetime import datetime
 
 load_dotenv()
 
@@ -684,23 +685,6 @@ def consultar_tabla_mssql():
 
 
 
-        
-
-
-
-
-        
-
-
-
-
-
-
-
-
-
-
-
 
         #aca_voyyyyy
 
@@ -744,39 +728,202 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
         # Eliminar datos existentes de las tablas
-        cursor.execute("DELETE FROM rt954cobro")
-        cursor.execute("DELETE FROM rt955cobroitem")
-        cursor.execute("DELETE FROM rt908liquidacion")
-        cursor.execute("DELETE FROM rt994notificacion")
-        cursor.execute("DELETE FROM rt976tramitepaso")
-        cursor.execute("DELETE FROM rt10tiporetenrango")
+        # cursor.execute("DELETE FROM rt954cobro")
+        # cursor.execute("DELETE FROM rt955cobroitem")
+        # cursor.execute("DELETE FROM rt908liquidacion")
+        # cursor.execute("DELETE FROM rt994notificacion")
+        # cursor.execute("DELETE FROM rt985tr")
 
 
+  
 
 
+   
 
 
-
-
-        cursor.execute("SELECT  t970codcia,t970idtramite,t970agno,t970codtipotramite,t970codexpediente,t970coddepen,t970numradicadoentrada,t970fecharadicadoentrada,t970descripcion,t970idtramiteref,t970observacion,t970codestadotram,t970tuafechainiperm,t970tuamesesplazo,t970tuafechafinperm,t970numresolperm,t970fecharesperm,t970tuacaudalconcesi,t970tuapredio,t970verifico_fun FROM rt970tramite")
+        cursor.execute("SELECT t914numdistribucion,t914codctabanco FROM rt914distribucion")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
-        nuevos_registros = [dato_970 for dato_970 in data_970 if tuple(dato_970) not in existing_records_set]
+
+        # Filtrar los registros nuevos
+        nuevos_registros = [dato for dato in data_914 if dato[2] not in {rec[0] for rec in existing_records_set}]
         
+        if nuevos_registros:
+            print("Nuevos registros a insertar en la tabla rt914distribucion:")
+            for registro in nuevos_registros:
+                print(registro)
+
+                insert_query_914 = """
+                INSERT INTO rt914distribucion (
+                    t914codcia, t914codtiporenta, t914numdistribucion, t914agno, t914codtipodoc,
+                    t914numerodoc, t914codctabanco, t914codgruporec, t914fecha, t914numorigen,
+                    t914codorigen, t914abonarliq, t914anulado, t914numerodocrnt
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                
+                registro = tuple(None if val is None else val for val in registro)
+                # Convertir fechas de cadena a objetos datetime si es necesario
+                for i, value in enumerate(registro):
+                    if i in [8] and isinstance(value, str):
+                        try:
+                            registro[i] = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            pass  # El valor no es una fecha válida, dejarlo como está
+
+                cursor.execute(insert_query_914, registro)
+        else:
+             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt914distribucion.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        # Consulta para obtener registros existentes de rt980tua
+        cursor.execute("""
+            SELECT 
+                t980codcia, t980numtua, t980agno, t980periodo, t980numformulario, 
+                t980codtipodeclaracion, t980aprobada, t980fechadiligenciamiento, t980fecha, 
+                t980numradicadoentrada, t980fecharadicadoentrada, t980nit, t980coddpto, 
+                t980codmpio, t980codpostal, t980direccion, t980telefono, t980codtipousuario, 
+                t980nitreplegal, t980codubicacion, t980idcobro, t980anulado, t980observacion, 
+                t980idtramite 
+            FROM rt980tua
+        """)
+        existing_records = cursor.fetchall()
+        existing_records_set = set(existing_records)
+
+        # Filtrar los registros nuevos
+        nuevos_registros = [
+            (
+                dato[0], dato[1], dato[2], dato[3], dato[4], dato[5], dato[6], dato[7], 
+                dato[8], dato[9], dato[10], dato[11], dato[12], dato[13], dato[14], dato[15], 
+                dato[16], dato[17], dato[18], dato[19], dato[20], dato[21], dato[22], dato[23]
+            ) for dato in data_980 if (
+                dato[0], dato[1]
+            ) not in {(rec[0], rec[1]) for rec in existing_records_set}
+        ]
+
+        if nuevos_registros:
+            print("Nuevos registros a insertar en la tabla rt980tua:")
+            for registro in nuevos_registros:
+                print(registro)
+
+                # Convertir fechas de cadena a objetos datetime si es necesario
+                registro = list(registro)
+                for i, value in enumerate(registro):
+                    if i in [7, 8, 10, 21] and isinstance(value, str):
+                        try:
+                            registro[i] = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            pass  # El valor no es una fecha, dejarlo como está
+
+                cursor.execute("""
+                    INSERT INTO rt980tua (
+                        t980codcia, t980numtua, t980agno, t980periodo, t980numformulario, 
+                        t980codtipodeclaracion, t980aprobada, t980fechadiligenciamiento, t980fecha, 
+                        t980numradicadoentrada, t980fecharadicadoentrada, t980nit, t980coddpto, 
+                        t980codmpio, t980codpostal, t980direccion, t980telefono, t980codtipousuario, 
+                        t980nitreplegal, t980codubicacion, t980idcobro, t980anulado, t980observacion, 
+                        t980idtramite
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, tuple(registro))
+
+        else:
+            print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt980tua.")
+
+ 
+
+
+
+
+
+
+        # cursor.execute("SELECT  t985codcia,t985numtr,t985agno,t985periodo,t985numformulario,t985codtipodeclaracion,t985aprobada,t985fechadiligenciamiento,t985fecha,t985numradicadoentrada,t985fecharadicadoentrada,t985nit,t985coddpto,t985codmpio,t985codpostal,t985direccion,t985telefono,t985codtipousuario,t985nitreplegal,t985codubicacion,t985idcobro,t985anulado,t985observacion,t985nitelaboro,t985cargoelaboro,t985lugarelaboro,t985numficha,t985nummatricula,t985geoubicacion,t985idtramite FROM rt985tr")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_985 for dato_985 in data_985 if tuple(dato_985) not in existing_records_set]
+        
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt985tr:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
+
+        #     insert_query_985 = """
+        #     INSERT INTO rt985tr   (
+        #     t985codcia,t985numtr,t985agno,t985periodo,t985numformulario,t985codtipodeclaracion,t985aprobada,t985fechadiligenciamiento,t985fecha,t985numradicadoentrada,t985fecharadicadoentrada,t985nit,t985coddpto,t985codmpio,t985codpostal,t985direccion,t985telefono,t985codtipousuario,t985nitreplegal,t985codubicacion,t985idcobro,t985anulado,t985observacion,t985nitelaboro,t985cargoelaboro,t985lugarelaboro,t985numficha,t985nummatricula,t985geoubicacion,t985idtramite
+        #     )VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        #     for dato_985 in nuevos_registros:
+        #         dato_985 = tuple(None if val is None else val for val in dato_985)
+        #         cursor.execute(insert_query_985, dato_985)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt985tr.")
+
+ 
+
+
+
+      # Consulta para obtener registros existentes de rt970tramite
+        cursor.execute("""
+            SELECT 
+                t970codcia, t970idtramite, t970agno, t970codtipotramite, t970codexpediente, 
+                t970coddepen, t970numradicadoentrada, t970fecharadicadoentrada, t970descripcion, 
+                t970idtramiteref, t970observacion, t970codestadotram, t970tuafechainiperm, 
+                t970tuamesesplazo, t970tuafechafinperm, t970numresolperm, t970fecharesperm, 
+                t970tuacaudalconcesi, t970tuapredio, t970verifico_fun 
+            FROM rt970tramite
+        """)
+        existing_records = cursor.fetchall()
+        existing_records_set = set(existing_records)
+
+        # Filtrar los registros nuevos
+        nuevos_registros = [
+            (
+                dato[0], dato[1], dato[2], dato[3], dato[4], dato[5], dato[6], dato[7], 
+                dato[8], dato[9], dato[10], dato[11], dato[12], dato[13], dato[14], dato[15], 
+                dato[16], dato[17], dato[18], dato[19]
+            ) for dato in data_970 if (
+                dato[0], dato[1]
+            ) not in {(rec[0], rec[1]) for rec in existing_records_set}
+        ]
+
         if nuevos_registros:
             print("Nuevos registros a insertar en la tabla rt970tramite:")
             for registro in nuevos_registros:
                 print(registro)
 
-            insert_query_970 = """
-            INSERT INTO rt970tramite   (
-            t970codcia,t970idtramite,t970agno,t970codtipotramite,t970codexpediente,t970coddepen,t970numradicadoentrada,t970fecharadicadoentrada,t970descripcion,t970idtramiteref,t970observacion,t970codestadotram,t970tuafechainiperm,t970tuamesesplazo,t970tuafechafinperm,t970numresolperm,t970fecharesperm,t970tuacaudalconcesi,t970tuapredio,t970verifico_fun    
-            )VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_970 in nuevos_registros:
-                dato_970 = tuple(None if val is None else val for val in dato_970)
-                cursor.execute(insert_query_970, dato_970)
+                # Convertir fechas de cadena a objetos datetime si es necesario
+                registro = list(registro)
+                if isinstance(registro[7], str):
+                    registro[7] = datetime.strptime(registro[7], '%Y-%m-%d %H:%M:%S')
+                if isinstance(registro[12], str):
+                    registro[12] = datetime.strptime(registro[12], '%Y-%m-%d %H:%M:%S')
+                if isinstance(registro[14], str):
+                    registro[14] = datetime.strptime(registro[14], '%Y-%m-%d %H:%M:%S')
+                if isinstance(registro[16], str):
+                    registro[16] = datetime.strptime(registro[16], '%Y-%m-%d %H:%M:%S')
+
+                cursor.execute("""
+                    INSERT INTO rt970tramite (
+                        t970codcia, t970idtramite, t970agno, t970codtipotramite, t970codexpediente,
+                        t970coddepen, t970numradicadoentrada, t970fecharadicadoentrada, t970descripcion,
+                        t970idtramiteref, t970observacion, t970codestadotram, t970tuafechainiperm,
+                        t970tuamesesplazo, t970tuafechafinperm, t970numresolperm, t970fecharesperm,
+                        t970tuacaudalconcesi, t970tuapredio, t970verifico_fun
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, tuple(registro))
+
         else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt970tramite.")
+            print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt970tramite.")
+
+
 
 
 
@@ -835,27 +982,9 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-        cursor.execute("SELECT  t985codcia,t985numtr,t985agno,t985periodo,t985numformulario,t985codtipodeclaracion,t985aprobada,t985fechadiligenciamiento,t985fecha,t985numradicadoentrada,t985fecharadicadoentrada,t985nit,t985coddpto,t985codmpio,t985codpostal,t985direccion,t985telefono,t985codtipousuario,t985nitreplegal,t985codubicacion,t985idcobro,t985anulado,t985observacion,t985nitelaboro,t985cargoelaboro,t985lugarelaboro,t985numficha,t985nummatricula,t985geoubicacion,t985idtramite FROM rt985tr")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_985 for dato_985 in data_985 if tuple(dato_985) not in existing_records_set]
-        
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt985tr:")
-            for registro in nuevos_registros:
-                print(registro)
 
-            insert_query_985 = """
-            INSERT INTO rt985tr   (
-            t985codcia,t985numtr,t985agno,t985periodo,t985numformulario,t985codtipodeclaracion,t985aprobada,t985fechadiligenciamiento,t985fecha,t985numradicadoentrada,t985fecharadicadoentrada,t985nit,t985coddpto,t985codmpio,t985codpostal,t985direccion,t985telefono,t985codtipousuario,t985nitreplegal,t985codubicacion,t985idcobro,t985anulado,t985observacion,t985nitelaboro,t985cargoelaboro,t985lugarelaboro,t985numficha,t985nummatricula,t985geoubicacion,t985idtramite
-            )VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_985 in nuevos_registros:
-                dato_985 = tuple(None if val is None else val for val in dato_985)
-                cursor.execute(insert_query_985, dato_985)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt985tr.")
 
-    
+
 
 
 
@@ -915,28 +1044,6 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
     
    
 
-        cursor.execute("SELECT t980codcia,t980numtua,t980agno,t980periodo,t980numformulario,t980codtipodeclaracion,t980aprobada,t980fechadiligenciamiento,t980fecha,t980numradicadoentrada,t980fecharadicadoentrada,t980nit,t980coddpto,t980codmpio,t980codpostal,t980direccion,t980telefono,t980codtipousuario,t980nitreplegal,t980codubicacion,t980idcobro,t980anulado,t980observacion,t980idtramite FROM rt980tua")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_980 for dato_980 in data_980 if tuple(dato_980) not in existing_records_set]
-        
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt980tua:")
-            for registro in nuevos_registros:
-                print(registro)
-
-            insert_query_980 = """
-            INSERT INTO rt980tua   (
-                t980codcia,t980numtua,t980agno,t980periodo,t980numformulario,t980codtipodeclaracion,t980aprobada,t980fechadiligenciamiento,t980fecha,t980numradicadoentrada,t980fecharadicadoentrada,t980nit,t980coddpto,t980codmpio,t980codpostal,t980direccion,t980telefono,t980codtipousuario,t980nitreplegal,t980codubicacion,t980idcobro,t980anulado,t980observacion,t980idtramite)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_980 in nuevos_registros:
-                dato_980 = tuple(None if val is None else val for val in dato_980)
-                cursor.execute(insert_query_980, dato_980)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt980tua.")
-
-
-
-
     
    
 
@@ -993,121 +1100,108 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-        cursor.execute("SELECT t914codcia,t914codtiporenta,t914numdistribucion,t914agno,t914codtipodoc,t914numerodoc,t914codctabanco,t914codgruporec,t914fecha,t914numorigen,t914codorigen,t914abonarliq,t914anulado,t914numerodocrnt FROM rt914distribucion")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_914 for dato_914 in data_914 if tuple(dato_914) not in existing_records_set]
-        
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt914distribucion:")
-            for registro in nuevos_registros:
-                print(registro)
 
-            insert_query_914 = """
-            INSERT INTO rt914distribucion   (
-                t914codcia,t914codtiporenta,t914numdistribucion,t914agno,t914codtipodoc,t914numerodoc,t914codctabanco,t914codgruporec,t914fecha,t914numorigen,t914codorigen,t914abonarliq,t914anulado,t914numerodocrnt)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_914 in nuevos_registros:
-                dato_914 = tuple(None if val is None else val for val in dato_914)
-                cursor.execute(insert_query_914, dato_914)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt914distribucion.")
+     
+
+        # cursor.execute("SELECT   t913codcia,t913codtiporenta,t913numrecaudo,t913agno,t913codtipodoc,t913codctabanco,t913codgruporec,t913nit,t913fecha,t913fechareal,t913valor,t913tipodistribucion,t913codtipoformulario,t913numformulario,t913numformulariopago,t913anulado,t913numanulacion,t913codformapago,t913numdocpago FROM rt913recaudo")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_913 for dato_913 in data_913 if tuple(dato_913) not in existing_records_set]
+        
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt913recaudo:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
+
+        #     insert_query_913 = """
+        #     INSERT INTO rt913recaudo   (
+        #         t913codcia,t913codtiporenta,t913numrecaudo,t913agno,t913codtipodoc,t913codctabanco,t913codgruporec,t913nit,t913fecha,t913fechareal,t913valor,t913tipodistribucion,t913codtipoformulario,t913numformulario,t913numformulariopago,t913anulado,t913numanulacion,t913codformapago,t913numdocpago)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        #     for dato_913 in nuevos_registros:
+        #         dato_913 = tuple(None if val is None else val for val in dato_913)
+        #         cursor.execute(insert_query_913, dato_913)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt913recaudo.")
 
 
 
 
      
 
-        cursor.execute("SELECT   t913codcia,t913codtiporenta,t913numrecaudo,t913agno,t913codtipodoc,t913codctabanco,t913codgruporec,t913nit,t913fecha,t913fechareal,t913valor,t913tipodistribucion,t913codtipoformulario,t913numformulario,t913numformulariopago,t913anulado,t913numanulacion,t913codformapago,t913numdocpago FROM rt913recaudo")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_913 for dato_913 in data_913 if tuple(dato_913) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt913recaudo:")
-            for registro in nuevos_registros:
-                print(registro)
-
-            insert_query_913 = """
-            INSERT INTO rt913recaudo   (
-                t913codcia,t913codtiporenta,t913numrecaudo,t913agno,t913codtipodoc,t913codctabanco,t913codgruporec,t913nit,t913fecha,t913fechareal,t913valor,t913tipodistribucion,t913codtipoformulario,t913numformulario,t913numformulariopago,t913anulado,t913numanulacion,t913codformapago,t913numdocpago)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_913 in nuevos_registros:
-                dato_913 = tuple(None if val is None else val for val in dato_913)
-                cursor.execute(insert_query_913, dato_913)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt913recaudo.")
 
 
-
-
-     
-
-        cursor.execute("SELECT   t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet FROM rt915distribucionliq")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_915 for dato_915 in data_915 if tuple(dato_915) not in existing_records_set]
+        # cursor.execute("SELECT   t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet FROM rt915distribucionliq")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_915 for dato_915 in data_915 if tuple(dato_915) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt915distribucionliq:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt915distribucionliq:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_915 = """
-            INSERT INTO rt915distribucionliq   (
-                t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet)VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_915 in nuevos_registros:
-                dato_915 = tuple(None if val is None else val for val in dato_915)
-                cursor.execute(insert_query_915, dato_915)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt915distribucionliq.")
-
-
+        #     insert_query_915 = """
+        #     INSERT INTO rt915distribucionliq   (
+        #         t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet)VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
+        #     for dato_915 in nuevos_registros:
+        #         dato_915 = tuple(None if val is None else val for val in dato_915)
+        #         cursor.execute(insert_query_915, dato_915)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt915distribucionliq.")
 
 
 
-        cursor.execute("SELECT   t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet FROM rt915distribucionliq")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_915 for dato_915 in data_915 if tuple(dato_915) not in existing_records_set]
+
+
+        # cursor.execute("SELECT  t916codcia,t916codtiporenta,t916numdistribucion,t916numliquidacion,t916numcuota,t916valorcapital,t916valorinteres,t916fechainiint,t916valorint1066,t916valorprescripcion FROM rt916distribucioncuot")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_916 for dato_916 in data_916 if tuple(dato_916) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt915distribucionliq:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt916distribucioncuot:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_915 = """
-            INSERT INTO rt915distribucionliq   (
-                t915codcia,t915codtiporenta,t915numdistribucion,t915numliquidacion,t915codconcepto,t915valorpagado,t915valorprescripcion,t915valorpagadodet)VALUES (%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_915 in nuevos_registros:
-                dato_915 = tuple(None if val is None else val for val in dato_915)
-                cursor.execute(insert_query_915, dato_915)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt915distribucionliq.")
-
-
+        #     insert_query_916 = """
+        #     INSERT INTO rt916distribucioncuot   (
+        #        t916codcia,t916codtiporenta,t916numdistribucion,t916numliquidacion,t916numcuota,t916valorcapital,t916valorinteres,t916fechainiint,t916valorint1066,t916valorprescripcion)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+        #     for dato_916 in nuevos_registros:
+        #         dato_916 = tuple(None if val is None else val for val in dato_916)
+        #         cursor.execute(insert_query_916, dato_916)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt916distribucioncuot.")
 
 
 
-        cursor.execute("SELECT  t916codcia,t916codtiporenta,t916numdistribucion,t916numliquidacion,t916numcuota,t916valorcapital,t916valorinteres,t916fechainiint,t916valorint1066,t916valorprescripcion FROM rt916distribucioncuot")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_916 for dato_916 in data_916 if tuple(dato_916) not in existing_records_set]
+
+
+
+
+
+
+
+
+
+        # cursor.execute("SELECT   t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif FROM rt03tercero")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_03 for dato_03 in data_03 if tuple(dato_03) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt916distribucioncuot:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt03tercero:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_916 = """
-            INSERT INTO rt916distribucioncuot   (
-               t916codcia,t916codtiporenta,t916numdistribucion,t916numliquidacion,t916numcuota,t916valorcapital,t916valorinteres,t916fechainiint,t916valorint1066,t916valorprescripcion)VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
-            for dato_916 in nuevos_registros:
-                dato_916 = tuple(None if val is None else val for val in dato_916)
-                cursor.execute(insert_query_916, dato_916)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt916distribucioncuot.")
-
-
-
+        #     insert_query_03 = """
+        #     INSERT INTO rt03tercero   (
+        #        t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif
+        #        )VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        #     for dato_03 in nuevos_registros:
+        #         dato_03 = tuple(None if val is None else val for val in dato_03)
+        #         cursor.execute(insert_query_03, dato_03)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt03tercero.")
 
 
 
@@ -1115,52 +1209,24 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-
-
-        cursor.execute("SELECT   t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif FROM rt03tercero")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_03 for dato_03 in data_03 if tuple(dato_03) not in existing_records_set]
+        # cursor.execute("SELECT  t912codcia, t912codtiporenta, t912numanulacionliq,t912numliquidacion, t912fecha, t912numerodoc, t912observacion FROM rt912anulliquidacion")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_912 for dato_912 in data_912 if tuple(dato_912) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt03tercero:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt912anulliquidacion:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_03 = """
-            INSERT INTO rt03tercero   (
-               t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif
-               )VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            for dato_03 in nuevos_registros:
-                dato_03 = tuple(None if val is None else val for val in dato_03)
-                cursor.execute(insert_query_03, dato_03)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt03tercero.")
-
-
-
-
-
-
-
-        cursor.execute("SELECT  t912codcia, t912codtiporenta, t912numanulacionliq,t912numliquidacion, t912fecha, t912numerodoc, t912observacion FROM rt912anulliquidacion")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_912 for dato_912 in data_912 if tuple(dato_912) not in existing_records_set]
-        
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt912anulliquidacion:")
-            for registro in nuevos_registros:
-                print(registro)
-
-            insert_query_912 = """
-            INSERT INTO rt912anulliquidacion   (
-               t912codcia, t912codtiporenta, t912numanulacionliq,t912numliquidacion, t912fecha, t912numerodoc, t912observacion)VALUES (%s, %s, %s, %s, %s, %s, %s)"""
-            for dato_912 in nuevos_registros:
-                dato_912 = tuple(None if val is None else val for val in dato_912)
-                cursor.execute(insert_query_912, dato_912)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt912anulliquidacion.")
+        #     insert_query_912 = """
+        #     INSERT INTO rt912anulliquidacion   (
+        #        t912codcia, t912codtiporenta, t912numanulacionliq,t912numliquidacion, t912fecha, t912numerodoc, t912observacion)VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        #     for dato_912 in nuevos_registros:
+        #         dato_912 = tuple(None if val is None else val for val in dato_912)
+        #         cursor.execute(insert_query_912, dato_912)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt912anulliquidacion.")
 
 
 
@@ -1323,24 +1389,24 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-        cursor.execute("SELECT t909codcia, t909codtiporenta, t909numliquidacion, t909codconcepto, t909valor,t909valorpagado, t909valorbasesancion, t909fechabasesancion, t909valorprescripcion,t909valordescbenef, t909valorpagoantbenef, t909valordeterioro, t909valorpagadodet FROM rt909liqconcepto")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_909 for dato_909 in data_909 if tuple(dato_909) not in existing_records_set]
+        # cursor.execute("SELECT t909codcia, t909codtiporenta, t909numliquidacion, t909codconcepto, t909valor,t909valorpagado, t909valorbasesancion, t909fechabasesancion, t909valorprescripcion,t909valordescbenef, t909valorpagoantbenef, t909valordeterioro, t909valorpagadodet FROM rt909liqconcepto")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_909 for dato_909 in data_909 if tuple(dato_909) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt909liqconcepto:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt909liqconcepto:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_909 = """
-            INSERT INTO rt909liqconcepto   (
-                  t909codcia, t909codtiporenta, t909numliquidacion, t909codconcepto, t909valor,t909valorpagado, t909valorbasesancion, t909fechabasesancion, t909valorprescripcion,t909valordescbenef, t909valorpagoantbenef, t909valordeterioro, t909valorpagadodet)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            for dato_909 in nuevos_registros:
-                dato_909 = tuple(None if val is None else val for val in dato_909)
-                cursor.execute(insert_query_909, dato_909)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt909liqconcepto.")
+        #     insert_query_909 = """
+        #     INSERT INTO rt909liqconcepto   (
+        #           t909codcia, t909codtiporenta, t909numliquidacion, t909codconcepto, t909valor,t909valorpagado, t909valorbasesancion, t909fechabasesancion, t909valorprescripcion,t909valordescbenef, t909valorpagoantbenef, t909valordeterioro, t909valorpagadodet)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        #     for dato_909 in nuevos_registros:
+        #         dato_909 = tuple(None if val is None else val for val in dato_909)
+        #         cursor.execute(insert_query_909, dato_909)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt909liqconcepto.")
 
 
 
@@ -1372,50 +1438,28 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-        cursor.execute("SELECT   t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref FROM rt901periodo")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_901 for dato_901 in data_901 if tuple(dato_901) not in existing_records_set]
+
+
+
+
+        # cursor.execute("SELECT   t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref FROM rt901periodo")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_901 for dato_901 in data_901 if tuple(dato_901) not in existing_records_set]
         
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt901periodo:")
-            for registro in nuevos_registros:
-                print(registro)
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt901periodo:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
 
-            insert_query_901 = """
-            INSERT INTO rt901periodo   (
-                     t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            for dato_901 in nuevos_registros:
-                dato_901 = tuple(None if val is None else val for val in dato_901)
-                cursor.execute(insert_query_901, dato_901)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt901periodo.")
-
-
-
-
-
-
-
-
-        cursor.execute("SELECT   t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref FROM rt901periodo")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_901 for dato_901 in data_901 if tuple(dato_901) not in existing_records_set]
-        
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt901periodo:")
-            for registro in nuevos_registros:
-                print(registro)
-
-            insert_query_901 = """
-            INSERT INTO rt901periodo   (
-                     t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            for dato_901 in nuevos_registros:
-                dato_901 = tuple(None if val is None else val for val in dato_901)
-                cursor.execute(insert_query_901, dato_901)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt901periodo.")
+        #     insert_query_901 = """
+        #     INSERT INTO rt901periodo   (
+        #              t901codcia, t901codtiporenta, t901agno, t901periodo, t901descripcion,t901fechainicial,t901fechafinal,t901codtipocalcfacilidad,t901codactividadciiupref)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        #     for dato_901 in nuevos_registros:
+        #         dato_901 = tuple(None if val is None else val for val in dato_901)
+        #         cursor.execute(insert_query_901, dato_901)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt901periodo.")
 
 
 
@@ -1469,24 +1513,25 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-        cursor.execute("SELECT   t993codcia, t993numtransfsectelect, t993agno, t993periodo, t993numformulario, t993codtipodeclaracion, t993aprobada, t993fechadiligenciamiento, t993fecha, t993numradicadoentrada, t993fecharadicadoentrada, t993nit, t993idcobro, t993anulado, t993observacion FROM rt993transfsectelect")
-        existing_records = cursor.fetchall()
-        existing_records_set = set(existing_records)
-        nuevos_registros = [dato_993 for dato_993 in data_993 if tuple(dato_993) not in existing_records_set]
-        
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt993transfsectelect:")
-            for registro in nuevos_registros:
-                print(registro)
+        # cursor.execute("SELECT   t993codcia, t993numtransfsectelect, t993agno, t993periodo, t993numformulario, t993codtipodeclaracion, t993aprobada, t993fechadiligenciamiento, t993fecha, t993numradicadoentrada, t993fecharadicadoentrada, t993nit, t993idcobro, t993anulado, t993observacion FROM rt993transfsectelect")
 
-            insert_query_993 = """
-            INSERT INTO rt993transfsectelect   (
-                       t993codcia, t993numtransfsectelect, t993agno, t993periodo, t993numformulario, t993codtipodeclaracion, t993aprobada, t993fechadiligenciamiento, t993fecha, t993numradicadoentrada, t993fecharadicadoentrada, t993nit, t993idcobro, t993anulado, t993observacion)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            for dato_993 in nuevos_registros:
-                dato_993 = tuple(None if val is None else val for val in dato_993)
-                cursor.execute(insert_query_993, dato_993)
-        else:
-             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt993transfsectelect.")
+        # existing_records = cursor.fetchall()
+        # existing_records_set = set(existing_records)
+        # nuevos_registros = [dato_993 for dato_993 in data_993 if tuple(dato_993) not in existing_records_set]
+        
+        # if nuevos_registros:
+        #     print("Nuevos registros a insertar en la tabla rt993transfsectelect:")
+        #     for registro in nuevos_registros:
+        #         print(registro)
+
+        #     insert_query_993 = """
+        #     INSERT INTO rt993transfsectelect   (
+        #                t993codcia, t993numtransfsectelect, t993agno, t993periodo, t993numformulario, t993codtipodeclaracion, t993aprobada, t993fechadiligenciamiento, t993fecha, t993numradicadoentrada, t993fecharadicadoentrada, t993nit, t993idcobro, t993anulado, t993observacion)VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        #     for dato_993 in nuevos_registros:
+        #         dato_993 = tuple(None if val is None else val for val in dato_993)
+        #         cursor.execute(insert_query_993, dato_993)
+        # else:
+        #      print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt993transfsectelect.")
 
 
 
@@ -1613,114 +1658,114 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-        insert_query_10 = """
-       INSERT INTO rt10tiporetenrango   (
-       t10codcia, t10agno, t10codtiporet, t10rangodesde, t10rangohasta, t10porcentaje, t10valor, t10valoruvtadic
+#         insert_query_10 = """
+#        INSERT INTO rt10tiporetenrango   (
+#        t10codcia, t10agno, t10codtiporet, t10rangodesde, t10rangohasta, t10porcentaje, t10valor, t10valoruvtadic
 
-         )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
- """
+#          )
+#     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+#  """
 
-        for dato_10 in data_10:
-          dato_10 = tuple(None if val is None else val for val in dato_10)
-          cursor.execute(insert_query_10, dato_10)
-
-
+#         for dato_10 in data_10:
+#           dato_10 = tuple(None if val is None else val for val in dato_10)
+#           cursor.execute(insert_query_10, dato_10)
 
 
-        insert_query_994 = """
-       INSERT INTO rt994notificacion   (
-      t994codcia, t994numnotificacion, t994codmodonotificacion, t994fechaenviocorreocert, t994fecharptarecibidocorreocert, t994codmotivodevolcorreocert, t994nit, t994coddpto, t994codmpio, t994direccion,t994codpostal,t994telefono, t994email, t994codtiporptenotif, t994nitrptenotif, t994nombrerptenotif,
-      t994fechanotificacion, t994docnotifpersonal, t994observacion, t994doccitacion, t994fechaenviocitacion, t994codmotivodevolcitacion, t994docnorecibecitacion, t994docaviso, t994fechaenvioaviso,
-      t994codmotivodevolaviso, t994fecharecibidoaviso, t994aplicacodigonuevo, t994fechaedicto, t994fechaenfirme, t994codorigennotif, t994fechainterpusorecurso, t994anulado, t994fechaanulacion, t994motivoanulacion,
-      t994fechainicio, t994fecharecibidocitacion, t994timestamp, t994fechaavisoweb, t994fechapublicacitacion, t994docavisoconst, t994docedicto, t994docfijaaviso, t994docpublicacitacion
+
+
+#         insert_query_994 = """
+#        INSERT INTO rt994notificacion   (
+#       t994codcia, t994numnotificacion, t994codmodonotificacion, t994fechaenviocorreocert, t994fecharptarecibidocorreocert, t994codmotivodevolcorreocert, t994nit, t994coddpto, t994codmpio, t994direccion,t994codpostal,t994telefono, t994email, t994codtiporptenotif, t994nitrptenotif, t994nombrerptenotif,
+#       t994fechanotificacion, t994docnotifpersonal, t994observacion, t994doccitacion, t994fechaenviocitacion, t994codmotivodevolcitacion, t994docnorecibecitacion, t994docaviso, t994fechaenvioaviso,
+#       t994codmotivodevolaviso, t994fecharecibidoaviso, t994aplicacodigonuevo, t994fechaedicto, t994fechaenfirme, t994codorigennotif, t994fechainterpusorecurso, t994anulado, t994fechaanulacion, t994motivoanulacion,
+#       t994fechainicio, t994fecharecibidocitacion, t994timestamp, t994fechaavisoweb, t994fechapublicacitacion, t994docavisoconst, t994docedicto, t994docfijaaviso, t994docpublicacitacion
        
 
-         )
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s, %s,%s,%s, %s, %s, %s,%s, %s, %s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s)
- """
+#          )
+#     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s,%s, %s, %s, %s,%s, %s, %s, %s, %s,%s,%s, %s, %s, %s,%s, %s, %s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s)
+#  """
 
-        for dato_994 in data_994:
-          dato_994 = tuple(None if val is None else val for val in dato_994)
-          cursor.execute(insert_query_994, dato_994)
-
-
-
-        insert_query_976 = """
-       INSERT INTO rt976tramitepaso   (
-         t976codcia, t976idtramite, t976idpaso, t976consecpaso, t976idcobro,
-         t976numradicadoentrada, t976fecharadicadoentrada, t976codestadotram,
-         t976codestadotramant, t976fechainicial, t976fechafinal, t976fecharealizacion,
-         t976cumplido, t976timestamp, t976afvolumentotal, t976otorgado, t976nit,
-         t976fechacobro, t976direcfechasalida, t976direcfechadevol
-         )
-    VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
- """
-
-
-        for dato_976 in data_976:
-          dato_976 = tuple(None if val is None else val for val in dato_976)
-          cursor.execute(insert_query_976, dato_976)
+#         for dato_994 in data_994:
+#           dato_994 = tuple(None if val is None else val for val in dato_994)
+#           cursor.execute(insert_query_994, dato_994)
 
 
 
+#         insert_query_976 = """
+#        INSERT INTO rt976tramitepaso   (
+#          t976codcia, t976idtramite, t976idpaso, t976consecpaso, t976idcobro,
+#          t976numradicadoentrada, t976fecharadicadoentrada, t976codestadotram,
+#          t976codestadotramant, t976fechainicial, t976fechafinal, t976fecharealizacion,
+#          t976cumplido, t976timestamp, t976afvolumentotal, t976otorgado, t976nit,
+#          t976fechacobro, t976direcfechasalida, t976direcfechadevol
+#          )
+#     VALUES (%s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+#  """
 
 
-        insert_query_908 = """
-       INSERT INTO rt908liquidacion   (
-        t908codcia, t908codtiporenta, t908numliquidacion, t908agno, t908periodo,
-        t908nit, t908fecha, t908valor, t908valorpagado, t908valorprescripcion,
-        t908anulado, t908numresolucion, t908agnoresolucion, t908codorigenliq,
-        t908observacion, t908codtipobeneficio, t908fechacontab, t908secobra,
-        t908fechaenfirme, t908numorigenliq
+#         for dato_976 in data_976:
+#           dato_976 = tuple(None if val is None else val for val in dato_976)
+#           cursor.execute(insert_query_976, dato_976)
+
+
+
+
+
+#         insert_query_908 = """
+#        INSERT INTO rt908liquidacion   (
+#         t908codcia, t908codtiporenta, t908numliquidacion, t908agno, t908periodo,
+#         t908nit, t908fecha, t908valor, t908valorpagado, t908valorprescripcion,
+#         t908anulado, t908numresolucion, t908agnoresolucion, t908codorigenliq,
+#         t908observacion, t908codtipobeneficio, t908fechacontab, t908secobra,
+#         t908fechaenfirme, t908numorigenliq
        
        
-    ) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-"""
+#     ) 
+#     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+# """
 
 
-        for dato_908 in data_908:
-          dato_908 = tuple(None if val is None else val for val in dato_908)
-          cursor.execute(insert_query_908, dato_908)
+#         for dato_908 in data_908:
+#           dato_908 = tuple(None if val is None else val for val in dato_908)
+#           cursor.execute(insert_query_908, dato_908)
 
 
 
-        insert_query_955 = """
-       INSERT INTO rt955cobroitem  (
-        t955codcia, t955idcobro, t955iditemcobro, t955consecutivo, t955valor,
-        t955tuaqmes, t955tuanumdiasmes, t955tuanumhoras, t955tuavcmes,
-        t955tuavvmes, t955tuafopmes, t955tuavmes, t955tuavalortotal,
-        t955trqmes, t955trnumdiasmes, t955trnumhoras, t955trconcdbomes,
-        t955trcargacdbomes, t955trvalordbo, t955trconcsstmes, t955trcargacsstmes,
-        t955trvalorssst, t955trvalortotal, t955tuavmesmanual, t955tuadctomes
+#         insert_query_955 = """
+#        INSERT INTO rt955cobroitem  (
+#         t955codcia, t955idcobro, t955iditemcobro, t955consecutivo, t955valor,
+#         t955tuaqmes, t955tuanumdiasmes, t955tuanumhoras, t955tuavcmes,
+#         t955tuavvmes, t955tuafopmes, t955tuavmes, t955tuavalortotal,
+#         t955trqmes, t955trnumdiasmes, t955trnumhoras, t955trconcdbomes,
+#         t955trcargacdbomes, t955trvalordbo, t955trconcsstmes, t955trcargacsstmes,
+#         t955trvalorssst, t955trvalortotal, t955tuavmesmanual, t955tuadctomes
        
        
-    ) 
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-            %s, %s, %s, %s, %s, %s, %s, %s)
-"""
+#     ) 
+#     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+#             %s, %s, %s, %s, %s, %s, %s, %s)
+# """
 
-          #Insertar cada dato en la tabla t981tuaactividad
-        for dato_955 in data_955:
-          dato_955 = tuple(None if val is None else val for val in dato_955)
-          cursor.execute(insert_query_955, dato_955)
-
-
+#           #Insertar cada dato en la tabla t981tuaactividad
+#         for dato_955 in data_955:
+#           dato_955 = tuple(None if val is None else val for val in dato_955)
+#           cursor.execute(insert_query_955, dato_955)
 
 
-        insert_query_954 = """
-       INSERT INTO rt954cobro  (
-    t954codcia,t954idcobro,t954codtiporenta,t954codtipocobro,t954nit,t954liquidado,t954numliquidacion,t954secobra,t954codorigencobro,t954numorigencobro,t954idpaso,t954consecpaso,t954numnotificacion,t954anulado,t954tuatm,t954tuafr,t954tuavalortua,t954trtmdbo,t954trtmsst,t954trfrdbo,t954trfrsst,t954trvalortrdbo,t954trvalortrsst,t954trcantperanidbo,t954trcantperanisst,t954trtienepsmv,t954tuaporcdcto,t954tuanormadcto,t954tuausarvmanual,t954replegalimportad,t954tsetvb,t954traplicadcto465
+
+
+#         insert_query_954 = """
+#        INSERT INTO rt954cobro  (
+#     t954codcia,t954idcobro,t954codtiporenta,t954codtipocobro,t954nit,t954liquidado,t954numliquidacion,t954secobra,t954codorigencobro,t954numorigencobro,t954idpaso,t954consecpaso,t954numnotificacion,t954anulado,t954tuatm,t954tuafr,t954tuavalortua,t954trtmdbo,t954trtmsst,t954trfrdbo,t954trfrsst,t954trvalortrdbo,t954trvalortrsst,t954trcantperanidbo,t954trcantperanisst,t954trtienepsmv,t954tuaporcdcto,t954tuanormadcto,t954tuausarvmanual,t954replegalimportad,t954tsetvb,t954traplicadcto465
    
-    ) 
-    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-"""
+#     ) 
+#     VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+# """
 
-          #Insertar cada dato en la tabla t981tuaactividad
-        for dato_954 in data_954:
-          dato_954 = tuple(None if val is None else val for val in dato_954)
-          cursor.execute(insert_query_954, dato_954)
+#           #Insertar cada dato en la tabla t981tuaactividad
+#         for dato_954 in data_954:
+#           dato_954 = tuple(None if val is None else val for val in dato_954)
+#           cursor.execute(insert_query_954, dato_954)
 
 
 
