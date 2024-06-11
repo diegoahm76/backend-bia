@@ -262,14 +262,5 @@ class ControlStockGetSerializer(serializers.ModelSerializer):
     unidad_medida = serializers.ReadOnlyField(source='id_bien.id_unidad_medida.abreviatura', default=None)
     
     class Meta:
-        fields = [
-            'id_bien',
-            'codigo_bien',
-            'nombre_bien',
-            'stock_minimo',
-            'stock_maximo',
-            'cantidad_existente',
-            'id_unidad_medida',
-            'unidad_medida'
-        ]
+        fields = '__all__'
         model = Inventario

@@ -13,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
+from django.db.models import F, Sum, Value, CharField
+from django.db.models.functions import Concat
 import operator, itertools
 
 from almacen.serializers.inventario_serializers import BusquedaBienesConsumoSerializer, BusquedaBienesSerializer, ControlBienesConsumoGetListSerializer, ControlConsumoBienesGetListSerializer, ControlInventarioByTipoSerializer, ControlInventarioTodoSerializer, ControlStockGetSerializer, OrigenesListGetSerializer
@@ -341,7 +343,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
         no_discriminar = True if no_discriminar.lower() == 'true' else False
 
         for key, value in request.query_params.items():
-            if key in ['es_despacho_conservacion', 'id_bien', 'id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula','codigo_bien_despachado']:
+            if key in ['es_despacho_conservacion', 'id_bien', 'nombre_bien_despachado','id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula','codigo_bien_despachado']:
                 if key == 'es_despacho_conservacion':
                     if value != '':
                         filter['id_despacho_consumo__es_despacho_conservacion'] = True if value.lower() == 'true' else False
@@ -375,6 +377,9 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 elif key == 'codigo_bien_despachado':
                     if value != '':
                         filter['id_bien_despachado__codigo_bien__icontains'] = value
+                elif key == 'nombre_bien_despachado':
+                    if value != '':
+                        filter['id_bien_despachado__nombre__icontains'] = value
                 else:
                 
                     if value != '':
@@ -468,22 +473,59 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
 
 
 class ControlStockGetView(generics.ListAPIView):
-    serializer_class=ControlStockGetSerializer
-    queryset=Inventario.objects.all()
+    serializer_class = ControlStockGetSerializer
+    queryset = Inventario.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        solicitable_vivero = request.query_params.get('solicitable_vivero', None)
+    def get_queryset(self):
+        queryset = Inventario.objects.all()
         
+        solicitable_vivero = self.request.query_params.get('solicitable_vivero')
+        codigo_bien = self.request.query_params.get('codigo_bien')
+        nombre_bien = self.request.query_params.get('nombre_bien')
+        cod_tipo_entrada = self.request.query_params.get('cod_tipo_entrada')
+        id_bodega = self.request.query_params.get('id_bodega')
+        id_persona_responsable = self.request.query_params.get('id_persona_responsable')
+        consecutivo = self.request.query_params.get('consecutivo')
+
         if solicitable_vivero:
-            solicitable_vivero = True if solicitable_vivero.lower() == 'true' else None
-            
-        inventario = self.queryset.all().filter(id_bien__solicitable_vivero=True) if solicitable_vivero else self.queryset.all()
+            queryset = queryset.filter(id_bien__solicitable_vivero=(solicitable_vivero.lower() == 'true'))
         
+        if codigo_bien:
+            queryset = queryset.filter(id_bien__codigo_bien__icontains=codigo_bien)
+        
+        if nombre_bien:
+            queryset = queryset.filter(id_bien__nombre__icontains=nombre_bien)
+        
+        if cod_tipo_entrada:
+            queryset = queryset.filter(cod_tipo_entrada=cod_tipo_entrada)
+        
+        if id_bodega:
+            queryset = queryset.filter(id_bodega=id_bodega)
+        
+        if id_persona_responsable:
+            queryset = queryset.filter(id_persona_responsable=id_persona_responsable)
+
+        if consecutivo:
+            queryset = queryset.filter(id_bien__nro_elemento_bien=consecutivo)
+
+        return queryset
+
+    def get(self, request):
+        inventario = self.get_queryset()
+
+        # Añadir nombre completo de la persona responsable
         data_output = inventario.filter(id_bien__cod_tipo_bien='C').values(
             'id_bien',
             codigo_bien=F('id_bien__codigo_bien'),
             nombre_bien=F('id_bien__nombre'),
+            cod_tipo_entrada_stock=F('cod_tipo_entrada'),
+            nombre_cod_tipo_entrada_stock=F('cod_tipo_entrada__nombre'),
+            cod_tipo_bien=F('id_bien__cod_tipo_bien'),
+            consecutivo=F('id_bien__nro_elemento_bien'),
+            id_bodega_stock=F('id_bodega'),
+            nombre_bodega_stock=F('id_bodega__nombre'),
+            fecha_ultimo_mov=F('fecha_ultimo_movimiento'),
             stock_minimo=F('id_bien__stock_minimo'),
             stock_maximo=F('id_bien__stock_maximo'),
             id_unidad_medida=F('id_bien__id_unidad_medida__id_unidad_medida'),
@@ -491,7 +533,18 @@ class ControlStockGetView(generics.ListAPIView):
         ).annotate(
             cantidad_entrante_consumo_total=Sum('cantidad_entrante_consumo', default=0),
             cantidad_saliente_consumo_total=Sum('cantidad_saliente_consumo', default=0),
-            cantidad_existente=F('cantidad_entrante_consumo_total') - F('cantidad_saliente_consumo_total')
+            cantidad_existente=F('cantidad_entrante_consumo_total') - F('cantidad_saliente_consumo_total'),
+            id_persona_responsable_stock=F('id_persona_responsable'),
+            nombre_completo_responsable=Concat(
+                F('id_persona_responsable__primer_nombre'),
+                Value(' '),
+                F('id_persona_responsable__segundo_nombre'),
+                Value(' '),
+                F('id_persona_responsable__primer_apellido'),
+                Value(' '),
+                F('id_persona_responsable__segundo_apellido'),
+                output_field=CharField()
+            )
         ).order_by('nombre_bien')
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
