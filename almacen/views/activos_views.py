@@ -547,6 +547,7 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
             'gestionada_alma': False,
             'rechazada_almacen': False,
             'solicitud_anulada_solicitante': False,
+            'fecha_devolucion': fecha_devolucion,
         }
 
         solicitud_serializer = self.serializer_class(data=solicitud_data)
@@ -750,7 +751,8 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
                 'nombre_unidad_medida': item.id_unidad_medida.nombre,
                 'observacion': item.observacion,
-                'nro_posicion': item.nro_posicion
+                'nro_posicion': item.nro_posicion,
+                'fecha_devolucion': item.fecha_devolucion
             }
             items_data.append(item_data)
         
