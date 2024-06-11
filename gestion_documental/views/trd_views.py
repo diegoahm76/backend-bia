@@ -4202,7 +4202,8 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
                 id_tipologia_doc = plantilla.id_tipologia_doc_trd,
                 id_persona_genera= persona,
                 id_archivo_digital= archivo_digital,
-                finalizado= False
+                finalizado= False,
+                cargado = True
             )
 
             serializer = self.serializer_class(consecutivo_tipologia)
@@ -4262,7 +4263,6 @@ class ActualizarDocumentos(generics.UpdateAPIView):
             #archivo = SubirDocumentoAlGenerador()
             #archivo_creado = archivo.crear_archivos(archivo, fecha_actual).data
             archivo_creado = self.crear_archivos(archivo, fecha_actual).data
-            print(archivo_creado)
             archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=archivo_creado['data']['id_archivo_digital'])
             ruta_archivo = archivo_digital.ruta_archivo.path if archivo_digital else None
             if ruta_archivo and os.path.exists(ruta_archivo):
@@ -4278,6 +4278,8 @@ class ActualizarDocumentos(generics.UpdateAPIView):
                 consecutivo.variables = variables if variables else {}
             else:
                 consecutivo.variables = variables if variables else {}
+
+            consecutivo.cargado = True
             consecutivo.save()
 
             serializer = self.serializer_class(consecutivo)
