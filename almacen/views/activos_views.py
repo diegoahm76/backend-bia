@@ -744,9 +744,9 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'cod_tipo_bien': item.id_bien.cod_tipo_bien,
                 'doc_identificador_nro': item.id_bien.doc_identificador_nro,
                 'descripcion': item.id_bien.descripcion,
-                'marca': item.id_bien.id_marca.nombre,                
+                'marca': item.id_bien.id_marca.nombre if item.id_bien.id_marca else None,                
                 'cantidad': item.cantidad,
-                'id_unidad_medida': item.id_unidad_medida.id_unidad_medida,  
+                'id_unidad_medida': item.id_unidad_medida.id_unidad_medida if item.id_unidad_medida else None,  
                 'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
                 'nombre_unidad_medida': item.id_unidad_medida.nombre,
                 'observacion': item.observacion,
@@ -763,7 +763,9 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'id_despacho_activo': item_despacho.id_despacho_activo.id_despacho_activo,
                 'id_bien_solicitado': item_despacho.id_bien_solicitado.id_bien if item_despacho.id_bien_solicitado else None,
                 'nombre_bien_solicitado': item_despacho.id_bien_solicitado.nombre if item_despacho.id_bien_solicitado else None,
+                'codigo_bien_solicitado': item_despacho.id_bien_solicitado.codigo_bien if item_despacho.id_bien_solicitado else None,
                 'id_bien_despachado': item_despacho.id_bien_despachado.id_bien if item_despacho.id_bien_despachado else None,
+                'codigo_bien_despachado': item_despacho.id_bien_despachado.codigo_bien if item_despacho.id_bien_despachado else None,
                 'nombre_bien_despachado': item_despacho.id_bien_despachado.nombre if item_despacho.id_bien_despachado else None,
                 'id_entrada_alma': item_despacho.id_entrada_alma.id_entrada_almacen if item_despacho.id_entrada_alma else None,
                 'id_bodega': item_despacho.id_bodega.id_bodega if item_despacho.id_bodega else None,
@@ -1778,6 +1780,17 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
 
         #T096ActivosDevolucionados
         activos_devolucionados_data = data.get('activos_devolucionados', [])
+        despacho_tipo = False
+        despacho_activo = DespachoActivos.objects.get(id_despacho_activo = id_despacho_activo)
+        if not despacho_activo.despacho_sin_solicitud:
+            solicitud_activo = SolicitudesActivos.objects.get(id_solicitud_activo=despacho_activo.id_solicitud_activo.id_solicitud_activo)
+            if solicitud_activo.solicitud_prestamo:
+                despacho_tipo = True 
+            else:
+                despacho_tipo = False
+        else:
+            despacho_tipo = False
+
         for activo_devolucionado_data in activos_devolucionados_data:
             activo_devolucionado_data['id_devolucion_activo'] = devolucion_obj.id_devolucion_activos
             activo_devolucionado_serializer = ActivosDevolucionadosSerializer(data=activo_devolucionado_data)
@@ -1827,7 +1840,7 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
                 inventario_obj.cod_estado_activo = activo_devolucionado_obj.cod_estado_activo_devolucion
                 inventario_obj.ubicacion_en_bodega = True
                 inventario_obj.fecha_ultimo_movimiento = current_date
-                inventario_obj.tipo_doc_ultimo_movimiento = 'DEV'
+                inventario_obj.tipo_doc_ultimo_movimiento = 'DEV_P' if despacho_tipo else 'DEV_A'
                 inventario_obj.id_registro_doc_ultimo_movimiento = None
                 inventario_obj.save()
         #raise ValidationError("PERE")
@@ -2290,7 +2303,7 @@ class DespachosAutorizarGet(generics.ListAPIView):
 
         data = {
             'success': True,
-            'detail': 'Despachos sin solicitud obtenidos correctamente.',
+            'detail': 'Despachos obtenidos correctamente.',
             'data': serializer_data
         }
         return Response(data, status=status.HTTP_200_OK)  
@@ -3533,6 +3546,64 @@ class RechazarDespachoPut(generics.UpdateAPIView):
 #         serializer = self.serializer_class(despacho)
 #         return Response({'detail': 'El despacho asociado se ha aceptado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+# class AceptarDespachoPut(generics.UpdateAPIView):
+#     queryset = DespachoActivos.objects.all()
+#     serializer_class = DespachoActivosSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def update(self, request, *args, **kwargs):
+#         despacho_id = kwargs.get('pk')
+        
+#         try:
+#             despacho = DespachoActivos.objects.get(id_despacho_activo=despacho_id)
+#         except DespachoActivos.DoesNotExist:
+#             return Response({'detail': 'El despacho especificado no existe.'}, status=status.HTTP_404_NOT_FOUND)
+        
+#         if despacho.estado_despacho != 'Ep':
+#             return Response({'detail': 'Solo se puede Aceptar un despacho que esté en estado "En espera".'},
+#                             status=status.HTTP_400_BAD_REQUEST)
+        
+#         persona_logueada = request.user.persona
+#         persona_anula = get_object_or_404(Personas, id_persona=persona_logueada.id_persona)
+
+#         solicitud = despacho.id_solicitud_activo
+        
+#         with transaction.atomic():
+#             despacho.estado_despacho = 'Ac'
+#             despacho.fecha_autorizacion_resp = datetime.now()
+
+#             if solicitud:
+#                 solicitud.estado_solicitud = 'DA'
+#                 solicitud.save()
+
+#             # Obtener el responsable de la asignación de activos
+#             asignacion = AsignacionActivos.objects.filter(
+#                 id_despacho_asignado=despacho
+#             ).first()
+
+#             if asignacion:
+#                 id_persona_responsable = asignacion.id_funcionario_resp_asignado
+#             else:
+#                 id_persona_responsable = solicitud.id_funcionario_resp_unidad if solicitud else None
+                
+
+#             # Actualizar el inventario asociado al despacho
+#             inventario = Inventario.objects.filter(id_bodega=despacho.id_bodega.id_bodega).first()
+#             if inventario:
+#                 inventario.ubicacion_en_bodega = False
+#                 inventario.ubicacion_asignado = despacho.despacho_sin_solicitud or (solicitud and not solicitud.solicitud_prestamo)
+#                 inventario.ubicacion_prestado = solicitud and solicitud.solicitud_prestamo
+#                 inventario.id_persona_responsable = id_persona_responsable
+#                 inventario.fecha_ultimo_movimiento = datetime.now()
+#                 inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
+#                 inventario.save()
+
+#             despacho.save()
+        
+#         serializer = self.serializer_class(despacho)
+#         return Response({'detail': 'El despacho asociado se ha aceptado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 class AceptarDespachoPut(generics.UpdateAPIView):
     queryset = DespachoActivos.objects.all()
     serializer_class = DespachoActivosSerializer
@@ -3573,22 +3644,24 @@ class AceptarDespachoPut(generics.UpdateAPIView):
             else:
                 id_persona_responsable = solicitud.id_funcionario_resp_unidad if solicitud else None
 
-            # Actualizar el inventario asociado al despacho
-            inventario = Inventario.objects.filter(id_bodega=despacho.id_bodega.id_bodega).first()
-            if inventario:
-                inventario.ubicacion_en_bodega = False
-                inventario.ubicacion_asignado = despacho.despacho_sin_solicitud or (solicitud and not solicitud.solicitud_prestamo)
-                inventario.ubicacion_prestado = solicitud and solicitud.solicitud_prestamo
-                inventario.id_persona_responsable = id_persona_responsable
-                inventario.fecha_ultimo_movimiento = datetime.now()
-                inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
-                inventario.save()
+
+            item_despacho = ItemsDespachoActivos.objects.filter(id_despacho_activo = despacho.id_despacho_activo)
+            for item in item_despacho:
+                # Actualizar el inventario asociado al despacho
+                inventario = Inventario.objects.filter(id_bien=item.id_bien_despachado).first()
+                if inventario:
+                    inventario.ubicacion_en_bodega = False
+                    inventario.ubicacion_asignado = despacho.despacho_sin_solicitud or (solicitud and not solicitud.solicitud_prestamo)
+                    inventario.ubicacion_prestado = solicitud and solicitud.solicitud_prestamo
+                    inventario.id_persona_responsable = id_persona_responsable
+                    inventario.fecha_ultimo_movimiento = datetime.now()
+                    inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
+                    inventario.save()
 
             despacho.save()
         
         serializer = self.serializer_class(despacho)
         return Response({'detail': 'El despacho asociado se ha aceptado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-
     
 
 

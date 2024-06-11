@@ -974,40 +974,40 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
 
             #Identificar tipo de tramite
            
-            #tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=asignacion.id_solicitud_tramite).first()
-            tramite = asignacion.id_solicitud_tramite
-            #APERTURA DEL EXPEDIENTE
+            # #tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=asignacion.id_solicitud_tramite).first()
+            # tramite = asignacion.id_solicitud_tramite
+            # #APERTURA DEL EXPEDIENTE
 
-            vista_creadora_expediente = CrearExpedienteTramite()
-            request.data['id_cat_serie_und_org_ccd_trd_prop'] = asignacion.id_catalogo_serie_subserie
-            request.data['id_unidad_org_oficina_respon_original'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
-            request.data['id_und_org_oficina_respon_actual'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
-            request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
-            respuesta = vista_creadora_expediente.create(request)
+            # vista_creadora_expediente = CrearExpedienteTramite()
+            # request.data['id_cat_serie_und_org_ccd_trd_prop'] = asignacion.id_catalogo_serie_subserie
+            # request.data['id_unidad_org_oficina_respon_original'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+            # request.data['id_und_org_oficina_respon_actual'] = asignacion.id_und_org_seccion_asignada.id_unidad_organizacional
+            # request.data['id_persona_titular_exp_complejo'] = asignacion.id_solicitud_tramite.id_persona_titular
+            # respuesta = vista_creadora_expediente.create(request)
             
-            respuesta_expediente = respuesta.data['data']
+            # respuesta_expediente = respuesta.data['data']
             
-            id_expediente = respuesta_expediente['id_expediente_documental']
-            expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
-            if not expediente:
-                raise NotFound("No se encontro el expediente")
+            # id_expediente = respuesta_expediente['id_expediente_documental']
+            # expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=id_expediente).first()
+            # if not expediente:
+            #     raise NotFound("No se encontro el expediente")
            
            
 
-            #raise ValidationError(request)
-            #data_archivo = self.crear_acto(tramite,respuesta_expediente,request.META.get('HTTP_AUTHORIZATION'))
-            #radicado_cadena = self.radicado_completo(tramite.id_radicado)
-            #data_tareas = self.tarea_radicado(radicado_cadena,request.META.get('HTTP_AUTHORIZATION'))
+            # #raise ValidationError(request)
+            # #data_archivo = self.crear_acto(tramite,respuesta_expediente,request.META.get('HTTP_AUTHORIZATION'))
+            # #radicado_cadena = self.radicado_completo(tramite.id_radicado)
+            # #data_tareas = self.tarea_radicado(radicado_cadena,request.META.get('HTTP_AUTHORIZATION'))
             
-            #print(data_tareas)
-            #print("SASOF TAREA")
-            #print(data_tareas)
-            #raise ValidationError("HAAA")
+            # #print(data_tareas)
+            # #print("SASOF TAREA")
+            # #print(data_tareas)
+            # #raise ValidationError("HAAA")
         
-            tramite = asignacion.id_solicitud_tramite
-            tramite.id_expediente = expediente
-            tramite.fecha_expediente = respuesta_expediente['fecha_apertura_expediente']
-            tramite.save()
+            # tramite = asignacion.id_solicitud_tramite
+            # tramite.id_expediente = expediente
+            # tramite.fecha_expediente = respuesta_expediente['fecha_apertura_expediente']
+            # tramite.save()
 
             
 
@@ -1015,7 +1015,7 @@ class TareasAsignadasAceptarTramiteUpdate(generics.UpdateAPIView):
             
            
 
-        return Response({'success':True,'detail':"Se acepto el tramite correctamente.","data":serializer.data,'data_asignacion':data_asignacion,'data_expediente':{**respuesta_expediente}},status=status.HTTP_200_OK)
+        return Response({'success':True,'detail':"Se acepto el tramite correctamente.","data":serializer.data,'data_asignacion':data_asignacion},status=status.HTTP_200_OK)
     
 
 
