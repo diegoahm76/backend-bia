@@ -341,7 +341,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
         no_discriminar = True if no_discriminar.lower() == 'true' else False
 
         for key, value in request.query_params.items():
-            if key in ['es_despacho_conservacion', 'id_bien', 'id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula']:
+            if key in ['es_despacho_conservacion', 'id_bien', 'id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula','codigo_bien_despachado']:
                 if key == 'es_despacho_conservacion':
                     if value != '':
                         filter['id_despacho_consumo__es_despacho_conservacion'] = True if value.lower() == 'true' else False
@@ -372,6 +372,9 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 elif key == 'id_persona_anula':
                     if value != '':
                         filter['id_despacho_consumo__id_persona_anula'] = value
+                elif key == 'codigo_bien_despachado':
+                    if value != '':
+                        filter['id_bien_despachado__codigo_bien__icontains'] = value
                 else:
                 
                     if value != '':
