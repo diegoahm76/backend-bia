@@ -121,6 +121,9 @@ class MantenimientosRealizadosGetSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_articulo.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
     serial_placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
+    marca = serializers.ReadOnlyField(source='id_articulo.id_marca.nombre', default=None)
+    cod_tipo_activo = serializers.ReadOnlyField(source='id_articulo.cod_tipo_activo.nombre', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
     estado_final = serializers.ReadOnlyField(source='cod_estado_final.nombre', default=None)
     tipo_mantenimiento = serializers.ReadOnlyField(source='get_cod_tipo_mantenimiento_display', default=None)
     realizado_por = serializers.SerializerMethodField()
@@ -140,12 +143,15 @@ class MantenimientosRealizadosGetSerializer(serializers.ModelSerializer):
             'nombre_bien',
             'codigo_bien',
             'serial_placa',
+            'marca',
+            'cod_tipo_activo',
             'cod_tipo_mantenimiento',
             'tipo_mantenimiento',
             'fecha_ejecutado',
             'realizado_por',
             'cod_estado_final',
-            'estado_final'
+            'estado_final',
+            'consecutivo'
         ]
         model = RegistroMantenimientos
 
@@ -154,6 +160,8 @@ class InventarioSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     identificador_bien = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
+    cod_tipo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
     id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
