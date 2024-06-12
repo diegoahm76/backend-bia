@@ -4122,7 +4122,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         print(token)
         
         try:
-            response = requests.post(url_login_token,json=payload,headers=auth_headers, timeout=30)
+            response = requests.post(url_login_token,json=payload,headers=auth_headers, timeout=120)
             print(response.url)
             response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
             print("pase")
