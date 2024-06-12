@@ -133,13 +133,17 @@ class SerializerRegistroMantenimientosPost(serializers.ModelSerializer):
 class ControlMantenimientosProgramadosGetListSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_articulo.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
     cod_tipo_activo = serializers.ReadOnlyField(source='id_articulo.cod_tipo_activo.cod_tipo_activo', default=None)
     tipo_activo = serializers.ReadOnlyField(source='id_articulo.cod_tipo_activo.nombre', default=None)
     serial_placa = serializers.ReadOnlyField(source='id_articulo.doc_identificador_nro', default=None)
     tipo_mantenimiento = serializers.CharField(source='get_cod_tipo_mantenimiento_display')
     kilometraje_actual = serializers.SerializerMethodField()
     dias_kilometros_vencidos = serializers.SerializerMethodField()
-    
+    persona_solicita = serializers.SerializerMethodField()
+    persona_anula = serializers.SerializerMethodField()
+    estado = serializers.SerializerMethodField()
+
     def get_kilometraje_actual(self, obj):
         kilometraje_actual = None
         hoja_vida = HojaDeVidaVehiculos.objects.filter(id_articulo = obj.id_articulo).first()
@@ -165,21 +169,42 @@ class ControlMantenimientosProgramadosGetListSerializer(serializers.ModelSeriali
             
         return dias_kilometros_vencidos
     
+    def get_persona_solicita(self, obj):
+        nombre_completo_persona_solicita = None
+        if obj.id_persona_solicita:
+            if obj.id_persona_solicita.tipo_persona == 'J':
+                nombre_completo_persona_solicita = obj.id_persona_solicita.razon_social
+            else:
+                nombre_list = [obj.id_persona_solicita.primer_nombre, obj.id_persona_solicita.segundo_nombre,
+                                obj.id_persona_solicita.primer_apellido, obj.id_persona_solicita.segundo_apellido]
+                nombre_completo_persona_solicita = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_persona_solicita = nombre_completo_persona_solicita if nombre_completo_persona_solicita != "" else None
+        return nombre_completo_persona_solicita
+    
+    def get_persona_anula(self, obj):
+        nombre_completo_persona_anula = None
+        if obj.id_persona_anula:
+            if obj.id_persona_anula.tipo_persona == 'J':
+                nombre_completo_persona_anula = obj.id_persona_anula.razon_social
+            else:
+                nombre_list = [obj.id_persona_anula.primer_nombre, obj.id_persona_anula.segundo_nombre,
+                                obj.id_persona_anula.primer_apellido, obj.id_persona_anula.segundo_apellido]
+                nombre_completo_persona_anula = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_persona_anula = nombre_completo_persona_anula if nombre_completo_persona_anula != "" else None
+        return nombre_completo_persona_anula
+    
+    def get_estado(self, obj):
+        estado = None
+        if obj.fecha_programada:
+            estado = 'Vencido' if obj.fecha_programada < datetime.now().date() else 'Programado'
+        else:
+            hdv_vehiculo = HojaDeVidaVehiculos.objects.filter(id_articulo=obj.id_articulo).first()
+            if hdv_vehiculo and hdv_vehiculo.ultimo_kilometraje:
+                estado = 'Vencido' if obj.kilometraje_programado < hdv_vehiculo.ultimo_kilometraje else 'Programado'
+            else:
+                estado = 'Programado'
+        return estado
+    
     class Meta:
-        fields = [
-            'id_articulo',
-            'nombre_bien',
-            'codigo_bien',
-            'cod_tipo_activo',
-            'tipo_activo',
-            'serial_placa',
-            'cod_tipo_mantenimiento',
-            'tipo_mantenimiento',
-            'fecha_generada',
-            'fecha_programada',
-            'kilometraje_programado',
-            'kilometraje_actual',
-            'ejecutado',
-            'dias_kilometros_vencidos'
-        ]
+        fields= '__all__'
         model = ProgramacionMantenimientos

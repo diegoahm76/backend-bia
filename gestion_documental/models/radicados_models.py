@@ -453,7 +453,7 @@ class AsignacionDocs(models.Model):
     id_persona_asigna = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T320Id_PersonaAsigna',related_name='persona_asigna_docs')
     id_persona_asignada = models.ForeignKey('transversal.Personas',on_delete=models.CASCADE,db_column='T320Id_PersonaAsignada',related_name='persona_asignada_docs')
     cod_estado_asignacion = models.CharField(max_length=2,
-                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado')],
+                                             choices=[('Ac', 'Aceptado'),('Re', 'Rechazado'),('Ca', 'Cancelado')],
                                              db_column='T320codEstadoAsignacion',null=True,blank=True)
     fecha_eleccion_estado = models.DateTimeField(db_column='T320fechaEleccionEstado',null=True,blank=True)
     justificacion_rechazo = models.CharField(max_length=250,null=True,blank=True,db_column='T320justificacionRechazo')

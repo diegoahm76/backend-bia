@@ -808,7 +808,7 @@ class CreateProgramacionMantenimiento(generics.CreateAPIView):
          
 
             conf = ConfiguracionClaseAlerta.objects.filter(cod_clase_alerta=cod_alerta).first()
-            if conf :
+            if conf and instance.fecha_programada:
                 crear_alerta=AlertasProgramadasCreate()
 
                 data_alerta = {
@@ -978,12 +978,54 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
     
 class ControlMantenimientosProgramadosGetListView(generics.ListAPIView):
-    serializer_class=ControlMantenimientosProgramadosGetListSerializer
-    queryset=ProgramacionMantenimientos.objects.filter(ejecutado=False)
+    serializer_class = ControlMantenimientosProgramadosGetListSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        mantenimientos_programados = self.queryset.all()
-        serializer = self.serializer_class(mantenimientos_programados, many=True)
+    def get_queryset(self):
+        queryset = ProgramacionMantenimientos.objects.filter(ejecutado=False)
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer.data},status=status.HTTP_200_OK)
+        id_persona_solicita = self.request.query_params.get('id_persona_solicita')
+        id_persona_anula = self.request.query_params.get('id_persona_anula')
+        fecha_desde = self.request.query_params.get('fecha_desde')
+        fecha_hasta = self.request.query_params.get('fecha_hasta')
+        codigo_bien = self.request.query_params.get('codigo_bien')
+        cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
+        serial_placa = self.request.query_params.get('serial_placa')
+        consecutivo = self.request.query_params.get('consecutivo')
+
+        if id_persona_solicita:
+            queryset = queryset.filter(id_persona_solicita=id_persona_solicita)
+        
+        if id_persona_anula:
+            queryset = queryset.filter(id_persona_anula=id_persona_anula)
+
+        if fecha_desde:
+            queryset = queryset.filter(fecha_solicitud__gte=fecha_desde)
+        
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_solicitud__lte=fecha_hasta)
+        
+        if codigo_bien:
+            queryset = queryset.filter(id_articulo__codigo_bien__icontains=codigo_bien)
+        
+        if consecutivo:
+            queryset = queryset.filter(id_articulo__nro_elemento_bien=consecutivo)
+        
+        if cod_tipo_activo:
+            queryset = queryset.filter(id_articulo__cod_tipo_activo=cod_tipo_activo)
+
+        if serial_placa:
+            queryset = queryset.filter(id_articulo__doc_identificador_nro__icontains=serial_placa)
+             
+        return queryset
+    
+        
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        
+        # Retornar la respuesta con los datos procesados
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+

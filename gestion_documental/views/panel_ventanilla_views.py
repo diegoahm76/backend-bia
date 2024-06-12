@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import re
 import requests
 import base64
 
@@ -19,9 +20,10 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales, Expe
 from gestion_documental.models.permisos_models import PermisosUndsOrgActualesSerieExpCCD
 from gestion_documental.models.plantillas_models import PlantillasDoc
 from gestion_documental.models.radicados_models import PQRSDF, Anexos, Anexos_PQR, AsignacionOtros, AsignacionPQR, AsignacionTramites, BandejaTareasPersona, ComplementosUsu_PQR, ConfigTiposRadicadoAgno, Estados_PQR, EstadosSolicitudes, InfoDenuncias_PQRSDF, MetadatosAnexosTmp, Otros, SolicitudAlUsuarioSobrePQRSDF, SolicitudDeDigitalizacion, T262Radicados
-from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, ConsecutivoTipologia, TipologiasDoc
+from gestion_documental.models.trd_models import CatSeriesUnidadOrgCCDTRD, ConfigTipologiasDocAgno, ConsecutivoTipologia, TipologiasDoc
 from gestion_documental.serializers.expedientes_serializers import AperturaExpedienteComplejoSerializer, AperturaExpedienteSimpleSerializer
 from gestion_documental.serializers.permisos_serializers import DenegacionPermisosGetSerializer, PermisosGetSerializer, PermisosPostDenegacionSerializer, PermisosPostSerializer, PermisosPutDenegacionSerializer, PermisosPutSerializer, SerieSubserieUnidadCCDGetSerializer
+from gestion_documental.serializers.plantillas_serializers import PlantillasDocBusquedaAvanzadaSerializer
 from gestion_documental.serializers.ventanilla_pqrs_serializers import ActosAdministrativosCreateSerializer, AdicionalesDeTareasCreateSerializer, AnexoArchivosDigitalesSerializer, Anexos_PQRAnexosGetSerializer, Anexos_PQRCreateSerializer, AnexosComplementoGetSerializer, AnexosCreateSerializer, AnexosDocumentoDigitalGetSerializer, AnexosGetSerializer, AsignacionOtrosGetSerializer, AsignacionOtrosPostSerializer, AsignacionPQRGetSerializer, AsignacionPQRPostSerializer, AsignacionTramiteGetSerializer, AsignacionTramiteOpaGetSerializer, AsignacionTramitesPostSerializer, ComplementosUsu_PQRGetSerializer, ComplementosUsu_PQRPutSerializer, Estados_OTROSSerializer, Estados_PQRPostSerializer, Estados_PQRSerializer, EstadosSolicitudesGetSerializer, InfoDenuncias_PQRSDFGetByPqrsdfSerializer, LiderGetSerializer, MetadatosAnexosTmpCreateSerializer, MetadatosAnexosTmpGetSerializer, MetadatosAnexosTmpSerializerGet, OPADetalleHistoricoSerializer, OPAGetHistoricoSerializer, OPAGetRefacSerializer, OPAGetSerializer, OtrosGetHistoricoSerializer, OtrosGetSerializer, OtrosPutSerializer, PQRSDFCabezeraGetSerializer, PQRSDFDetalleSolicitud, PQRSDFGetSerializer, PQRSDFHistoricoGetSerializer, PQRSDFPutSerializer, PQRSDFTitularGetSerializer, RespuestasRequerimientosOpaGetSerializer, RespuestasRequerimientosPutGetSerializer, RespuestasRequerimientosPutSerializer, SolicitudAlUsuarioSobrePQRSDFCreateSerializer, SolicitudAlUsuarioSobrePQRSDFGetDetalleSerializer, SolicitudAlUsuarioSobrePQRSDFGetSerializer, SolicitudDeDigitalizacionGetSerializer, SolicitudDeDigitalizacionPostSerializer, SolicitudJuridicaOPACreateSerializer, SolicitudesTramitesGetSerializer, TramitePutSerializer, TramitesComplementosUsu_PQRGetSerializer, TramitesGetHistoricoComplementoSerializer, TramitesGetHistoricoSerializer, UnidadesOrganizacionalesSecSubVentanillaGetSerializer, UnidadesOrganizacionalesSerializer,CatalogosSeriesUnidadGetSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.bandeja_tareas_views import  TareaBandejaTareasPersonaCreate, TareasAsignadasCreate
@@ -3188,7 +3190,7 @@ class CreateAutoInicio(generics.CreateAPIView):
     def acta_inicio(self,data,plantilla):
 
         context = data
-        print(context)
+        #print(context)
 
         #print(str(settings.BASE_DIR) +plantilla)
         #pathToTemplate = str(settings.BASE_DIR) + os.sep +str(plantilla)
@@ -3197,10 +3199,10 @@ class CreateAutoInicio(generics.CreateAPIView):
         pathToTemplate = str(settings.MEDIA_ROOT) + os.sep +str(plantilla)
         outputPath = str(settings.MEDIA_ROOT) +os.sep+'pruebas.docx'
 
-        print(pathToTemplate)
+        #print(pathToTemplate)
         doc = DocxTemplate(pathToTemplate)
         doc.render(context)
-        doc.save(outputPath)
+        #doc.save(outputPath)
        
         return doc
     
@@ -3235,8 +3237,10 @@ class CreateAutoInicio(generics.CreateAPIView):
             raise ValidationError("No se encontro el tramite")
         instance_radicado = tramite.id_radicado
         respuesta_consecutivo = vista_consecutivo_trd.consecutivo(ConsecutivoTipologiaDoc,request,None)
-        print(respuesta_consecutivo)
-
+        
+        if not respuesta_consecutivo:
+            raise ValidationError("No se pudo crear el numero de auto")
+        
         if respuesta_consecutivo.status_code != status.HTTP_201_CREATED:
             return respuesta_consecutivo
         data_consecutivo = respuesta_consecutivo.data['data']
@@ -3275,6 +3279,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         context_auto['TipoDocTitular'] = titular.tipo_documento.nombre
         context_auto['NumDocTitular'] = titular.numero_documento
         context_auto['RadicadoTramite'] = cadena_radicado
+        context_auto['FechaRadicadoTramite'] = UtilsGestor.get_desc_fecha(instance_radicado.fecha_radicado.date())
         context_auto['EmailTitular'] = titular.email
         #CORRESPONDENCIA
         context_auto['NumOficioReque '] ='{{NumOficioReque }}'
@@ -3300,8 +3305,13 @@ class CreateAutoInicio(generics.CreateAPIView):
             context_auto['FechaReferenciaPago']  = '{{FechaReferenciaPago}}'
         
         #PARA CONSTANCIA DE PAGO
-        context_auto['NumRadicadoPago'] ='{{NumRadicadoPago}}'
-        context_auto['FechaNumRadicadoPago'] = '{{FechaNumRadicadoPago }}'
+        pago = liquidacion_tramite.id_solicitud_tramite.id_pago_evaluacion if liquidacion_tramite else None
+        if pago and pago.estado_pago == "1":
+            context_auto['NumRadicadoPago'] = pago.id_pago
+            context_auto['FechaNumRadicadoPago'] = UtilsGestor.get_desc_fecha(pago.fecha_pago.date())
+        else:
+            context_auto['NumRadicadoPago'] ='{{NumRadicadoPago}}'
+            context_auto['FechaNumRadicadoPago'] = '{{FechaNumRadicadoPago }}'
 
 
         #PARA  CONCESION DE AGUAS SUPERFICIALES 
@@ -3405,6 +3415,22 @@ class CreateAutoInicio(generics.CreateAPIView):
 
         #AUTO INICIO APROVECHAMIENTO FORESTAL PERSISTENTE
         context_auto['NormativaAprocechamientoForestalPersistente'] = '{{NormativaAprocechamientoForestalPersistente }}'#?????
+
+        #AUTO INICIO DETERMINANTES AMBIENTALES
+        if 'CCatas' in detalle_tramite_data:
+                context_auto['NumCedulaCatastral'] = detalle_tramite_data['CCatas']
+        else:
+                context_auto['NumCedulaCatastral'] = '{{NumCedulaCatastral}}'
+        # VALIDAR ESTOS CAMPOS
+        if 'Name_propietario' in detalle_tramite_data:
+                context_auto['NombrePropietarioPredio'] = detalle_tramite_data['Name_propietario']
+        else:
+                context_auto['NombrePropietarioPredio'] = '{{NombrePropietarioPredio}}'
+        if 'Area' in detalle_tramite_data:
+                context_auto['AreaTotal'] = detalle_tramite_data['Area']
+        else:
+                context_auto['AreaTotal'] = '{{AreaTotal}}'
+
         dato = self.acta_inicio(context_auto,plantilla.id_archivo_digital.ruta_archivo)
 
         memoria = self.document_to_inmemory_uploadedfile(dato)
@@ -3453,6 +3479,9 @@ class CrearExpediente(generics.CreateAPIView):
         if not tramite:
             raise ValidationError('No se encontro Tramite asociado')
         
+        # if tramite.id_expediente:    #DESCOMENTAR AL FINALIZAR LAS PRUEBAS
+        #     raise ValidationError("Ya existe un expediente asociado ")
+        
         request.data['id_persona_titular_exp_complejo'] = tramite.id_persona_titular.id_persona
         respuesta = vista_creadora_expediente.create(request)
         
@@ -3466,9 +3495,9 @@ class CrearExpediente(generics.CreateAPIView):
         tramite.id_expediente = expediente
         tramite.fecha_expediente = respuesta_expediente['fecha_apertura_expediente']
         tramite.save()
-
+        num_exp=tramite.id_expediente.codigo_exp_und_serie_subserie +'-'+str(tramite.id_expediente.codigo_exp_Agno) +'-'+str(tramite.id_expediente.codigo_exp_consec_por_agno)
         
-        return Response({'success': True, 'detail':'Se creo el Expediente','data':respuesta_expediente}, status=status.HTTP_201_CREATED)
+        return Response({'success': True, 'detail':'Se creo el Expediente','data':{**respuesta_expediente,'numero_expediente':num_exp}}, status=status.HTTP_201_CREATED)
 
 class CreateValidacionTareaTramite(generics.CreateAPIView):
     
@@ -3511,14 +3540,10 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
      
         payload={
-            "access":'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE3MDExOTc5LCJpYXQiOjE3MTY4MzkxNzksImp0aSI6IjRmYTBlNjk2MTIzMDQyMDg5NTAwNmQ1NTA1OTMxZjBhIiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY8OpbiIsIlJvbCBDb25zZXJ2YWNpw7NuIiwiUm9sIEdlc3RvciIsIlJvbCBSZWNhdWRvIiwiUm9sIFJlY3Vyc28iLCJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgU2VndWltaWVudG8gYSBwbGFuZXMiLCJ6Q2FtdW5kYSAtIFJvbCBULUNvbmNlc2nDs24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjacOzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1csOtZGljYS1Db29yZGluYWRvciBvIEzDrWRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIEp1csOtZGljbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyw61kaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0acOzbiBBbWJpZW50YWwtUHJvZmVzaW9uYWwgSnVyw61kaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTMOtZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUp1csOtZGljYSIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzacOzbiBkZSBBZ3VhcyBTdWJ0ZXJyw6FuZWFzIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIE9jdXBhY2nDs24gZGUgQ2F1Y2UiLCJ6Q2FtdW5kYSAtIFJvbCBULVBlcm1pc28gZGUgUHJvc3BlY2Npw7NuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpw7NuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3Rpw7NuIEFtYmllbnRhbC1TdWJkaXJlY3RvcmEgUGxhbmVhY2nDs24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMw61kZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzacOzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1KdXLDrWRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXSwidHlwZVBlcnNvbiI6ImZ1bmNpb25hcmlvIiwicHJldmlvdXNUb2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUowYjJ0bGJsOTBlWEJsSWpvaVlXTmpaWE56SWl3aVpYaHdJam94TnpFM01ERXhPVGM1TENKcFlYUWlPakUzTVRZNE16a3hOemtzSW1wMGFTSTZJalJtWVRCbE5qazJNVEl6TURReU1EZzVOVEF3Tm1RMU5UQTFPVE14WmpCaElpd2lkWE5sY2w5cFpDSTZNVEV5TENKcFpGOXdaWEp6YjI1aElqb3lNVFVzSW01dmJXSnlaVjlrWlY5MWMzVmhjbWx2SWpvaWMyVm5kWEpwWkdGa0lpd2ljbTlzWlhNaU9sc2lVbTlzSUZWemRXRnlhVzl6SUZkbFlpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGTmxaM1Z5YVdSaFpDSXNJbEp2YkNCQmJHMWhZMXgxTURCbE9XNGlMQ0pTYjJ3Z1EyOXVjMlZ5ZG1GamFWeDFNREJtTTI0aUxDSlNiMndnUjJWemRHOXlJaXdpVW05c0lGSmxZMkYxWkc4aUxDSlNiMndnVW1WamRYSnpieUlzSWxKdmJDQlVjbUZ1YzNabGNuTmhiQ0lzSWxKdmJDQlRaV2QxYVcxcFpXNTBieUJoSUhCc1lXNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRlF0UTI5dVkyVnphVngxTURCbU0yNGdaR1VnUVdkMVlYTWdVM1Z3WlhKbWFXTnBZV3hsY3lJc0lucERZVzExYm1SaElDMGdVbTlzSUZRdFJHVjBaWEp0YVc1aGJuUmxjeUJCYldKcFpXNTBZV3hsY3lCUWNtOXdhV1ZrWVdRZ1VISnBkbUZrWVNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVlZ6ZFdGeWFXOGlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxV1pXNTBZVzVwYkd4aElpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UkdseVpXTmphVngxTURCbU0yNGdSMlZ1WlhKaGJDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRUZuZFdGekxVTnZiM0prYVc1aFpHOXlJRzhnVEZ4MU1EQmxaR1JsY2lJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFRm5kV0Z6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1FXZDFZWE10VUhKdlptVnphVzl1WVd3aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QkJaM1ZoY3kxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFQyWnBZMmx1WVNCS2RYSmNkVEF3WldSa2FXTmhMVU52YjNKa2FXNWhaRzl5SUc4Z1RGeDFNREJsWkdSbGNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFU5bWFXTnBibUVnU25WeVhIVXdNR1ZrWkdsallTMVFjbTltWlhOcGIyNWhiQ0JLZFhKY2RUQXdaV1JrYVdOdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0VDJacFkybHVZU0JLZFhKY2RUQXdaV1JrYVdOaExWQnliMlpsYzJsdmJtRnNJR1JsSUVGd2IzbHZJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dRV04wYjNJdFUzVmlJRWRsYzNScFhIVXdNR1l6YmlCQmJXSnBaVzUwWVd3dFEyOXZjbVJwYm1Ga2IzSWlMQ0o2UTJGdGRXNWtZU0F0SUZKdmJDQkJZM1J2Y2kxVGRXSWdSMlZ6ZEdsY2RUQXdaak51SUVGdFltbGxiblJoYkMxUWNtOW1aWE5wYjI1aGJDQktkWEpjZFRBd1pXUmthV052SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1QzSmtaVzVoYldsbGJuUnZJRlJsY25KcGRHOXlhV0ZzTFVOdmIzSmthVzVoWkc5eUlHOGdURngxTURCbFpHUmxjaUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUU5eVpHVnVZVzFwWlc1MGJ5QlVaWEp5YVhSdmNtbGhiQzFRY205bVpYTnBiMjVoYkNJc0lucERZVzExYm1SaElDMGdVbTlzSUVGamRHOXlMVWR5ZFhCdklFOXlaR1Z1WVcxcFpXNTBieUJVWlhKeWFYUnZjbWxoYkMxS2RYSmNkVEF3WldSa2FXTmhJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFEYjI1alpYTnBYSFV3TUdZemJpQmtaU0JCWjNWaGN5QlRkV0owWlhKeVhIVXdNR1V4Ym1WaGN5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JQWTNWd1lXTnBYSFV3TUdZemJpQmtaU0JEWVhWalpTSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lGUXRVR1Z5YldsemJ5QmtaU0JRY205emNHVmpZMmxjZFRBd1pqTnVJaXdpZWtOaGJYVnVaR0VnTFNCU2Iyd2dWQzFRWlhKdGFYTnZJR1JsSUZabGNuUnBiV2xsYm5SdmN5QmhiQ0JUZFdWc2J5SXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVaMWJtTnBiMjVoY21sdklpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UVdSdGFXNXBjM1J5WVdSdmNpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVkeWRYQnZJRTl5WkdWdVlXMXBaVzUwYnlCVVpYSnlhWFJ2Y21saGJDMUpibWRsYm1sbGNtOGdaR1VnVW1WMmFYTnBYSFV3TUdZemJpSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFZOMVlpQkhaWE4wYVZ4MU1EQm1NMjRnUVcxaWFXVnVkR0ZzTFZOMVltUnBjbVZqZEc5eVlTQlFiR0Z1WldGamFWeDFNREJtTTI0aUxDSjZRMkZ0ZFc1a1lTQXRJRkp2YkNCQlkzUnZjaTFIY25Wd2J5QlRkV1ZzYjNNdFEyOXZjbVJwYm1Ga2IzSWdieUJNWEhVd01HVmtaR1Z5SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFVsdVoyVnVhV1Z5YnlCa1pTQlNaWFpwYzJsY2RUQXdaak51SWl3aWVrTmhiWFZ1WkdFZ0xTQlNiMndnUVdOMGIzSXRSM0oxY0c4Z1UzVmxiRzl6TFZCeWIyWmxjMmx2Ym1Gc0lpd2lla05oYlhWdVpHRWdMU0JTYjJ3Z1FXTjBiM0l0UjNKMWNHOGdVM1ZsYkc5ekxVcDFjbHgxTURCbFpHUnBZMkVpTENKNlEyRnRkVzVrWVNBdElISnZiR0Z6WkNJc0lucERZVzExYm1SaElDMGdVbTlzSUZCeWRXVmlZU0I2UXlJc0lsSnZiQ0JHZFc1amFXOXVZWEpwYnlJc0lsSnZiQ0JEYVhWa1lXUmhibThpTENKU2Iyd2dRV1J0YVc1cGMzUnlZV1J2Y2lJc0lsSnZiQ0JCWkcxdmJpSXNJbEp2YkNCT2IzUnBabWxqWVdOcGIyNWxjeUlzSW5wRFlXMTFibVJoSUMwZ1VtOXNJRUZqZEc5eUxVZHlkWEJ2SUVGbmRXRnpMVkJ5YjJabGMybHZibUZzTFZSbFkyNXBZMjhpTENKNlEyRnRkVzVrWVNBdElGSnZiQ0JCWTNSdmNpMUpiblJsY205d1pYSmhZbWxzYVdSaFpDSXNJbnBEWVcxMWJtUmhJQzBnVW05c0lFRmpkRzl5TFVsdWRHVnliM0JsY21GaWFXeHBaR0ZrSUZabGJuUmhibWxzYkdFaVhYMC5LbUNyc2VILWRUSTZxYU1qY2ZZS2hEUTBHNU90TXBkY1l0Rk9PTzEtZS1NIiwiaWRQZXJzb24iOjIxNSwiZS1tYWlsIjoiYnJheWFuLmJhcnJhZ2FuQHVuaWxsYW5vcy5lZHUuY28ifQ.'
+            "access":token
         }
-        # payload={
-        #     "nombre_de_usuario": "Seguridad",
-        #     "password": "Seguridad12345+"
-        # }
-        
-        #print (token)
+
+  
         try:
             response = requests.post(url_login_token,json=payload,headers=auth_headers)
             response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
@@ -3557,19 +3582,69 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
             return None  # Manejo de errores de solicitud
 
     def buscar_tramite(self,radicado):
-        tramites = SolicitudesTramites.objects.all()
+       
+        patron = r"([A-Z]+)-(\d{4})-(\d+)"
+        coincidencia = re.match(patron, radicado)
+        tramite = None
+        if coincidencia:
+            prefijo = coincidencia.group(1)
+            año = coincidencia.group(2)
+            entero = int(coincidencia.group(3))  # Convertir el entero a número para quitar ceros a la izquierda
 
-        for tramite in tramites:
-                
-            if   tramite.id_radicado:
-                instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=tramite.id_radicado.agno_radicado,cod_tipo_radicado=tramite.id_radicado.cod_tipo_radicado).first()
-                numero_con_ceros = str(tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
-                cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
-                print (cadena)
-                if cadena == radicado:
-                    return tramite
-        return None
+            print(f"Prefijo: {prefijo}")
+            print(f"Año: {año}")
+            print(f"Entero: {entero}")
+            tramite = SolicitudesTramites.objects.filter(id_radicado__prefijo_radicado=prefijo,id_radicado__agno_radicado=año,id_radicado__nro_radicado=entero).first()
+
+        else:
+            raise ValidationError ("No se encontro tramite asociado a este radicado")
+       
         
+        if not tramite:
+            raise ValidationError ("No se encontro tramite asociado a este radicado")
+        return tramite
+        
+
+    def post_tramite_camunda(self,token,data,id):
+
+
+
+        #TOKEN PARA SASOFTCO
+
+        #print(data)
+        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Interoperability/complete-task-assignee-group/"+id
+        payload={"variables":data}
+        auth_headers = {
+            "accept": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+        # payload={
+        #     "nombre_de_usuario": "Seguridad",
+        #     "password": "Seguridad12345+"
+        # }
+        
+  
+        try:
+            response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()  # Convertimos los datos a JSON
+
+            return data
+        except requests.RequestException as e:
+            error_message=''
+            if e.response is not None:
+                try:
+                    error_details = e.response.json()
+                    error_message += f" | Detalles del error: {error_details}"
+                except ValueError:
+                    error_message += f" | Respuesta del servidor: {e.response.text}"
+
+            print("ERROR")
+            raise ValidationError(error_message)
+        
+        except ValueError as e:
+        # Capturar y manejar errores de decodificación JSON
+            raise ValidationError(f"Error al decodificar la respuesta JSON: {e}")
 
     
     def post(self, request):
@@ -3583,20 +3658,27 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
         radicado = request.data['radicado']
         #raise ValidationError(radicado)
-        #token_camunda = self.get_token_camunda(token)
         
-        #data = self.get_tramite_ventanilla_sasoft(radicado,token_camunda)
-        data = self.get_tramite_ventanilla_sasoft(radicado,data_in['access'])
-        #UNICO-2024-00232
+        
+        token_camunda=None
+        
+        if 'access' in data_in:
+            
+            token_camunda=data_in['access']
+            
+        else:
+            token_camunda = self.get_token_camunda(token)
+        data = self.get_tramite_ventanilla_sasoft(radicado,token_camunda)
+        
+        
+        if not data:
+            raise ValidationError("No se encontro el tramite en bandeja de tareas.")
         print(data)
-        # if not data:
-        #     raise ValidationError("Algo salio mal")
-        
-        # if not 'processInstanceId' in data:
-        #     raise ValidationError("Id del proceso no encontrado")
-        
-        # id_instancia = data['processInstanceId']
-        #print(id_instancia)
+
+
+
+        id_instancia = data['processInstanceId']
+        print(id_instancia)
         tramite=None
         if 'id_solicitud_tramite' in data_in and data_in['id_solicitud_tramite']:
             tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=data_in['id_solicitud_tramite']).first()
@@ -3641,16 +3723,14 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         contenido =None
         contenido_base64=None
-        if not  os.path.exists(pathToTemplate):
+        if   os.path.exists(pathToTemplate):
                 print("EXISTE")
                 with open(pathToTemplate, 'rb') as file:
                     contenido = file.read()
-                    contenido_base64 = base64.b64encode(contenido)
+                    contenido_base64 = base64.b64encode(contenido).decode('utf-8')
         else:
             raise ValidationError(" No se encontro el documento del auto")
 
-            archivo = self.archivo_temporal({"clave":"valor"})
-            print(archivo)
             # print('NO EXISTE')
             # auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
             # data_auto = auto_consecutivo.variables
@@ -3678,17 +3758,22 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         data_respuesta={}
         data_respuesta['NumeroAuto']={
-            "type": "String",
+            "type": "string",
             "value": numero_auto,
-            "valueInfo": {}
+            "valueInfo": {
+                "filename": "string",
+                "mimetype": "string",
+                "encoding": "string"
+            }
         }
-        data_respuesta['Auto'] = {
+        data_respuesta['DocumentoAuto'] = {
 
 
             "type": "File",
             "value": contenido_base64,
             "valueInfo": {
-            "encoding": "latin-1",
+            "mimetype": "application/octet-stream",   
+            "encoding": "utf-8",
             "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
             }
         }
@@ -3700,16 +3785,21 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
             
             data_respuesta['NumeroPago']={
 
-            "type": "String",
+            "type": "string",
             "value": '00000',
-            "valueInfo": {}
+            "valueInfo": {
+                "filename": "string",
+                "mimetype": "string",
+                "encoding": "string"
+            }
             }
 
             data_respuesta['SoportePago'] = {
             "type": "File",
             "value": contenido_base64,
             "valueInfo": {
-            "encoding": "latin-1",
+            "mimetype": "application/octet-stream",
+            "encoding": "utf-8",
             "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
             }
             }
@@ -3722,7 +3812,11 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         data_respuesta['NumExp']={
             "type": "String",
             "value": num_exp,
-            "valueInfo": {}
+            "valueInfo": {
+                "filename": "string",
+                "mimetype": "string",
+                "encoding": "string"
+            }
         }
 
         # GrupoFunTramite 
@@ -3730,35 +3824,97 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         data_respuesta['GrupoFunTramite']={
             "type": "String",
             "value": unidad.nombre,
-            "valueInfo": {}
+                  "valueInfo": {
+                "filename": "string",
+                "mimetype": "string",
+                "encoding": "string"
+            }
         }
         
         # dateAutoStart  #FECHA AUTO
         data_respuesta['dateAutoStart']={
-            "type": "String",
-            "value": auto.fecha_acto_administrativo,
-            "valueInfo": {}
+            "type": "string",
+            "value": str(auto.fecha_acto_administrativo.date()),
+            "valueInfo": {
+                "filename": "string",
+                "mimetype": "string",
+                "encoding": "string"
+            }
         }
         # FNAuto #FECHA NOTIFICACION
         data_respuesta['FNAuto']={
-            "type": "String",
-            "value": auto.fecha_acto_administrativo,
-            "valueInfo": {}
+            "type": "string",
+            "value": str(auto.fecha_acto_administrativo.date()),
+            "valueInfo": {
+                "filename": "string",
+                "mimetype": "string",
+                "encoding": "string"
+            }
         }
          
         # priorityProject #PRIORITARIO O NO
         data_respuesta['priorityProject']={
-            "type": "Boolean",
+            "type": "boolean",
             "value": False,
-            "valueInfo": {}
+                  "valueInfo": {
+                "filename": "boolean",
+                "mimetype": "boolean",
+                "encoding": "boolean"
+            }
         }
-        # prioritario 
+        respuesta = self.post_tramite_camunda(token_camunda,data_respuesta,id_instancia)
+        print(respuesta)
 
 
 
 
         return Response(data_respuesta, status=status.HTTP_201_CREATED)
+
+
+class BusquedaAvanzadaPlantillasConfiguradas(generics.ListAPIView):
+    serializer_class = PlantillasDocBusquedaAvanzadaSerializer
+    queryset = PlantillasDoc.objects.all()
+    permission_classes = [IsAuthenticated]
     
+    def get(self,request):
+        filter={}
+        usuario = request.user.persona
+
+        for key, value in request.query_params.items():
+
+            if key == 'nombre':
+                if value !='':
+                    filter['nombre__icontains'] = value
+            if key =='descripcion':
+                if value != '':
+                    filter['descripcion__icontains'] = value    
+            if key =='tipologia':
+                if value != '':
+                    filter['id_tipologia_doc_trd__nombre__icontains'] = value
+            if key =='disponibilidad':
+                if value != '':
+                    filter['cod_tipo_acceso__icontains'] = value
+            if key =='extension':
+                if value != '':
+                    filter['id_archivo_digital__formato__icontains'] = value                 
+                
+        filter['activa']=True
+
+
+        
+        agno_actual = datetime.now().year
+
+        plantilla = self.queryset.all().filter(**filter)
+        plantillas_tipologia_configurada=[]
+        for data in plantilla:
+            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=data.id_tipologia_doc_trd, agno_tipologia = agno_actual).first()
+            if config_tipologia:
+                plantillas_tipologia_configurada.append(data)
+        serializador = self.serializer_class(plantillas_tipologia_configurada,many=True)
+        
+        return Response({'success':True,'detail':'Se encontraron los siguientes registros.','data':serializador.data},status=status.HTTP_200_OK)
+        
+
 
 class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
     serializer_class = SolicitudJuridicaOPACreateSerializer
@@ -3815,6 +3971,30 @@ class SolicitudJuridicaTramitesCreate(generics.CreateAPIView):
         instance = serializer.save()
 
         return Response({'succes': True, 'detail':'Se creo la solicitud de jurídica', 'data':serializer.data, 'estados':data_respuesta_estado_asociado}, status=status.HTTP_201_CREATED)
+
+
+class listadoActos(generics.ListAPIView):
+    serializer_class = AnexoArchivosDigitalesSerializer
+    queryset = SolicitudesTramites.objects.all()
+    permission_classes = [IsAuthenticated]
+
+
+    def get (self, request,pk):
+      
+        instance = SolicitudesTramites.objects.filter(id_solicitud_tramite=pk).first()
+        if not instance:
+            raise ValidationError("No existe tramite asociado")
+
+        if not instance:
+                raise NotFound("No existen registros")
+        
+        acto = ActosAdministrativos.objects.filter(id_solicitud_tramite=instance).first()
+        if not acto:
+            raise NotFound("No existen registros")
+        archivo = acto.id_archivo_acto_administrativo
+        serializer= self.serializer_class(archivo)
+        data_acto =ActosAdministrativosCreateSerializer(acto)
+        return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':{'acto':data_acto.data,'archivo':serializer.data},}, status=status.HTTP_200_OK)
 
 
  

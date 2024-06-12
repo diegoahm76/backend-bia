@@ -1239,7 +1239,7 @@ class SearchArticulosPagination(PageNumberPagination):
 class SearchArticulos(generics.ListAPIView):
     serializer_class = CatalogoBienesSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = SearchArticulosPagination  # Clase de paginación
+    pagination_class = SearchArticulosPagination  
 
     def get_queryset(self):
         queryset = CatalogoBienes.objects.all()
@@ -1273,7 +1273,7 @@ class SearchArticulos(generics.ListAPIView):
 
         if page is not None:
             serializer = self.serializer_class(page, many=True)
-            total_pages = self.get_total_pages(queryset)  # Calcular el número total de páginas
+            total_pages = self.get_total_pages(queryset) 
             return self.get_paginated_response(serializer.data, self.paginator.page.number, total_pages,total_elements)
 
         serializer = self.serializer_class(queryset, many=True)
@@ -1794,7 +1794,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
             raise ValidationError('No existe el proveedor enviado')
 
         # SI EL USUARIO ACTUALIZA EL TIPO DE ENTRADA
-        if cod_tipo_entrada != entrada.id_tipo_entrada:
+        if cod_tipo_entrada != entrada.id_tipo_entrada.cod_tipo_entrada:
             match cod_tipo_entrada:
                 case 1:
                     tipo_doc_ultimo_movimiento = 'E_CPR'
@@ -1820,7 +1820,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
             for id_bien in id_bien_items_list:
                 bien_inventario = Inventario.objects.filter(
                     id_bien=id_bien).first()
-                if str(bien_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
+                if bien_inventario.id_registro_doc_ultimo_movimiento and str(bien_inventario.id_registro_doc_ultimo_movimiento) != str(entrada.id_entrada_almacen):
                     raise PermissionDenied('No se puede actualizar ya que los items asociados a esta entrada no tienen como último movimiento la entrada')
 
             # ACTUALIZA EL TIPO DE ENTRADA EN CADA UNO DE LOS ITEMS
@@ -1828,8 +1828,9 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 bien_inventario = Inventario.objects.filter(
                     id_bien=id_bien).first()
                 bien_inventario.cod_tipo_entrada = tipo_entrada_instance
-                bien_inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
-                bien_inventario.id_persona_origen = proveedor
+                if bien_inventario.tipo_doc_ultimo_movimiento:
+                    bien_inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
+                    bien_inventario.id_persona_origen = proveedor
                 bien_inventario.save()
         # VALIDACIÓN PERSONA ACTUALIZA
         persona_actualiza = request.user.persona
@@ -2193,7 +2194,7 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
             serializer_catalogo_bien.save()
 
             descripcion_item_actualizado = {
-                'nombre': serializer_catalogo_bien.data['nombre']}
+                'nombre': catalogo_bien_instance_actualizar.nombre}
 
             # SE ACTUALIZA EN INVENTARIO
             inventario_instance_actualizar = inventario_fijos_actualizar.filter(
@@ -2203,11 +2204,11 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
             serializer_inventario.is_valid(raise_exception=True)
             serializer_inventario.save()
 
-            previous_item_actualizado = copy.copy(item_instance)
-
             # SE ACTUALIZA ITEM ENTRADA
             item_instance = items_entrada_actualizar.filter(
                 id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+
+            previous_item_actualizado = copy.copy(item_instance)
             
             serializer_item = SerializerUpdateItemEntradaActivosFijos(
                 item_instance, data=item)
@@ -2236,43 +2237,67 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                 inventario_instance_actualizar = inventario_consumo_actualizar.filter(
                     id_bien=item['id_bien'], id_bodega=item['id_bodega']).first()
 
-                if item['id_bodega'] == inventario_instance_actualizar.id_bodega.id_bodega:
-                    # SE ACTUALIZA EN INVENTARIO
-                    item_instance = items_entrada_actualizar.filter(
-                        id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+                # SE ACTUALIZA EN INVENTARIO
+                item_instance = items_entrada_actualizar.filter(
+                    id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
 
-                    item['cantidad_entrante_consumo'] = inventario_instance_actualizar.cantidad_entrante_consumo + \
-                        abs((item_instance.cantidad - item['cantidad']))
-                    serializer_inventario = SerializerUpdateInventariosConsumo(
-                        inventario_instance_actualizar, data=item)
-                    serializer_inventario.is_valid(raise_exception=True)
-                    serializer_inventario.save()
+                item['cantidad_entrante_consumo'] = inventario_instance_actualizar.cantidad_entrante_consumo + \
+                    abs((item_instance.cantidad - item['cantidad']))
+                serializer_inventario = SerializerUpdateInventariosConsumo(
+                    inventario_instance_actualizar, data=item)
+                serializer_inventario.is_valid(raise_exception=True)
+                serializer_inventario.save()
 
-                    bien_actualizado = bienes_existe.filter(
-                        id_bien=item['id_bien']).first()
-                    descripcion_item_actualizado = {
-                        'nombre': bien_actualizado.nombre}
-                    previous_item_actualizado = copy.copy(item_instance)
+                bien_actualizado = bienes_existe.filter(
+                    id_bien=item['id_bien']).first()
+                descripcion_item_actualizado = {
+                    'nombre': bien_actualizado.nombre}
+                previous_item_actualizado = copy.copy(item_instance)
 
-                    # SE ACTUALIZA ITEM ENTRADA
-                    serializer_item = SerializerItemEntradaConsumoPut(
-                        item_instance, data=item)
-                    serializer_item.is_valid(raise_exception=True)
-                    serializer_item.save()
+                # SE ACTUALIZA ITEM ENTRADA
+                serializer_item = SerializerItemEntradaConsumoPut(
+                    item_instance, data=item)
+                serializer_item.is_valid(raise_exception=True)
+                serializer_item.save()
 
-                    items_guardados.append(serializer_item.data)
+                items_guardados.append(serializer_item.data)
 
-                    valores_actualizados_detalles.append(
-                        {'descripcion': descripcion_item_actualizado, 'previous': previous_item_actualizado, 'current': item_instance})
-
-                else:
-                    pass
+                valores_actualizados_detalles.append(
+                    {'descripcion': descripcion_item_actualizado, 'previous': previous_item_actualizado, 'current': item_instance})
             # CANTIDAD REDUCE
-            else:
-                if item['cantidad'] < item_consumo_instance.cantidad:
-                    valor_minimo_posible = UtilAlmacen.get_valor_minimo_entradas(item_consumo_instance.id_bien.id_bien, item_consumo_instance.id_bodega.id_bodega, item_consumo_instance.id_entrada_almacen.id_entrada_almacen)
-                    if item['cantidad'] < valor_minimo_posible:
-                        raise PermissionDenied('No puede reducir la cantidad del bien ' + item_consumo_instance.id_bien.nombre + ' hasta la cantidad ingresada. La cantidad mínima posible a la que puede quedar es ' + valor_minimo_posible)
+            elif item['cantidad'] < item_consumo_instance.cantidad:
+                valor_minimo_posible = UtilAlmacen.get_valor_minimo_entradas(item_consumo_instance.id_bien.id_bien, item_consumo_instance.id_bodega.id_bodega, item_consumo_instance.id_entrada_almacen.id_entrada_almacen)
+                print("valor_minimo_posible: ", valor_minimo_posible)
+                if item['cantidad'] < valor_minimo_posible:
+                    raise PermissionDenied(f'No puede reducir la cantidad del bien {item_consumo_instance.id_bien.nombre} hasta la cantidad ingresada. La cantidad mínima posible a la que puede quedar es {valor_minimo_posible}')
+                
+                inventario_instance_actualizar = inventario_consumo_actualizar.filter(
+                    id_bien=item['id_bien'], id_bodega=item['id_bodega']).first()
+                    
+                # SE ACTUALIZA EN INVENTARIO
+                item_instance = items_entrada_actualizar.filter(
+                    id_item_entrada_almacen=item['id_item_entrada_almacen']).first()
+
+                item['cantidad_entrante_consumo'] = inventario_instance_actualizar.cantidad_entrante_consumo - \
+                    abs((item_instance.cantidad - item['cantidad']))
+                serializer_inventario = SerializerUpdateInventariosConsumo(
+                    inventario_instance_actualizar, data=item)
+                serializer_inventario.is_valid(raise_exception=True)
+                serializer_inventario.save()
+
+                bien_actualizado = bienes_existe.filter(
+                    id_bien=item['id_bien']).first()
+                descripcion_item_actualizado = {
+                    'nombre': bien_actualizado.nombre}
+                previous_item_actualizado = copy.copy(item_instance)
+
+                # SE ACTUALIZA ITEM ENTRADA
+                serializer_item = SerializerItemEntradaConsumoPut(
+                    item_instance, data=item)
+                serializer_item.is_valid(raise_exception=True)
+                serializer_item.save()
+
+                items_guardados.append(serializer_item.data)
             
         # SE ACTUALIZA VALOR TOTAL ENTRADA MODIFICADO
         entrada_almacen.valor_total_entrada = valor_total_entrada
