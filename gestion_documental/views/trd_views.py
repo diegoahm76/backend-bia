@@ -3984,8 +3984,8 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         if not id_consecutivo or not codigo:
             raise ValidationError('Debe enviar el consecutivo y el código')
         
-        persona = request.user.persona
-        print(persona.id_persona)
+        persona = request.user
+        print(persona)
         current_time = datetime.now()
         
         consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
