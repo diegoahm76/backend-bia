@@ -4109,11 +4109,11 @@ class ValidacionCodigoView(generics.UpdateAPIView):
     def get_token_camunda(self,token):
 
         auth_headers = {
-            "accept": "*/*",
+            "accept": "application/json",
             "Content-Type": "application/json"
         }   
         #TOKEN PARA SASOFTCO
-        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+        url_login_token = "https://bia.cormacarena.gov.co/clerk/api/Authentication/login-token-bia"
 
         payload={
             "access": token
