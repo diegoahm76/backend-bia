@@ -4108,17 +4108,17 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return True
         
     def get_token_camunda(self,token):
-        conn = http.client.HTTPSConnection("backendclerkapi.sedeselectronicas.com")
-        payload = json.dumps({
-            "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE4MzgwNDk4LCJpYXQiOjE3MTgyMDc2OTgsImp0aSI6IjJiZTg1MThkZTRlNDRmZDQ5Mzk0NTkzM2I5NWM3MzkyIiwidXNlcl9pZCI6MTkwLCJpZF9wZXJzb25hIjozMTcsIm5vbWJyZV9kZV91c3VhcmlvIjoianVhbnNhbmRpbm8iLCJyb2xlcyI6WyJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgRnVuY2lvbmFyaW8iLCJSb2wgQ2l1ZGFkYW5vIiwiUm9sIEFkbWluaXN0cmFkb3IiLCJSb2wgQ29uc2VydmFjaVx1MDBmM24iLCJSb2wgVXN1YXJpb3MgV2ViIiwiekNhbXVuZGEgLSBSb2wgVC1Db25jZXNpXHUwMGYzbiBkZSBBZ3VhcyBTdXBlcmZpY2lhbGVzIiwiekNhbXVuZGEgLSBSb2wgVC1EZXRlcm1pbmFudGVzIEFtYmllbnRhbGVzIFByb3BpZWRhZCBQcml2YWRhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItVXN1YXJpbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVZlbnRhbmlsbGEiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1EaXJlY2NpXHUwMGYzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtSW5nZW5pZXJvIGRlIFJldmlzaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUp1clx1MDBlZGRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1clx1MDBlZGRpY2EtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLVByb2Zlc2lvbmFsIEp1clx1MDBlZGRpY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1clx1MDBlZGRpY2EtUHJvZmVzaW9uYWwgZGUgQXBveW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1TdWIgR2VzdGlcdTAwZjNuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0aVx1MDBmM24gQW1iaWVudGFsLVByb2Zlc2lvbmFsIEp1clx1MDBlZGRpY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBPcmRlbmFtaWVudG8gVGVycml0b3JpYWwtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRnVuY2lvbmFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1BZG1pbmlzdHJhZG9yIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3RpXHUwMGYzbiBBbWJpZW50YWwtU3ViZGlyZWN0b3JhIFBsYW5lYWNpXHUwMGYzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Db29yZGluYWRvciBvIExcdTAwZWRkZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSnVyXHUwMGVkZGljYSIsIlJvbCBSZWNhdWRvIiwiUm9sQWxtYWNlbiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBSZWN1cnNvIiwiUm9sIEdlc3RvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXX0.Nm0uIiGbyGEiRleDkgrIZnXTuXSKzUPXPF4VsGhnR7U"
-        })
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        conn.request("POST", "/api/Authentication/login-token-bia", payload, headers)
-        res = conn.getresponse()
-        data = res.read()
-        print(data.decode("utf-8"))
+        # conn = http.client.HTTPSConnection("backendclerkapi.sedeselectronicas.com")
+        # payload = json.dumps({
+        #     "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE4MzgwNDk4LCJpYXQiOjE3MTgyMDc2OTgsImp0aSI6IjJiZTg1MThkZTRlNDRmZDQ5Mzk0NTkzM2I5NWM3MzkyIiwidXNlcl9pZCI6MTkwLCJpZF9wZXJzb25hIjozMTcsIm5vbWJyZV9kZV91c3VhcmlvIjoianVhbnNhbmRpbm8iLCJyb2xlcyI6WyJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgRnVuY2lvbmFyaW8iLCJSb2wgQ2l1ZGFkYW5vIiwiUm9sIEFkbWluaXN0cmFkb3IiLCJSb2wgQ29uc2VydmFjaVx1MDBmM24iLCJSb2wgVXN1YXJpb3MgV2ViIiwiekNhbXVuZGEgLSBSb2wgVC1Db25jZXNpXHUwMGYzbiBkZSBBZ3VhcyBTdXBlcmZpY2lhbGVzIiwiekNhbXVuZGEgLSBSb2wgVC1EZXRlcm1pbmFudGVzIEFtYmllbnRhbGVzIFByb3BpZWRhZCBQcml2YWRhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItVXN1YXJpbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVZlbnRhbmlsbGEiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1EaXJlY2NpXHUwMGYzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtSW5nZW5pZXJvIGRlIFJldmlzaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUp1clx1MDBlZGRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1clx1MDBlZGRpY2EtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLVByb2Zlc2lvbmFsIEp1clx1MDBlZGRpY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1clx1MDBlZGRpY2EtUHJvZmVzaW9uYWwgZGUgQXBveW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1TdWIgR2VzdGlcdTAwZjNuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0aVx1MDBmM24gQW1iaWVudGFsLVByb2Zlc2lvbmFsIEp1clx1MDBlZGRpY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBPcmRlbmFtaWVudG8gVGVycml0b3JpYWwtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRnVuY2lvbmFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1BZG1pbmlzdHJhZG9yIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3RpXHUwMGYzbiBBbWJpZW50YWwtU3ViZGlyZWN0b3JhIFBsYW5lYWNpXHUwMGYzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Db29yZGluYWRvciBvIExcdTAwZWRkZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSnVyXHUwMGVkZGljYSIsIlJvbCBSZWNhdWRvIiwiUm9sQWxtYWNlbiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBSZWN1cnNvIiwiUm9sIEdlc3RvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXX0.Nm0uIiGbyGEiRleDkgrIZnXTuXSKzUPXPF4VsGhnR7U"
+        # })
+        # headers = {
+        #     'Content-Type': 'application/json'
+        # }
+        # conn.request("POST", "/api/Authentication/login-token-bia", payload, headers)
+        # res = conn.getresponse()
+        # data = res.read()
+        # print(data.decode("utf-8"))
 
         # auth_headers = {
         #     "accept": "application/json",
@@ -4155,6 +4155,29 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         # except requests.RequestException as e:
         #     print(f"Error en la solicitud: {e}")
         #     return None  # Manejo de errores de solicitud
+
+        headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json"
+        }
+
+        url = "https://hotel-hub.azurewebsites.net/weatherforecast"
+
+
+        try:
+            response = requests.get(url, headers)
+            print(f"Request URL: {response.url}")
+            print(f"Response Status Code: {response.status_code}")
+            print("")
+
+            response.raise_for_status()
+
+            data = response.json()
+            print("Response JSON:", data)
+        except requests.exceptions.HTTPError as http_err:
+            print(f"HTTP error occurred: {http_err}")
+        except requests.exceptions.RequestException as err:
+            print(f"Error occurred: {err}")
 
 
     def get_firmas_funcionarios_sasoft(self,username,token):
