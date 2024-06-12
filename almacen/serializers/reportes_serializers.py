@@ -306,6 +306,8 @@ class HojaDeVidaVehiculosSerializer(serializers.ModelSerializer):
     nombre = serializers.SerializerMethodField()
     tipo_vehiculo = serializers.CharField(source='get_cod_tipo_vehiculo_display', default=None)
     nombre_contratista = serializers.ReadOnlyField(source='id_vehiculo_arrendado.empresa_contratista', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
 
     class Meta:
         model = HojaDeVidaVehiculos
@@ -344,6 +346,9 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
     id_responsable_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.id_persona', default=None)
     primer_nombre_responsable_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_nombre', default=None)
     primer_apellido_responsable_vehiculo = serializers.ReadOnlyField(source='id_vehiculo_conductor.id_persona_conductor.primer_apellido', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_articulo.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_articulo.nro_elemento_bien', default=None)
+    nombre_estado = serializers.CharField(source='get_estado_display')
     tipo_vehiculo = serializers.SerializerMethodField()
     funcionario_autorizo = serializers.SerializerMethodField()
     placa = serializers.SerializerMethodField()
