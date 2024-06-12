@@ -17,27 +17,52 @@ from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, PersonasS
 from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible
 
 class EntradasInventarioGetView(generics.ListAPIView):
-    serializer_class=EntradasInventarioGetSerializer
-    queryset=ItemEntradaAlmacen.objects.all()
+    serializer_class = EntradasInventarioGetSerializer
+    queryset = ItemEntradaAlmacen.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        filter={}
+    def get(self, request):
+        filter = {}
         
-        for key,value in request.query_params.items():
-            if key in ['id_bodega','cod_tipo_bien','fecha_desde','fecha_hasta']:
+        for key, value in request.query_params.items():
+            if key in [
+                'id_bodega', 'cod_tipo_bien', 'fecha_desde', 'fecha_hasta',
+                'nombre_bien', 'codigo_bien', 'placa_serial', 
+                'id_proveedor', 'id_responsable', 'consecutivo', 'cod_tipo_activo', 
+            ]:
                 if key == 'cod_tipo_bien':
-                    if value != '':
-                        filter['id_bien__cod_tipo_bien']=value
+                    if value:
+                        filter['id_bien__cod_tipo_bien'] = value
                 elif key == 'fecha_desde':
-                    if value != '':
-                        filter['id_entrada_almacen__fecha_entrada__gte']=value
+                    if value:
+                        filter['id_entrada_almacen__fecha_entrada__gte'] = value
                 elif key == 'fecha_hasta':
-                    if value != '':
-                        filter['id_entrada_almacen__fecha_entrada__lte']=value
+                    if value:
+                        filter['id_entrada_almacen__fecha_entrada__lte'] = value
+                elif key == 'nombre_bien':
+                    if value:
+                        filter['id_bien__nombre__icontains'] = value
+                elif key == 'codigo_bien':
+                    if value:
+                        filter['id_bien__codigo_bien__icontains'] = value
+                elif key == 'placa_serial':
+                    if value:
+                        filter['id_bien__doc_identificador_nro__icontains'] = value
+                elif key == 'id_proveedor':
+                    if value:
+                        filter['id_entrada_almacen__id_proveedor'] = value
+                elif key == 'id_responsable':
+                    if value:
+                        filter['id_entrada_almacen__id_responsable'] = value
+                elif key == 'consecutivo':
+                    if value:
+                        filter['id_bien__nro_elemento_bien'] = value
+                elif key == 'cod_tipo_activo':
+                    if value:
+                        filter['id_bien__cod_tipo_activo'] = value
                 else:
-                    if value != '':
-                        filter[key]=value
+                    if value:
+                        filter[key] = value
         
         items_entradas = self.queryset.filter(**filter).filter(id_bien__nivel_jerarquico=5)
         serializer = self.serializer_class(items_entradas, many=True)
@@ -46,21 +71,17 @@ class EntradasInventarioGetView(generics.ListAPIView):
         data_output = []
         
         if items_entradas:
-            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", 
-                                                                                 "nombre_bodega", 
-                                                                                 "id_bien", 
-                                                                                 "nombre_bien", 
-                                                                                 "codigo_bien", 
-                                                                                 "responsable_bodega",
-                                                                                 "nombre_proveedor"))
+            items_entrada_data = sorted(serializer_data, key=operator.itemgetter(
+                "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
+                "codigo_bien", "responsable_bodega", "nombre_proveedor",
+                "consecutivo", "cod_tipo_activo", "placa_serial","id_responsable","id_proveedor","cod_tipo_bien"
+            ))
                 
-            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega", 
-                                                                                                "nombre_bodega", 
-                                                                                                "id_bien", 
-                                                                                                "nombre_bien", 
-                                                                                                "codigo_bien", 
-                                                                                                "responsable_bodega",
-                                                                                                "nombre_proveedor")):
+            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter(
+                "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
+                "codigo_bien", "responsable_bodega", "nombre_proveedor",
+                "consecutivo", "cod_tipo_activo", "placa_serial","id_responsable","id_proveedor","cod_tipo_bien"
+            )):
                 detalles = list(items)
                 
                 for detalle in detalles:
@@ -71,6 +92,12 @@ class EntradasInventarioGetView(generics.ListAPIView):
                     del detalle['codigo_bien']
                     del detalle['responsable_bodega']
                     del detalle['nombre_proveedor']
+                    del detalle['consecutivo']
+                    del detalle['cod_tipo_activo']
+                    del detalle['placa_serial']
+                    del detalle['id_responsable']
+                    del detalle['id_proveedor']
+                    del detalle['cod_tipo_bien']
                     
                 items_data = {
                     "id_bodega": entrada[0],
@@ -81,12 +108,18 @@ class EntradasInventarioGetView(generics.ListAPIView):
                     "cantidad_ingresada_total": sum(item['cantidad'] for item in detalles),
                     "responsable_bodega": entrada[5],
                     "nombre_proveedor": entrada[6],
+                    "consecutivo": entrada[7],
+                    "cod_tipo_activo": entrada[8],
+                    "placa_serial": entrada[9],
+                    "id_responsable": entrada[10],
+                    "id_proveedor": entrada[11],
+                    "cod_tipo_bien": entrada[12],
                     "detalle": detalles
                 }
                 
                 data_output.append(items_data)
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
 
 class MovimientosIncautadosGetView(generics.ListAPIView):
     serializer_class = MovimientosIncautadosGetSerializer
@@ -99,16 +132,40 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
         for key, value in request.query_params.items():
             if key in ['fecha_desde', 'fecha_hasta']:
                 if key == 'fecha_desde':
-                    if value != '':
+                    if value:
                         filter['id_entrada_almacen__fecha_entrada__gte'] = value
                 elif key == 'fecha_hasta':
-                    if value != '':
+                    if value:
                         filter['id_entrada_almacen__fecha_entrada__lte'] = value
             elif key == 'categoria':
-                if value != '':
+                if value:
                     filter['id_bien__cod_tipo_bien'] = value
+            elif key == 'nombre_bien':
+                if value:
+                    filter['id_bien__nombre__icontains'] = value
+            elif key == 'codigo_bien':
+                if value:
+                    filter['id_bien__codigo_bien__icontains'] = value
+            elif key == 'placa_serial':
+                if value:
+                    filter['id_bien__doc_identificador_nro__icontains'] = value
+            elif key == 'id_proveedor':
+                if value:
+                    filter['id_entrada_almacen__id_proveedor'] = value
+            elif key == 'id_responsable':
+                if value:
+                    filter['id_entrada_almacen__id_responsable'] = value
+            elif key == 'consecutivo':
+                if value:
+                    filter['id_bien__nro_elemento_bien'] = value
+            elif key == 'cod_tipo_activo':
+                if value:
+                    filter['id_bien__cod_tipo_activo'] = value
+            elif key == 'id_bodega':
+                if value:
+                    filter['id_bodega'] = value
             else:
-                if value != '':
+                if value:
                     filter[key] = value
 
         items_entradas = self.queryset.filter(**filter).filter(id_entrada_almacen__id_tipo_entrada=8, id_bien__nivel_jerarquico=5)
@@ -118,33 +175,19 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
         data_output = []
 
         if items_entradas:
-            items_entrada_data = sorted(serializer_data, key=operator.itemgetter("id_bodega", 
-                                                                                 "nombre_bodega", 
-                                                                                 "id_bien", 
-                                                                                 "nombre_bien", 
-                                                                                 "codigo_bien", 
-                                                                                 "tipo_activo",
-                                                                                 "codigo_activo_nombre",
-                                                                                 'codigo_activo',
-                                                                                 "cod_estado",
-                                                                                 "codigo_estado_nombre",
-                                                                                 'id_responsable',
-                                                                                 "nombre_responsable",
-                                                                                 "apellido_responsable"))
+            items_entrada_data = sorted(serializer_data, key=operator.itemgetter(
+                "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
+                "codigo_bien", "tipo_activo", "codigo_activo_nombre", 
+                'codigo_activo', "cod_estado", "codigo_estado_nombre", 
+                'id_responsable', "responsable_bodega","consecutivo","placa_serial","nombre_marca"
+            ))
 
-            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter("id_bodega",
-                                                                                                 "nombre_bodega", 
-                                                                                                 "id_bien", 
-                                                                                                 "nombre_bien", 
-                                                                                                 "codigo_bien", 
-                                                                                                 "tipo_activo",
-                                                                                                 "codigo_activo_nombre",
-                                                                                                 'codigo_activo',
-                                                                                                 "cod_estado",
-                                                                                                 "codigo_estado_nombre",
-                                                                                                 'id_responsable',
-                                                                                                 "nombre_responsable",
-                                                                                                 "apellido_responsable")):
+            for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter(
+                "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
+                "codigo_bien", "tipo_activo", "codigo_activo_nombre", 
+                'codigo_activo', "cod_estado", "codigo_estado_nombre", 
+                'id_responsable', "responsable_bodega","consecutivo","placa_serial","nombre_marca"
+            )):
                 items_list = list(items)
 
                 items_data = {
@@ -159,8 +202,10 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     "codigo_estado": entrada[8],
                     "codigo_estado_nombre": entrada[9],
                     "id_responsable": entrada[10],
-                    "nombre_responsable": entrada[11],
-                    "apellido_responsable": entrada[12],
+                    "responsable_bodega": entrada[11],
+                    "consecutivo": entrada[12],
+                    "placa_serial": entrada[13],
+                    "nombre_marca": entrada[14],
                     "cantidad_ingresada": sum(item['cantidad'] for item in items_list)
                 }
 
@@ -170,30 +215,46 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
 
 
 class MantenimientosRealizadosGetView(generics.ListAPIView):
-    serializer_class=MantenimientosRealizadosGetSerializer
-    queryset=RegistroMantenimientos.objects.all()
+    serializer_class = MantenimientosRealizadosGetSerializer
+    queryset = RegistroMantenimientos.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        filter={}
-        
-        for key,value in request.query_params.items():
-            if key in ['cod_tipo_mantenimiento','id_persona_realiza','fecha_desde','fecha_hasta']:
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key in ['cod_tipo_mantenimiento', 'id_persona_realiza', 'fecha_desde', 'fecha_hasta', 'nombre_bien', 'codigo_bien', 'serial_placa','consecutivo','cod_tipo_activo']:
                 if key == 'fecha_desde':
-                    if value != '':
-                        filter['fecha_ejecutado__gte']=value
+                    if value:
+                        filter['fecha_ejecutado__gte'] = value
                 elif key == 'fecha_hasta':
-                    if value != '':
-                        filter['fecha_ejecutado__lte']=value
+                    if value:
+                        filter['fecha_ejecutado__lte'] = value
+                elif key == 'nombre_bien':
+                    if value:
+                        filter['id_articulo__nombre__icontains'] = value
+                elif key == 'codigo_bien':
+                    if value:
+                        filter['id_articulo__codigo_bien__icontains'] = value
+                elif key == 'serial_placa':
+                    if value:
+                        filter['id_articulo__doc_identificador_nro__icontains'] = value
+                elif key == 'consecutivo':
+                    if value:
+                        filter['id_articulo__nro_elemento_bien'] = value
+                elif key == 'cod_tipo_activo':
+                    if value:
+                        filter['id_articulo__cod_tipo_activo'] = value
                 else:
-                    if value != '':
-                        filter[key]=value
-        
+                    if value:
+                        filter[key] = value
+
         registro_mantenimientos = self.queryset.filter(**filter)
         serializer = self.serializer_class(registro_mantenimientos, many=True)
         serializer_data = serializer.data
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer_data},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': serializer_data}, status=status.HTTP_200_OK)
+
 
 
 class BusquedaGeneralInventario(generics.ListAPIView):
@@ -203,21 +264,51 @@ class BusquedaGeneralInventario(generics.ListAPIView):
     def get_queryset(self):
         queryset = Inventario.objects.all()
 
-        # Obtener parámetros de consulta
         tipo_movimiento = self.request.query_params.get('tipo_movimiento')
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
+        identificador_bien = self.request.query_params.get('identificador_bien')
+        codigo_bien = self.request.query_params.get('codigo_bien')
+        nombre_bien = self.request.query_params.get('nombre_bien')
+        cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
+        consecutivo = self.request.query_params.get('consecutivo')
+        id_bodega = self.request.query_params.get('id_bodega')
+        id_persona_origen = self.request.query_params.get('id_persona_origen')
+        id_persona_responsable = self.request.query_params.get('id_persona_responsable')
 
         # Filtrar por tipo de movimiento
         if tipo_movimiento:
             queryset = queryset.filter(tipo_doc_ultimo_movimiento=tipo_movimiento)
         
-        # Filtrar por rango de fechas
         if fecha_desde:
             queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
             
         if fecha_hasta:
             queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+        
+        if identificador_bien:
+            queryset = queryset.filter(id_bien__doc_identificador_nro__icontains=identificador_bien)
+        
+        if codigo_bien:
+            queryset = queryset.filter(id_bien__codigo_bien__icontains=codigo_bien)
+        
+        if nombre_bien:
+            queryset = queryset.filter(id_bien__nombre__icontains=nombre_bien)
+
+        if cod_tipo_activo:
+            queryset = queryset.filter(id_bien__cod_tipo_activo=cod_tipo_activo)
+        
+        if consecutivo:
+            queryset = queryset.filter(id_bien__nro_elemento_bien=consecutivo)
+        
+        if id_bodega:
+            queryset = queryset.filter(id_bodega=id_bodega)
+        
+        if id_persona_origen:
+            queryset = queryset.filter(id_persona_origen=id_persona_origen)
+        
+        if id_persona_responsable:
+            queryset = queryset.filter(id_persona_responsable=id_persona_responsable)
 
         return queryset
 
@@ -230,6 +321,7 @@ class BusquedaGeneralInventario(generics.ListAPIView):
             'data': serializer.data
         }
         return Response(data)
+
     
 
 class BusquedaVehiculos(generics.ListAPIView):

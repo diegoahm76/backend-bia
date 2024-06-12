@@ -158,6 +158,14 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
 
             # Agregar registro al inventario
             inventario = Inventario.objects.filter(id_bien=bien['id_bien']).first()
+            if Inventario.ubicacion_asignado or Inventario.ubicacion_prestado:
+                message = f"Esta solicitando una baja a un bien que esta ASIGNADO o PRESTADO: {inventario.id_bien.nombre}."
+                raise ValidationError(message)
+            
+            if Inventario.realizo_baja :
+                message = f"Ya se le realizo la baja a de uno de los bienes: {inventario.id_bien.nombre}."
+                raise ValidationError(message)
+            
             if inventario:
                 inventario.realizo_baja = True
                 inventario.ubicacion_en_bodega = False
@@ -547,6 +555,7 @@ class CrearSolicitudActivosView(generics.CreateAPIView):
             'gestionada_alma': False,
             'rechazada_almacen': False,
             'solicitud_anulada_solicitante': False,
+            'fecha_devolucion': fecha_devolucion,
         }
 
         solicitud_serializer = self.serializer_class(data=solicitud_data)
@@ -750,7 +759,8 @@ class ResumenSolicitudGeneralActivosView(generics.RetrieveAPIView):
                 'abreviatura_unidad_medida': item.id_unidad_medida.abreviatura,  
                 'nombre_unidad_medida': item.id_unidad_medida.nombre,
                 'observacion': item.observacion,
-                'nro_posicion': item.nro_posicion
+                'nro_posicion': item.nro_posicion,
+                'fecha_devolucion': item.fecha_devolucion
             }
             items_data.append(item_data)
         
@@ -1839,6 +1849,8 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
                 inventario_obj = Inventario.objects.get(id_bien=bien_despachado)
                 inventario_obj.cod_estado_activo = activo_devolucionado_obj.cod_estado_activo_devolucion
                 inventario_obj.ubicacion_en_bodega = True
+                inventario_obj.ubicacion_asignado = False
+                inventario_obj.ubicacion_prestado = False
                 inventario_obj.fecha_ultimo_movimiento = current_date
                 inventario_obj.tipo_doc_ultimo_movimiento = 'DEV_P' if despacho_tipo else 'DEV_A'
                 inventario_obj.id_registro_doc_ultimo_movimiento = None
@@ -2641,8 +2653,8 @@ class CrearDespachoActivosView(generics.CreateAPIView):
         # Realizar las actualizaciones en el modelo SolicitudesActivos si existe solicitud_id
         if solicitud_id:
             solicitud = get_object_or_404(SolicitudesActivos, pk=solicitud_id)
-            solicitud.estado_solicitud = 'R'  # Actualizar estado a 'Respondido'
-            solicitud.gestionada_alma = True  # Actualizar gestionadaAlmacen a True
+            solicitud.estado_solicitud = 'R' 
+            solicitud.gestionada_alma = True  
             solicitud.save()
 
         # # Obtener el ID de la bodega del despacho

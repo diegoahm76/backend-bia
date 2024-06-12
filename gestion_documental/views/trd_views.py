@@ -3984,8 +3984,8 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         if not id_consecutivo or not codigo:
             raise ValidationError('Debe enviar el consecutivo y el código')
         
-        persona = request.user.persona
-        print(persona.id_persona)
+        persona = request.user
+        print(persona)
         current_time = datetime.now()
         
         consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
@@ -4007,25 +4007,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
 
-                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
-                # data_in = request.data
-                # if not authorization_header:
-                #     raise ValidationError("No se suministro un Token")
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                data_in = request.data
+                if not authorization_header:
+                    raise ValidationError("No se suministro un Token")
 
-                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
-                # token_camunda=None
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                print("token: ", token)
+                token_camunda=None
         
-                # if 'access' in data_in:
+                if 'access' in data_in:
                     
-                #     token_camunda=data_in['access']
+                    token_camunda=data_in['access']
                     
-                # else:
-                #     token_camunda = self.get_token_camunda(token)
+                else:
+                    token_camunda = self.get_token_camunda(token)
 
-                # print(token_camunda)
+                print("token_camunda", token_camunda)
 
-                # img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
-                # print(img)
+                img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
+                print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
@@ -4202,7 +4203,8 @@ class SubirDocumentoAlGenerador(generics.CreateAPIView):
                 id_tipologia_doc = plantilla.id_tipologia_doc_trd,
                 id_persona_genera= persona,
                 id_archivo_digital= archivo_digital,
-                finalizado= False
+                finalizado= False,
+                cargado = True
             )
 
             serializer = self.serializer_class(consecutivo_tipologia)
@@ -4262,7 +4264,6 @@ class ActualizarDocumentos(generics.UpdateAPIView):
             #archivo = SubirDocumentoAlGenerador()
             #archivo_creado = archivo.crear_archivos(archivo, fecha_actual).data
             archivo_creado = self.crear_archivos(archivo, fecha_actual).data
-            print(archivo_creado)
             archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=archivo_creado['data']['id_archivo_digital'])
             ruta_archivo = archivo_digital.ruta_archivo.path if archivo_digital else None
             if ruta_archivo and os.path.exists(ruta_archivo):
@@ -4278,6 +4279,8 @@ class ActualizarDocumentos(generics.UpdateAPIView):
                 consecutivo.variables = variables if variables else {}
             else:
                 consecutivo.variables = variables if variables else {}
+
+            consecutivo.cargado = True
             consecutivo.save()
 
             serializer = self.serializer_class(consecutivo)
