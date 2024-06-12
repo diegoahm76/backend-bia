@@ -506,6 +506,8 @@ class ControlStockGetView(generics.ListAPIView):
         if id_persona_origen:
             queryset = queryset.filter(id_persona_origen=id_persona_origen)
 
+        if id_persona_responsable:
+            queryset = queryset.filter(id_persona_responsable=id_persona_responsable)
 
         return queryset
 

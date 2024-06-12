@@ -212,30 +212,46 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
 
 
 class MantenimientosRealizadosGetView(generics.ListAPIView):
-    serializer_class=MantenimientosRealizadosGetSerializer
-    queryset=RegistroMantenimientos.objects.all()
+    serializer_class = MantenimientosRealizadosGetSerializer
+    queryset = RegistroMantenimientos.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        filter={}
-        
-        for key,value in request.query_params.items():
-            if key in ['cod_tipo_mantenimiento','id_persona_realiza','fecha_desde','fecha_hasta']:
+    def get(self, request):
+        filter = {}
+
+        for key, value in request.query_params.items():
+            if key in ['cod_tipo_mantenimiento', 'id_persona_realiza', 'fecha_desde', 'fecha_hasta', 'nombre_bien', 'codigo_bien', 'serial_placa','consecutivo','cod_tipo_activo']:
                 if key == 'fecha_desde':
-                    if value != '':
-                        filter['fecha_ejecutado__gte']=value
+                    if value:
+                        filter['fecha_ejecutado__gte'] = value
                 elif key == 'fecha_hasta':
-                    if value != '':
-                        filter['fecha_ejecutado__lte']=value
+                    if value:
+                        filter['fecha_ejecutado__lte'] = value
+                elif key == 'nombre_bien':
+                    if value:
+                        filter['id_articulo__nombre__icontains'] = value
+                elif key == 'codigo_bien':
+                    if value:
+                        filter['id_articulo__codigo_bien__icontains'] = value
+                elif key == 'serial_placa':
+                    if value:
+                        filter['id_articulo__doc_identificador_nro__icontains'] = value
+                elif key == 'consecutivo':
+                    if value:
+                        filter['id_articulo__nro_elemento_bien'] = value
+                elif key == 'cod_tipo_activo':
+                    if value:
+                        filter['id_articulo__cod_tipo_activo'] = value
                 else:
-                    if value != '':
-                        filter[key]=value
-        
+                    if value:
+                        filter[key] = value
+
         registro_mantenimientos = self.queryset.filter(**filter)
         serializer = self.serializer_class(registro_mantenimientos, many=True)
         serializer_data = serializer.data
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':serializer_data},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': serializer_data}, status=status.HTTP_200_OK)
+
 
 
 class BusquedaGeneralInventario(generics.ListAPIView):
@@ -245,21 +261,51 @@ class BusquedaGeneralInventario(generics.ListAPIView):
     def get_queryset(self):
         queryset = Inventario.objects.all()
 
-        # Obtener parámetros de consulta
         tipo_movimiento = self.request.query_params.get('tipo_movimiento')
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
+        identificador_bien = self.request.query_params.get('identificador_bien')
+        codigo_bien = self.request.query_params.get('codigo_bien')
+        nombre_bien = self.request.query_params.get('nombre_bien')
+        cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
+        consecutivo = self.request.query_params.get('consecutivo')
+        id_bodega = self.request.query_params.get('id_bodega')
+        id_persona_origen = self.request.query_params.get('id_persona_origen')
+        id_persona_responsable = self.request.query_params.get('id_persona_responsable')
 
         # Filtrar por tipo de movimiento
         if tipo_movimiento:
             queryset = queryset.filter(tipo_doc_ultimo_movimiento=tipo_movimiento)
         
-        # Filtrar por rango de fechas
         if fecha_desde:
             queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
             
         if fecha_hasta:
             queryset = queryset.filter(fecha_ultimo_movimiento__lte=fecha_hasta)
+        
+        if identificador_bien:
+            queryset = queryset.filter(id_bien__doc_identificador_nro__icontains=identificador_bien)
+        
+        if codigo_bien:
+            queryset = queryset.filter(id_bien__codigo_bien__icontains=codigo_bien)
+        
+        if nombre_bien:
+            queryset = queryset.filter(id_bien__nombre__icontains=nombre_bien)
+
+        if cod_tipo_activo:
+            queryset = queryset.filter(id_bien__cod_tipo_activo=cod_tipo_activo)
+        
+        if consecutivo:
+            queryset = queryset.filter(id_bien__nro_elemento_bien=consecutivo)
+        
+        if id_bodega:
+            queryset = queryset.filter(id_bodega=id_bodega)
+        
+        if id_persona_origen:
+            queryset = queryset.filter(id_persona_origen=id_persona_origen)
+        
+        if id_persona_responsable:
+            queryset = queryset.filter(id_persona_responsable=id_persona_responsable)
 
         return queryset
 
@@ -272,6 +318,7 @@ class BusquedaGeneralInventario(generics.ListAPIView):
             'data': serializer.data
         }
         return Response(data)
+
     
 
 class BusquedaVehiculos(generics.ListAPIView):
