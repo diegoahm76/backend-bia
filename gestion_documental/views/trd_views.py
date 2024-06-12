@@ -7,6 +7,7 @@ import subprocess
 from django.http import JsonResponse
 # import pypandoc
 import requests
+import http.client
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from backend.settings.base import MEDIA_ROOT
 from docxtpl import DocxTemplate
@@ -4107,42 +4108,53 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return True
         
     def get_token_camunda(self,token):
-
-        auth_headers = {
-            "accept": "application/json",
-            "Content-Type": "application/json"
-        }   
-        #TOKEN PARA SASOFTCO
-        url_login_token = "https://bia.cormacarena.gov.co/clerk/api/Authentication/login-token-bia"
-
-        token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE4MzgwMjY4LCJpYXQiOjE3MTgyMDc0NjgsImp0aSI6Ijg5NzJlNGNiZDFmYTQ2YTI4YjRhNGRhM2JhM2ZjMmQzIiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY1x1MDBlOW4iLCJSb2wgQ29uc2VydmFjaVx1MDBmM24iLCJSb2wgR2VzdG9yIiwiUm9sIFJlY2F1ZG8iLCJSb2wgUmVjdXJzbyIsIlJvbCBUcmFuc3ZlcnNhbCIsIlJvbCBTZWd1aW1pZW50byBhIHBsYW5lcyIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzaVx1MDBmM24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjaVx1MDBmM24gR2VuZXJhbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXJcdTAwZWRkaWNhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyXHUwMGVkZGljYS1Qcm9mZXNpb25hbCBKdXJcdTAwZWRkaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3RpXHUwMGYzbiBBbWJpZW50YWwtQ29vcmRpbmFkb3IiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1TdWIgR2VzdGlcdTAwZjNuIEFtYmllbnRhbC1Qcm9mZXNpb25hbCBKdXJcdTAwZWRkaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1KdXJcdTAwZWRkaWNhIiwiekNhbXVuZGEgLSBSb2wgVC1Db25jZXNpXHUwMGYzbiBkZSBBZ3VhcyBTdWJ0ZXJyXHUwMGUxbmVhcyIsInpDYW11bmRhIC0gUm9sIFQtUGVybWlzbyBkZSBPY3VwYWNpXHUwMGYzbiBkZSBDYXVjZSIsInpDYW11bmRhIC0gUm9sIFQtUGVybWlzbyBkZSBQcm9zcGVjY2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpXHUwMGYzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0aVx1MDBmM24gQW1iaWVudGFsLVN1YmRpcmVjdG9yYSBQbGFuZWFjaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLUp1clx1MDBlZGRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXX0.lKI4tPZVs7qjLqAPiQDSjfYb51DykWKcwrCOfngNxD4"
-
-
-        payload={
-            "access": token
+        conn = http.client.HTTPSConnection("backendclerkapi.sedeselectronicas.com")
+        payload = json.dumps({
+            "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE4MzgwNDk4LCJpYXQiOjE3MTgyMDc2OTgsImp0aSI6IjJiZTg1MThkZTRlNDRmZDQ5Mzk0NTkzM2I5NWM3MzkyIiwidXNlcl9pZCI6MTkwLCJpZF9wZXJzb25hIjozMTcsIm5vbWJyZV9kZV91c3VhcmlvIjoianVhbnNhbmRpbm8iLCJyb2xlcyI6WyJSb2wgVHJhbnN2ZXJzYWwiLCJSb2wgRnVuY2lvbmFyaW8iLCJSb2wgQ2l1ZGFkYW5vIiwiUm9sIEFkbWluaXN0cmFkb3IiLCJSb2wgQ29uc2VydmFjaVx1MDBmM24iLCJSb2wgVXN1YXJpb3MgV2ViIiwiekNhbXVuZGEgLSBSb2wgVC1Db25jZXNpXHUwMGYzbiBkZSBBZ3VhcyBTdXBlcmZpY2lhbGVzIiwiekNhbXVuZGEgLSBSb2wgVC1EZXRlcm1pbmFudGVzIEFtYmllbnRhbGVzIFByb3BpZWRhZCBQcml2YWRhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItVXN1YXJpbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVZlbnRhbmlsbGEiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1EaXJlY2NpXHUwMGYzbiBHZW5lcmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtSW5nZW5pZXJvIGRlIFJldmlzaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUp1clx1MDBlZGRpY2EiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1clx1MDBlZGRpY2EtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLVByb2Zlc2lvbmFsIEp1clx1MDBlZGRpY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1PZmljaW5hIEp1clx1MDBlZGRpY2EtUHJvZmVzaW9uYWwgZGUgQXBveW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1TdWIgR2VzdGlcdTAwZjNuIEFtYmllbnRhbC1Db29yZGluYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0aVx1MDBmM24gQW1iaWVudGFsLVByb2Zlc2lvbmFsIEp1clx1MDBlZGRpY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBPcmRlbmFtaWVudG8gVGVycml0b3JpYWwtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRnVuY2lvbmFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1BZG1pbmlzdHJhZG9yIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3RpXHUwMGYzbiBBbWJpZW50YWwtU3ViZGlyZWN0b3JhIFBsYW5lYWNpXHUwMGYzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIFN1ZWxvcy1Db29yZGluYWRvciBvIExcdTAwZWRkZXIiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSW5nZW5pZXJvIGRlIFJldmlzaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtSnVyXHUwMGVkZGljYSIsIlJvbCBSZWNhdWRvIiwiUm9sQWxtYWNlbiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBSZWN1cnNvIiwiUm9sIEdlc3RvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXX0.Nm0uIiGbyGEiRleDkgrIZnXTuXSKzUPXPF4VsGhnR7U"
+        })
+        headers = {
+            'Content-Type': 'application/json'
         }
+        conn.request("POST", "/api/Authentication/login-token-bia", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        print(data.decode("utf-8"))
 
-        print(token)
+        # auth_headers = {
+        #     "accept": "application/json",
+        #     "Content-Type": "application/json"
+        # }   
+        # #TOKEN PARA SASOFTCO
+        # url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+
+        # token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzE4MzgwMjY4LCJpYXQiOjE3MTgyMDc0NjgsImp0aSI6Ijg5NzJlNGNiZDFmYTQ2YTI4YjRhNGRhM2JhM2ZjMmQzIiwidXNlcl9pZCI6MTEyLCJpZF9wZXJzb25hIjoyMTUsIm5vbWJyZV9kZV91c3VhcmlvIjoic2VndXJpZGFkIiwicm9sZXMiOlsiUm9sIFVzdWFyaW9zIFdlYiIsInpDYW11bmRhIC0gUm9sIFNlZ3VyaWRhZCIsIlJvbCBBbG1hY1x1MDBlOW4iLCJSb2wgQ29uc2VydmFjaVx1MDBmM24iLCJSb2wgR2VzdG9yIiwiUm9sIFJlY2F1ZG8iLCJSb2wgUmVjdXJzbyIsIlJvbCBUcmFuc3ZlcnNhbCIsIlJvbCBTZWd1aW1pZW50byBhIHBsYW5lcyIsInpDYW11bmRhIC0gUm9sIFQtQ29uY2VzaVx1MDBmM24gZGUgQWd1YXMgU3VwZXJmaWNpYWxlcyIsInpDYW11bmRhIC0gUm9sIFQtRGV0ZXJtaW5hbnRlcyBBbWJpZW50YWxlcyBQcm9waWVkYWQgUHJpdmFkYSIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVVzdWFyaW8iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1WZW50YW5pbGxhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItRGlyZWNjaVx1MDBmM24gR2VuZXJhbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gQWd1YXMtUHJvZmVzaW9uYWwiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBBZ3Vhcy1KdXJcdTAwZWRkaWNhIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLU9maWNpbmEgSnVyXHUwMGVkZGljYS1Qcm9mZXNpb25hbCBKdXJcdTAwZWRkaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItT2ZpY2luYSBKdXJcdTAwZWRkaWNhLVByb2Zlc2lvbmFsIGRlIEFwb3lvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItU3ViIEdlc3RpXHUwMGYzbiBBbWJpZW50YWwtQ29vcmRpbmFkb3IiLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1TdWIgR2VzdGlcdTAwZjNuIEFtYmllbnRhbC1Qcm9mZXNpb25hbCBKdXJcdTAwZWRkaWNvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gT3JkZW5hbWllbnRvIFRlcnJpdG9yaWFsLUNvb3JkaW5hZG9yIG8gTFx1MDBlZGRlciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Qcm9mZXNpb25hbCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1KdXJcdTAwZWRkaWNhIiwiekNhbXVuZGEgLSBSb2wgVC1Db25jZXNpXHUwMGYzbiBkZSBBZ3VhcyBTdWJ0ZXJyXHUwMGUxbmVhcyIsInpDYW11bmRhIC0gUm9sIFQtUGVybWlzbyBkZSBPY3VwYWNpXHUwMGYzbiBkZSBDYXVjZSIsInpDYW11bmRhIC0gUm9sIFQtUGVybWlzbyBkZSBQcm9zcGVjY2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgVC1QZXJtaXNvIGRlIFZlcnRpbWllbnRvcyBhbCBTdWVsbyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUZ1bmNpb25hcmlvIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItQWRtaW5pc3RyYWRvciIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIE9yZGVuYW1pZW50byBUZXJyaXRvcmlhbC1Jbmdlbmllcm8gZGUgUmV2aXNpXHUwMGYzbiIsInpDYW11bmRhIC0gUm9sIEFjdG9yLVN1YiBHZXN0aVx1MDBmM24gQW1iaWVudGFsLVN1YmRpcmVjdG9yYSBQbGFuZWFjaVx1MDBmM24iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1HcnVwbyBTdWVsb3MtQ29vcmRpbmFkb3IgbyBMXHUwMGVkZGVyIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLUluZ2VuaWVybyBkZSBSZXZpc2lcdTAwZjNuIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLVByb2Zlc2lvbmFsIiwiekNhbXVuZGEgLSBSb2wgQWN0b3ItR3J1cG8gU3VlbG9zLUp1clx1MDBlZGRpY2EiLCJ6Q2FtdW5kYSAtIHJvbGFzZCIsInpDYW11bmRhIC0gUm9sIFBydWViYSB6QyIsIlJvbCBGdW5jaW9uYXJpbyIsIlJvbCBDaXVkYWRhbm8iLCJSb2wgQWRtaW5pc3RyYWRvciIsIlJvbCBBZG1vbiIsIlJvbCBOb3RpZmljYWNpb25lcyIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUdydXBvIEFndWFzLVByb2Zlc2lvbmFsLVRlY25pY28iLCJ6Q2FtdW5kYSAtIFJvbCBBY3Rvci1JbnRlcm9wZXJhYmlsaWRhZCIsInpDYW11bmRhIC0gUm9sIEFjdG9yLUludGVyb3BlcmFiaWxpZGFkIFZlbnRhbmlsbGEiXX0.lKI4tPZVs7qjLqAPiQDSjfYb51DykWKcwrCOfngNxD4"
+
+
+        # payload={
+        #     "access": token
+        # }
+
+        # print(token)
         
-        try:
-            response = requests.post(url_login_token,json=payload,headers=auth_headers, timeout=120)
-            print(response.url)
-            response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
-            print("pase")
-            data = response.json()  # Convertimos los datos a JSON
-            print(data)
+        # try:
+        #     response = requests.post(url_login_token,json=payload,headers=auth_headers, timeout=120)
+        #     print(response.url)
+        #     response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+        #     print("pase")
+        #     data = response.json()  # Convertimos los datos a JSON
+        #     print(data)
             
-            if 'userinfo' in data:
-                if 'userinfo' in data['userinfo']:
-                    info = data['userinfo']['userinfo']
+        #     if 'userinfo' in data:
+        #         if 'userinfo' in data['userinfo']:
+        #             info = data['userinfo']['userinfo']
 
-                    token = info['tokens']['access']
-                    print(token)
-                    return token
-            return None
-        except requests.RequestException as e:
-            print(f"Error en la solicitud: {e}")
-            return None  # Manejo de errores de solicitud
+        #             token = info['tokens']['access']
+        #             print(token)
+        #             return token
+        #     return None
+        # except requests.RequestException as e:
+        #     print(f"Error en la solicitud: {e}")
+        #     return None  # Manejo de errores de solicitud
 
 
     def get_firmas_funcionarios_sasoft(self,username,token):
