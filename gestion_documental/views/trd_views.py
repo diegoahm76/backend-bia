@@ -4156,43 +4156,43 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         #     print(f"Error en la solicitud: {e}")
         #     return None  # Manejo de errores de solicitud
 
-        headers = {
-            "accept": "application/json",
-            "Content-Type": "application/json"
-        }
+        # headers = {
+        #     "accept": "application/json",
+        #     "Content-Type": "application/json"
+        # }
 
-        url = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/Login"
+        # url = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/Login"
 
-        payload={
+        # payload={
 
-            "nombre_de_usuario": "juansandino",
-            "password": "Prueba12345+"
-        }
+        #     "nombre_de_usuario": "juansandino",
+        #     "password": "Prueba12345+"
+        # }
         
 
 
-        try:
-            response = requests.post(url, json=payload, headers=headers)
-            print(f"Request URL: {response.url}")
-            print(f"Response Status Code: {response.status_code}")
-            print("")
+        # try:
+        #     response = requests.post(url, json=payload, headers=headers)
+        #     print(f"Request URL: {response.url}")
+        #     print(f"Response Status Code: {response.status_code}")
+        #     print("")
 
-            response.raise_for_status()
+        #     response.raise_for_status()
 
-            data = response.json()
-            print("Response JSON:", data)
-        except requests.exceptions.HTTPError as http_err:
-            print(f"HTTP error occurred: {http_err}")
-        except requests.exceptions.RequestException as err:
-            print(f"Error occurred: {err}")
+        #     data = response.json()
+        #     print("Response JSON:", data)
+        # except requests.exceptions.HTTPError as http_err:
+        #     print(f"HTTP error occurred: {http_err}")
+        # except requests.exceptions.RequestException as err:
+        #     print(f"Error occurred: {err}")
 
 
         url_login_token = "https://jsonplaceholder.typicode.com/posts"
 
         payload2 = {
-        "userId": 1,
-        "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
-        "body": "quia et suscipit suscipit recusandae consequuntur expedita et cum reprehenderit molestiae ut ut quas totam nostrum rerum est autem sunt rem eveniet architecto"
+            "userId": 1,
+            "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+            "body": "quia et suscipit suscipit recusandae consequuntur expedita et cum reprehenderit molestiae ut ut quas totam nostrum rerum est autem sunt rem eveniet architecto"
         }
 
         auth_headers = {
