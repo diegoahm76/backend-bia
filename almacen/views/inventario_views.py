@@ -486,7 +486,7 @@ class ControlStockGetView(generics.ListAPIView):
         cod_tipo_entrada = self.request.query_params.get('cod_tipo_entrada')
         id_bodega = self.request.query_params.get('id_bodega')
         id_persona_responsable = self.request.query_params.get('id_persona_responsable')
-        consecutivo = self.request.query_params.get('consecutivo')
+        id_persona_origen = self.request.query_params.get('id_persona_origen')
 
         if solicitable_vivero:
             queryset = queryset.filter(id_bien__solicitable_vivero=(solicitable_vivero.lower() == 'true'))
@@ -503,11 +503,9 @@ class ControlStockGetView(generics.ListAPIView):
         if id_bodega:
             queryset = queryset.filter(id_bodega=id_bodega)
         
-        if id_persona_responsable:
-            queryset = queryset.filter(id_persona_responsable=id_persona_responsable)
+        if id_persona_origen:
+            queryset = queryset.filter(id_persona_origen=id_persona_origen)
 
-        if consecutivo:
-            queryset = queryset.filter(id_bien__nro_elemento_bien=consecutivo)
 
         return queryset
 
@@ -522,7 +520,6 @@ class ControlStockGetView(generics.ListAPIView):
             cod_tipo_entrada_stock=F('cod_tipo_entrada'),
             nombre_cod_tipo_entrada_stock=F('cod_tipo_entrada__nombre'),
             cod_tipo_bien=F('id_bien__cod_tipo_bien'),
-            consecutivo=F('id_bien__nro_elemento_bien'),
             id_bodega_stock=F('id_bodega'),
             nombre_bodega_stock=F('id_bodega__nombre'),
             fecha_ultimo_mov=F('fecha_ultimo_movimiento'),
@@ -543,6 +540,17 @@ class ControlStockGetView(generics.ListAPIView):
                 F('id_persona_responsable__primer_apellido'),
                 Value(' '),
                 F('id_persona_responsable__segundo_apellido'),
+                output_field=CharField()
+            ),
+            id_persona_origen_stock=F('id_persona_origen'),
+            nombre_completo_persona_origen=Concat(
+                F('id_persona_origen__primer_nombre'),
+                Value(' '),
+                F('id_persona_origen__segundo_nombre'),
+                Value(' '),
+                F('id_persona_origen__primer_apellido'),
+                Value(' '),
+                F('id_persona_origen__segundo_apellido'),
                 output_field=CharField()
             )
         ).order_by('nombre_bien')

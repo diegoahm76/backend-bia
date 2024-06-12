@@ -12,7 +12,12 @@ class EntradasInventarioGetSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
+    cod_tipo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
+    placa_serial = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
     fecha_entrada = serializers.ReadOnlyField(source='id_entrada_almacen.fecha_entrada', default=None)
+    id_responsable = serializers.ReadOnlyField(source='id_bodega.id_responsable.id_persona', default=None)
+    id_proveedor = serializers.ReadOnlyField(source='id_entrada_almacen.id_proveedor.id_persona', default=None)
     responsable_bodega = serializers.SerializerMethodField()
     nombre_proveedor = serializers.SerializerMethodField()
     entrada = serializers.SerializerMethodField()
@@ -55,7 +60,13 @@ class EntradasInventarioGetSerializer(serializers.ModelSerializer):
             'entrada',
             'fecha_entrada',
             'responsable_bodega',
-            'nombre_proveedor'
+            'nombre_proveedor',
+            'consecutivo',
+            'cod_tipo_activo',
+            'placa_serial',
+            'id_responsable',
+            'id_proveedor',
+            
         ]
         model = ItemEntradaAlmacen
         
@@ -67,9 +78,22 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
     codigo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.cod_tipo_activo', default=None)
     tipo_activo = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
     codigo_estado_nombre = serializers.ReadOnlyField(source='cod_estado.nombre', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
+    placa_serial = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
     id_responsable = serializers.ReadOnlyField(source='id_bodega.id_responsable.id_persona', default=None)
-    nombre_responsable = serializers.ReadOnlyField(source='id_bodega.id_responsable.primer_nombre', default=None)
-    apellido_responsable = serializers.ReadOnlyField(source='id_bodega.id_responsable.primer_apellido', default=None)
+    responsable_bodega = serializers.SerializerMethodField()
+
+
+
+    def get_responsable_bodega(self, obj):
+        nombre_completo_responsable = None
+        if obj.id_bodega.id_responsable:
+            nombre_list = [obj.id_bodega.id_responsable.primer_nombre, obj.id_bodega.id_responsable.segundo_nombre,
+                            obj.id_bodega.id_responsable.primer_apellido, obj.id_bodega.id_responsable.segundo_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
 
     
     class Meta:
@@ -86,8 +110,9 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
             'cod_estado',
             'codigo_estado_nombre',
             'id_responsable',
-            'nombre_responsable',
-            'apellido_responsable'
+            'responsable_bodega',
+            'consecutivo',
+            'placa_serial',
         ]
         model = ItemEntradaAlmacen
 
