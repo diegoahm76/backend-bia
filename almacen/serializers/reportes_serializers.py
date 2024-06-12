@@ -397,6 +397,9 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
 class ItemDespachoConsumoSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien')
     nombre_bien = serializers.ReadOnlyField(source='id_bien_despachado.nombre')
+    cod_tipo_bien = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_bien')
+    cod_tipo_activo = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo.nombre')
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre')
     cantidad = serializers.ReadOnlyField(source='cantidad_despachada')
     fecha_entrega = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho')
     responsable = serializers.SerializerMethodField()
