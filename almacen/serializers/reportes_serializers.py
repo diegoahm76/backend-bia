@@ -165,6 +165,7 @@ class InventarioSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     identificador_bien = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
     cod_tipo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
+    cod_tipo_bien = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
     consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
     id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
     nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
