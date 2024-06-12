@@ -3992,7 +3992,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         if not consecutivo_tipologia:
             raise NotFound('No se encontró el consecutivo ingresado')
         
-        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.persona.id_persona).first()
         print(doble_verificacion)
         if not doble_verificacion:
             raise ValidationError('No se encuentra un código para el índice ingresado')
