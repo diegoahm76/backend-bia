@@ -28,7 +28,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
             if key in [
                 'id_bodega', 'cod_tipo_bien', 'fecha_desde', 'fecha_hasta',
                 'nombre_bien', 'codigo_bien', 'placa_serial', 
-                'id_proveedor', 'id_responsable', 'consecutivo', 'cod_tipo_activo'
+                'id_proveedor', 'id_responsable', 'consecutivo', 'cod_tipo_activo', 
             ]:
                 if key == 'cod_tipo_bien':
                     if value:
@@ -74,13 +74,13 @@ class EntradasInventarioGetView(generics.ListAPIView):
             items_entrada_data = sorted(serializer_data, key=operator.itemgetter(
                 "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
                 "codigo_bien", "responsable_bodega", "nombre_proveedor",
-                "consecutivo", "cod_tipo_activo", "placa_serial","id_responsable","id_proveedor"
+                "consecutivo", "cod_tipo_activo", "placa_serial","id_responsable","id_proveedor","cod_tipo_bien"
             ))
                 
             for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter(
                 "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
                 "codigo_bien", "responsable_bodega", "nombre_proveedor",
-                "consecutivo", "cod_tipo_activo", "placa_serial","id_responsable","id_proveedor"
+                "consecutivo", "cod_tipo_activo", "placa_serial","id_responsable","id_proveedor","cod_tipo_bien"
             )):
                 detalles = list(items)
                 
@@ -97,6 +97,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
                     del detalle['placa_serial']
                     del detalle['id_responsable']
                     del detalle['id_proveedor']
+                    del detalle['cod_tipo_bien']
                     
                 items_data = {
                     "id_bodega": entrada[0],
@@ -112,6 +113,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
                     "placa_serial": entrada[9],
                     "id_responsable": entrada[10],
                     "id_proveedor": entrada[11],
+                    "cod_tipo_bien": entrada[12],
                     "detalle": detalles
                 }
                 
