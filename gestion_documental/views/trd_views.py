@@ -4025,7 +4025,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
 
                 print("token_camunda", token_camunda)
 
-                img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
+                img = self.get_firmas_funcionarios_sasoft(persona.nombre_de_usuario, token_camunda)
                 print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
