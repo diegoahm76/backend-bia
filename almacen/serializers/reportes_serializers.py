@@ -78,6 +78,7 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
     codigo_activo_nombre = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
     codigo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.cod_tipo_activo', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_bien.id_marca.nombre', default=None)
     tipo_activo = serializers.CharField(source='id_bien.get_cod_tipo_bien_display')
     codigo_estado_nombre = serializers.ReadOnlyField(source='cod_estado.nombre', default=None)
     consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
@@ -115,6 +116,7 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
             'responsable_bodega',
             'consecutivo',
             'placa_serial',
+            'nombre_marca'
         ]
         model = ItemEntradaAlmacen
 
