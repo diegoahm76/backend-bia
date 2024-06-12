@@ -400,14 +400,21 @@ class ViajesAgendadosSerializer(serializers.ModelSerializer):
     
     
 class ItemDespachoConsumoSerializer(serializers.ModelSerializer):
-    codigo_bien = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien')
-    nombre_bien = serializers.ReadOnlyField(source='id_bien_despachado.nombre')
-    cod_tipo_bien = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_bien')
-    cod_tipo_activo = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo.nombre')
-    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre')
-    cantidad = serializers.ReadOnlyField(source='cantidad_despachada')
-    fecha_entrega = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho')
+    codigo_bien = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
+    cod_tipo_bien = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_bien', default=None)
+    cod_tipo_activo = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo.nombre', default=None)
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
+    cantidad = serializers.ReadOnlyField(source='cantidad_despachada', default=None)
+    motivo_despacho = serializers.ReadOnlyField(source='id_despacho_consumo.motivo', default=None)
+    fecha_despacho = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho', default=None)
+    fecha_solicitud = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_solicitud', default=None)
+    fecha_anulacion = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_anulacion', default=None)
+    nombre_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_despacho_consumo.id_unidad_para_la_que_solicita.nombre', default=None)
     responsable = serializers.SerializerMethodField()
+    persona_despacha = serializers.SerializerMethodField()
+    persona_solicita = serializers.SerializerMethodField()
+    persona_anula = serializers.SerializerMethodField()
 
     def get_responsable(self, obj):
         responsable = None
@@ -418,7 +425,36 @@ class ItemDespachoConsumoSerializer(serializers.ModelSerializer):
             responsable = ' '.join(item for item in nombre_list if item is not None)
             responsable = responsable if responsable != "" else None
         return responsable
+    
+    def get_persona_despacha(self, obj):
+        persona_despacha = None
+        if obj.id_despacho_consumo.id_persona_despacha:
+            persona_despacha = obj.id_despacho_consumo.id_persona_despacha
+            nombre_list = [persona_despacha.primer_nombre, persona_despacha.segundo_nombre,
+                           persona_despacha.primer_apellido, persona_despacha.segundo_apellido]
+            persona_despacha = ' '.join(item for item in nombre_list if item is not None)
+            persona_despacha = persona_despacha if persona_despacha != "" else None
+        return persona_despacha
+    
+    def get_persona_solicita(self, obj):
+        persona_solicita = None
+        if obj.id_despacho_consumo.id_persona_solicita:
+            persona_solicita = obj.id_despacho_consumo.id_persona_solicita
+            nombre_list = [persona_solicita.primer_nombre, persona_solicita.segundo_nombre,
+                           persona_solicita.primer_apellido, persona_solicita.segundo_apellido]
+            persona_solicita = ' '.join(item for item in nombre_list if item is not None)
+            persona_solicita = persona_solicita if persona_solicita != "" else None
+        return persona_solicita
 
+    def get_persona_anula(self, obj):
+        persona_anula = None
+        if obj.id_despacho_consumo.id_persona_anula:
+            persona_anula = obj.id_despacho_consumo.id_persona_anula
+            nombre_list = [persona_anula.primer_nombre, persona_anula.segundo_nombre,
+                           persona_anula.primer_apellido, persona_anula.segundo_apellido]
+            persona_anula = ' '.join(item for item in nombre_list if item is not None)
+            persona_anula = persona_anula if persona_anula != "" else None
+        return persona_anula
     class Meta:
         model = ItemDespachoConsumo
         fields = '__all__'
