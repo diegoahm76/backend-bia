@@ -146,6 +146,7 @@ class SolicitudesPendientesAprobarSerializer(serializers.ModelSerializer):
 class CrearItemsSolicitudConsumiblePostSerializer(serializers.ModelSerializer):
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None) 
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
+    nombre_unidad_medida = serializers.ReadOnlyField(source='id_unidad_medida.nombre', default=None)
     
     class Meta:
         model = ItemsSolicitudConsumible
