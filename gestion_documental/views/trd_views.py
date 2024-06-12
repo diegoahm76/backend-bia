@@ -3984,15 +3984,15 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         if not id_consecutivo or not codigo:
             raise ValidationError('Debe enviar el consecutivo y el código')
         
-        persona = request.user.persona
-        print(persona.id_persona)
+        persona = request.user
+        print(persona)
         current_time = datetime.now()
         
         consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
         if not consecutivo_tipologia:
             raise NotFound('No se encontró el consecutivo ingresado')
         
-        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.persona.id_persona).first()
         print(doble_verificacion)
         if not doble_verificacion:
             raise ValidationError('No se encuentra un código para el índice ingresado')
@@ -4007,25 +4007,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
 
-                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
-                # data_in = request.data
-                # if not authorization_header:
-                #     raise ValidationError("No se suministro un Token")
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                data_in = request.data
+                if not authorization_header:
+                    raise ValidationError("No se suministro un Token")
 
-                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
-                # token_camunda=None
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                print("token: ", token)
+                token_camunda=None
         
-                # if 'access' in data_in:
+                if 'access' in data_in:
                     
-                #     token_camunda=data_in['access']
+                    token_camunda=data_in['access']
                     
-                # else:
-                #     token_camunda = self.get_token_camunda(token)
+                else:
+                    token_camunda = self.get_token_camunda(token)
 
-                # print(token_camunda)
+                print("token_camunda", token_camunda)
 
-                # img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
-                # print(img)
+                img = self.get_firmas_funcionarios_sasoft(persona.nombre_de_usuario, token_camunda)
+                print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
