@@ -4007,25 +4007,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
 
-                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
-                # data_in = request.data
-                # if not authorization_header:
-                #     raise ValidationError("No se suministro un Token")
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                data_in = request.data
+                if not authorization_header:
+                    raise ValidationError("No se suministro un Token")
 
-                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
-                # token_camunda=None
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                print("token: ", token)
+                token_camunda=None
         
-                # if 'access' in data_in:
+                if 'access' in data_in:
                     
-                #     token_camunda=data_in['access']
+                    token_camunda=data_in['access']
                     
-                # else:
-                #     token_camunda = self.get_token_camunda(token)
+                else:
+                    token_camunda = self.get_token_camunda(token)
 
-                # print(token_camunda)
+                print("token_camunda", token_camunda)
 
-                # img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
-                # print(img)
+                img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
+                print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
