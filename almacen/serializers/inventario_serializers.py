@@ -74,6 +74,7 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
     cod_tipo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.cod_tipo_activo', default=None)
     categoria = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
     id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
@@ -149,7 +150,8 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
             'cod_estado_activo',
             'estado_activo',
             'fecha_ultimo_movimiento',
-            'tipo_numero_origen'
+            'tipo_numero_origen',
+            'consecutivo'
         ]
         model = Inventario
 

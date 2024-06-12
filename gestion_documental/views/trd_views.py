@@ -7,6 +7,7 @@ import subprocess
 from django.http import JsonResponse
 # import pypandoc
 import requests
+import http.client
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from backend.settings.base import MEDIA_ROOT
 from docxtpl import DocxTemplate
@@ -3992,7 +3993,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         if not consecutivo_tipologia:
             raise NotFound('No se encontró el consecutivo ingresado')
         
-        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.persona.id_persona).first()
         print(doble_verificacion)
         if not doble_verificacion:
             raise ValidationError('No se encuentra un código para el índice ingresado')
@@ -4025,7 +4026,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
 
                 print("token_camunda", token_camunda)
 
-                img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
+                img = self.get_firmas_funcionarios_sasoft(persona.nombre_de_usuario, token_camunda)
                 print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
@@ -4107,13 +4108,13 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return True
         
     def get_token_camunda(self,token):
-
         auth_headers = {
-            "accept": "*/*",
+            "accept": "application/json",
             "Content-Type": "application/json"
         }   
         #TOKEN PARA SASOFTCO
         url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+
 
         payload={
             "access": token
@@ -4141,6 +4142,68 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             print(f"Error en la solicitud: {e}")
             return None  # Manejo de errores de solicitud
 
+        
+
+        
+
+
+        # url_login_token = "https://jsonplaceholder.typicode.com/posts"
+
+        # payload2 = {
+        #     "userId": 1,
+        #     "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+        #     "body": "quia et suscipit suscipit recusandae consequuntur expedita et cum reprehenderit molestiae ut ut quas totam nostrum rerum est autem sunt rem eveniet architecto"
+        # }
+
+        # auth_headers = {
+        #     "accept": "/",
+        #     "Content-Type": "application/json"
+        # }
+
+        # try:
+        #     response = requests.post(url_login_token, json=payload2, headers=auth_headers)
+
+        #     print(f"Request URL: {response.url}")
+        #     print(f"Response Status Code: {response.status_code}")
+
+        #     response.raise_for_status()
+
+        #     data = response.json()
+        #     print("Response JSON:", data)
+
+        # except requests.exceptions.HTTPError as http_err:
+        #     print(f"HTTP error occurred: {http_err}")
+        # except requests.exceptions.RequestException as err:
+        #     print(f"Error occurred: {err}")
+
+        # url = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/Login"
+
+        # payload={
+
+        #     "nombre_de_usuario": "juansandino",
+        #     "password": "Prueba12345+"
+        # }
+        
+        # headers = {
+        #     "accept": "application/json",
+        #     "Content-Type": "application/json"
+        # }
+
+
+        # try:
+        #     response = requests.post(url, json=payload, headers=headers)
+        #     print(f"Request URL: {response.url}")
+        #     print(f"Response Status Code: {response.status_code}")
+        #     print("")
+
+        #     response.raise_for_status()
+
+        #     data = response.json()
+        #     print("Response JSON:", data)
+        # except requests.exceptions.HTTPError as http_err:
+        #     print(f"HTTP error occurred: {http_err}")
+        # except requests.exceptions.RequestException as err:
+        #     print(f"Error occurred: {err}")
 
     def get_firmas_funcionarios_sasoft(self,username,token):
 
