@@ -154,7 +154,7 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     filter['id_entrada_almacen__id_proveedor'] = value
             elif key == 'id_responsable':
                 if value:
-                    filter['id_entrada_almacen__id_responsable'] = value
+                    filter['id_bodega__id_responsable'] = value
             elif key == 'consecutivo':
                 if value:
                     filter['id_bien__nro_elemento_bien'] = value
