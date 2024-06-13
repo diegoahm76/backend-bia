@@ -84,22 +84,41 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
     consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
     placa_serial = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
     id_responsable = serializers.ReadOnlyField(source='id_bodega.id_responsable.id_persona', default=None)
+    id_proveedor = serializers.ReadOnlyField(source='id_entrada_almacen.id_proveedor.id_persona', default=None)
     responsable_bodega = serializers.SerializerMethodField()
-
-
+    proveedor_bodega = serializers.SerializerMethodField()
 
     def get_responsable_bodega(self, obj):
         nombre_completo_responsable = None
         if obj.id_bodega.id_responsable:
-            nombre_list = [obj.id_bodega.id_responsable.primer_nombre, obj.id_bodega.id_responsable.segundo_nombre,
-                            obj.id_bodega.id_responsable.primer_apellido, obj.id_bodega.id_responsable.segundo_apellido]
+            nombre_list = [
+                obj.id_bodega.id_responsable.primer_nombre,
+                obj.id_bodega.id_responsable.segundo_nombre,
+                obj.id_bodega.id_responsable.primer_apellido,
+                obj.id_bodega.id_responsable.segundo_apellido
+            ]
             nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
             nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
         return nombre_completo_responsable
-    
 
-    
+    def get_proveedor_bodega(self, obj):
+        nombre_completo_proveedor = None
+        if obj.id_entrada_almacen.id_proveedor:
+            if obj.id_entrada_almacen.id_proveedor.tipo_persona == 'J':
+                nombre_completo_proveedor = obj.id_entrada_almacen.id_proveedor.razon_social
+            else:
+                nombre_list = [
+                    obj.id_entrada_almacen.id_proveedor.primer_nombre,
+                    obj.id_entrada_almacen.id_proveedor.segundo_nombre,
+                    obj.id_entrada_almacen.id_proveedor.primer_apellido,
+                    obj.id_entrada_almacen.id_proveedor.segundo_apellido
+                ]
+                nombre_completo_proveedor = ' '.join(item for item in nombre_list if item is not None)
+                nombre_completo_proveedor = nombre_completo_proveedor if nombre_completo_proveedor != "" else None
+        return nombre_completo_proveedor
+
     class Meta:
+        model = ItemEntradaAlmacen
         fields = [
             'id_bodega',
             'nombre_bodega',
@@ -116,9 +135,11 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
             'responsable_bodega',
             'consecutivo',
             'placa_serial',
-            'nombre_marca'
+            'nombre_marca',
+            'id_proveedor',
+            'proveedor_bodega'
         ]
-        model = ItemEntradaAlmacen
+
 
 
 class MantenimientosRealizadosGetSerializer(serializers.ModelSerializer):

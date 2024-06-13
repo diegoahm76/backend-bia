@@ -179,14 +179,14 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                 "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
                 "codigo_bien", "tipo_activo", "codigo_activo_nombre", 
                 'codigo_activo', "cod_estado", "codigo_estado_nombre", 
-                'id_responsable', "responsable_bodega","consecutivo","placa_serial","nombre_marca"
+                'id_responsable', "responsable_bodega","consecutivo","placa_serial","nombre_marca","id_proveedor", "proveedor_bodega"
             ))
 
             for entrada, items in itertools.groupby(items_entrada_data, key=operator.itemgetter(
                 "id_bodega", "nombre_bodega", "id_bien", "nombre_bien", 
                 "codigo_bien", "tipo_activo", "codigo_activo_nombre", 
                 'codigo_activo', "cod_estado", "codigo_estado_nombre", 
-                'id_responsable', "responsable_bodega","consecutivo","placa_serial","nombre_marca"
+                'id_responsable', "responsable_bodega","consecutivo","placa_serial","nombre_marca","id_proveedor", "proveedor_bodega"
             )):
                 items_list = list(items)
 
@@ -206,6 +206,8 @@ class MovimientosIncautadosGetView(generics.ListAPIView):
                     "consecutivo": entrada[12],
                     "placa_serial": entrada[13],
                     "nombre_marca": entrada[14],
+                    "id_proveedor": entrada[15],
+                    "proveedor_bodega": entrada[16],
                     "cantidad_ingresada": sum(item['cantidad'] for item in items_list)
                 }
 
@@ -321,6 +323,8 @@ class BusquedaGeneralInventario(generics.ListAPIView):
             'data': serializer.data
         }
         return Response(data)
+    
+
 
     
 

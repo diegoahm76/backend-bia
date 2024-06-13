@@ -238,6 +238,7 @@ class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
     fecha_despacho = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho', default=None)
     nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
     codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    cod_tipo_activo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo.nombre', default=None)
     id_unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.id_unidad_medida', default=None)
     unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.abreviatura', default=None)
     
@@ -252,7 +253,8 @@ class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
             'id_unidad_medida',
             'unidad_medida',
             'es_despacho_conservacion',
-            'fecha_despacho'
+            'fecha_despacho',
+            'cod_tipo_activo'
         ]
         model = ItemDespachoConsumo
         
