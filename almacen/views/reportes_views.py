@@ -493,6 +493,7 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
         id_responsable = self.request.query_params.get('id_responsable')
+        id_persona_autoriza = self.request.query_params.get('id_persona_autoriza')
 
         queryset_vehiculos = HojaDeVidaVehiculos.objects.all()
 
@@ -524,6 +525,10 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         # Filtrar los viajes agendados autorizados asociados a las asignaciones de conductor
         viajes_agendados = ViajesAgendados.objects.filter(id_vehiculo_conductor__in=asignaciones_conductor, viaje_autorizado=True)
 
+        #Filtrar por persona que autoriza
+        if id_persona_autoriza:
+            viajes_agendados = viajes_agendados.filter(id_persona_autoriza=id_persona_autoriza)
+        
         # Filtrar por fecha desde y fecha hasta
         if fecha_desde:
             viajes_agendados = viajes_agendados.filter(fecha_partida_asignada__gte=datetime.strptime(fecha_desde, '%Y-%m-%d'))
