@@ -343,7 +343,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
         no_discriminar = True if no_discriminar.lower() == 'true' else False
 
         for key, value in request.query_params.items():
-            if key in ['es_despacho_conservacion', 'id_bien', 'nombre_bien_despachado','id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula','codigo_bien_despachado']:
+            if key in ['es_despacho_conservacion', 'id_bien', 'nombre_bien_despachado','cod_tipo_activo','id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula','codigo_bien_despachado']:
                 if key == 'es_despacho_conservacion':
                     if value != '':
                         filter['id_despacho_consumo__es_despacho_conservacion'] = True if value.lower() == 'true' else False
@@ -380,6 +380,9 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 elif key == 'nombre_bien_despachado':
                     if value != '':
                         filter['id_bien_despachado__nombre__icontains'] = value
+                elif key == 'cod_tipo_activo':
+                    if value != '':
+                        filter['id_bien_despachado__cod_tipo_activo'] = value
                 else:
                 
                     if value != '':
@@ -396,6 +399,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 codigo_bien_despachado=F('id_bien_despachado__codigo_bien'),
                 id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
                 unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura'),
+                cod_tipo_activo_bien_despachado=F('id_bien_despachado__cod_tipo_activo'),
                 id_bodega_reporte=F('id_bodega'),
                 nombre_bodega=F('id_bodega__nombre'),
                 observacion_reporte=F('observacion'),
@@ -411,6 +415,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 codigo_bien_despachado=F('id_bien_despachado__codigo_bien'),
                 id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
                 unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura'),
+                cod_tipo_activo_bien_despachado=F('id_bien_despachado__cod_tipo_activo'),
                 id_bodega_reporte=F('id_bodega'),
                 nombre_bodega=F('id_bodega__nombre'),
                 fecha_solicitud=F('id_despacho_consumo__fecha_solicitud'),
