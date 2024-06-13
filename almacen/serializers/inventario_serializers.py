@@ -284,6 +284,7 @@ class HistorialMovimientosSerializer(serializers.ModelSerializer):
     ubicacion = serializers.SerializerMethodField()
     responsable_actual = serializers.SerializerMethodField()
     estado_activo = serializers.ReadOnlyField(source='id_inventario.cod_estado_activo.nombre', default=None)
+    tipo_doc_ultimo_movimiento_nombre = serializers.CharField(source='get_tipo_doc_ultimo_movimiento_display', read_only = True, default=None)
     
     def get_propiedad(self, obj):
         propiedad = None

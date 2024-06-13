@@ -336,10 +336,13 @@ class HistorialDeMovimientosInventario(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        id_bien = request.data.get('id_bien')
-        inventario = Inventario.objects.get(id_bien=id_bien)
+        id_bien = request.query_params.get('id_bien')
+        print(id_bien)
+        inventario = Inventario.objects.filter(id_bien=id_bien).first()
+        if not inventario:
+            raise ValidationError('No se encontró el inventario asociado al bien proporcionado.')
 
-        movimientos = HistoricoMovimientosInventario.objects.filter(id_inventario=inventario)
+        movimientos = HistoricoMovimientosInventario.objects.filter(id_inventario=inventario.id_inventario)
         serializer = self.serializer_class(movimientos, many=True)
         return Response({'success': True, 'detail': 'Historial de movimientos obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
 
