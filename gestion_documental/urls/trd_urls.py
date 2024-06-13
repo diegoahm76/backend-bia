@@ -71,7 +71,4 @@ urlpatterns = [
     path('documentos-finalizados-get/', views.DocumentosFinalizadosList.as_view(), name='documentos-finalizados-get'),
     path('crear-documento-cargado/', views.SubirDocumentoAlGenerador.as_view(), name='crear-documento-cargado'),
     path('actualizar-documentos/', views.ActualizarDocumentos.as_view(), name='actualizar-documentos'),
-
-
- 
 ]

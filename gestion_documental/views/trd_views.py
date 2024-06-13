@@ -3308,30 +3308,28 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             
             
             plantilla = request.data.get('plantilla')
-            if not plantilla:
-                raise ValidationError('Debe especificar la plantilla.')
-            
-            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
-
-            
-            if not plantilla.id_tipologia_doc_trd.activo:
-                raise ValidationError('La tipología documental no está activa.')
+            if plantilla:
+                plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
+                if not plantilla.id_tipologia_doc_trd.activo:
+                    raise ValidationError('La tipología documental no está activa.')
+                tipologia = plantilla.id_tipologia_doc_trd
+    
             
             if tipologias_doc:
-                tipologia = tipologias_doc
-            else:
-                tipologia = plantilla.id_tipologia_doc_trd.id_tipologia_documental
+                tipologia = get_object_or_404(TipologiasDoc, id_tipologia_documental=tipologias_doc)
+                if not tipologia.activo:
+                    raise ValidationError('La tipología documental no está activa.')
             
             current_date = datetime.now()
 
             #Validar si la tipologia docuemntal tiene una configuración de consecutivo
-            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=tipologia, agno_tipologia = current_date.year).first()
+            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=tipologia.id_tipologia_documental, agno_tipologia = current_date.year).first()
             if not config_tipologia:
                 raise ValidationError('La tipología documental no tiene una configuración de consecutivo para el año actual.')
             
             if config_tipologia.maneja_consecutivo:
                 catalogo_x_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(
-                    id_tipologia_doc = plantilla.id_tipologia_doc_trd#,
+                    id_tipologia_doc = tipologia.id_tipologia_documental#plantilla.id_tipologia_doc_trd#,
                     #id_catserie_unidadorg_ccd_trd__id_cat_serie_und__id_unidad_organizacional = unidad_organizacional.id_unidad_organizacional,
                 ).first()
 
@@ -3358,7 +3356,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
                         id_plantilla_doc = plantilla,
-                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        id_tipologia_doc = tipologia,
                         CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
                         agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
                         nro_consecutivo = nro_consecutivo,
@@ -3412,7 +3410,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
                         id_plantilla_doc = plantilla,
-                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        id_tipologia_doc = tipologia,
                         agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
                         nro_consecutivo = nro_consecutivo,
                         prefijo_consecutivo = consecutivo.prefijo_consecutivo,
@@ -4140,7 +4138,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return None
         except requests.RequestException as e:
             print(f"Error en la solicitud: {e}")
-            return None  # Manejo de errores de solicitud
+            raise ValidationError(f"Error en la solicitud: {e}")
 
         
 
@@ -4238,7 +4236,6 @@ class DocumentosFinalizadosList(generics.ListAPIView):
         consecutivos = consecutivos.filter(finalizado= True)
         serializer = self.serializer_class(consecutivos, many=True)
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
-
 
 
 class SubirDocumentoAlGenerador(generics.CreateAPIView):
