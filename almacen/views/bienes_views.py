@@ -34,6 +34,7 @@ from almacen.models.generics_models import (
     Bodegas,
 )
 from almacen.models.inventario_models import (
+    HistoricoMovimientosInventario,
     Inventario,
     TiposEntradas
 )
@@ -1618,6 +1619,12 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
                 tipo_doc_ultimo_movimiento=tipo_doc_ultimo_movimiento,
                 id_registro_doc_ultimo_movimiento=entrada_creada.id_entrada_almacen
             )
+
+            historial = HistoricoMovimientosInventario.objects.create(
+                id_inventario=registro_inventario,
+                fecha_ultimo_movimiento=datetime.now(),
+                tipo_doc_ultimo_movimiento=registro_inventario.tipo_doc_ultimo_movimiento
+            )
             if tiene_hoja_vida == True:
                 if bien_padre.cod_tipo_activo:
                     match bien_padre.cod_tipo_activo.cod_tipo_activo:
@@ -1832,6 +1839,11 @@ class UpdateEntrada(generics.RetrieveUpdateAPIView):
                     bien_inventario.tipo_doc_ultimo_movimiento = tipo_doc_ultimo_movimiento
                     bien_inventario.id_persona_origen = proveedor
                 bien_inventario.save()
+                historial = HistoricoMovimientosInventario.objects.create(
+                    id_inventario=bien_inventario,
+                    fecha_ultimo_movimiento=datetime.now(),
+                    tipo_doc_ultimo_movimiento=bien_inventario.tipo_doc_ultimo_movimiento
+                )
         # VALIDACIÓN PERSONA ACTUALIZA
         persona_actualiza = request.user.persona
         if (persona_actualiza.id_persona != entrada.id_creador.id_persona):
