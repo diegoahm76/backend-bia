@@ -406,59 +406,118 @@ class BusquedaViajesAgendados(generics.ListAPIView):
     
 
 
+# class HistoricoTodosViajesAgendados(generics.ListAPIView):
+#     serializer_class = ViajesAgendadosSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         # Obtener los parámetros de los filtros adicionales
+#         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
+#         marca = self.request.query_params.get('marca')
+#         placa = self.request.query_params.get('placa')
+#         es_arrendado = self.request.query_params.get('es_arrendado')
+#         fecha_desde = self.request.query_params.get('fecha_desde')
+#         fecha_hasta = self.request.query_params.get('fecha_hasta')
+#         id_responsable = self.request.query_params.get('id_responsable')
+
+#         queryset_vehiculos = HojaDeVidaVehiculos.objects.all()
+
+#         if tipo_vehiculo:
+#             queryset_vehiculos = queryset_vehiculos.filter(cod_tipo_vehiculo=tipo_vehiculo)
+
+#         if id_responsable:
+#             queryset_vehiculos = queryset_vehiculos.filter(id_vehiculo_conductor__id_persona_conductor=id_responsable)
+
+#         if es_arrendado:
+#             queryset_vehiculos = queryset_vehiculos.filter(es_arrendado=es_arrendado)
+
+#         if marca:
+#             queryset_vehiculos = queryset_vehiculos.filter(Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) |
+#                                                            Q(id_articulo__id_marca__nombre__icontains=marca))
+
+#         if placa:
+#             queryset_vehiculos = queryset_vehiculos.filter(Q(es_arrendado=None, id_articulo__doc_identificador_nro__icontains=placa) |
+#                                                            Q(es_arrendado=False, id_articulo__doc_identificador_nro__icontains=placa) |
+#                                                            Q(es_arrendado=True, id_vehiculo_arrendado__placa__icontains=placa))
+
+#         # Filtrar las asignaciones de conductor para los vehículos filtrados
+#         asignaciones_conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo__in=queryset_vehiculos.values('pk'))
+
+#         # Filtrar los viajes agendados autorizados asociados a las asignaciones de conductor
+#         queryset_viajes = []
+#         for asignacion in asignaciones_conductor:
+#             viajes_agendados = asignacion.viajesagendados_set.filter(viaje_autorizado=True)
+
+#             # Filtrar por fecha desde y fecha hasta
+#             if fecha_desde:
+#                 viajes_agendados = viajes_agendados.filter(fecha_partida_asignada__gte=datetime.strptime(fecha_desde, '%Y-%m-%d'))
+#             if fecha_hasta:
+#                 viajes_agendados = viajes_agendados.filter(fecha_retorno_asignada__lte=datetime.strptime(fecha_hasta, '%Y-%m-%d'))
+
+#             queryset_viajes.extend(viajes_agendados)
+
+#         return queryset_viajes
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.serializer_class(queryset, many=True)
+#         return Response({'success': True, 'detail': 'Viajes obtenidos exitosamente', 'data': serializer.data})
+    
 class HistoricoTodosViajesAgendados(generics.ListAPIView):
     serializer_class = ViajesAgendadosSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Obtener los parámetros de los filtros adicionales
         tipo_vehiculo = self.request.query_params.get('tipo_vehiculo')
         marca = self.request.query_params.get('marca')
         placa = self.request.query_params.get('placa')
         es_arrendado = self.request.query_params.get('es_arrendado')
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
+        id_responsable = self.request.query_params.get('id_responsable')
 
         queryset_vehiculos = HojaDeVidaVehiculos.objects.all()
 
         if tipo_vehiculo:
             queryset_vehiculos = queryset_vehiculos.filter(cod_tipo_vehiculo=tipo_vehiculo)
 
-        if es_arrendado:
+        if es_arrendado is not None:
             queryset_vehiculos = queryset_vehiculos.filter(es_arrendado=es_arrendado)
 
         if marca:
-            queryset_vehiculos = queryset_vehiculos.filter(Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) |
-                                                           Q(id_articulo__id_marca__nombre__icontains=marca))
+            queryset_vehiculos = queryset_vehiculos.filter(
+                Q(id_vehiculo_arrendado__id_marca__nombre__icontains=marca) |
+                Q(id_articulo__id_marca__nombre__icontains=marca)
+            )
 
         if placa:
-            queryset_vehiculos = queryset_vehiculos.filter(Q(es_arrendado=None, id_articulo__doc_identificador_nro__icontains=placa) |
-                                                           Q(es_arrendado=False, id_articulo__doc_identificador_nro__icontains=placa) |
-                                                           Q(es_arrendado=True, id_vehiculo_arrendado__placa__icontains=placa))
+            queryset_vehiculos = queryset_vehiculos.filter(
+                Q(es_arrendado=None, id_articulo__doc_identificador_nro__icontains=placa) |
+                Q(es_arrendado=False, id_articulo__doc_identificador_nro__icontains=placa) |
+                Q(es_arrendado=True, id_vehiculo_arrendado__placa__icontains=placa)
+            )
 
-        # Filtrar las asignaciones de conductor para los vehículos filtrados
+        # Obtener las asignaciones de conductor para los vehículos filtrados
         asignaciones_conductor = VehiculosAgendables_Conductor.objects.filter(id_hoja_vida_vehiculo__in=queryset_vehiculos.values('pk'))
 
+        if id_responsable:
+            asignaciones_conductor = asignaciones_conductor.filter(id_persona_conductor=id_responsable)
+
         # Filtrar los viajes agendados autorizados asociados a las asignaciones de conductor
-        queryset_viajes = []
-        for asignacion in asignaciones_conductor:
-            viajes_agendados = asignacion.viajesagendados_set.filter(viaje_autorizado=True)
+        viajes_agendados = ViajesAgendados.objects.filter(id_vehiculo_conductor__in=asignaciones_conductor, viaje_autorizado=True)
 
-            # Filtrar por fecha desde y fecha hasta
-            if fecha_desde:
-                viajes_agendados = viajes_agendados.filter(fecha_partida_asignada__gte=datetime.strptime(fecha_desde, '%Y-%m-%d'))
-            if fecha_hasta:
-                viajes_agendados = viajes_agendados.filter(fecha_retorno_asignada__lte=datetime.strptime(fecha_hasta, '%Y-%m-%d'))
+        # Filtrar por fecha desde y fecha hasta
+        if fecha_desde:
+            viajes_agendados = viajes_agendados.filter(fecha_partida_asignada__gte=datetime.strptime(fecha_desde, '%Y-%m-%d'))
+        if fecha_hasta:
+            viajes_agendados = viajes_agendados.filter(fecha_retorno_asignada__lte=datetime.strptime(fecha_hasta, '%Y-%m-%d'))
 
-            queryset_viajes.extend(viajes_agendados)
-
-        return queryset_viajes
+        return viajes_agendados
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
         return Response({'success': True, 'detail': 'Viajes obtenidos exitosamente', 'data': serializer.data})
-    
 
 
 class BusquedaGeneralInventarioActivos(generics.ListAPIView):
@@ -509,8 +568,23 @@ class BusquedaGeneralDespachosConsumo(generics.ListAPIView):
         # Obtener parámetros de consulta
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
+        id_persona_responsable = self.request.query_params.get('id_persona_responsable')
+        id_persona_solicita = self.request.query_params.get('id_persona_solicita')
+        id_persona_despacha = self.request.query_params.get('id_persona_despacha')
+        id_persona_anula = self.request.query_params.get('id_persona_anula')
 
-        # Filtrar por rango de fechas de despacho
+        if id_persona_responsable:
+            queryset = queryset.filter(id_despacho_consumo__id_funcionario_responsable_unidad=id_persona_responsable)
+
+        if id_persona_solicita:
+            queryset = queryset.filter(id_despacho_consumo__id_persona_solicita=id_persona_solicita)
+
+        if id_persona_despacha:
+            queryset = queryset.filter(id_despacho_consumo__id_persona_despacha=id_persona_despacha)
+        
+        if id_persona_anula:
+            queryset = queryset.filter(id_despacho_consumo__id_persona_anula=id_persona_anula)
+
         if fecha_desde:
             queryset = queryset.filter(id_despacho_consumo__fecha_despacho__gte=fecha_desde)
         
