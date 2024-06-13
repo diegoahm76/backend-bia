@@ -1,5 +1,6 @@
 import datetime
 import operator, itertools
+from almacen.models.activos_models import ItemsDespachoActivos
 from almacen.models.bienes_models import ItemEntradaAlmacen
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -11,8 +12,9 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import F, Count, Sum
 from almacen.models.hoja_de_vida_models import HojaDeVidaVehiculos
 from almacen.models.mantenimientos_models import RegistroMantenimientos
+from almacen.serializers.inventario_serializers import HistorialMovimientosSerializer
 from almacen.serializers.reportes_serializers import EntradasInventarioGetSerializer, HojaDeVidaVehiculosSerializer, InventarioReporteSerializer, InventarioSerializer, ItemDespachoConsumoSerializer, MantenimientosRealizadosGetSerializer, MovimientosIncautadosGetSerializer, ViajesAgendadosSerializer
-from almacen.models.inventario_models import Inventario
+from almacen.models.inventario_models import HistoricoMovimientosInventario, Inventario
 from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, PersonasSolicitudViaje, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
 from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible
 
@@ -329,6 +331,17 @@ class BusquedaGeneralInventario(generics.ListAPIView):
         return Response(data)
     
 
+class HistorialDeMovimientosInventario(generics.ListAPIView):
+    serializer_class = HistorialMovimientosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        id_bien = request.data.get('id_bien')
+        inventario = Inventario.objects.get(id_bien=id_bien)
+
+        movimientos = HistoricoMovimientosInventario.objects.filter(id_inventario=inventario)
+        serializer = self.serializer_class(movimientos, many=True)
+        return Response({'success': True, 'detail': 'Historial de movimientos obtenido exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
 
     
 

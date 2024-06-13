@@ -34,7 +34,7 @@ from transversal.models.personas_models import (
     Personas
 )
 from almacen.models.inventario_models import (
-    Inventario
+    Inventario, HistoricoMovimientosInventario
 )
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -973,7 +973,12 @@ class CreateRegistroMantenimiento(generics.CreateAPIView):
         
         inventario.id_registro_doc_ultimo_movimiento = registro_mantenimiento.pk
         inventario.tipo_doc_ultimo_movimiento = 'MANT'
-        inventario.save()        
+        inventario.save()   
+        historial = HistoricoMovimientosInventario.objects.create(
+            id_inventario=inventario,
+            fecha_ultimo_movimiento=datetime.now(),
+            tipo_doc_ultimo_movimiento=inventario.tipo_doc_ultimo_movimiento
+        )     
         
         return Response({'success':True, 'detail':'Mantenimiento registrado con éxito'}, status=status.HTTP_200_OK)
     

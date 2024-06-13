@@ -58,3 +58,14 @@ class Inventario(models.Model):
         verbose_name = 'Inventario'
         verbose_name_plural = 'Inventario'
         unique_together = ['id_bien', 'id_bodega']
+
+class HistoricoMovimientosInventario(models.Model):
+    id_movimiento = models.AutoField(primary_key=True, editable=False, db_column='T097IdMovimiento')
+    id_inventario = models.ForeignKey(Inventario, on_delete=models.CASCADE, db_column='T097IdInventario')
+    fecha_ultimo_movimiento = models.DateTimeField(db_column='T097fechaUltimoMov')
+    tipo_doc_ultimo_movimiento = models.CharField(max_length=5,choices=tipo_doc_ultimo_CHOICES, db_column='T097tipoDocUltimoMov')
+    
+    class Meta:
+        db_table = 'T097HistoricoMovimientosInventario'
+        verbose_name = 'Historico Movimientos Inventario'
+        verbose_name_plural = 'Historico Movimientos Inventario'

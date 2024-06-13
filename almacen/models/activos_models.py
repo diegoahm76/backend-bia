@@ -132,6 +132,7 @@ class DespachoActivos(models.Model):
     id_despacho_activo = models.AutoField(primary_key=True, db_column="T089IdDespachoActivo")
     id_solicitud_activo = models.ForeignKey(SolicitudesActivos, blank=True, null=True, on_delete=models.SET_NULL, db_column='T089Id_SolicitudActivo')
     despacho_sin_solicitud = models.BooleanField(db_column="T089despachoSinSolicitud")
+    es_reasignacion = models.BooleanField(default=False, db_column="T089esReasignacion")
     estado_despacho = models.CharField(max_length=2, choices=estado_despacho_CHOICES, db_column="T089estadoDespacho")
     fecha_autorizacion_resp = models.DateTimeField(blank=True, null=True,db_column='T089fechaAutorizacionResp')
     justificacion_rechazo_resp = models.CharField(max_length=255, blank=True, null=True, db_column="T089justificacionRechazoResp")
