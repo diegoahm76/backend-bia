@@ -4140,7 +4140,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return None
         except requests.RequestException as e:
             print(f"Error en la solicitud: {e}")
-            return None  # Manejo de errores de solicitud
+            raise ValidationError(f"Error en la solicitud: {e}")
 
         
 
@@ -4239,6 +4239,27 @@ class DocumentosFinalizadosList(generics.ListAPIView):
         serializer = self.serializer_class(consecutivos, many=True)
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+class TestSasoftcoLoginView(generics.ListAPIView):
+    serializer_class = ConsecutivoTipologiaDocFinalizadosSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        data_in = request.data
+        if not authorization_header:
+            raise ValidationError("No se suministro un Token")
+
+        token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+        print("token: ", token)
+        token_camunda=None
+
+        if 'access' in data_in:
+            token_camunda=data_in['access']
+        else:
+            validacion_codigo_class = ValidacionCodigoView()
+            token_camunda = validacion_codigo_class.get_token_camunda(token)
+        return Response({'success':True, 'detail':'Se obtuvo el siguiente token de camunda', 'token_camunda': token_camunda}, status=status.HTTP_200_OK)
 
 
 class SubirDocumentoAlGenerador(generics.CreateAPIView):
