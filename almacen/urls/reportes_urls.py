@@ -15,6 +15,8 @@ urlpatterns = [
     path('reporte-bienes-activos/get-list/', views.BusquedaGeneralInventarioActivos.as_view(), name='historico-bienes-activos-list'),
     path('reporte-bienes-consumo/get-list/', views.BusquedaGeneralDespachosConsumo.as_view(), name='historico-bienes-consumo-list'),
 
+    path('reporte-historial-moviminetos/get/', views.HistorialDeMovimientosInventario.as_view(), name='historico-movimientos-list'),
+
 
     
 ]
