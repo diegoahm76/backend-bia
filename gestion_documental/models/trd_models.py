@@ -203,7 +203,7 @@ class ConsecPorNivelesTipologiasDocAgno(models.Model):
 class ConsecutivoTipologia(models.Model):
     id_consecutivo_tipologia = models.AutoField(primary_key=True, db_column='T319IdConsecutivoTipologia')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T319Id_UnidadOrganizacional')
-    id_plantilla_doc = models.ForeignKey('gestion_documental.PlantillasDoc', on_delete=models.CASCADE, db_column='T319Id_Plantilla_Doc')
+    id_plantilla_doc = models.ForeignKey('gestion_documental.PlantillasDoc', on_delete=models.SET_NULL, db_column='T319Id_Plantilla_Doc', blank=True, null=True)
     id_tipologia_doc = models.ForeignKey(TipologiasDoc, on_delete=models.CASCADE, db_column='T319Id_TipologiaDoc')
     CatalogosSeriesUnidad = models.ForeignKey('gestion_documental.CatalogosSeriesUnidad',blank=True,null=True ,on_delete=models.SET_NULL, db_column='T329Id_CatalogoSeriesUnidad',related_name='T319Id_CatalogoSeriesUnidad')
     agno_consecutivo = models.SmallIntegerField(db_column='T319agnoConsecutivo', null=True, blank=True)
