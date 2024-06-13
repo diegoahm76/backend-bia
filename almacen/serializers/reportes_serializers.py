@@ -85,6 +85,7 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
     placa_serial = serializers.ReadOnlyField(source='id_bien.doc_identificador_nro', default=None)
     id_responsable = serializers.ReadOnlyField(source='id_bodega.id_responsable.id_persona', default=None)
     id_proveedor = serializers.ReadOnlyField(source='id_entrada_almacen.id_proveedor.id_persona', default=None)
+    fecha_entrada = serializers.ReadOnlyField(source='id_entrada_almacen.fecha_entrada', default=None)
     responsable_bodega = serializers.SerializerMethodField()
     proveedor_bodega = serializers.SerializerMethodField()
 
@@ -137,7 +138,8 @@ class MovimientosIncautadosGetSerializer(serializers.ModelSerializer):
             'placa_serial',
             'nombre_marca',
             'id_proveedor',
-            'proveedor_bodega'
+            'proveedor_bodega',
+            'fecha_entrada'
         ]
 
 
