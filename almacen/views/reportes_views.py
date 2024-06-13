@@ -55,7 +55,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
                         filter['id_entrada_almacen__id_proveedor'] = value
                 elif key == 'id_responsable':
                     if value:
-                        filter['id_entrada_almacen__id_responsable'] = value
+                        filter['id_bodega__id_responsable'] = value
                 elif key == 'consecutivo':
                     if value:
                         filter['id_bien__nro_elemento_bien'] = value
@@ -122,6 +122,8 @@ class EntradasInventarioGetView(generics.ListAPIView):
                 data_output.append(items_data)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
+    
+
 
 class MovimientosIncautadosGetView(generics.ListAPIView):
     serializer_class = MovimientosIncautadosGetSerializer
