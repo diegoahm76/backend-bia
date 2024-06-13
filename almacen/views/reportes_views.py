@@ -55,7 +55,7 @@ class EntradasInventarioGetView(generics.ListAPIView):
                         filter['id_entrada_almacen__id_proveedor'] = value
                 elif key == 'id_responsable':
                     if value:
-                        filter['id_entrada_almacen__id_responsable'] = value
+                        filter['id_bodega__id_responsable'] = value
                 elif key == 'consecutivo':
                     if value:
                         filter['id_bien__nro_elemento_bien'] = value
@@ -122,6 +122,8 @@ class EntradasInventarioGetView(generics.ListAPIView):
                 data_output.append(items_data)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
+    
+
 
 class MovimientosIncautadosGetView(generics.ListAPIView):
     serializer_class = MovimientosIncautadosGetSerializer
@@ -491,6 +493,7 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
         id_responsable = self.request.query_params.get('id_responsable')
+        id_persona_autoriza = self.request.query_params.get('id_persona_autoriza')
 
         queryset_vehiculos = HojaDeVidaVehiculos.objects.all()
 
@@ -522,6 +525,10 @@ class HistoricoTodosViajesAgendados(generics.ListAPIView):
         # Filtrar los viajes agendados autorizados asociados a las asignaciones de conductor
         viajes_agendados = ViajesAgendados.objects.filter(id_vehiculo_conductor__in=asignaciones_conductor, viaje_autorizado=True)
 
+        #Filtrar por persona que autoriza
+        if id_persona_autoriza:
+            viajes_agendados = viajes_agendados.filter(id_persona_autoriza=id_persona_autoriza)
+        
         # Filtrar por fecha desde y fecha hasta
         if fecha_desde:
             viajes_agendados = viajes_agendados.filter(fecha_partida_asignada__gte=datetime.strptime(fecha_desde, '%Y-%m-%d'))
