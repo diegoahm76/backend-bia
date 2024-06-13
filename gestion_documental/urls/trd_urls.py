@@ -73,5 +73,6 @@ urlpatterns = [
     path('actualizar-documentos/', views.ActualizarDocumentos.as_view(), name='actualizar-documentos'),
 
 
- 
+    # TESTING
+    path('test-sasoftco-login/', views.TestSasoftcoLoginView.as_view(), name='test-sasoftco-login'),
 ]
