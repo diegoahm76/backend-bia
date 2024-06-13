@@ -471,12 +471,18 @@ class BusquedaGeneralInventarioActivos(generics.ListAPIView):
         fecha_desde = self.request.query_params.get('fecha_desde')
         fecha_hasta = self.request.query_params.get('fecha_hasta')
         cod_tipo_activo = self.request.query_params.get('cod_tipo_activo')
+        id_persona_origen = self.request.query_params.get('id_persona_origen')
+        id_persona_responsable = self.request.query_params.get('id_persona_responsable')
 
-        # Filtrar por código de tipo de activo
+        if id_persona_responsable:
+            queryset = queryset.filter(id_persona_responsable=id_persona_responsable)
+        
+        if id_persona_origen:
+            queryset = queryset.filter(id_persona_origen=id_persona_origen)
+
         if cod_tipo_activo:
             queryset = queryset.filter(id_bien__cod_tipo_activo=cod_tipo_activo)
 
-        # Filtrar por fecha de último movimiento
         if fecha_desde:
             queryset = queryset.filter(fecha_ultimo_movimiento__gte=fecha_desde)
         
