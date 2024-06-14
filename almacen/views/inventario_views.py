@@ -110,7 +110,9 @@ class ControlActivosFijosGetListView(generics.ListAPIView):
         filter={}
         
         for key,value in request.query_params.items():
-            if key in ['id_bodega','cod_estado_activo','ubicacion','propiedad','cod_tipo_activo', 'realizo_baja', 'realizo_salida', 'cod_tipo_entrada']:
+            if key in ['id_bodega','cod_estado_activo','codigo_bien','ubicacion','propiedad','cod_tipo_activo', 'realizo_baja', 'realizo_salida', 'cod_tipo_entrada',
+                       'fecha_desde','fecha_hasta','consecutivo']:
+                
                 if key == 'cod_tipo_activo':
                     if value != '':
                         filter['id_bien__cod_tipo_activo']=value
@@ -132,6 +134,18 @@ class ControlActivosFijosGetListView(generics.ListAPIView):
                 elif key == 'realizo_salida':
                     if value.lower() == 'true':
                         filter['realizo_salida']=True
+                elif key == 'fecha_desde':
+                    if value:
+                        filter['fecha_ingreso__gte'] = value
+                elif key == 'fecha_hasta':
+                    if value:
+                        filter['fecha_ingreso__lte'] = value
+                elif key == 'codigo_bien':
+                    if value:
+                        filter['id_bien__codigo_bien__icontains'] = value
+                elif key == 'consecutivo':
+                    if value:
+                        filter['id_bien__nro_elemento_bien'] = value
                 else:
                     if value != '':
                         filter[key]=value
@@ -287,23 +301,38 @@ class ControlActivosFijosGetByTipoView(generics.ListAPIView):
         return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output}, status=status.HTTP_200_OK)
 
 class ControlBienesConsumoGetListView(generics.ListAPIView):
-    serializer_class=ControlBienesConsumoGetListSerializer
-    queryset=Inventario.objects.all()
+    serializer_class = ControlBienesConsumoGetListSerializer
+    queryset = Inventario.objects.all()
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
-        filter={}
+    def get(self, request):
+        filter = {}
         agrupado = request.query_params.get('agrupado', '')
         agrupado = True if agrupado.lower() == 'true' else False
         
-        for key,value in request.query_params.items():
-            if key in ['id_bodega','id_bien','solicitable_vivero']:
+        for key, value in request.query_params.items():
+            if key in ['id_bodega', 'id_bien', 'solicitable_vivero', 'codigo_bien', 'fecha_desde', 'fecha_hasta','nombre_bien']:
                 if key == 'solicitable_vivero':
                     if value != '':
-                        filter['id_bien__solicitable_vivero']=True if value.lower() == 'true' else False
+                        filter['id_bien__solicitable_vivero'] = True if value.lower() == 'true' else False
+                elif key == 'codigo_bien':
+                    if value != '':
+                        filter['id_bien__codigo_bien__icontains'] = value
+                elif key == 'nombre_bien':
+                    if value != '':
+                        filter['id_bien__nombre_bien__icontains'] = value
+                elif key == 'id_bodega':
+                    if value != '':
+                        filter['id_bodega'] = value
+                elif key == 'fecha_desde':
+                    if value != '':
+                        filter['fecha_ingreso__gte'] = value
+                elif key == 'fecha_hasta':
+                    if value != '':
+                        filter['fecha_ingreso__lte'] = value
                 else:
                     if value != '':
-                        filter[key]=value
+                        filter[key] = value
         
         inventarios = self.queryset.filter(**filter).filter(id_bien__cod_tipo_bien='C')
         
@@ -330,7 +359,8 @@ class ControlBienesConsumoGetListView(generics.ListAPIView):
         else:
             data_output = serializer.data
 
-        return Response({'success':True,'detail':'Se encontró la siguiente información','data':data_output},status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
+
 
 class ControlConsumoBienesGetListView(generics.ListAPIView):
     serializer_class = ControlConsumoBienesGetListSerializer
@@ -343,7 +373,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
         no_discriminar = True if no_discriminar.lower() == 'true' else False
 
         for key, value in request.query_params.items():
-            if key in ['es_despacho_conservacion', 'id_bien', 'nombre_bien_despachado','cod_tipo_activo','id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable','id_persona_solicita','id_persona_despacha','id_persona_anula','codigo_bien_despachado']:
+            if key in ['es_despacho_conservacion', 'id_bien', 'nombre_bien_despachado', 'cod_tipo_activo', 'id_unidad_para_la_que_solicita', 'fecha_desde', 'fecha_hasta', 'id_bodega_reporte', 'id_funcionario_responsable', 'id_persona_solicita', 'id_persona_despacha', 'id_persona_anula', 'codigo_bien_despachado']:
                 if key == 'es_despacho_conservacion':
                     if value != '':
                         filter['id_despacho_consumo__es_despacho_conservacion'] = True if value.lower() == 'true' else False
@@ -384,7 +414,6 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                     if value != '':
                         filter['id_bien_despachado__cod_tipo_activo'] = value
                 else:
-                
                     if value != '':
                         filter[key] = value
 
@@ -400,6 +429,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 id_unidad_medida=F('id_bien_despachado__id_unidad_medida__id_unidad_medida'),
                 unidad_medida=F('id_bien_despachado__id_unidad_medida__abreviatura'),
                 cod_tipo_activo_bien_despachado=F('id_bien_despachado__cod_tipo_activo'),
+                fecha_registro=F('id_despacho_consumo__fecha_registro'),
                 id_bodega_reporte=F('id_bodega'),
                 nombre_bodega=F('id_bodega__nombre'),
                 observacion_reporte=F('observacion'),
@@ -421,6 +451,7 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 fecha_solicitud=F('id_despacho_consumo__fecha_solicitud'),
                 fecha_despacho=F('id_despacho_consumo__fecha_despacho'),
                 fecha_anulacion=F('id_despacho_consumo__fecha_anulacion'),
+                fecha_registro=F('id_despacho_consumo__fecha_registro'),
                 justificacion_anulacion=F('id_despacho_consumo__justificacion_anulacion'),
                 observacion_reporte=F('observacion'),
                 motivo=F('id_despacho_consumo__motivo'),
@@ -472,9 +503,15 @@ class ControlConsumoBienesGetListView(generics.ListAPIView):
                 if not item['id_unidad_para_la_que_solicita']:
                     item['nombre_unidad_para_la_que_solicita'] = 'Entrega a Viveros'
 
-        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
-    
+        # Calcular la cantidad existente para cada bien
+        for item in data_output:
+            bien_id = item['id_bien_despachado']
+            inventario = Inventario.objects.filter(id_bien=bien_id)
+            cantidad_entrante_consumo = inventario.aggregate(Sum('cantidad_entrante_consumo'))['cantidad_entrante_consumo__sum'] or 0
+            cantidad_saliente_consumo = inventario.aggregate(Sum('cantidad_saliente_consumo'))['cantidad_saliente_consumo__sum'] or 0
+            item['cantidad_existente'] = cantidad_entrante_consumo - cantidad_saliente_consumo
 
+        return Response({'success': True, 'detail': 'Se encontró la siguiente información', 'data': data_output}, status=status.HTTP_200_OK)
 
 
 class ControlStockGetView(generics.ListAPIView):
