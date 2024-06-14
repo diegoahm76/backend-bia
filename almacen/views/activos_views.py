@@ -28,7 +28,7 @@ from django.db.models.functions import Lower
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
 from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen, EstadosArticulo
 from almacen.serializers.activos_serializer import ActivosDespachadosDevolucionSerializer, ActivosDevolucionadosSerializer, AlmacenistaLogueadoSerializer, AnexoSerializer, AnexosDocsAlmaSerializer, AnexosOpcionalesDocsAlmaSerializer, ArchivosDigitalesSerializer, AsignacionActivosSerializer, BajaActivosSerializer, BodegasSerializer, BusquedaArticuloSubSerializer, BusquedaSolicitudActivoSerializer, CatalogoBienesSerializer, ClasesTerceroPersonaSerializer, CodigoBarrasSerializer, DespachoActivosCreateSerializer, DespachoActivosSerializer, DespachoSinSolicitudSerializer, DetalleSolicitudActivosSerializer, DevolucionActivosSerializer, EntradasAlmacenSerializer, EstadosArticuloSerializer, InventarioSerializer, ItemEntradaAlmacenSerializer, ItemSolicitudActivosSerializer, ItemsBajaActivosSerializer, ItemsDespachoActivosSerializer, ItemsSolicitudActivosSerializer, RegistrarBajaAnexosCreateSerializer, RegistrarBajaBienesCreateSerializer, RegistrarBajaCreateSerializer, SalidasEspecialesArticulosSerializer, SalidasEspecialesSerializer, SolicitudesActivosSerializer, UnidadesMedidaSerializer
-from almacen.models.inventario_models import Inventario
+from almacen.models.inventario_models import Inventario, HistoricoMovimientosInventario
 from seguridad.models import Personas
 from almacen.models.bienes_models import CatalogoBienes, EntradasAlmacen, Bodegas
 from almacen.models.activos_models import ActivosDevolucionados, AnexosDocsAlma, AsignacionActivos, BajaActivos, DespachoActivos, DevolucionActivos, ItemsBajaActivos, ItemsDespachoActivos, ItemsSolicitudActivos, SalidasEspecialesArticulos, SolicitudesActivos
@@ -173,6 +173,12 @@ class RegistrarBajaCreateView(generics.CreateAPIView):
                 inventario.tipo_doc_ultimo_movimiento = 'BAJA'
                 inventario.id_registro_doc_ultimo_movimiento = baja_creada.id_baja_activo
                 inventario.save()
+
+                historial = HistoricoMovimientosInventario.objects.create(
+                    id_inventario=inventario,
+                    fecha_ultimo_movimiento=current_date,
+                    tipo_doc_ultimo_movimiento=inventario.tipo_doc_ultimo_movimiento
+                )
 
         serializer_bienes = self.serializer_bienes_class(data=bienes, many=True)
         serializer_bienes.is_valid(raise_exception=True)
@@ -1379,6 +1385,12 @@ class CrearSalidaEspecialView(generics.CreateAPIView):
             inventario_obj.id_registro_doc_ultimo_movimiento = None
             inventario_obj.save()
 
+            historial = HistoricoMovimientosInventario.objects.create(
+                id_inventario=inventario_obj,
+                fecha_ultimo_movimiento=current_date,
+                tipo_doc_ultimo_movimiento=inventario_obj.tipo_doc_ultimo_movimiento
+            )
+
         if anexos_data and anexos:
             anexos_data = json.loads(data.get('anexos'))
 
@@ -1855,6 +1867,12 @@ class DevolucionActivosCreateView(generics.CreateAPIView):
                 inventario_obj.tipo_doc_ultimo_movimiento = 'DEV_P' if despacho_tipo else 'DEV_A'
                 inventario_obj.id_registro_doc_ultimo_movimiento = None
                 inventario_obj.save()
+
+                historial = HistoricoMovimientosInventario.objects.create(
+                    id_inventario=inventario_obj,
+                    fecha_ultimo_movimiento=current_date,
+                    tipo_doc_ultimo_movimiento=inventario_obj.tipo_doc_ultimo_movimiento
+                )
         #raise ValidationError("PERE")
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
@@ -3028,6 +3046,12 @@ class CrearReasginacionResponsableView(generics.CreateAPIView):
                 inventario.fecha_ultimo_movimiento = current_date
                 inventario.save()
 
+                historial = HistoricoMovimientosInventario.objects.create(
+                    id_inventario=inventario,
+                    fecha_ultimo_movimiento=current_date,
+                    tipo_doc_ultimo_movimiento=inventario.tipo_doc_ultimo_movimiento
+                )
+
         return Response({'success': True, 'detail': 'Despacho de activo creado exitosamente.'}, status=status.HTTP_201_CREATED)
     
     
@@ -3688,6 +3712,12 @@ class AceptarDespachoPut(generics.UpdateAPIView):
                     inventario.fecha_ultimo_movimiento = datetime.now()
                     inventario.tipo_doc_ultimo_movimiento = 'PRES' if solicitud and solicitud.solicitud_prestamo else 'ASIG'
                     inventario.save()
+
+                    historial = HistoricoMovimientosInventario.objects.create(
+                        id_inventario=inventario,
+                        fecha_ultimo_movimiento=datetime.now(),
+                        tipo_doc_ultimo_movimiento=inventario.tipo_doc_ultimo_movimiento
+                    )
 
             despacho.save()
         

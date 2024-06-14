@@ -7,6 +7,7 @@ import subprocess
 from django.http import JsonResponse
 # import pypandoc
 import requests
+import http.client
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from backend.settings.base import MEDIA_ROOT
 from docxtpl import DocxTemplate
@@ -3307,30 +3308,28 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             
             
             plantilla = request.data.get('plantilla')
-            if not plantilla:
-                raise ValidationError('Debe especificar la plantilla.')
-            
-            plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
-
-            
-            if not plantilla.id_tipologia_doc_trd.activo:
-                raise ValidationError('La tipología documental no está activa.')
+            if plantilla:
+                plantilla = get_object_or_404(PlantillasDoc, id_plantilla_doc=plantilla)
+                if not plantilla.id_tipologia_doc_trd.activo:
+                    raise ValidationError('La tipología documental no está activa.')
+                tipologia = plantilla.id_tipologia_doc_trd
+    
             
             if tipologias_doc:
-                tipologia = tipologias_doc
-            else:
-                tipologia = plantilla.id_tipologia_doc_trd.id_tipologia_documental
+                tipologia = get_object_or_404(TipologiasDoc, id_tipologia_documental=tipologias_doc)
+                if not tipologia.activo:
+                    raise ValidationError('La tipología documental no está activa.')
             
             current_date = datetime.now()
 
             #Validar si la tipologia docuemntal tiene una configuración de consecutivo
-            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=tipologia, agno_tipologia = current_date.year).first()
+            config_tipologia = ConfigTipologiasDocAgno.objects.filter(id_tipologia_doc=tipologia.id_tipologia_documental, agno_tipologia = current_date.year).first()
             if not config_tipologia:
                 raise ValidationError('La tipología documental no tiene una configuración de consecutivo para el año actual.')
             
             if config_tipologia.maneja_consecutivo:
                 catalogo_x_tipologia = SeriesSubSUnidadOrgTRDTipologias.objects.filter(
-                    id_tipologia_doc = plantilla.id_tipologia_doc_trd#,
+                    id_tipologia_doc = tipologia.id_tipologia_documental#plantilla.id_tipologia_doc_trd#,
                     #id_catserie_unidadorg_ccd_trd__id_cat_serie_und__id_unidad_organizacional = unidad_organizacional.id_unidad_organizacional,
                 ).first()
 
@@ -3357,7 +3356,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
                         id_plantilla_doc = plantilla,
-                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        id_tipologia_doc = tipologia,
                         CatalogosSeriesUnidad = catalogo_x_tipologia.id_catserie_unidadorg_ccd_trd.id_cat_serie_und,
                         agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
                         nro_consecutivo = nro_consecutivo,
@@ -3411,7 +3410,7 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
                     generar_consecutivo = ConsecutivoTipologia.objects.create(
                         id_unidad_organizacional = unidad_organizacional,
                         id_plantilla_doc = plantilla,
-                        id_tipologia_doc = plantilla.id_tipologia_doc_trd,
+                        id_tipologia_doc = tipologia,
                         agno_consecutivo = consecutivo.id_config_tipologia_doc_agno.agno_tipologia,
                         nro_consecutivo = nro_consecutivo,
                         prefijo_consecutivo = consecutivo.prefijo_consecutivo,
@@ -3984,15 +3983,15 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         if not id_consecutivo or not codigo:
             raise ValidationError('Debe enviar el consecutivo y el código')
         
-        persona = request.user.persona
-        print(persona.id_persona)
+        persona = request.user
+        print(persona)
         current_time = datetime.now()
         
         consecutivo_tipologia = get_object_or_404(ConsecutivoTipologia, id_consecutivo_tipologia=id_consecutivo)
         if not consecutivo_tipologia:
             raise NotFound('No se encontró el consecutivo ingresado')
         
-        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.id_persona).first()
+        doble_verificacion = DobleVerificacionTmp.objects.filter(id_consecutivo_tipologia=consecutivo_tipologia.id_consecutivo_tipologia, id_persona_firma=persona.persona.id_persona).first()
         print(doble_verificacion)
         if not doble_verificacion:
             raise ValidationError('No se encuentra un código para el índice ingresado')
@@ -4007,25 +4006,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 doble_verificacion.verificacion_exitosa = True
                 doble_verificacion.save()
 
-                # authorization_header = request.META.get('HTTP_AUTHORIZATION')
-                # data_in = request.data
-                # if not authorization_header:
-                #     raise ValidationError("No se suministro un Token")
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                data_in = request.data
+                if not authorization_header:
+                    raise ValidationError("No se suministro un Token")
 
-                # token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
-                # token_camunda=None
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                print("token: ", token)
+                token_camunda=None
         
-                # if 'access' in data_in:
+                if 'access' in data_in:
                     
-                #     token_camunda=data_in['access']
+                    token_camunda=data_in['access']
                     
-                # else:
-                #     token_camunda = self.get_token_camunda(token)
+                else:
+                    token_camunda = self.get_token_camunda(token)
 
-                # print(token_camunda)
+                print("token_camunda", token_camunda)
 
-                # img = self.get_firmas_funcionarios_sasoft(persona.username, token_camunda)
-                # print(img)
+                img = self.get_firmas_funcionarios_sasoft(persona.nombre_de_usuario, token_camunda)
+                print(img)
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
@@ -4106,13 +4106,13 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return True
         
     def get_token_camunda(self,token):
-
         auth_headers = {
-            "accept": "*/*",
+            "accept": "application/json",
             "Content-Type": "application/json"
         }   
         #TOKEN PARA SASOFTCO
         url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+
 
         payload={
             "access": token
@@ -4138,8 +4138,70 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             return None
         except requests.RequestException as e:
             print(f"Error en la solicitud: {e}")
-            return None  # Manejo de errores de solicitud
+            raise ValidationError(f"Error en la solicitud: {e}")
 
+        
+
+        
+
+
+        # url_login_token = "https://jsonplaceholder.typicode.com/posts"
+
+        # payload2 = {
+        #     "userId": 1,
+        #     "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+        #     "body": "quia et suscipit suscipit recusandae consequuntur expedita et cum reprehenderit molestiae ut ut quas totam nostrum rerum est autem sunt rem eveniet architecto"
+        # }
+
+        # auth_headers = {
+        #     "accept": "/",
+        #     "Content-Type": "application/json"
+        # }
+
+        # try:
+        #     response = requests.post(url_login_token, json=payload2, headers=auth_headers)
+
+        #     print(f"Request URL: {response.url}")
+        #     print(f"Response Status Code: {response.status_code}")
+
+        #     response.raise_for_status()
+
+        #     data = response.json()
+        #     print("Response JSON:", data)
+
+        # except requests.exceptions.HTTPError as http_err:
+        #     print(f"HTTP error occurred: {http_err}")
+        # except requests.exceptions.RequestException as err:
+        #     print(f"Error occurred: {err}")
+
+        # url = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/Login"
+
+        # payload={
+
+        #     "nombre_de_usuario": "juansandino",
+        #     "password": "Prueba12345+"
+        # }
+        
+        # headers = {
+        #     "accept": "application/json",
+        #     "Content-Type": "application/json"
+        # }
+
+
+        # try:
+        #     response = requests.post(url, json=payload, headers=headers)
+        #     print(f"Request URL: {response.url}")
+        #     print(f"Response Status Code: {response.status_code}")
+        #     print("")
+
+        #     response.raise_for_status()
+
+        #     data = response.json()
+        #     print("Response JSON:", data)
+        # except requests.exceptions.HTTPError as http_err:
+        #     print(f"HTTP error occurred: {http_err}")
+        # except requests.exceptions.RequestException as err:
+        #     print(f"Error occurred: {err}")
 
     def get_firmas_funcionarios_sasoft(self,username,token):
 
@@ -4174,7 +4236,6 @@ class DocumentosFinalizadosList(generics.ListAPIView):
         consecutivos = consecutivos.filter(finalizado= True)
         serializer = self.serializer_class(consecutivos, many=True)
         return Response({'success':True, 'detail':'Se encontraron los siguientes resultados', 'data': serializer.data}, status=status.HTTP_200_OK)
-
 
 
 class SubirDocumentoAlGenerador(generics.CreateAPIView):

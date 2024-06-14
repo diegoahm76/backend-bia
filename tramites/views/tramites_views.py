@@ -199,11 +199,20 @@ class GeneralTramitesUpdateView(generics.UpdateAPIView):
     serializer_class = GeneralTramitesGetSerializer
     permission_classes = [IsAuthenticated]
     
-    def update(self, request, id_solicitud_tramite):
+    def update(self, request, numero_radicado):
         data = request.data
-        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+
+        radicado_split = numero_radicado.split("-")
+        if len(radicado_split) != 3:
+            raise ValidationError('El número de radicado ingresado no es válido')
+        
+        prefijo_radicado = radicado_split[0]
+        agno_radicado = radicado_split[1]
+        nro_radicado = int(radicado_split[2])
+
+        tramite = SolicitudesTramites.objects.filter(id_radicado__prefijo_radicado=prefijo_radicado, id_radicado__agno_radicado=agno_radicado, id_radicado__nro_radicado=nro_radicado).first()
         if not tramite:
-            raise NotFound('No se encontró el trámite ingresado')
+            raise NotFound('No se encontró el trámite por el radicado ingresado')
         
         serializer = self.serializer_class(tramite, data=data, partial=True)
         serializer.is_valid(raise_exception=True)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from almacen.models.bienes_models import CatalogoBienes
-from almacen.models.inventario_models import Inventario, TiposEntradas
+from almacen.models.inventario_models import HistoricoMovimientosInventario, Inventario, TiposEntradas
 from almacen.models.solicitudes_models import ItemDespachoConsumo
 
 class SerializerUpdateInventariosActivosFijos(serializers.ModelSerializer):
@@ -74,6 +74,7 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
     nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre', default=None)
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     codigo_bien = serializers.ReadOnlyField(source='id_bien.codigo_bien', default=None)
+    consecutivo = serializers.ReadOnlyField(source='id_bien.nro_elemento_bien', default=None)
     cod_tipo_activo = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.cod_tipo_activo', default=None)
     categoria = serializers.ReadOnlyField(source='id_bien.cod_tipo_activo.nombre', default=None)
     id_marca = serializers.ReadOnlyField(source='id_bien.id_marca.id_marca', default=None)
@@ -149,7 +150,8 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
             'cod_estado_activo',
             'estado_activo',
             'fecha_ultimo_movimiento',
-            'tipo_numero_origen'
+            'tipo_numero_origen',
+            'consecutivo'
         ]
         model = Inventario
 
@@ -236,6 +238,7 @@ class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
     fecha_despacho = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho', default=None)
     nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
     codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
+    cod_tipo_activo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo.nombre', default=None)
     id_unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.id_unidad_medida', default=None)
     unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.abreviatura', default=None)
     
@@ -250,7 +253,8 @@ class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
             'id_unidad_medida',
             'unidad_medida',
             'es_despacho_conservacion',
-            'fecha_despacho'
+            'fecha_despacho',
+            'cod_tipo_activo'
         ]
         model = ItemDespachoConsumo
         
@@ -264,3 +268,56 @@ class ControlStockGetSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Inventario
+
+class HistorialMovimientosSerializer(serializers.ModelSerializer):
+    nombre_bodega = serializers.ReadOnlyField(source='id_inventario.id_bodega.nombre', default=None)
+    nombre_bien = serializers.ReadOnlyField(source='id_inventario.id_bien.nombre', default=None)
+    codigo_bien = serializers.ReadOnlyField(source='id_inventario.id_bien.codigo_bien', default=None)
+    cod_tipo_activo = serializers.ReadOnlyField(source='id_inventario.id_bien.cod_tipo_activo.cod_tipo_activo', default=None)
+    categoria = serializers.ReadOnlyField(source='id_inventario.id_bien.cod_tipo_activo.nombre', default=None)
+    id_marca = serializers.ReadOnlyField(source='id_inventario.id_bien.id_marca.id_marca', default=None)
+    nombre_marca = serializers.ReadOnlyField(source='id_inventario.id_bien.id_marca.nombre', default=None)
+    serial = serializers.ReadOnlyField(source='id_inventario.id_bien.doc_identificador_nro', default=None)
+    nombre_tipo_entrada = serializers.ReadOnlyField(source='id_inventario.cod_tipo_entrada.nombre', default=None)
+    constituye_propiedad = serializers.ReadOnlyField(source='id_inventario.cod_tipo_entrada.constituye_propiedad', default=None)
+    propiedad = serializers.SerializerMethodField()
+    ubicacion = serializers.SerializerMethodField()
+    responsable_actual = serializers.SerializerMethodField()
+    estado_activo = serializers.ReadOnlyField(source='id_inventario.cod_estado_activo.nombre', default=None)
+    tipo_doc_ultimo_movimiento_nombre = serializers.CharField(source='get_tipo_doc_ultimo_movimiento_display', read_only = True, default=None)
+    
+    def get_propiedad(self, obj):
+        propiedad = None
+        if obj.id_inventario.cod_tipo_entrada.constituye_propiedad:
+            propiedad = 'Propio'
+        else:
+            propiedad = 'No Propio'
+        
+        return propiedad
+    
+    def get_ubicacion(self, obj):
+        ubicacion = None
+        if obj.id_inventario.ubicacion_en_bodega:
+            ubicacion = 'En Bodega'
+        elif obj.id_inventario.ubicacion_asignado:
+            ubicacion = 'Asignado a Persona'
+        elif obj.id_inventario.ubicacion_prestado:
+            ubicacion = 'Prestado a Persona'
+        elif obj.id_inventario.realizo_baja:
+            ubicacion = 'Dado de Baja'
+        elif obj.id_inventario.realizo_salida:
+            ubicacion = 'Se le registró Salida'
+        
+        return ubicacion
+    
+    def get_responsable_actual(self, obj):
+        nombre_completo_responsable = None
+        if obj.id_inventario.id_persona_responsable:
+            nombre_list = [obj.id_inventario.id_persona_responsable.primer_nombre, obj.id_inventario.id_persona_responsable.primer_apellido]
+            nombre_completo_responsable = ' '.join(item for item in nombre_list if item is not None)
+            nombre_completo_responsable = nombre_completo_responsable if nombre_completo_responsable != "" else None
+        return nombre_completo_responsable
+    
+    class Meta:
+        fields = '__all__'
+        model = HistoricoMovimientosInventario
