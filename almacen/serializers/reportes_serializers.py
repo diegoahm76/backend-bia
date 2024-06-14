@@ -5,7 +5,11 @@ from almacen.models.inventario_models import Inventario
 from almacen.models.hoja_de_vida_models import HojaDeVidaVehiculos
 from almacen.models.vehiculos_models import  InspeccionesVehiculosDia, PersonasSolicitudViaje, VehiculosAgendables_Conductor, VehiculosArrendados, Marcas, ViajesAgendados,BitacoraViaje
 from transversal.models.base_models import Municipio, ApoderadoPersona, ClasesTerceroPersona, Personas
-from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible
+from almacen.models.solicitudes_models import DespachoConsumo, ItemDespachoConsumo, SolicitudesConsumibles, ItemsSolicitudConsumible 
+from almacen.models.activos_models import ItemsDespachoActivos
+from datetime import datetime
+from datetime import datetime
+
 
 
 class EntradasInventarioGetSerializer(serializers.ModelSerializer):
@@ -270,6 +274,13 @@ class InventarioReporteSerializer(serializers.ModelSerializer):
     tipo_movimiento = serializers.SerializerMethodField()
     nombre_persona_responsable = serializers.SerializerMethodField()
     nombre_persona_origen = serializers.SerializerMethodField()
+    valor_unitario = serializers.SerializerMethodField()
+    valor_total = serializers.SerializerMethodField()
+    valor_iva = serializers.SerializerMethodField()
+    valor_residual = serializers.SerializerMethodField()
+    depreciacion_valor  = serializers.SerializerMethodField()
+    fecha_devolucion  = serializers.SerializerMethodField()
+    se_devolvio  = serializers.SerializerMethodField()
 
     def get_nombre_persona_origen(self, obj):
         nombre_persona_origen = None
@@ -294,11 +305,51 @@ class InventarioReporteSerializer(serializers.ModelSerializer):
         tipo_movimiento_choices = dict(Inventario.tipo_doc_ultimo_movimiento.field.choices)
         return tipo_movimiento_choices.get(tipo_movimiento, tipo_movimiento)
     
+    def get_depreciacion_valor(self, obj):
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=obj.id_bien).first()
+        
+        if item_entrada and item_entrada.cantidad_vida_util:
+            valor_ingreso = obj.valor_ingreso
+            cantidad_vida_util = item_entrada.cantidad_vida_util
+                
+            fecha_actual = datetime.now().date()
+            dias_transcurridos = (fecha_actual - obj.fecha_ingreso).days
+                
+            valor_depreciado = valor_ingreso - ((valor_ingreso / cantidad_vida_util) * dias_transcurridos)
+            
+            # Validar si el valor depreciado es menor al valor residual
+            if valor_depreciado < item_entrada.valor_residual:
+                return item_entrada.valor_residual
+            else:
+                return valor_depreciado
+        else:
+            return None
+
+    
     def get_valor_unitario(self, obj):
         id_bien = obj.id_bien
         item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
         valor_unitario = item_entrada.valor_unitario if item_entrada else None
         return valor_unitario
+
+    def get_valor_total(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_iva = item_entrada.valor_iva if item_entrada else None
+        return valor_iva
+    
+    def get_valor_iva(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_total_item = item_entrada.valor_total_item if item_entrada else None
+        return valor_total_item
+    
+    def get_valor_residual(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_residual = item_entrada.valor_residual if item_entrada else None
+        return valor_residual
+    
 
     def get_id_item_entrada_almacen(self, obj):
         id_bien = obj.id_bien
@@ -316,7 +367,26 @@ class InventarioReporteSerializer(serializers.ModelSerializer):
             return 'Asignado a Funcionario'
         elif obj.ubicacion_prestado:
             return 'Prestado'
-   
+        
+    def get_fecha_devolucion(self, obj):
+        # Obtener el objeto ItemsDespachoActivos relacionado con este Inventario
+        item_despacho = ItemsDespachoActivos.objects.filter(id_bien_despachado=obj.id_bien).first()
+        
+        # Retornar la fecha de devolución si el objeto existe y tiene la fecha establecida
+        if item_despacho:
+            return item_despacho.fecha_devolucion
+        else:
+            return None
+        
+    def get_se_devolvio(self, obj):
+        # Obtener el objeto ItemsDespachoActivos relacionado con este Inventario
+        item_despacho = ItemsDespachoActivos.objects.filter(id_bien_despachado=obj.id_bien).first()
+        
+        # Retornar el campo se_devolvio si el objeto existe y tiene el campo establecido
+        if item_despacho:
+            return item_despacho.se_devolvio
+        else:
+            return None
     
     class Meta:
         model = Inventario
