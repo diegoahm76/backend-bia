@@ -149,6 +149,7 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
             'propiedad',
             'fecha_ingreso',
             'ubicacion',
+            'id_persona_responsable',
             'responsable_actual',
             'cod_estado_activo',
             'estado_activo',

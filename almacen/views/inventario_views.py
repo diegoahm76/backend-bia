@@ -111,7 +111,7 @@ class ControlActivosFijosGetListView(generics.ListAPIView):
         
         for key,value in request.query_params.items():
             if key in ['id_bodega','cod_estado_activo','codigo_bien','ubicacion','propiedad','cod_tipo_activo', 'realizo_baja', 'realizo_salida', 'cod_tipo_entrada',
-                       'fecha_desde','fecha_hasta','consecutivo']:
+                       'fecha_desde','fecha_hasta','consecutivo','id_persona_responsable']:
                 
                 if key == 'cod_tipo_activo':
                     if value != '':
@@ -146,6 +146,9 @@ class ControlActivosFijosGetListView(generics.ListAPIView):
                 elif key == 'consecutivo':
                     if value:
                         filter['id_bien__nro_elemento_bien'] = value
+                elif key == 'id_persona_responsable':
+                    if value:
+                        filter['id_persona_responsable'] = value
                 else:
                     if value != '':
                         filter[key]=value
