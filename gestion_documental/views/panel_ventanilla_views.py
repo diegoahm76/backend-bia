@@ -2366,6 +2366,21 @@ class TramitesGetHitorico(generics.ListAPIView):
         
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':data_validada, 'data_complementos':data_validada_complementos}, status=status.HTTP_200_OK)
 
+class TramitesGetExpediente(generics.ListAPIView):
+    serializer_class = AperturaExpedienteComplejoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get (self, request, id_solicitud_tramite):
+        tramite = SolicitudesTramites.objects.filter(id_solicitud_tramite=id_solicitud_tramite).first()
+        if not tramite:
+            raise NotFound("No se encontró el tramite ingresado")
+        if not tramite.id_expediente:
+            raise NotFound("El trámite no posee un expediente")
+
+        serializer = self.serializer_class(tramite.id_expediente)
+        
+        return Response({'succes': True, 'detail':'Se encontró el siguiente expediente', 'data':serializer.data}, status=status.HTTP_200_OK)
+
 #Asignacion_Tramites
 class AsignacionTramiteSubseccionOGrupo(generics.CreateAPIView):
     serializer_class = AsignacionTramitesPostSerializer
@@ -3318,8 +3333,10 @@ class CreateAutoInicio(generics.CreateAPIView):
 
         if 'fuente_captacion' in detalle_tramite_data:
                 fuente_captacion_json= detalle_tramite_data['fuente_captacion'][0]
-
-                context_auto['NombreFuenteHidrica'] = fuente_captacion_json['Name_fuente_hidrica_value']
+                if fuente_captacion_json.get('Name_fuente_hidrica_value'):
+                    context_auto['NombreFuenteHidrica'] = fuente_captacion_json['Name_fuente_hidrica_value']
+                else:
+                    context_auto['NombreFuenteHidrica'] = '{{NombreFuenteHidrica}}'
         else:
                 context_auto['NombreFuenteHidrica'] = '{{NombreFuenteHidrica}}'
 
@@ -3430,6 +3447,12 @@ class CreateAutoInicio(generics.CreateAPIView):
                 context_auto['AreaTotal'] = detalle_tramite_data['Area']
         else:
                 context_auto['AreaTotal'] = '{{AreaTotal}}'
+
+        #####
+        if 'Telefono' in detalle_tramite_data:
+            context_auto['TelefonoTitular'] = detalle_tramite_data['Telefono']
+        else:
+            context_auto['TelefonoTitular'] = '{{TelefonoTitular}}'
 
         dato = self.acta_inicio(context_auto,plantilla.id_archivo_digital.ruta_archivo)
 
