@@ -77,6 +77,9 @@ class BusquedaBienesConsumoView(generics.ListAPIView):
                 elif key == 'codigo_bien':
                     if value != '':
                         filter['codigo_bien__icontains']=value
+                elif key == 'cod_tipo_elemento_vivero':
+                    if value != '':
+                        filter['cod_tipo_elemento_vivero']=value
                 elif key == 'solicitable_vivero':
                     if value != '':
                         filter['solicitable_vivero']=True if value.lower() == 'true' else False
