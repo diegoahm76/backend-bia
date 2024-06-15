@@ -89,6 +89,7 @@ urlpatterns = [
     path('tramites/solicitud_digitalizacion/create/',views.SolicitudDeDigitalizacionTramitesCreate.as_view(),name='crear-solicitud-tramites'),
     path('tramites/anexo/get/<str:tra>/',views.TramitesAnexoInfoGet.as_view(),name='get-tramites-anexo'),
     path('tramites/historico/get/',views.TramitesGetHitorico.as_view(),name='listar-historico-tramites'),
+    path('tramites/expediente/get/<str:id_solicitud_tramite>/',views.TramitesGetExpediente.as_view(),name='listar-historico-tramites'),
     path('tramites/complementos/get/<str:id_solicitud_tramite>/', views.TramitesCompletementosGet.as_view(),name='listar-complementos-tramites'),
     path('tramites/complementos/digitalizacion/create/',views.TramitesSolicitudDeDigitalizacionComplementoCreate.as_view(),name='crear-solicitud-complemento-tramites'),
     path('tramites/complementos/asignar/create/',views.AsignacionComplementoTramitesCreate.as_view(),name='crear-asignacion-grupo-tramites'),
