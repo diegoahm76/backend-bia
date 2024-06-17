@@ -1,7 +1,10 @@
 from rest_framework import serializers
-from almacen.models.bienes_models import CatalogoBienes
+from almacen.models.bienes_models import CatalogoBienes, ItemEntradaAlmacen
 from almacen.models.inventario_models import HistoricoMovimientosInventario, Inventario, TiposEntradas
 from almacen.models.solicitudes_models import ItemDespachoConsumo
+from datetime import datetime
+from django.db.models import F, Count, Sum
+from django.db.models import F, Sum, Value, CharField
 
 class SerializerUpdateInventariosActivosFijos(serializers.ModelSerializer):
     valor_total_item = serializers.FloatField(source='valor_ingreso')
@@ -146,6 +149,7 @@ class ControlInventarioTodoSerializer(serializers.ModelSerializer):
             'propiedad',
             'fecha_ingreso',
             'ubicacion',
+            'id_persona_responsable',
             'responsable_actual',
             'cod_estado_activo',
             'estado_activo',
@@ -189,6 +193,12 @@ class ControlBienesConsumoGetListSerializer(serializers.ModelSerializer):
     nombre_cientifico = serializers.ReadOnlyField(source='id_bien.nombre_cientifico', default=None)
     cantidad_existente = serializers.SerializerMethodField()
     tipo_consumo_vivero = serializers.SerializerMethodField()
+    valor_unitario = serializers.SerializerMethodField()
+    valor_total = serializers.SerializerMethodField()
+    valor_iva = serializers.SerializerMethodField()
+    valor_residual = serializers.SerializerMethodField()
+    depreciacion_valor  = serializers.SerializerMethodField()
+    ubicacion = serializers.SerializerMethodField()
     
     def get_cantidad_existente(self, obj):
         cantidad_entrante_consumo = obj.cantidad_entrante_consumo if obj.cantidad_entrante_consumo else 0
@@ -210,6 +220,68 @@ class ControlBienesConsumoGetListSerializer(serializers.ModelSerializer):
             
         return tipo_bien
     
+    def get_depreciacion_valor(self, obj):
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=obj.id_bien).first()
+        
+        if item_entrada and item_entrada.cantidad_vida_util:
+            valor_ingreso = obj.valor_ingreso
+            cantidad_vida_util = item_entrada.cantidad_vida_util
+                
+            fecha_actual = datetime.now().date()
+            dias_transcurridos = (fecha_actual - obj.fecha_ingreso).days
+                
+            valor_depreciado = valor_ingreso - ((valor_ingreso / cantidad_vida_util) * dias_transcurridos)
+            
+            # Validar si el valor depreciado es menor al valor residual
+            if valor_depreciado < item_entrada.valor_residual:
+                return item_entrada.valor_residual
+            else:
+                return valor_depreciado
+        else:
+            return None
+
+    
+    def get_valor_unitario(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_unitario = item_entrada.valor_unitario if item_entrada else None
+        return valor_unitario
+
+    def get_valor_total(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_iva = item_entrada.valor_iva if item_entrada else None
+        return valor_iva
+    
+    def get_valor_iva(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_total_item = item_entrada.valor_total_item if item_entrada else None
+        return valor_total_item
+
+    def get_id_item_entrada_almacen(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        id_item_entrada_almacen = item_entrada.id_item_entrada_almacen if item_entrada else None
+        return id_item_entrada_almacen
+    
+    def get_valor_residual(self, obj):
+        id_bien = obj.id_bien
+        item_entrada = ItemEntradaAlmacen.objects.filter(id_bien=id_bien).first()
+        valor_residual = item_entrada.valor_residual if item_entrada else None
+        return valor_residual
+
+
+    def get_ubicacion(self, obj):
+        if obj.ubicacion_en_bodega:
+            return 'En Bodega'
+        elif obj.ubicacion_asignado:
+            return 'Asignado a Funcionario'
+        elif obj.ubicacion_prestado:
+            return 'Prestado a Funcionario'
+        else:
+            return 'Ubicación desconocida'
+    
     class Meta:
         fields = [
             'id_inventario',
@@ -227,37 +299,59 @@ class ControlBienesConsumoGetListSerializer(serializers.ModelSerializer):
             'cod_tipo_elemento_vivero',
             'es_semilla_vivero',
             'tipo_consumo_vivero',
-            'nombre_cientifico'
+            'nombre_cientifico',
+            'fecha_ingreso',
+            'valor_unitario',
+            'valor_total',
+            'valor_iva',
+            'valor_residual',
+            'depreciacion_valor',
+            'ubicacion',
+            'valor_ingreso'
         ]
         model = Inventario
 
 class ControlConsumoBienesGetListSerializer(serializers.ModelSerializer):
-    id_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_despacho_consumo.id_unidad_para_la_que_solicita.id_unidad_organizacional', default=None)
-    nombre_unidad_para_la_que_solicita = serializers.ReadOnlyField(source='id_despacho_consumo.id_unidad_para_la_que_solicita.nombre', default=None)
-    es_despacho_conservacion = serializers.ReadOnlyField(source='id_despacho_consumo.es_despacho_conservacion', default=None)
-    fecha_despacho = serializers.ReadOnlyField(source='id_despacho_consumo.fecha_despacho', default=None)
-    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre', default=None)
-    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien', default=None)
-    cod_tipo_activo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo.nombre', default=None)
-    id_unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.id_unidad_medida', default=None)
-    unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.abreviatura', default=None)
-    
+    nombre_bodega = serializers.ReadOnlyField(source='id_bodega.nombre')
+    nombre_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.nombre')
+    codigo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.codigo_bien')
+    id_unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.id_unidad_medida')
+    unidad_medida = serializers.ReadOnlyField(source='id_bien_despachado.id_unidad_medida.abreviatura')
+    cod_tipo_activo_bien_despachado = serializers.ReadOnlyField(source='id_bien_despachado.cod_tipo_activo')
+    observacion_reporte = serializers.ReadOnlyField(source='observacion')
+    cantidad_despachada_unidad = serializers.SerializerMethodField()
+    cantidad_existente = serializers.SerializerMethodField()
+
+    def get_cantidad_despachada_unidad(self, obj):
+        return obj.cantidad_despachada
+
+    def get_cantidad_existente(self, obj):
+        # Filtrar el inventario para el bien despachado
+        inventario = Inventario.objects.filter(id_bien=obj.id_bien_despachado)
+        
+        # Sumar las cantidades entrantes y salientes
+        cantidad_entrante_consumo = inventario.aggregate(Sum('cantidad_entrante_consumo'))['cantidad_entrante_consumo__sum'] or 0
+        cantidad_saliente_consumo = inventario.aggregate(Sum('cantidad_saliente_consumo'))['cantidad_saliente_consumo__sum'] or 0
+        
+        cantidad_existente = cantidad_entrante_consumo - cantidad_saliente_consumo
+        return cantidad_existente
+
     class Meta:
+        model = ItemDespachoConsumo
         fields = [
-            'id_unidad_para_la_que_solicita',
-            'nombre_unidad_para_la_que_solicita',
             'id_bien_despachado',
+            'nombre_bodega',
             'nombre_bien_despachado',
             'codigo_bien_despachado',
-            'cantidad_despachada',
             'id_unidad_medida',
             'unidad_medida',
-            'es_despacho_conservacion',
-            'fecha_despacho',
-            'cod_tipo_activo'
+            'cod_tipo_activo_bien_despachado',
+            'id_bodega_reporte',
+            'observacion_reporte',
+            'cantidad_despachada_unidad',
+            'cantidad_existente',
         ]
-        model = ItemDespachoConsumo
-        
+
 class ControlStockGetSerializer(serializers.ModelSerializer):
     nombre_bien = serializers.ReadOnlyField(source='id_bien.nombre', default=None)
     stock_minimo = serializers.ReadOnlyField(source='id_bien.stock_minimo', default=None)

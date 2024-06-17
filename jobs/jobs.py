@@ -82,7 +82,7 @@ def update_tramites_bia(radicado):
 		radicado_split = radicado.split("-")
 		prefijo_radicado = radicado_split[0]
 		agno_radicado = radicado_split[1]
-		nro_radicado = radicado_split[2].strip("0")
+		nro_radicado = int(radicado_split[2])
 
 		tramite_bia = SolicitudesTramites.objects.filter(id_radicado__prefijo_radicado=prefijo_radicado, id_radicado__agno_radicado=agno_radicado, id_radicado__nro_radicado=nro_radicado).first()
 		permiso_ambiental_tramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tramite_bia.id_solicitud_tramite)
