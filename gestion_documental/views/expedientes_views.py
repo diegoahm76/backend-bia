@@ -24,6 +24,10 @@ from gestion_documental.serializers.transferencias_documentales_serializers impo
 from gestion_documental.serializers.trd_serializers import BusquedaTRDNombreVersionSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from gestion_documental.views.conf__tipos_exp_views import ConfiguracionTipoExpedienteAgnoGetConsect
+from recaudo.models.base_models import RangosEdad
+from recaudo.models.cobros_models import Cartera, ConceptoContable
+from recaudo.models.liquidaciones_models import Deudores, Expedientes
+from recaudo.models.procesos_models import AtributosEtapas, CategoriaAtributo, EtapasProceso, Procesos, TiposAtributos, ValoresProceso
 from seguridad.permissions.permissions_gestor import PermisoActualizarAperturaExpedientes, PermisoActualizarConcesionAccesoDocumentos, PermisoActualizarConcesionAccesoExpedientes, PermisoActualizarIndexacionDocumentos, PermisoActualizarReubicacionFisicaExpedientes, PermisoAnularAperturaExpedientes, PermisoAnularIndexacionDocumentos, PermisoBorrarAperturaExpedientes, PermisoBorrarIndexacionDocumentos, PermisoCrearAperturaExpedientes, PermisoCrearCierreExpedientesDocumentales, PermisoCrearFirmaCierreIndiceElectronico, PermisoCrearIndexacionDocumentos, PermisoCrearReaperturaExpedientesDocumentales
 from seguridad.utils import Util
 from rest_framework import generics
@@ -1749,8 +1753,90 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             )
             
             docs_indice.append(model_to_dict(doc_indice_elect))
-        
+
+            if data.get('crear_obligacion'):
+                obligacion = self.crear_obligacion(data, expediente, request.user.persona)
+
         return Response({'success':True, 'detail':'Indexación de documentos realizado correctamente', 'data':docs_indice}, status=status.HTTP_201_CREATED)
+    
+    def crear_obligacion(self, request, expediente, user):
+        #expediente = ExpedientesDocumentales.objects.filter(id_expediente_documental=expediente.id_expediente_documental).first()
+        tramite = SolicitudesTramites.objects.filter(id_expediente=expediente.id_expediente_documental).first()
+
+        expediente_recaudo = Expedientes.objects.filter(id_expediente_doc=expediente.id_expediente_documental).first()
+        if not expediente_recaudo:
+            deudor = Deudores.objects.filter(id_persona_deudor=tramite.id_persona_titular).first()
+            if not deudor:
+                deudor = Deudores.objects.create(
+                    id_persona_deudor=tramite.id_persona_titular,
+                )
+            expediente_recaudo = Expedientes.objects.create(
+                id_deudor=deudor,
+                id_expediente_doc=expediente,
+            )
+
+        rango = RangosEdad.objects.filter(id_rango_edad=request.get('id_rango')).first()
+
+        concepto_contable = ConceptoContable.objects.filter(id_codigo_contable=request.get('id_codigo_contable')).first()
+
+        obligaciones = Cartera.objects.create(
+            nombre = request.get('nombre'),
+            dias_mora = 0,
+            inicio = datetime.now(),
+            id_rango = rango,
+            codigo_contable = concepto_contable,
+            monto_inicial = request.get('monto_inicial'),
+            tipo_cobro = request.get('tipo_cobro'),
+            id_expediente_doc=expediente_recaudo,
+            id_deudor = deudor,
+            id_persona_que_crea=user,
+            fecha_creacion_cartera=datetime.now(),
+            fecha_vencimiento_cartera=request.get('fecha_vencimiento_cartera'),
+            fecha_ultimo_movimiento=datetime.now(),
+        )
+
+        if not obligaciones:
+            raise ValidationError('No se pudo crear la obligación')
+        
+        etapa = EtapasProceso.objects.filter(id_etapa_proceso=request.get('id_etapa')).first()
+        if not etapa:
+            raise ValidationError('No se encontró la etapa del proceso')
+        subestapa = CategoriaAtributo.objects.filter(id_categoria_atributo=request.get('id_subestapa')).first()
+        if not subestapa:
+            raise ValidationError('No se encontró la subetapa del proceso')
+        
+        tipo_atributo = TiposAtributos.objects.filter(id_tipo_atributo=request.get('id_tipo')).first()
+        if not tipo_atributo:
+            raise ValidationError('No se encontró el tipo de atributo')
+        
+        atributo_etapa = AtributosEtapas.objects.create(
+            id_tipo = tipo_atributo,
+            id_etapa=etapa,
+            id_categoria=subestapa,
+        )
+        if not atributo_etapa:
+            raise ValidationError('No se pudo crear el atributo de la etapa')
+
+        proceso = Procesos.objects.create(
+            id_cartera=obligaciones,
+            id_etapa=etapa,
+            id_funcionario = user,
+            id_categoria=subestapa,
+            inicio = datetime.now(),
+        )
+        if not proceso:
+            raise ValidationError('No se pudo crear el proceso')
+        
+        valores_proceso = ValoresProceso.objects.create(
+            id_proceso=proceso,
+            id_atributo=atributo_etapa,
+            actual=True,
+        )
+        if not valores_proceso:
+            raise ValidationError('No se pudo crear el valor del proceso')
+            
+        return obligaciones
+
 
 class IndexarDocumentosGet(generics.ListAPIView):
     serializer_class = IndexarDocumentosGetSerializer

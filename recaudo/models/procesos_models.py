@@ -70,8 +70,8 @@ class CategoriaAtributo(models.Model):
 
 class AtributosEtapas(models.Model):
     id = models.AutoField(primary_key=True, db_column='T421IdAtributoEtapa')
-    descripcion = models.CharField(max_length=255, db_column='T421descripcion')
-    obligatorio = models.IntegerField(db_column='T421obligatorio')
+    descripcion = models.CharField(max_length=255, null=True, blank=True, db_column='T421descripcion')
+    obligatorio = models.IntegerField(null=True, blank=True, db_column='T421obligatorio')
     id_tipo = models.ForeignKey(TiposAtributos, on_delete=models.CASCADE, db_column='T421Id_TipoAtributo')
     id_etapa = models.ForeignKey(EtapasProceso, on_delete=models.CASCADE, db_column='T421Id_EtapaProceso')
     id_categoria = models.ForeignKey(CategoriaAtributo, on_delete=models.CASCADE, db_column='T421Id_CategoriaAtributo')
@@ -101,6 +101,7 @@ class ValoresProceso(models.Model):
     id = models.AutoField(primary_key=True, db_column='T423IdValorProceso')
     id_proceso = models.ForeignKey(Procesos, on_delete=models.CASCADE, db_column='T423Id_Proceso')
     id_atributo = models.ForeignKey(AtributosEtapas, on_delete=models.CASCADE, db_column='T423Id_AtributoEtapa')
+    actual = models.BooleanField(db_column='T423actual')
     valor = models.TextField(db_column='T423valor', null=True, blank=True)
     documento = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T423documento')
 
