@@ -11,8 +11,8 @@ from gestion_documental.serializers.expedientes_serializers import ArchivosDigit
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos
-from seguimiento_planes.models.planes_models import Metas, Rubro
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador
+from seguimiento_planes.models.planes_models import Metas, Rubro, Planes, Proyecto
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
@@ -817,6 +817,48 @@ class ConceptoPOAIList(generics.ListAPIView):
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
     
+
+class ConceptoPOAIListTable(generics.ListAPIView):
+    serializer_class = ConceptoPOAISerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        conceptos = ConceptoPOAI.objects.all()
+        id_plan = request.query_params.get('id_plan')
+        id_proyecto = request.query_params.get('id_proyecto')
+        id_indicador = request.query_params.get('id_indicador')
+        id_meta = request.query_params.get('id_meta')
+
+        if id_plan is None or id_proyecto is None or id_indicador is None or id_meta is None:
+            raise ValidationError("Por favor, ingresa los parámetros necesarios.")
+        
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan con este ID.")
+        
+        try:
+            proyecto = Proyecto.objects.get(id_proyecto=id_proyecto)
+        except Proyecto.DoesNotExist:
+            raise NotFound("No se encontró un proyecto con este ID.")
+        
+        try:
+            indicador = Indicador.objects.get(id_indicador=id_indicador)
+        except Indicador.DoesNotExist:
+            raise NotFound("No se encontró un indicador con este ID.")
+        
+        try:
+            meta = Metas.objects.get(id_meta=id_meta)
+        except Metas.DoesNotExist:
+            raise NotFound("No se encontró una meta con este ID.")
+        
+        conceptos = conceptos.filter(id_plan=plan.id_plan, id_proyecto=proyecto.id_proyecto, id_indicador=indicador.id_indicador, id_meta=meta.id_meta)
+        serializer = ConceptoPOAISerializer(conceptos, many=True)
+        
+        if not conceptos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Crear un registro de concepto POAI
 
 class ConceptoPOAICreate(generics.CreateAPIView):

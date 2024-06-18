@@ -539,11 +539,10 @@ class SeguimientoPGAR(models.Model):
 
 
 
-class Fuente(models.Model):
+class ParametricaFuente(models.Model):
     id_fuente = models.AutoField( primary_key=True, editable=False, db_column='T540IdFuente')
     nombre_fuente = models.CharField( max_length=255, db_column='T540nombreFuente')
     
-
     def __str__(self):
         return str(self.id_fuente)
 
@@ -563,4 +562,6 @@ class ParametricaRubro(models.Model):
         db_table = 'T541ParametricaRubro'
         verbose_name = 'Parametrica Rubro'
         verbose_name_plural = 'Parametricas Rubros'
+
+
 
