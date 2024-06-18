@@ -6,13 +6,13 @@ from recaudo.choices.estados_liquidacion_choices import estados_liquidacion_CHOI
 
 class Deudores(models.Model):
     id = models.AutoField(primary_key=True, db_column='T410IdDeudor')
-    identificacion = models.CharField(max_length=255, db_column='T410identificacion')
-    nombres = models.CharField(max_length=255, db_column='T410nombres')
+    identificacion = models.CharField(max_length=255, null=True, blank=True, db_column='T410identificacion')
+    nombres = models.CharField(max_length=255, null=True, blank=True, db_column='T410nombres')
     apellidos = models.CharField(null=True, blank=True, max_length=255, db_column='T410apellidos')
-    telefono = models.CharField(max_length=255, db_column='T410telefono')
-    email = models.CharField(max_length=255, db_column='T410email')
-    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T410Id_Ubicacion')
-    naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.CASCADE, db_column='T410Id_NaturalezaJuridica')
+    telefono = models.CharField(max_length=255, null=True, blank=True, db_column='T410telefono')
+    email = models.CharField(max_length=255, null=True, blank=True, db_column='T410email')
+    ubicacion_id = models.ForeignKey(Ubicaciones, on_delete=models.SET_NULL, null=True, blank=True, db_column='T410Id_Ubicacion')
+    naturaleza_juridica_id = models.ForeignKey(NaturalezaJuridica, on_delete=models.SET_NULL, null=True, blank=True, db_column='T410Id_NaturalezaJuridica')
     id_persona_deudor = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, blank=True, null=True, db_column='T410Id_PersonaDeudor')
 
     class Meta:
@@ -23,12 +23,12 @@ class Deudores(models.Model):
 
 class Expedientes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T407IdExpediente')
-    cod_expediente = models.CharField(max_length=255, db_column='T407codigoExpediente')
+    cod_expediente = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoExpediente')
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407Id_Deudor')
-    numero_resolucion = models.CharField(max_length=255, db_column='T407codigoResolucion')
-    cod_auto = models.CharField(max_length=255, db_column='T407codigoAuto')
-    cod_recurso = models.CharField(max_length=255, db_column='T407codigoRecurso')
-    liquidado = models.BooleanField(default=False, db_column='T407liquidado')
+    numero_resolucion = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoResolucion')
+    cod_auto = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoAuto')
+    cod_recurso = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoRecurso')
+    liquidado = models.BooleanField(default=False, null=True, blank=True, db_column='T407liquidado')
     id_expediente_doc = models.ForeignKey('gestion_documental.ExpedientesDocumentales', on_delete=models.SET_NULL, blank=True, null=True, db_column='T407Id_ExpedienteDoc')
     id_expediente_pimisys = models.ForeignKey(T920Expediente, on_delete=models.SET_NULL, blank=True, null=True, db_column='T407Id_ExpedientePimisys')
 

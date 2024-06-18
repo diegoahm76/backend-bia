@@ -326,7 +326,7 @@ class ControlBienesConsumoGetListView(generics.ListAPIView):
                         filter['id_bien__codigo_bien__icontains'] = value
                 elif key == 'nombre_bien':
                     if value != '':
-                        filter['id_bien__nombre_bien__icontains'] = value
+                        filter['id_bien__nombre__icontains'] = value
                 elif key == 'id_bodega':
                     if value != '':
                         filter['id_bodega'] = value
