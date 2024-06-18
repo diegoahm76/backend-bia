@@ -1663,7 +1663,7 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
         # Consulta para obtener registros existentes
-        cursor.execute("SELECT t03nit FROM rt03tercero")
+        cursor.execute("SELECT t03nit,t03nombre FROM rt03tercero")
         existing_recor = cursor.fetchall()
         existing_records_sett = {rec[0] for rec in existing_recor}
 
@@ -1684,15 +1684,16 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
                         except ValueError:
                             print(f"Error: La fecha '{value}' en el registro no es válida.")
                             continue  # Otra acción según sea necesario si la fecha no es válida
-
-                # Convertir valores None a None en la tupla dato_03
                 registro = tuple(None if val is None else val for val in registro)
 
-            insert_query_03 = """
+                # Convertir valores None a None en la tupla dato_03
+                 
+
+                insert_query_03 = """
             INSERT INTO rt03tercero   (
                t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif
                )VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            cursor.execute(insert_query_03, registro)
+                cursor.execute(insert_query_03, registro)
 
             print("Registros insertados correctamente en rt03tercero.")
         else:
@@ -1701,7 +1702,7 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
-      
+
 
         # Confirmar la transacción
         conn_postgresql.commit()
