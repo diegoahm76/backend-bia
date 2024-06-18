@@ -150,8 +150,12 @@ class ConceptoPOAI(models.Model):
     id_concepto = models.AutoField(primary_key=True, editable=False, db_column='T525IdConcepto')
     concepto = models.CharField(max_length=255, db_column='T525concepto')
     valor_total = models.BigIntegerField(null=True, blank=True, db_column='T525valorTotal')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T525IdPlan')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T525IdProyecto')
     id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T525IdRubro')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T525IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T525IdMeta')
+    id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T525IdModaliad')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T525IdUnidadOrganizacional')
 
     def __str__(self):
@@ -328,6 +332,7 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
         verbose_name = "Seguimiento PAI Documentos"
         verbose_name_plural = "Seguimiento PAI Documentos"
 
+
 # class SeguimientoPOAI(models.Model):
 #     id_seguimiento = models.AutoField(primary_key=True, editable=False, db_column='T532IdSeguiPOAI')
 #     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T528IdPlan')
@@ -410,3 +415,6 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
 #         verbose_name_plural = "Seguimiento POAI"
 
 # # class SeguimientoPoaiOptimizado(models.Model):
+
+
+  

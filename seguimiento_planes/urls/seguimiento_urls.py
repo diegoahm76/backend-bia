@@ -57,6 +57,7 @@ urlpatterns=[
     path('eliminar-codigos-unsp/<str:pk>/',views.CodigosUNSPDelete.as_view(),name='eliminarcodigosunsp'),
     # Conceptos POAI
     path('consultar-conceptos-poai/',views.ConceptoPOAIList.as_view(),name='consultarconceptospoai'),
+    path('consultar-conceptos-poai-lista/',views.ConceptoPOAIListTable.as_view(),name='consultar-conceptos-poai-lista'),
     path('crear-conceptos-poai/',views.ConceptoPOAICreate.as_view(),name='crearconceptospoai'),
     path('actualizar-conceptos-poai/<str:pk>/',views.ConceptoPOAIUpdate.as_view(),name='actualizarconceptospoai'),
     path('eliminar-conceptos-poai/<str:pk>/',views.ConceptoPOAIDelete.as_view(),name='eliminarconceptospoai'),
