@@ -1765,7 +1765,7 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
 
         expediente_recaudo = Expedientes.objects.filter(id_expediente_doc=expediente.id_expediente_documental).first()
         if not expediente_recaudo:
-            deudor = Deudores.objects.filter(id_persona_deudor=tramite.id_persona_titular).first()
+            deudor = Deudores.objects.filter(id=tramite.id_persona_titular.id_persona).first()
             if not deudor:
                 deudor = Deudores.objects.create(
                     id_persona_deudor=tramite.id_persona_titular,
@@ -1775,9 +1775,9 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
                 id_expediente_doc=expediente,
             )
 
-        rango = RangosEdad.objects.filter(id_rango_edad=request.get('id_rango')).first()
+        rango = RangosEdad.objects.filter(id=request.get('id_rango')).first()
 
-        concepto_contable = ConceptoContable.objects.filter(id_codigo_contable=request.get('id_codigo_contable')).first()
+        concepto_contable = ConceptoContable.objects.filter(id=request.get('id_codigo_contable')).first()
 
         obligaciones = Cartera.objects.create(
             nombre = request.get('nombre'),
@@ -1787,25 +1787,21 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
             codigo_contable = concepto_contable,
             monto_inicial = request.get('monto_inicial'),
             tipo_cobro = request.get('tipo_cobro'),
-            id_expediente_doc=expediente_recaudo,
+            id_expediente=expediente_recaudo,
             id_deudor = deudor,
-            id_persona_que_crea=user,
-            fecha_creacion_cartera=datetime.now(),
-            fecha_vencimiento_cartera=request.get('fecha_vencimiento_cartera'),
-            fecha_ultimo_movimiento=datetime.now(),
         )
 
         if not obligaciones:
             raise ValidationError('No se pudo crear la obligación')
         
-        etapa = EtapasProceso.objects.filter(id_etapa_proceso=request.get('id_etapa')).first()
+        etapa = EtapasProceso.objects.filter(id=request.get('id_etapa')).first()
         if not etapa:
             raise ValidationError('No se encontró la etapa del proceso')
-        subestapa = CategoriaAtributo.objects.filter(id_categoria_atributo=request.get('id_subestapa')).first()
+        subestapa = CategoriaAtributo.objects.filter(id=request.get('id_subestapa')).first()
         if not subestapa:
             raise ValidationError('No se encontró la subetapa del proceso')
         
-        tipo_atributo = TiposAtributos.objects.filter(id_tipo_atributo=request.get('id_tipo')).first()
+        tipo_atributo = TiposAtributos.objects.filter(id=request.get('id_tipo')).first()
         if not tipo_atributo:
             raise ValidationError('No se encontró el tipo de atributo')
         
@@ -1820,7 +1816,7 @@ class IndexarDocumentosCreate(generics.CreateAPIView):
         proceso = Procesos.objects.create(
             id_cartera=obligaciones,
             id_etapa=etapa,
-            id_funcionario = user,
+            id_funcionario = user.id_persona,
             id_categoria=subestapa,
             inicio = datetime.now(),
         )
