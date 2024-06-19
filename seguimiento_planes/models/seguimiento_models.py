@@ -416,5 +416,66 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
 
 # # class SeguimientoPoaiOptimizado(models.Model):
 
+class SeguimientoPOAI(models.Model):
+    id_seguimiento = models.AutoField(primary_key=True, editable=False, db_column='T537IdSeguimiento')
+    id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T537IdConcepto')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T537IdPlan')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T537IdProducto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T537IdActividad')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T537IdIndicador')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T537IdMeta')
+    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T537IdRubro')
+    descripcion = models.CharField(max_length=255, db_column='T537descripcion')
+    id_prioridad = models.BigIntegerField(null=True, blank=True, db_column='T537IdPrioridad')
+    codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')
+    cuenta = models.SmallIntegerField(db_column='T537cuenta')
+    id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T537IdUnidadOrganizacional')
+    modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T537Modalidad')
+    id_fuente1 = models.BigIntegerField(null=True, blank=True, db_column='T537IdFuente1')
+    valor_fte1 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte1')
+    adicion1 = models.BooleanField(null=True, blank=True, db_column='T537adicion1')
+    id_fuente2 = models.BigIntegerField(null=True, blank=True, db_column='T537IdFuente2')
+    valor_fte2 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte2')
+    adicion2 = models.BooleanField(null=True, blank=True, db_column='T537adicion2')
+    id_fuente3 = models.BigIntegerField(null=True, blank=True, db_column='T537IdFuente3')
+    valor_fte3 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte3')
+    adicion3 = models.BooleanField(null=True, blank=True, db_column='T537adicion3')
+    id_fuente4 = models.BigIntegerField(null=True, blank=True, db_column='T537IdFuente4')
+    valor_fte4 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte4')
+    adicion4 = models.BooleanField(null=True, blank=True, db_column='T537adicion4')
+    valor_banco = models.BigIntegerField(null=True, blank=True, db_column='T537valorBanco')
+    valor_cdp = models.BigIntegerField(null=True, blank=True, db_column='T537valorCDP')
+    valor_rp = models.BigIntegerField(null=True, blank=True, db_column='T537valorRP')
+    valor_obligado = models.BigIntegerField(null=True, blank=True, db_column='T537valorObligado')
+    fecha_terminacion = models.DateField(null=True, blank=True, db_column='T537fechaTerminacion')
+    duracion = models.BigIntegerField(null=True, blank=True, db_column='T537duracion')
+    valor_mensual = models.BigIntegerField(null=True, blank=True, db_column='T537valorMensual')
+    fecha_estimada = models.DateField(null=True, blank=True, db_column='T537fechaEstimada')
+    mes_proyectado = models.CharField(max_length=11, db_column='T537mesProyectado')
+    codigo_unsp = models.CharField(max_length=200, db_column='T537codigoUNSP')
+    lugar_ejecucion = models.CharField(max_length=100, db_column='T537lugarEjecucion')
+    numero_contrato = models.BigIntegerField(null=True, blank=True, db_column='T537numeroContrato')
+    numero_banco = models.BigIntegerField(null=True, blank=True, db_column='T537numeroBanco')
+    numero_rp = models.BigIntegerField(null=True, blank=True, db_column='T537numeroRP')
+    fecha_rp = models.DateField(null=True, blank=True, db_column='T537fechaRP')
+    numero_cdp = models.BigIntegerField(null=True, blank=True, db_column='T537numeroCDP')
+    fecha_cdp = models.DateField(null=True, blank=True, db_column='T537fechaCDP')
+    nombre_contratista = models.CharField(max_length=100, db_column='T537nombreContratista')
+    observaciones_poai = models.CharField(max_length=100, db_column='T537observacionesPOAI')
+    fecha_registro = models.DateField(null=True, blank=True, db_column='T537fechaRegistro')
+    valor_pagado = models.BigIntegerField(null=True, blank=True, db_column='T537valorPagado')
+    vseguimiento_paabanco = models.BigIntegerField(null=True, blank=True, db_column='T537vseguimientoPAABanco')
+    vseguimiento_paacdp = models.BigIntegerField(null=True, blank=True, db_column='T537vseguimientoPAACDP')
+    vseguimiento_paarp = models.BigIntegerField(null=True, blank=True, db_column='T537vseguimientoPAARP')
+    svseguimiento_paaobligado = models.BigIntegerField(null=True, blank=True, db_column='T537svseguimientoPAAObligado')
+    vseguimiento_paapagado = models.BigIntegerField(null=True, blank=True, db_column='T537vseguimientoPAAPagado')
 
-  
+    def __str__(self):
+        return str(self.id_seguimiento)
+    
+    class Meta:
+        db_table = "T537SeguimientoPOAI"
+        verbose_name = "Seguimiento POAI"
+        verbose_name_plural = "Registros Seguimiento POAI"
+
+    

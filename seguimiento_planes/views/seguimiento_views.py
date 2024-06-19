@@ -854,7 +854,7 @@ class ConceptoPOAIListTable(generics.ListAPIView):
         
         conceptos = conceptos.filter(id_plan=plan.id_plan, id_proyecto=proyecto.id_proyecto, id_indicador=indicador.id_indicador, id_meta=meta.id_meta)
         serializer = ConceptoPOAISerializer(conceptos, many=True)
-        
+
         if not conceptos:
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
@@ -1625,3 +1625,6 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 #         if not seguimientos:
 #             raise NotFound("No se encontraron resultados para esta consulta.")
 #         return Response( {'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+# ---------------------------------------- Seguimiento POAI ----------------------------------------
