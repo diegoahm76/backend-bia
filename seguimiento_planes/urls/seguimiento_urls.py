@@ -107,6 +107,12 @@ urlpatterns=[
     path('eliminar-seguimiento-pai-documentos/<str:pk>/',views.SeguimientoPAIDocumentosDelete.as_view(),name='eliminarseguimientopaidocumentos'),
     path('consltar-seguimiento-documentos-id-pai/<str:pk>/', views.SeguimientoPAIDocumentosListIdSeguimiento.as_view(),name='consultaridseguimientopai'),
     # Seguimiento POAI
+    path('consultar-seguimiento-poai/<str:id_concepto>/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
+
+
+
+
+
     # path('consultar-seguimiento-poai/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
     # path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
     # path('actualizar-seguimiento-poai/<str:pk>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),

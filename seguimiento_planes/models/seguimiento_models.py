@@ -148,8 +148,8 @@ class CodigosUNSP(models.Model):
 
 class ConceptoPOAI(models.Model):
     id_concepto = models.AutoField(primary_key=True, editable=False, db_column='T525IdConcepto')
-    concepto = models.CharField(max_length=255, db_column='T525concepto')
-    valor_total = models.BigIntegerField(null=True, blank=True, db_column='T525valorTotal')
+    nombre_concepto = models.CharField(max_length=255, db_column='T525nombreConcepto')
+    valor_inicial = models.BigIntegerField(null=True, blank=True, db_column='T525valorInicial')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T525IdPlan')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T525IdProyecto')
     id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T525IdRubro')

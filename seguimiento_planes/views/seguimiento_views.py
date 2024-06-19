@@ -10,8 +10,8 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguimiento_planes.models.planes_models import Sector
-from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador
+from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer, SeguimientoPOAISerializer, ConceptoPOAISerializerGet
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes, Proyecto
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 
@@ -819,7 +819,7 @@ class ConceptoPOAIList(generics.ListAPIView):
     
 
 class ConceptoPOAIListTable(generics.ListAPIView):
-    serializer_class = ConceptoPOAISerializer
+    serializer_class = ConceptoPOAISerializerGet
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -853,7 +853,7 @@ class ConceptoPOAIListTable(generics.ListAPIView):
             raise NotFound("No se encontró una meta con este ID.")
         
         conceptos = conceptos.filter(id_plan=plan.id_plan, id_proyecto=proyecto.id_proyecto, id_indicador=indicador.id_indicador, id_meta=meta.id_meta)
-        serializer = ConceptoPOAISerializer(conceptos, many=True)
+        serializer = self.serializer_class(conceptos, many=True)
 
         if not conceptos:
             raise NotFound("No se encontraron resultados para esta consulta.")
@@ -1628,3 +1628,21 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 
 
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
+
+class SeguimientoPOAIList(generics.ListAPIView):
+    serializer_class = SeguimientoPOAISerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_concepto):
+        try:
+            concepto = ConceptoPOAI.objects.get(id_concepto=id_concepto)
+        except ConceptoPOAI.DoesNotExist:
+            raise NotFound("No se encontró un concepto POAI con este ID.")
+        
+        seguimientos = SeguimientoPOAI.objects.filter(id_concepto=concepto.id_concepto)
+        serializer = SeguimientoPOAISerializer(seguimientos, many=True)
+
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
