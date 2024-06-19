@@ -10,18 +10,16 @@ from transversal.models.base_models import (
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
-    nombre_fuente = models.CharField(max_length=100, db_column='T516nombreFuente')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T516vano1')
     vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T516vano2')
     vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T516vano3')
     vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T516vano4')
+    vadicion1 = models.BooleanField(default=False, db_column='T516adicion1')
+    vadicion2 = models.BooleanField(default=False, db_column='T516adicion2')
+    vadicion3 = models.BooleanField(default=False, db_column='T516adicion3')
+    vadicion4 = models.BooleanField(default=False, db_column='T516adicion4')
     valor_total = models.BigIntegerField(null=True, blank=True, db_column='T516valorTotal')
-    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T516IdIndicador')
-    id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T516IdCuenca')
-    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T516IdProyecto')
-    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T516IdActividad')
-    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T516IdProducto')
-    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T516IdMeta')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T516IdPlan')
 
     def __str__(self):
         return str(self.nombre_fuente)
