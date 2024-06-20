@@ -10,18 +10,16 @@ from transversal.models.base_models import (
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
-    nombre_fuente = models.CharField(max_length=100, db_column='T516nombreFuente')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T516vano1')
     vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T516vano2')
     vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T516vano3')
     vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T516vano4')
+    vadicion1 = models.BooleanField(default=False, db_column='T516adicion1')
+    vadicion2 = models.BooleanField(default=False, db_column='T516adicion2')
+    vadicion3 = models.BooleanField(default=False, db_column='T516adicion3')
+    vadicion4 = models.BooleanField(default=False, db_column='T516adicion4')
     valor_total = models.BigIntegerField(null=True, blank=True, db_column='T516valorTotal')
-    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T516IdIndicador')
-    id_cuenca = models.ForeignKey(Cuencas, on_delete=models.CASCADE, db_column='T516IdCuenca')
-    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T516IdProyecto')
-    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T516IdActividad')
-    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T516IdProducto')
-    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T516IdMeta')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T516IdPlan')
 
     def __str__(self):
         return str(self.nombre_fuente)
@@ -31,27 +29,6 @@ class FuenteFinanciacionIndicadores(models.Model):
         verbose_name = 'Fuentes de Financiación Indicadores'
         verbose_name_plural = 'Fuentes de Financiación Indicadores'
 
-class DetalleInversionCuentas(models.Model):
-    id_detalle_inversion = models.AutoField(primary_key=True, editable=False, db_column='T518IdDetalleInversion')
-    cuenta = models.CharField(max_length=100, db_column='T518cuenta')
-    valor_cuenta = models.IntegerField(null=True, blank=True, db_column='T518valorCuenta')
-    id_sector = models.ForeignKey(Sector, on_delete=models.CASCADE, db_column='T518IdSector')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T518IdRubro')
-    id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T518IdPrograma')
-    id_subprograma = models.ForeignKey(Subprograma, on_delete=models.CASCADE, db_column='T518IdSubprograma')
-    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T518IdProyecto')
-    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T518IdProducto')
-    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T518IdActividad')
-    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T518IdIndicador')
-    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T518IdMeta')
-
-    def __str__(self):
-        return str(self.cuenta)
-
-    class Meta:
-        db_table = 'T518DetalleInversionCuentas'
-        verbose_name = 'Detalle de Inversión Cuentas'
-        verbose_name_plural = 'Detalle de Inversión Cuentas'
 
 class Modalidad(models.Model): # Tabla básica
     id_modalidad = models.AutoField(primary_key=True, editable=False, db_column='T519IdModalidad')
@@ -148,8 +125,8 @@ class CodigosUNSP(models.Model):
 
 class ConceptoPOAI(models.Model):
     id_concepto = models.AutoField(primary_key=True, editable=False, db_column='T525IdConcepto')
-    concepto = models.CharField(max_length=255, db_column='T525concepto')
-    valor_total = models.BigIntegerField(null=True, blank=True, db_column='T525valorTotal')
+    nombre_concepto = models.CharField(max_length=255, db_column='T525nombreConcepto')
+    valor_inicial = models.BigIntegerField(null=True, blank=True, db_column='T525valorInicial')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T525IdPlan')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T525IdProyecto')
     id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T525IdRubro')
@@ -166,23 +143,6 @@ class ConceptoPOAI(models.Model):
         verbose_name = 'Concepto POAI'
         verbose_name_plural = 'Conceptos POAI'
 
-class FuenteFinanciacion(models.Model):
-    id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T526IdFuente')
-    nombre_fuente = models.CharField(max_length=100, db_column='T526nombreFuente')
-    vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T526vano1')
-    vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T526vano2')
-    vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T526vano3')
-    vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T526vano4')
-    id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T526IdConcepto')
-
-    def __str__(self):
-        return str(self.nombre_fuente)
-    
-    class Meta: 
-        db_table = 'T526FuentesFinanciacion'
-        verbose_name = 'Fuentes de Financiación'
-        verbose_name_plural = 'Fuentes de Financiación'
-
 
 class BancoProyecto(models.Model):
     id_banco = models.AutoField(primary_key=True, editable=False, db_column='T527IdBanco')
@@ -193,7 +153,7 @@ class BancoProyecto(models.Model):
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T527IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T527IdMeta')
     id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T527IdRubro')
-    id_fuente_financiacion = models.ForeignKey(FuenteFinanciacion, on_delete=models.CASCADE, db_column='T527IdFuenteFinanciacion')
+    id_fuente_financiacion = models.ForeignKey(FuenteFinanciacionIndicadores, on_delete=models.CASCADE, db_column='T527IdFuenteFinanciacion')
 
     def __str__(self):
         return str(self.objeto_contrato)
@@ -416,6 +376,21 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
 
 # # class SeguimientoPoaiOptimizado(models.Model):
 
+class Prioridad(models.Model):
+    id_prioridad = models.AutoField(primary_key=True, editable=False, db_column='T538IdPrioridad')
+    nombre_prioridad = models.CharField(max_length=100, db_column='T538nombrePrioridad')
+    activo = models.BooleanField(default=True, db_column='T538activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T538itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T538registroPrecargado')
+
+    def __str__(self):
+        return str(self.nombre_prioridad)
+
+    class Meta:
+        db_table = 'T533Prioridad'
+        verbose_name = 'Prioridad'
+        verbose_name_plural = 'Prioridades'
+
 class SeguimientoPOAI(models.Model):
     id_seguimiento = models.AutoField(primary_key=True, editable=False, db_column='T537IdSeguimiento')
     id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T537IdConcepto')
@@ -426,7 +401,7 @@ class SeguimientoPOAI(models.Model):
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T537IdMeta')
     id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T537IdRubro')
     descripcion = models.CharField(max_length=255, db_column='T537descripcion')
-    id_prioridad = models.BigIntegerField(null=True, blank=True, db_column='T537IdPrioridad')
+    id_prioridad = models.ForeignKey(Prioridad, null=True, blank=True, on_delete=models.SET_NULL, db_column='T537IdPrioridad')
     codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')
     cuenta = models.SmallIntegerField(db_column='T537cuenta')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T537IdUnidadOrganizacional')

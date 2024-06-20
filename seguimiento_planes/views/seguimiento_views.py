@@ -10,10 +10,32 @@ from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguimiento_planes.models.planes_models import Sector
-from seguimiento_planes.serializers.seguimiento_serializer import FuenteRecursosPaaSerializerUpdate, FuenteFinanciacionIndicadoresSerializer, SectorSerializer, SectorSerializerUpdate, DetalleInversionCuentasSerializer, ModalidadSerializer, ModalidadSerializerUpdate, UbicacionesSerializer, UbicacionesSerializerUpdate, FuenteRecursosPaaSerializer, IntervaloSerializer, IntervaloSerializerUpdate, EstadoVFSerializer, EstadoVFSerializerUpdate, CodigosUNSPSerializer, CodigosUNSPSerializerUpdate, ConceptoPOAISerializer, FuenteFinanciacionSerializer, BancoProyectoSerializer, PlanAnualAdquisicionesSerializer, PAACodgigoUNSPSerializer, SeguimientoPAISerializer, SeguimientoPAIDocumentosSerializer
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, DetalleInversionCuentas, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, FuenteFinanciacion, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador
-from seguimiento_planes.models.planes_models import Metas, Rubro, Planes, Proyecto
+from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecursosPaaSerializerUpdate, 
+                                                                   FuenteFinanciacionIndicadoresSerializer, 
+                                                                   SectorSerializer, SectorSerializerUpdate,
+                                                                   ModalidadSerializer, 
+                                                                   ModalidadSerializerUpdate, 
+                                                                   UbicacionesSerializer, 
+                                                                   UbicacionesSerializerUpdate, 
+                                                                   FuenteRecursosPaaSerializer, 
+                                                                   IntervaloSerializer, 
+                                                                   IntervaloSerializerUpdate, 
+                                                                   EstadoVFSerializer, 
+                                                                   EstadoVFSerializerUpdate, 
+                                                                   CodigosUNSPSerializer, 
+                                                                   CodigosUNSPSerializerUpdate, 
+                                                                   ConceptoPOAISerializer, 
+                                                                   BancoProyectoSerializer, 
+                                                                   PlanAnualAdquisicionesSerializer, 
+                                                                   PAACodgigoUNSPSerializer, 
+                                                                   SeguimientoPAISerializer, 
+                                                                   SeguimientoPAIDocumentosSerializer, 
+                                                                   SeguimientoPOAISerializer, 
+                                                                   ConceptoPOAISerializerGet)
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
+from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
+from transversal.models import UnidadesOrganizacionales
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -237,101 +259,6 @@ class SectorDelete(generics.DestroyAPIView):
         sector.delete()
         return Response({'success': True, 'detail': 'Se eliminó el registro de sector correctamente.', 'data': []}, status=status.HTTP_200_OK)
     
-# ---------------------------------------- Detalle de Inversión Cuentas ----------------------------------------
-
-# Listar todos los registros de detalle de inversión cuentas
-
-class DetalleInversionCuentasList(generics.ListAPIView):
-    queryset = DetalleInversionCuentas.objects.all()
-    serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        detalle = self.get_queryset()
-        serializer = DetalleInversionCuentasSerializer(detalle, many=True)
-        if not detalle:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
-# Crear un registro de detalle de inversión cuentas
-
-class DetalleInversionCuentasCreate(generics.CreateAPIView):
-    serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated, PermisoCrearDetalleInversionCuentas]
-
-    def post(self, request):
-        serializer = DetalleInversionCuentasSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'detail': 'Se creó el registro de detalle de inversión cuentas correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)  # Imprime los errores de validación
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-    
-# Actualizar un registro de detalle de inversión cuentas
-
-class DetalleInversionCuentasUpdate(generics.UpdateAPIView):
-    queryset = DetalleInversionCuentas.objects.all()
-    serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated, PermisoActualizarDetalleInversionCuentas]
-
-    def put(self, request, pk):
-        data = request.data
-        detalle = self.get_object()
-        serializer = self.serializer_class(detalle, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail': 'Se actualizó el registro de detalle de inversión cuentas correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-# Eliminar un registro de detalle de inversión cuentas
-
-class DetalleInversionCuentasDelete(generics.DestroyAPIView):
-    queryset = DetalleInversionCuentas.objects.all()
-    serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self, pk):
-        try:
-            return DetalleInversionCuentas.objects.get(pk=pk)
-        except DetalleInversionCuentas.DoesNotExist:
-            raise NotFound("No se encontró un registro de detalle de inversión cuentas con este ID.")
-
-    def delete(self, request, pk):
-        detalle = self.get_object(pk)
-        detalle.delete()
-        return Response({'success': True, 'detail': 'Se eliminó el registro de detalle de inversión cuentas correctamente.', 'data': []}, status=status.HTTP_200_OK)
-
-# Busqueda avanzada de detalle de inversión cuentas por cuenta, nombre programa, nombre subprograma, nombre proyecto, nombre actividad, nombre indicador
-
-class BusquedaAvanzadaDetalleInversionCuentas(generics.ListAPIView):
-    queryset = DetalleInversionCuentas.objects.all()
-    serializer_class = DetalleInversionCuentasSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        cuenta = request.GET.get('cuenta')
-        nombre_programa = request.GET.get('nombre_programa')
-        nombre_subprograma = request.GET.get('nombre_subprograma')
-        nombre_proyecto = request.GET.get('nombre_proyecto')
-        nombre_actividad = request.GET.get('nombre_actividad')
-        nombre_indicador = request.GET.get('nombre_indicador')
-        if cuenta:
-            detalle = self.queryset.filter(cuenta__icontains=cuenta)
-        elif nombre_programa:
-            detalle = self.queryset.filter(nombre_programa__icontains=nombre_programa)
-        elif nombre_subprograma:
-            detalle = self.queryset.filter(nombre_subprograma__icontains=nombre_subprograma)
-        elif nombre_proyecto:
-            detalle = self.queryset.filter(nombre_proyecto__icontains=nombre_proyecto)
-        elif nombre_actividad:
-            detalle = self.queryset.filter(nombre_actividad__icontains=nombre_actividad)
-        elif nombre_indicador:
-            detalle = self.queryset.filter(nombre_indicador__icontains=nombre_indicador)
-        else:
-            detalle = self.queryset.all()
-        serializer = DetalleInversionCuentasSerializer(detalle, many=True)
-        if not detalle:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Modalidades tabla básica ----------------------------------------
 
@@ -819,7 +746,7 @@ class ConceptoPOAIList(generics.ListAPIView):
     
 
 class ConceptoPOAIListTable(generics.ListAPIView):
-    serializer_class = ConceptoPOAISerializer
+    serializer_class = ConceptoPOAISerializerGet
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -853,7 +780,7 @@ class ConceptoPOAIListTable(generics.ListAPIView):
             raise NotFound("No se encontró una meta con este ID.")
         
         conceptos = conceptos.filter(id_plan=plan.id_plan, id_proyecto=proyecto.id_proyecto, id_indicador=indicador.id_indicador, id_meta=meta.id_meta)
-        serializer = ConceptoPOAISerializer(conceptos, many=True)
+        serializer = self.serializer_class(conceptos, many=True)
 
         if not conceptos:
             raise NotFound("No se encontraron resultados para esta consulta.")
@@ -931,91 +858,7 @@ class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de conceptos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
-# ---------------------------------------- Fuentes de financiación ----------------------------------------
-
-# Listar todos los registros de fuentes de financiación
-
-class FuenteFinanciacionList(generics.ListAPIView):
-    queryset = FuenteFinanciacion.objects.all()
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        fuentes = self.get_queryset()
-        serializer = FuenteFinanciacionSerializer(fuentes, many=True)
-        if not fuentes:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-# Crear un registro de fuente de financiación
-
-class FuenteFinanciacionCreate(generics.CreateAPIView):
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated, PermisoCrearFuenteFinanciacionPOAI]
-
-    def post(self, request):
-        serializer = FuenteFinanciacionSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'success': True, 'detail': 'Se creó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
-        else:
-            print(serializer.errors)  # Imprime los errores de validación
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-
-# Actualizar un registro de fuente de financiación
-
-class FuenteFinanciacionUpdate(generics.UpdateAPIView):
-    queryset = FuenteFinanciacion.objects.all()
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated, PermisoActualizarFuenteFinanciacionPOAI]
-
-    def put(self, request, pk):
-        data = request.data
-        fuente = self.get_object()
-        serializer = self.serializer_class(fuente, data=data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({'success': True, 'detail': 'Se actualizó el registro de fuente de financiación correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
-
-# Eliminar un registro de fuente de financiación
-
-class FuenteFinanciacionDelete(generics.DestroyAPIView):
-    queryset = FuenteFinanciacion.objects.all()
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self, pk):
-        try:
-            return FuenteFinanciacion.objects.get(pk=pk)
-        except FuenteFinanciacion.DoesNotExist:
-            raise NotFound("No se encontró un registro de fuente de financiación con este ID.")
-
-    def delete(self, request, pk):
-        fuente = self.get_object(pk)
-        fuente.delete()
-        return Response({'success': True, 'detail': 'Se eliminó el registro de fuente de financiación correctamente.', 'data': []}, status=status.HTTP_200_OK)
-
-#Busqueda Avanzada de fuentes de financiación por nombre_fuente, concepto
-
-class BusquedaAvanzadaFuenteFinanciacion(generics.ListAPIView):
-    queryset = FuenteFinanciacion.objects.all()
-    serializer_class = FuenteFinanciacionSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        nombre_fuente = request.GET.get('nombre_fuente')
-        concepto = request.GET.get('concepto')
-        if nombre_fuente:
-            fuentes = self.queryset.filter(nombre_fuente__icontains=nombre_fuente)
-        elif concepto:
-            fuentes = self.queryset.filter(concepto__icontains=concepto)
-        else:
-            fuentes = self.queryset.all()
-        serializer = FuenteFinanciacionSerializer(fuentes, many=True)
-        if not fuentes:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de fuentes de financiación:', 'data': serializer.data}, status=status.HTTP_200_OK)
-    
+   
 # ---------------------------------------- Banco Proyecto ----------------------------------------
 
 # Listar todos los registros de bancos de proyecto
@@ -1628,3 +1471,65 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 
 
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
+
+class SeguimientoPOAIList(generics.ListAPIView):
+    serializer_class = SeguimientoPOAISerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_concepto):
+        try:
+            concepto = ConceptoPOAI.objects.get(id_concepto=id_concepto)
+        except ConceptoPOAI.DoesNotExist:
+            raise NotFound("No se encontró un concepto POAI con este ID.")
+        
+        seguimientos = SeguimientoPOAI.objects.filter(id_concepto=concepto.id_concepto)
+        serializer = SeguimientoPOAISerializer(seguimientos, many=True)
+
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class SeguimientoPOAICreate(generics.CreateAPIView):
+    serializer_class = SeguimientoPOAISerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSeguimientoPOAI]
+
+    def create_seguimiento_poai(self, data_seguimiento):
+        id_concepto = data_seguimiento['id_concepto']
+        id_plan = data_seguimiento['id_plan']
+        id_producto = data_seguimiento['id_producto']
+        id_actividad = data_seguimiento['id_actividad']
+        id_indicador = data_seguimiento['id_indicador']
+        id_meta = data_seguimiento['id_meta']
+        id_rubro = data_seguimiento['id_rubro']
+        id_prioridad = data_seguimiento['id_prioridad']
+        id_unidad_organizacional = data_seguimiento['id_unidad_organizacional']
+
+        dict = {
+            'key': [id_concepto, id_plan, id_producto, id_actividad, id_indicador, id_meta, id_rubro, id_prioridad, id_unidad_organizacional],
+            'object': [ConceptoPOAI, Planes, Productos, Actividad, Indicador, Metas, Rubro, Prioridad, UnidadesOrganizacionales]
+        }
+
+        for key, object in dict.items():
+            try:
+                object = object.get(id=key)
+            except object.DoesNotExist:
+                raise NotFound(f"No se encontró un {object} con este ID.")
+
+        serializer = self.serializer_class(data=data_seguimiento)
+
+        if serializer.is_valid():
+            serializer.save()
+            return serializer.data
+        else:
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+        
+    
+    def post(self, request):
+        data_seguimiento = request.data
+        seguimiento = self.create_seguimiento_poai(data_seguimiento)
+
+        return Response({'success': True, 'detail': 'Se creó el seguimiento POAI correctamente.', 'data': seguimiento}, status=status.HTTP_201_CREATED)
+
+  
