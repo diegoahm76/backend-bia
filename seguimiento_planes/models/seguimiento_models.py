@@ -387,7 +387,7 @@ class Prioridad(models.Model):
         return str(self.nombre_prioridad)
 
     class Meta:
-        db_table = 'T533Prioridad'
+        db_table = 'T538Prioridad'
         verbose_name = 'Prioridad'
         verbose_name_plural = 'Prioridades'
 
@@ -405,7 +405,7 @@ class SeguimientoPOAI(models.Model):
     codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')
     cuenta = models.SmallIntegerField(db_column='T537cuenta')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T537IdUnidadOrganizacional')
-    modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T537Modalidad')
+    id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T537Modalidad')
     id_fuente1 = models.BigIntegerField(null=True, blank=True, db_column='T537IdFuente1')
     valor_fte1 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte1')
     adicion1 = models.BooleanField(null=True, blank=True, db_column='T537adicion1')
