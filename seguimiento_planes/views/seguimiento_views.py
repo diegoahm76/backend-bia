@@ -751,10 +751,16 @@ class ConceptoPOAIListTable(generics.ListAPIView):
 
     def get(self, request):
         conceptos = ConceptoPOAI.objects.all()
-        id_plan = request.query_params.get('id_plan')
-        id_proyecto = request.query_params.get('id_proyecto')
-        id_indicador = request.query_params.get('id_indicador')
-        id_meta = request.query_params.get('id_meta')
+        id_plan = request.query_params.get('id_plan', '')
+        id_proyecto = request.query_params.get('id_proyecto', '')
+        id_indicador = request.query_params.get('id_indicador', '')
+        id_meta = request.query_params.get('id_meta', '')
+
+        if id_plan == '' or id_proyecto == '' or id_indicador == '' or id_meta == '':
+            id_plan = None
+            id_proyecto = None
+            id_indicador = None
+            id_meta = None
 
         if id_plan is None or id_proyecto is None or id_indicador is None or id_meta is None:
             raise ValidationError("Por favor, ingresa los parámetros necesarios.")
@@ -1505,18 +1511,58 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
         id_rubro = data_seguimiento['id_rubro']
         id_prioridad = data_seguimiento['id_prioridad']
         id_unidad_organizacional = data_seguimiento['id_unidad_organizacional']
+        id_modalidad = data_seguimiento['id_modalidad']
 
-        dict = {
-            'key': [id_concepto, id_plan, id_producto, id_actividad, id_indicador, id_meta, id_rubro, id_prioridad, id_unidad_organizacional],
-            'object': [ConceptoPOAI, Planes, Productos, Actividad, Indicador, Metas, Rubro, Prioridad, UnidadesOrganizacionales]
-        }
-
-        for key, object in dict.items():
-            try:
-                object = object.get(id=key)
-            except object.DoesNotExist:
-                raise NotFound(f"No se encontró un {object} con este ID.")
-
+        try:
+            concepto = ConceptoPOAI.objects.get(id_concepto=id_concepto)
+        except ConceptoPOAI.DoesNotExist:
+            raise NotFound("No se encontró un concepto POAI")
+        
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan")
+        
+        try:
+            producto = Productos.objects.get(id_producto=id_producto)
+        except Productos.DoesNotExist:
+            raise NotFound("No se encontró un producto")
+        
+        try:
+            actividad = Actividad.objects.get(id_actividad=id_actividad)
+        except Actividad.DoesNotExist:
+            raise NotFound("No se encontró una actividad")
+        
+        try:
+            indicador = Indicador.objects.get(id_indicador=id_indicador)
+        except Indicador.DoesNotExist:
+            raise NotFound("No se encontró un indicador")
+        
+        try:
+            meta = Metas.objects.get(id_meta=id_meta)
+        except Metas.DoesNotExist:
+            raise NotFound("No se encontró una meta")
+        
+        try:
+            rubro = Rubro.objects.get(id_rubro=id_rubro)
+        except Rubro.DoesNotExist:
+            raise NotFound("No se encontró un rubro")
+        
+        try:
+            prioridad = Prioridad.objects.get(id_prioridad=id_prioridad)
+        except Prioridad.DoesNotExist:
+            raise NotFound("No se encontró una prioridad")
+        
+        try:
+            unidad_organizacional = UnidadesOrganizacionales.objects.get(id_unidad_organizacional=id_unidad_organizacional)
+        except UnidadesOrganizacionales.DoesNotExist:
+            raise NotFound("No se encontró una unidad organizacional")
+        
+        try:
+            modalidad = Modalidad.objects.get(id_modalidad=id_modalidad)
+        except Modalidad.DoesNotExist:
+            raise NotFound("No se encontró una modalidad")
+        
         serializer = self.serializer_class(data=data_seguimiento)
 
         if serializer.is_valid():
@@ -1524,12 +1570,31 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
             return serializer.data
         else:
             raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
-        
-    
+
+
     def post(self, request):
         data_seguimiento = request.data
         seguimiento = self.create_seguimiento_poai(data_seguimiento)
 
         return Response({'success': True, 'detail': 'Se creó el seguimiento POAI correctamente.', 'data': seguimiento}, status=status.HTTP_201_CREATED)
 
-  
+
+class SeguimientoPOAIUpdate(generics.UpdateAPIView):
+    serializer_class = SeguimientoPOAISerializer
+    permission_classes = [IsAuthenticated, PermisoActualizarSeguimientoPOAI]
+
+    def put(self, request, id_seguimiento):
+        data_seguimiento = request.data
+
+        try:
+            seguimiento = SeguimientoPOAI.objects.get(id_seguimiento=id_seguimiento)
+        except SeguimientoPOAI.DoesNotExist:
+            raise NotFound("No se encontró un seguimiento POAI con este ID.")
+        
+        serializer = self.serializer_class(seguimiento, data=data_seguimiento, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Se actualizó el seguimiento POAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
