@@ -32,9 +32,10 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPAIDocumentosSerializer, 
                                                                    SeguimientoPOAISerializer, 
                                                                    ConceptoPOAISerializerGet)
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI
-from seguimiento_planes.models.planes_models import Metas, Rubro, Planes, Proyecto
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
+from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
+from transversal.models import UnidadesOrganizacionales
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -1488,3 +1489,47 @@ class SeguimientoPOAIList(generics.ListAPIView):
             raise NotFound("No se encontraron resultados para esta consulta.")
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class SeguimientoPOAICreate(generics.CreateAPIView):
+    serializer_class = SeguimientoPOAISerializer
+    permission_classes = [IsAuthenticated, PermisoCrearSeguimientoPOAI]
+
+    def create_seguimiento_poai(self, data_seguimiento):
+        id_concepto = data_seguimiento['id_concepto']
+        id_plan = data_seguimiento['id_plan']
+        id_producto = data_seguimiento['id_producto']
+        id_actividad = data_seguimiento['id_actividad']
+        id_indicador = data_seguimiento['id_indicador']
+        id_meta = data_seguimiento['id_meta']
+        id_rubro = data_seguimiento['id_rubro']
+        id_prioridad = data_seguimiento['id_prioridad']
+        id_unidad_organizacional = data_seguimiento['id_unidad_organizacional']
+
+        dict = {
+            'key': [id_concepto, id_plan, id_producto, id_actividad, id_indicador, id_meta, id_rubro, id_prioridad, id_unidad_organizacional],
+            'object': [ConceptoPOAI, Planes, Productos, Actividad, Indicador, Metas, Rubro, Prioridad, UnidadesOrganizacionales]
+        }
+
+        for key, object in dict.items():
+            try:
+                object = object.get(id=key)
+            except object.DoesNotExist:
+                raise NotFound(f"No se encontró un {object} con este ID.")
+
+        serializer = self.serializer_class(data=data_seguimiento)
+
+        if serializer.is_valid():
+            serializer.save()
+            return serializer.data
+        else:
+            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+        
+    
+    def post(self, request):
+        data_seguimiento = request.data
+        seguimiento = self.create_seguimiento_poai(data_seguimiento)
+
+        return Response({'success': True, 'detail': 'Se creó el seguimiento POAI correctamente.', 'data': seguimiento}, status=status.HTTP_201_CREATED)
+
+  

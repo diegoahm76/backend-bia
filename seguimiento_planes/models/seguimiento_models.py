@@ -376,6 +376,21 @@ class SeguimientoPAIDocumentos(models.Model): # Tabla intermedia
 
 # # class SeguimientoPoaiOptimizado(models.Model):
 
+class Prioridad(models.Model):
+    id_prioridad = models.AutoField(primary_key=True, editable=False, db_column='T538IdPrioridad')
+    nombre_prioridad = models.CharField(max_length=100, db_column='T538nombrePrioridad')
+    activo = models.BooleanField(default=True, db_column='T538activo')
+    item_ya_usado = models.BooleanField(default=False, db_column='T538itemYaUsado')
+    registro_precargado = models.BooleanField(default=False, db_column='T538registroPrecargado')
+
+    def __str__(self):
+        return str(self.nombre_prioridad)
+
+    class Meta:
+        db_table = 'T533Prioridad'
+        verbose_name = 'Prioridad'
+        verbose_name_plural = 'Prioridades'
+
 class SeguimientoPOAI(models.Model):
     id_seguimiento = models.AutoField(primary_key=True, editable=False, db_column='T537IdSeguimiento')
     id_concepto = models.ForeignKey(ConceptoPOAI, on_delete=models.CASCADE, db_column='T537IdConcepto')
@@ -386,7 +401,7 @@ class SeguimientoPOAI(models.Model):
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T537IdMeta')
     id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T537IdRubro')
     descripcion = models.CharField(max_length=255, db_column='T537descripcion')
-    id_prioridad = models.BigIntegerField(null=True, blank=True, db_column='T537IdPrioridad')
+    id_prioridad = models.ForeignKey(Prioridad, null=True, blank=True, on_delete=models.SET_NULL, db_column='T537IdPrioridad')
     codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')
     cuenta = models.SmallIntegerField(db_column='T537cuenta')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T537IdUnidadOrganizacional')

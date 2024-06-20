@@ -94,7 +94,7 @@ urlpatterns=[
     path('consltar-seguimiento-documentos-id-pai/<str:pk>/', views.SeguimientoPAIDocumentosListIdSeguimiento.as_view(),name='consultaridseguimientopai'),
     # Seguimiento POAI
     path('consultar-seguimiento-poai/<str:id_concepto>/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
-
+    path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
 
 
 
