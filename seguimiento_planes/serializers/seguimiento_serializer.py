@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from seguimiento_planes.models.planes_models import Sector
-from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores, 
-                                                          DetalleInversionCuentas, 
+from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores,
                                                           Modalidad, 
                                                           Ubicaciones, 
                                                           FuenteRecursosPaa, 
@@ -9,7 +8,6 @@ from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndi
                                                           EstadoVF, 
                                                           CodigosUNSP, 
                                                           ConceptoPOAI, 
-                                                          FuenteFinanciacion, 
                                                           BancoProyecto, 
                                                           PlanAnualAdquisiciones, 
                                                           PAACodgigoUNSP, 
@@ -42,21 +40,6 @@ class SectorSerializerUpdate(serializers.ModelSerializer):
                 validated_data.pop('item_ya_usado', None)  # Excluir el campo específico
                 return super().update(instance, validated_data)
 
-class DetalleInversionCuentasSerializer(serializers.ModelSerializer):
-
-    nombre_sector = serializers.ReadOnlyField(source='id_sector.nombre_sector', default=None)
-    rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
-    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
-    nombre_subprograma = serializers.ReadOnlyField(source='id_subprograma.nombre_subprograma', default=None)
-    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
-    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
-    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
-    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
-    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
-
-    class Meta:
-        model = DetalleInversionCuentas
-        fields = '__all__'
 
 class ModalidadSerializer(serializers.ModelSerializer):
     class Meta:
@@ -153,12 +136,6 @@ class ConceptoPOAISerializerGet(serializers.ModelSerializer):
         model = ConceptoPOAI
         fields = ['id_concepto', 'nombre_concepto', 'valor_inicial', 'nombre_responsable', 'nombre_modalidad']
 
-class FuenteFinanciacionSerializer(serializers.ModelSerializer):
-
-    concepto = serializers.ReadOnlyField(source='id_concepto.concepto', default=None)
-    class Meta:
-        model = FuenteFinanciacion
-        fields = '__all__'
 
 class BancoProyectoSerializer(serializers.ModelSerializer):
     
