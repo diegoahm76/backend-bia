@@ -287,7 +287,8 @@ class Rt954Cobro(models.Model):
     t954replegalimportad = models.CharField(max_length=255,null=True)
     t954tsetvb = models.CharField(max_length=15,null=True)
     t954traplicadcto465 = models.CharField(max_length=1, null=True)
-
+    t954idtramite = models.CharField(max_length=30, null=True)
+ 
     class Meta:
         db_table = 'rt954cobro'
 
