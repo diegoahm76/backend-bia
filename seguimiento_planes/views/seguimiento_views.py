@@ -32,6 +32,7 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPAISerializer, 
                                                                    SeguimientoPAIDocumentosSerializer, 
                                                                    SeguimientoPOAISerializer, 
+                                                                   PrioridadPOAISerializer,
                                                                    ConceptoPOAISerializerGet)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
@@ -1486,6 +1487,18 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 #         if not seguimientos:
 #             raise NotFound("No se encontraron resultados para esta consulta.")
 #         return Response( {'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class PrioridadList(generics.ListAPIView):
+    serializer_class = PrioridadPOAISerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        prioridades = Prioridad.objects.all().order_by('id_prioridad')
+        serializer = self.serializer_class(prioridades, many=True)
+        if not prioridades:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron las siguientes prioridades:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
 
