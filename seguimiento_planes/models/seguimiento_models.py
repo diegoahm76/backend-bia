@@ -8,6 +8,7 @@ from transversal.models.base_models import (
     ClasesTercero
 )
 
+
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
     vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T516vano1')
@@ -46,6 +47,7 @@ class Modalidad(models.Model): # Tabla básica
         verbose_name = 'Modalidad'
         verbose_name_plural = 'Modalidades'
 
+
 class Ubicaciones(models.Model):
     id_ubicacion = models.AutoField(primary_key=True, editable=False, db_column='T520IdUbicacion')
     nombre_ubicacion = models.CharField(max_length=100, db_column='T520nombreUbicacion')
@@ -61,6 +63,7 @@ class Ubicaciones(models.Model):
         db_table = 'T520Ubicaciones'
         verbose_name = 'Ubicación'
         verbose_name_plural = 'Ubicaciones'
+
 
 class FuenteRecursosPaa(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T521IdFuente')
