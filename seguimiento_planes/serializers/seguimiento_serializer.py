@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import Sector
+from seguimiento_planes.models.planes_models import Sector, ParametricaFuente
 from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores,
                                                           Modalidad, 
                                                           Ubicaciones, 
@@ -222,6 +222,22 @@ class SeguimientoPAIDocumentosSerializer(serializers.ModelSerializer):
 #     class Meta:
 #             model = SeguimientoPOAI
 #             fields = '__all__'
+
+
+class FuentesFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
+    nombre_fuente = serializers.SerializerMethodField()
+    class Meta:
+        model = FuenteFinanciacionIndicadores
+        fields = '__all__'
+
+    def get_nombre_fuente(self, obj):
+        nombre_fuente = None
+        if obj.id_fuente:
+            fuente = ParametricaFuente.objects.get(id_fuente=obj.id_fuente)
+        nombre_fuente = fuente.nombre_fuente
+
+        return nombre_fuente
+
 
 class SeguimientoPOAISerializer(serializers.ModelSerializer):
     class Meta:

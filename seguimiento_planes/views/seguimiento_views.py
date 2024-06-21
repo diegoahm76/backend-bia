@@ -11,7 +11,8 @@ from gestion_documental.serializers.expedientes_serializers import ArchivosDigit
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecursosPaaSerializerUpdate, 
-                                                                   FuenteFinanciacionIndicadoresSerializer, 
+                                                                   FuenteFinanciacionIndicadoresSerializer,
+                                                                   FuentesFinanciacionIndicadoresSerializer, 
                                                                    SectorSerializer, SectorSerializerUpdate,
                                                                    ModalidadSerializer, 
                                                                    ModalidadSerializerUpdate, 
@@ -40,6 +41,17 @@ from transversal.models import UnidadesOrganizacionales
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
 # Listar todos los registros de fuentes de financiacion indicadores
+
+class FuenteFinanciacionIndicadoresLista(generics.ListAPIView):
+    serializer_class = FuentesFinanciacionIndicadoresSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        fuentes = FuenteFinanciacionIndicadores.objects.all()
+        serializer = self.serializer_class(fuentes, many=True)
+        if not fuentes:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 class FuenteFinanciacionIndicadoresList(generics.ListAPIView):
     queryset = FuenteFinanciacionIndicadores.objects.all()
@@ -1476,6 +1488,7 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 #         return Response( {'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
 
 class SeguimientoPOAIList(generics.ListAPIView):
@@ -1598,3 +1611,7 @@ class SeguimientoPOAIUpdate(generics.UpdateAPIView):
             return Response({'success': True, 'detail': 'Se actualizó el seguimiento POAI correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
         else:
             raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+        
+
+
+    

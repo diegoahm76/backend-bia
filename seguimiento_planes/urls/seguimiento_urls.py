@@ -4,6 +4,7 @@ from seguimiento_planes.views import seguimiento_views as views
 urlpatterns=[
     # Fuentes de financiacion indicadores
     path('consultar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresList.as_view(),name='consultarfuentesfinanciacionindicadores'),
+    path('consultar-fuentes-financiacion-indicadores-lista/',views.FuenteFinanciacionIndicadoresLista.as_view(),name='consultar-fuentes-financiacion-indicadores-lista'),
     path('crear-fuentes-financiacion-indicadores/',views.FuenteFinanciacionIndicadoresCreate.as_view(),name='crearfuentesfinanciacionindicadores'),
     path('actualizar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresUpdate.as_view(),name='actualizarfuentesfinanciacionindicadores'),
     path('eliminar-fuentes-financiacion-indicadores/<str:pk>/',views.FuenteFinanciacionIndicadoresDelete.as_view(),name='eliminarfuentesfinanciacionindicadores'),
