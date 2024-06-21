@@ -154,7 +154,7 @@ def consultar_tabla_mssql():
         select_query_954 = """SELECT 
         T954CodCia,T954IdCobro,T954CodTipoRenta,T954CodTipoCobro,T954Nit,T954Liquidado,T954NumLiquidacion,T954SeCobra,T954CodOrigenCobro,T954NumOrigenCobro,T954IdPaso,T954ConsecPaso,T954NumNotificacion,T954Anulado,
         T954TUATM, T954TUAFR,T954TUAVALORTUA,T954TRTMDBO,T954TRTMSST,T954TRFRDBO,T954TRFRSST,T954TRVALORTRDBO,T954TRVALORTRSST,T954TRCANTPERANIDBO,T954TRCANTPERANISST,T954TRTIENEPSMV,T954TUAPORCDCTO,T954TUANORMADCTO,T954TUAUSARVMANUAL,
-        T954REPLEGALIMPORTAD,T954TSETVB,T954TRAPLICADCTO465
+        T954REPLEGALIMPORTAD,T954TSETVB,T954TRAPLICADCTO465,T954IdTramite
     FROM
         T954COBRO    
         """
@@ -844,6 +844,46 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
 
+        # Consulta para obtener registros existentes
+        cursor.execute("SELECT t03nit,t03nombre FROM rt03tercero")
+        existing_recor = cursor.fetchall()
+        existing_records_sett = {rec[0] for rec in existing_recor}
+
+        # Filtrar los registros nuevos que no están en la tabla
+        nuevos_registros = [dato for dato in data_03 if dato[1] not in existing_records_sett]
+
+        if nuevos_registros:
+            print("Nuevos registros a insertar en la tabla rt03tercero:")
+            for registro in nuevos_registros:
+                print(registro)
+
+                # Convertir fechas de cadena a objetos datetime si es necesario
+                registro = list(registro)  # Convertir tupla a lista para modificar valores
+                for i, value in enumerate(registro):
+                    if isinstance(value, str) and i == 18:  # Indicar el índice correspondiente a t03fechaingreso
+                        try:
+                            registro[i] = datetime.strptime(value, '%Y-%m-%d').date()
+                        except ValueError:
+                            print(f"Error: La fecha '{value}' en el registro no es válida.")
+                            continue  # Otra acción según sea necesario si la fecha no es válida
+                registro = tuple(None if val is None else val for val in registro)
+
+                # Convertir valores None a None en la tupla dato_03
+                 
+
+                insert_query_03 = """
+            INSERT INTO rt03tercero   (
+               t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif
+               )VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                cursor.execute(insert_query_03, registro)
+
+            print("Registros insertados correctamente en rt03tercero.")
+        else:
+            print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt03tercero.")
+
+
+
+
 
 
 
@@ -874,9 +914,9 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
                         t912numerodoc, t912observacion
                     ) VALUES (%s, %s, %s, %s, %s, %s)
                 """
-            cursor.execute(insert_query_912, registro)
+                cursor.execute(insert_query_912, registro)
 
-            print("Registros insertados correctamente en rt912anulliquidacion.")
+                print("Registros insertados correctamente en rt912anulliquidacion.")
         else:
             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt912anulliquidacion.")
 
@@ -1627,7 +1667,7 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
 
         # Consulta para obtener registros existentes de rt954cobro
-        cursor.execute("SELECT t954codcia, t954idcobro, t954codtiporenta, t954codtipocobro, t954nit, t954liquidado, t954numliquidacion, t954secobra, t954codorigencobro, t954numorigencobro, t954idpaso, t954consecpaso, t954numnotificacion, t954anulado, t954tuatm, t954tuafr, t954tuavalortua, t954trtmdbo, t954trtmsst, t954trfrdbo, t954trfrsst, t954trvalortrdbo, t954trvalortrsst, t954trcantperanidbo, t954trcantperanisst, t954trtienepsmv, t954tuaporcdcto, t954tuanormadcto, t954tuausarvmanual, t954replegalimportad, t954tsetvb, t954traplicadcto465 FROM rt954cobro")
+        cursor.execute("SELECT t954codcia, t954idcobro, t954codtiporenta, t954codtipocobro, t954nit, t954liquidado, t954numliquidacion, t954secobra, t954codorigencobro, t954numorigencobro, t954idpaso, t954consecpaso, t954numnotificacion, t954anulado, t954tuatm, t954tuafr, t954tuavalortua, t954trtmdbo, t954trtmsst, t954trfrdbo, t954trfrsst, t954trvalortrdbo, t954trvalortrsst, t954trcantperanidbo, t954trcantperanisst, t954trtienepsmv, t954tuaporcdcto, t954tuanormadcto, t954tuausarvmanual, t954replegalimportad, t954tsetvb, t954traplicadcto465,t954idtramite FROM rt954cobro")
         existing_records = cursor.fetchall()
         existing_records_set = set(existing_records)
 
@@ -1648,8 +1688,8 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
                     t954consecpaso, t954numnotificacion, t954anulado, t954tuatm, t954tuafr, t954tuavalortua, 
                     t954trtmdbo, t954trtmsst, t954trfrdbo, t954trfrsst, t954trvalortrdbo, t954trvalortrsst, 
                     t954trcantperanidbo, t954trcantperanisst, t954trtienepsmv, t954tuaporcdcto, t954tuanormadcto, 
-                    t954tuausarvmanual, t954replegalimportad, t954tsetvb, t954traplicadcto465
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    t954tuausarvmanual, t954replegalimportad, t954tsetvb, t954traplicadcto465,t954idtramite
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s)
                 """
 
                 # Asegurarse de que los valores nulos sean manejados correctamente
@@ -1658,46 +1698,6 @@ def insertar_datos_postgresql(data_970, data_987, data_986, data_985 , data_982 
 
         else:
             print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt954cobro.")
-
-
-
-
-        # Consulta para obtener registros existentes
-        cursor.execute("SELECT t03nit,t03nombre FROM rt03tercero")
-        existing_recor = cursor.fetchall()
-        existing_records_sett = {rec[0] for rec in existing_recor}
-
-        # Filtrar los registros nuevos que no están en la tabla
-        nuevos_registros = [dato for dato in data_03 if dato[1] not in existing_records_sett]
-
-        if nuevos_registros:
-            print("Nuevos registros a insertar en la tabla rt03tercero:")
-            for registro in nuevos_registros:
-                print(registro)
-
-                # Convertir fechas de cadena a objetos datetime si es necesario
-                registro = list(registro)  # Convertir tupla a lista para modificar valores
-                for i, value in enumerate(registro):
-                    if isinstance(value, str) and i == 18:  # Indicar el índice correspondiente a t03fechaingreso
-                        try:
-                            registro[i] = datetime.strptime(value, '%Y-%m-%d').date()
-                        except ValueError:
-                            print(f"Error: La fecha '{value}' en el registro no es válida.")
-                            continue  # Otra acción según sea necesario si la fecha no es válida
-                registro = tuple(None if val is None else val for val in registro)
-
-                # Convertir valores None a None en la tupla dato_03
-                 
-
-                insert_query_03 = """
-            INSERT INTO rt03tercero   (
-               t03codcia, t03nit, t03codciudadced, t03codrapido, t03libretamil,t03matriprof, t03nombre, t03primerapellido, t03segundoapellido,t03primernombre, t03segundonombre, t03codpostal, t03direccion,t03telefono, t03fax, t03email, t03website, t03codtiposociedad,t03fechaingreso, t03codcalifica, t03observacion, t03cargoexterno, t03nitrel, t03codtiporegimen, t03tiposeparanombre, t03coddpto,t03codmpio, t03codcgn, t03codctacontabcausa, t03codactrut1,t03codactrut, t03codactrut3, t03codpais, t03codtipodocumid,t03codreciproca, t03entaseguradora, t03codentchip, t03fechanacimiento,t03genero, t03actcertifpyg, t03fechaactwebinfo, t03fechasolwebinfo,t03ipaddractserv, t03webpassword, t03actrecibosicar, t03id_pci_siif
-               )VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-                cursor.execute(insert_query_03, registro)
-
-            print("Registros insertados correctamente en rt03tercero.")
-        else:
-            print("No hay nuevos registros para insertar. Los registros no han cambiado en la tabla rt03tercero.")
 
 
 
