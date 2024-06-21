@@ -134,7 +134,7 @@ class ConceptoPOAISerializerGet(serializers.ModelSerializer):
 
     class Meta:
         model = ConceptoPOAI
-        fields = ['id_concepto', 'nombre_concepto', 'valor_inicial', 'nombre_responsable', 'nombre_modalidad']
+        fields = '__all__'
 
 
 class BancoProyectoSerializer(serializers.ModelSerializer):
