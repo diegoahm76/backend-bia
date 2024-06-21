@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from seguimiento_planes.models.planes_models import Sector, ParametricaFuente
 from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores,
-                                                          Modalidad, 
+                                                          Modalidad,
+                                                          Prioridad,
                                                           Ubicaciones, 
                                                           FuenteRecursosPaa, 
                                                           Intervalo, 
@@ -131,6 +132,8 @@ class ConceptoPOAISerializer(serializers.ModelSerializer):
 class ConceptoPOAISerializerGet(serializers.ModelSerializer):
     nombre_responsable = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
     nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.nombre_modalidad', default=None)
+    cod_presupuestal = serializers.ReadOnlyField(source='id_rubro.cod_pre', default=None)
+    cuenta = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
 
     class Meta:
         model = ConceptoPOAI
@@ -238,6 +241,11 @@ class FuentesFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
 
         return nombre_fuente
 
+
+class PrioridadPOAISerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prioridad
+        fields = '__all__'
 
 class SeguimientoPOAISerializer(serializers.ModelSerializer):
     class Meta:
