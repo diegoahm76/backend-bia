@@ -1595,7 +1595,7 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
             serializer.save()
             return serializer.data
         else:
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+            raise ValidationError(f'Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo. {serializer.errors}')
 
 
     def post(self, request):
