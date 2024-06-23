@@ -1,7 +1,7 @@
 from django.db import models
 
 from transversal.models.organigrama_models import UnidadesOrganizacionales
-from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores 
+# from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores 
 
 # Create your models here.
 
