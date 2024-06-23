@@ -1,5 +1,5 @@
 from django.db import models
-from seguimiento_planes.models.planes_models import Sector, Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
+from seguimiento_planes.models.planes_models import Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas

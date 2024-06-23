@@ -430,7 +430,7 @@ class Rubro(models.Model):
     valcuenta = models.CharField(max_length=255, db_column='T511valcuenta') 
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T511IdPlan')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T511IdMeta')
-    id_fuente = models.ForeignKey(FuenteFinanciacionIndicadores, on_delete=models.SET_NULL,null=True, blank=True, db_column='T511IdFuente')
+    id_fuente = models.ForeignKey("FuenteFinanciacionIndicadores", on_delete=models.SET_NULL,null=True, blank=True, db_column='T511IdFuente')
     valor_fuentes = models.BigIntegerField(db_column='T511valorFuentes')
     agno = models.IntegerField(db_column='T511agno')
     adicion = models.BooleanField(db_column='T511adicion')
