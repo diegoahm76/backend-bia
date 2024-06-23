@@ -17,13 +17,6 @@ from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndi
                                                           SeguimientoPOAI)
 class FuenteFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
 
-    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
-    nombre_cuenca = serializers.ReadOnlyField(source='id_cuenca.nombre', default=None)
-    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
-    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
-    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
-    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
-
     class Meta:
         model = FuenteFinanciacionIndicadores
         fields = '__all__'
@@ -121,9 +114,6 @@ class CodigosUNSPSerializerUpdate(serializers.ModelSerializer):
                 return super().update(instance, validated_data)
 
 class ConceptoPOAISerializer(serializers.ModelSerializer):
-    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
-    nombre = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
-    rubro = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
 
     class Meta:
         model = ConceptoPOAI
