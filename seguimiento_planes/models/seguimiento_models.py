@@ -1,5 +1,5 @@
 from django.db import models
-from seguimiento_planes.models.planes_models import Sector, Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
+from seguimiento_planes.models.planes_models import Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -406,7 +406,7 @@ class SeguimientoPOAI(models.Model):
     descripcion = models.CharField(max_length=255, db_column='T537descripcion')
     id_prioridad = models.ForeignKey(Prioridad, null=True, blank=True, on_delete=models.SET_NULL, db_column='T537IdPrioridad')
     codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')
-    cuenta = models.SmallIntegerField(db_column='T537cuenta')
+    cuenta = models.CharField(max_length=255, db_column='T537cuenta')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T537IdUnidadOrganizacional')
     id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T537Modalidad')
     id_fuente1 = models.BigIntegerField(null=True, blank=True, db_column='T537IdFuente1')

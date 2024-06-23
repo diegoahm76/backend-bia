@@ -1,6 +1,7 @@
 from django.db import models
 
 from transversal.models.organigrama_models import UnidadesOrganizacionales
+# from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores 
 
 # Create your models here.
 
@@ -21,10 +22,8 @@ class Sector(models.Model):
         verbose_name_plural = 'Sectores'
 
 class ObjetivoDesarrolloSostenible(models.Model):
-    id_objetivo = models.AutoField(
-        primary_key=True, editable=False, db_column='T500IdObjetivo')
-    nombre_objetivo = models.CharField(
-        max_length=400, db_column='T500nombreObjetivo')
+    id_objetivo = models.AutoField(primary_key=True, editable=False, db_column='T500IdObjetivo')
+    nombre_objetivo = models.CharField(max_length=400, db_column='T500nombreObjetivo')
     activo = models.BooleanField(default=True, db_column='T500activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T500itemYaUsado')
     registro_precargado = models.BooleanField(default=False, db_column='T500registroPrecargado')
@@ -38,24 +37,18 @@ class ObjetivoDesarrolloSostenible(models.Model):
         verbose_name_plural = 'Objetivos Desarrollo Sostenible'
 
 class Planes(models.Model):
-    id_plan = models.AutoField(
-        primary_key=True, editable=False, db_column='T501IdPlan')
-    nombre_plan = models.CharField(
-        max_length=255, db_column='T501nombrePlan')
-    sigla_plan = models.CharField(
-        max_length=30, db_column='T501siglaPlan')
-    tipo_plan = models.CharField(
-        max_length=3, choices=[
+    id_plan = models.AutoField(primary_key=True, editable=False, db_column='T501IdPlan')
+    nombre_plan = models.CharField(max_length=255, db_column='T501nombrePlan')
+    sigla_plan = models.CharField(max_length=30, db_column='T501siglaPlan')
+    tipo_plan = models.CharField(max_length=3, choices=[
             ('PND', 'Plan Nacional Desarrollo'),
             ('PAI', 'Plan Accion Institucional'),
             ('PGR', 'Plan Gestion Ambiental Regional'),
             ('PES', 'Plan de desarrollo economico y social'),
             ('POA', 'Plan Operativo Anual de Inversiones'),
         ], db_column='T501tipoPlan')
-    agno_inicio = models.IntegerField(
-        null=True, blank=True, db_column='T501agnoInicio')
-    agno_fin = models.IntegerField(
-        null=True, blank=True, db_column='T501agnoFin')
+    agno_inicio = models.IntegerField(null=True, blank=True, db_column='T501agnoInicio')
+    agno_fin = models.IntegerField(null=True, blank=True, db_column='T501agnoFin')
     estado_vigencia = models.BooleanField(default=True, db_column='T501estadoVigencia')
 
     def __str__(self):
@@ -67,10 +60,8 @@ class Planes(models.Model):
         verbose_name_plural = 'Planes Nacionales Desarrollos'
 
 class TipoEje(models.Model):
-    id_tipo_eje = models.AutoField(
-        primary_key=True, editable=False, db_column='T514IdTipoEje')
-    nombre_tipo_eje = models.CharField(
-        max_length=255, db_column='T514nombreTipoEje')
+    id_tipo_eje = models.AutoField(primary_key=True, editable=False, db_column='T514IdTipoEje')
+    nombre_tipo_eje = models.CharField(max_length=255, db_column='T514nombreTipoEje')
     activo = models.BooleanField(default=True, db_column='T514activo')
     item_ya_usado = models.BooleanField(default=False, db_column='T514itemYaUsado')
     registro_precargado = models.BooleanField(default=False, db_column='T514registroPrecargado')
@@ -375,33 +366,7 @@ class Indicador(models.Model):
         verbose_name = 'Indicador'
         verbose_name_plural = 'Indicadores'
 
-class Rubro(models.Model):
-    id_rubro = models.AutoField(
-        primary_key=True, editable=False, db_column='T511IdRubro')
-    cod_pre = models.CharField(
-        max_length=255, db_column='T511codPre')
-    cuenta = models.CharField(
-        max_length=255, db_column='T511cuenta')
-    valcuenta = models.CharField(
-        max_length=255, db_column='T511valcuenta') 
-    id_programa = models.ForeignKey(
-        Programa, on_delete=models.CASCADE, db_column='T511IdPrograma')
-    id_proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.CASCADE, db_column='T511IdProyecto')
-    id_producto = models.ForeignKey(
-        Productos, on_delete=models.CASCADE, db_column='T511IdProducto')
-    id_actividad = models.ForeignKey(
-        Actividad, on_delete=models.CASCADE, db_column='T511IdActividad')
-    id_indicador = models.ForeignKey(
-        Indicador, on_delete=models.CASCADE, db_column='T513IdIndicador')
 
-    def __str__(self):
-        return str(self.id_rubro)
-
-    class Meta:
-        db_table = 'T511Rubro'
-        verbose_name = 'Rubro'
-        verbose_name_plural = 'Rubros'
 
 class Metas(models.Model):
     id_meta = models.AutoField(
@@ -456,6 +421,28 @@ class Metas(models.Model):
         db_table = 'T513Meta'
         verbose_name = 'Meta'
         verbose_name_plural = 'Metas'
+
+
+class Rubro(models.Model):
+    id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T511IdRubro')
+    cod_pre = models.CharField(max_length=255, db_column='T511codPre')
+    cuenta = models.CharField(max_length=255, db_column='T511cuenta')
+    valcuenta = models.CharField(max_length=255, db_column='T511valcuenta') 
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T511IdPlan')
+    id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T511IdMeta')
+    id_fuente = models.ForeignKey("FuenteFinanciacionIndicadores", on_delete=models.SET_NULL,null=True, blank=True, db_column='T511IdFuente')
+    valor_fuentes = models.BigIntegerField(db_column='T511valorFuentes')
+    agno = models.IntegerField(db_column='T511agno')
+    adicion = models.BooleanField(db_column='T511adicion')
+
+    def __str__(self):
+        return str(self.id_rubro)
+
+    class Meta:
+        db_table = 'T511Rubro'
+        verbose_name = 'Rubro'
+        verbose_name_plural = 'Rubros'
+
 
 class Subprograma(models.Model):
     id_subprograma = models.AutoField(
