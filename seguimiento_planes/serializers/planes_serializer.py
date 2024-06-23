@@ -104,14 +104,7 @@ class TipoSerializer(serializers.ModelSerializer):
         model = Tipo
         fields = '__all__'
 
-class RubroSerializer(serializers.ModelSerializer):
-
-    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
-    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
-    nombre_proyecto = serializers.ReadOnlyField(source='id_proyecto.nombre_proyecto', default=None)
-    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
-    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
-                
+class RubroSerializer(serializers.ModelSerializer):                
     class Meta:
         model = Rubro
         fields = '__all__'
