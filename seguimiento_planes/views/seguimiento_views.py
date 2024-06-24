@@ -38,6 +38,7 @@ from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndic
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 from transversal.models import UnidadesOrganizacionales
+# from seguimiento_planes.views.planes_views import ParametrosFuentesCreate
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -73,12 +74,25 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearFuentesFinanciacionIndicadores]
 
     def post(self, request):
+
+        nombre_fuente = request.data['nombre_fuente']
+
+        if not nombre_fuente or nombre_fuente == "":
+            raise ValidationError("El nombre de la fuente de financiación es requerido.")
+
         try:
             plan = Planes.objects.get(id_plan=request.data['id_plan'])
         except Planes.DoesNotExist:
             raise ValidationError("No se encontró un plan con este ID.")
         
-        fuentes = FuenteFinanciacionIndicadores.objects.filter(id_plan=plan.id_plan)
+        # para_dict = {"nombre_fuente": nombre_fuente}    
+        # instancia_parametrica = ParametrosFuentesCreate()
+        # datos = instancia_parametrica.create_parametrica(para_dict)
+        # print("PASO ", datos)
+
+        # if datos['success'] == False:
+        #     raise ValidationError("No se pudo crear la fuente de financiación indicadores.")
+
 
         # valor_fuentes = 0
         # valor_total = 0

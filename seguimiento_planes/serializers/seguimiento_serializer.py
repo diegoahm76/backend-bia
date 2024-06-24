@@ -224,10 +224,16 @@ class FuentesFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_nombre_fuente(self, obj):
-        nombre_fuente = None
+        nombre_fuente = ""
         if obj.id_fuente:
-            fuente = ParametricaFuente.objects.get(id_fuente=obj.id_fuente)
-        nombre_fuente = fuente.nombre_fuente
+            fuente = None
+            try:
+                fuente = ParametricaFuente.objects.get(id_fuente=obj.id_fuente)
+            except:
+                fuente = None
+            
+            if fuente is not None:
+                nombre_fuente= fuente.nombre_fuente
 
         return nombre_fuente
 

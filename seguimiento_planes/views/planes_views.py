@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer
+from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer, ParametricaFuentesSerializer
 from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
 from seguridad.permissions.permissions_planes import PermisoActualizarActividades, PermisoActualizarActividadesPGAR, PermisoActualizarAdministracionPlanes, PermisoActualizarArmonizacionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarIndicadores, PermisoActualizarIndicadoresPGAR, PermisoActualizarLineasBasePGAR, PermisoActualizarMedicionIndicador, PermisoActualizarMetas, PermisoActualizarMetasPGAR, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarRubros, PermisoActualizarSeguimientoPGAR, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearActividades, PermisoCrearActividadesPGAR, PermisoCrearAdministracionPlanes, PermisoCrearArmonizacionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearIndicadores, PermisoCrearIndicadoresPGAR, PermisoCrearLineasBasePGAR, PermisoCrearMedicionIndicador, PermisoCrearMetas, PermisoCrearMetasPGAR, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearRubros, PermisoCrearSeguimientoPGAR, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
 
@@ -2508,3 +2508,63 @@ class TableroControlGeneralObjeivos(generics.ListAPIView):
                 porcenjates_generales['años'].append(año)
             response.append(porcenjates_generales)
         return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': response}, status=status.HTTP_200_OK)
+    
+
+# class ParametrosFuentesCreate(generics.CreateAPIView):
+#     serializer_class = ParametricaFuentesSerializer
+#     permission_classes = [IsAuthenticated, ParametricaFuentesSerializer]
+#     def create_parametrica(self, data):
+#         serializer = self.serializer_class(data=data)
+#         serializer.is_valid(raise_exception=True)
+#         parametrica_fuente = serializer.save()
+#         return parametrica_fuente
+
+#     def post(self, request):
+#         data = request.data
+#         parametrica_fuente = self.create_parametrica(data)
+
+#         return Response({'success': True, 'detail': 'Parametro de Fuente creado correctamente.', 'data': parametrica_fuente}, status=status.HTTP_201_CREATED)
+    
+# class ParametrosFuentesCreate(generics.CreateAPIView):
+#     serializer_class = ParametricaFuentesSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def create_parametrica(self, data):
+#         serializer = self.serializer_class(data=data)
+#         if serializer.is_valid():
+#             serializer.save()
+#         return serializer.data
+
+#     def post(self, request):
+#         data = request.data
+#         parametrica_fuente = self.create_parametrica(data)
+#         return Response({'success': True, 'detail': 'Parametro de Fuente creado correctamente.', 'data': parametrica_fuente}, status=status.HTTP_201_CREATED)
+
+
+# class ParametrosFuentesCreate(generics.CreateAPIView):
+#     serializer_class = ParametricaFuentesSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def create(self, request, data_in):
+#         data = data_in
+#         if request:
+#             data = request.data
+#         # Crear el serializer con los datos del request
+#         serializer = self.serializer_class(data=data)
+        
+#         # Validar los datos del serializer
+#         if serializer.is_valid():
+#             # Guardar los datos si son válidos
+#             serializer.save()
+            
+#             # Retornar la respuesta con el objeto creado
+#             return Response(
+#                 {'success': True, 'detail': 'Parametro de Fuente creado correctamente.', 'data': serializer.data},
+#                 status=status.HTTP_201_CREATED
+#             )
+#         else:
+#             # Si los datos no son válidos, retornar los errores
+#             return Response(
+#                 {'success': False, 'detail': 'Error en la creación del Parametro de Fuente.', 'errors': serializer.errors},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
