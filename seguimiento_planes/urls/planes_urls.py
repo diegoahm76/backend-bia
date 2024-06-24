@@ -108,6 +108,8 @@ urlpatterns=[
     path('actualizar-rubros/<str:pk>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
     path('eliminar-rubros/<str:pk>/',views.RubroDelete.as_view(),name='eliminarrubros'),
     path('consultar-rubros-id/<str:pk>/',views.RubroDetail.as_view(),name='consultarrubrosid'),
+    path('consultar-rubros-id-meta/<str:id_meta>/',views.RubroListIdMeta.as_view(),name='consultarrubrosidmeta'),
+    path('busqueda-avanzada-rubros-cod/',views.RubroBusquedaAvanzada.as_view(),name='busquedaavanzadarubroscod'),
     # Busqueda Avanzada rubros por cod_pre, cuenta, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador
     path('busqueda-avanzada-rubros/', views.BusquedaAvanzadaRubros.as_view(), name='busquedaavanzadarubros'),
     # Indicadores

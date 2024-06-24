@@ -32,6 +32,7 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPAISerializer, 
                                                                    SeguimientoPAIDocumentosSerializer, 
                                                                    SeguimientoPOAISerializer, 
+                                                                   PrioridadPOAISerializer,
                                                                    ConceptoPOAISerializerGet)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
@@ -72,21 +73,20 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearFuentesFinanciacionIndicadores]
 
     def post(self, request):
-        fuentes = FuenteFinanciacionIndicadores.objects.filter(id_meta=request.data['id_meta'])
-        meta = Metas.objects.filter(id_meta=request.data['id_meta']).first()
+        try:
+            plan = Planes.objects.get(id_plan=request.data['id_plan'])
+        except Planes.DoesNotExist:
+            raise ValidationError("No se encontró un plan con este ID.")
+        
+        fuentes = FuenteFinanciacionIndicadores.objects.filter(id_plan=plan.id_plan)
 
-        if meta == None:
-            raise ValidationError("No se encontró una meta con este ID.")
-
-        valor_fuentes = 0
-        valor_total = 0
-        for fuente in fuentes:
-            valor_fuentes = valor_fuentes + fuente.valor_total
-        valor_total = valor_fuentes + request.data['valor_total']
+        # valor_fuentes = 0
+        # valor_total = 0
+        # for fuente in fuentes:
+        #     valor_fuentes = valor_fuentes + fuente.valor_total
+        # valor_total = valor_fuentes + request.data['valor_total']
         
 
-        if valor_total > int(meta.valor_meta):
-            raise ValidationError("El valor total de las fuentes de financiación no puede ser mayor al valor de la meta.")
 
 
         serializer = FuenteFinanciacionIndicadoresSerializer(data=request.data)
@@ -95,7 +95,7 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
             return Response({'success': True, 'detail': 'Se creó el registro de fuente de financiación indicadores correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         else:
             print(serializer.errors)  # Imprime los errores de validación
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')        
+            raise ValidationError(f'Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo. {serializer.errors}')        
 # Actualizar un registro de fuente de financiacion indicadores
 
 class FuenteFinanciacionIndicadoresUpdate(generics.UpdateAPIView):
@@ -811,7 +811,7 @@ class ConceptoPOAICreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearConceptoPOAI]
 
     def post(self, request):
-        serializer = ConceptoPOAISerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({'success': True, 'detail': 'Se creó el registro de concepto POAI correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
@@ -1488,6 +1488,18 @@ class SeguimientoPAIDocumentosListIdSeguimiento(generics.ListAPIView):
 #         return Response( {'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
+class PrioridadList(generics.ListAPIView):
+    serializer_class = PrioridadPOAISerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        prioridades = Prioridad.objects.all().order_by('id_prioridad')
+        serializer = self.serializer_class(prioridades, many=True)
+        if not prioridades:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron las siguientes prioridades:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
 
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
 
@@ -1525,6 +1537,14 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
         id_prioridad = data_seguimiento['id_prioridad']
         id_unidad_organizacional = data_seguimiento['id_unidad_organizacional']
         id_modalidad = data_seguimiento['id_modalidad']
+
+        campos_vacios = [key for key, value in data_seguimiento.items() if value == '']
+        if campos_vacios:
+            raise ValidationError(f'Los siguientes campos no pueden estar vacíos: {campos_vacios}')
+
+        
+        # if any(value == '' for value in data_seguimiento.values()):
+        #     raise ValidationError('Los datos proporcionados no pueden estar vacíos. Por favor, revisa los datos e intenta de nuevo.')
 
         try:
             concepto = ConceptoPOAI.objects.get(id_concepto=id_concepto)
@@ -1582,7 +1602,7 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
             serializer.save()
             return serializer.data
         else:
-            raise ValidationError('Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
+            raise ValidationError(f'Los datos proporcionados no son válidos. Por favor, revisa los datos e intenta de nuevo.')
 
 
     def post(self, request):

@@ -1323,6 +1323,51 @@ class RubroDetail(generics.RetrieveAPIView):
         serializer = RubroSerializer(rubro)
         return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+class RubroListIdMeta(generics.ListAPIView):
+    serializer_class = RubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_meta):
+
+        try:
+            meta = Metas.objects.get(id_meta=id_meta)
+        except Metas.DoesNotExist:
+            raise NotFound('No se encontraron resultados.')
+        
+        rubro = Rubro.objects.filter(id_meta=meta)
+
+        if not rubro:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = RubroSerializer(rubro, many=True)
+        return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class RubroBusquedaAvanzada(generics.ListAPIView):
+    serializer_class = RubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rubros = Rubro.objects.all()
+        cod_pre = request.query_params.get('cod_pre', '')
+        cuenta_in = request.query_params.get('cuenta', '')
+        cuenta_split = cuenta_in.split('-')
+
+        rubros = rubros.filter(cod_pre__icontains=cod_pre)
+
+        for cuenta in cuenta_split:
+            rubros = rubros.filter(cuenta__icontains=cuenta)
+
+        if cod_pre == '' and cuenta_in == '':
+            rubros = Rubro.objects.all()
+
+        if not rubros:
+            raise NotFound('No se encontraron resultados.')
+        
+        serializer = RubroSerializer(rubros, many=True)
+        return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # Busqueda Avanzada rubros por cod_pre, cuenta, nombre programa, nombre proyecto, nombre producto, nombre actividad, nombre indicador
 
 class BusquedaAvanzadaRubros(generics.ListAPIView):
