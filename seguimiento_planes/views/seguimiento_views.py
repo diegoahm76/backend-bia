@@ -898,7 +898,7 @@ class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
         cod_pre = request.query_params.get('cod_pre', '')
         cuenta_in = request.query_params.get('cuenta', '')
 
-        if cod_pre == '' or cuenta_in == '':
+        if cod_pre == '' and cuenta_in == '':
             raise ValidationError("Por favor, ingresa los parámetros necesarios.")
         
         cuenta_split = cuenta_in.split(' ')
