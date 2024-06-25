@@ -445,7 +445,7 @@ class ExpedientesView(generics.ListAPIView):
 class ExpedienteEspecificoView(generics.ListAPIView):
     queryset = Expedientes.objects.all()
     serializer_class = ExpedientesSerializer
-    #permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
         queryset = Expedientes.objects.filter(pk=pk).first()
