@@ -1,3 +1,4 @@
+from django.db import connection
 from recaudo.models.cobros_models import (
     Cartera,
     VistaCarteraTua
@@ -66,7 +67,7 @@ class VistaCarteraTuaView(generics.ListAPIView):
 
     def get(self, request):
         self.pagination_class.default_limit = self.page_size
-        queryset = self.get_queryset()
+        queryset = self.get_results()
         page = self.paginate_queryset(queryset)
 
         if page is not None:
@@ -75,3 +76,9 @@ class VistaCarteraTuaView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
 
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+    def get_results(self):
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM public.vcarterabiatua")
+            rows = cursor.fetchall()
+        return rows
