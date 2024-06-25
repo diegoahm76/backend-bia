@@ -20,7 +20,7 @@ class FuenteFinanciacionIndicadores(models.Model):
     vadicion2 = models.BooleanField(default=False, db_column='T516adicion2')
     vadicion3 = models.BooleanField(default=False, db_column='T516adicion3')
     vadicion4 = models.BooleanField(default=False, db_column='T516adicion4')
-    valor_total = models.DecimalField(null=True, blank=True, db_column='T516valorTotal')
+    valor_total = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516valorTotal')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T516IdPlan')
 
     def __str__(self):
