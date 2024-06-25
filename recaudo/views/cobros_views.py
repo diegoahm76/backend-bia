@@ -60,7 +60,7 @@ class CarteraDeudoresView(generics.ListAPIView):
     
 
 class VistaCarteraTuaView(generics.ListAPIView):
-    queryset = VistaCarteraTua.objects.only('fecha', 'cod_cia', 'tipo_renta', 'cuenta_contable', 'nit', 'nombre_deudor', 'fecha_fac', 'fecha_notificacion', 'fecha_en_firme', 'corte_desde', 'corte_hasta', 'num_factura', 'num_liquidacion', 'periodo', 'agno', 'expediente', 'num_resolucion', 'recurso', 'doc_auto', 'saldo_capital', 'saldo_intereses', 'dias_mora')
+    #queryset = VistaCarteraTua.objects.only('fecha', 'cod_cia', 'tipo_renta', 'cuenta_contable', 'nit', 'nombre_deudor', 'fecha_fac', 'fecha_notificacion', 'fecha_en_firme', 'corte_desde', 'corte_hasta', 'num_factura', 'num_liquidacion', 'periodo', 'agno', 'expediente', 'num_resolucion', 'recurso', 'doc_auto', 'saldo_capital', 'saldo_intereses', 'dias_mora')
     serializer_class = VistaCarteraTuaSerializer
     pagination_class = LimitOffsetPagination
     page_size = 10
@@ -68,6 +68,7 @@ class VistaCarteraTuaView(generics.ListAPIView):
     def get(self, request):
         self.pagination_class.default_limit = self.page_size
         queryset = self.get_results()
+        print(queryset)
         page = self.paginate_queryset(queryset)
 
         if page is not None:
