@@ -436,7 +436,8 @@ class ParametricaRubro(models.Model):
 
 
 class Rubro(models.Model):
-    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T511IdRubro')
+    id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T511IdRubro')
+    id_rubro_pa = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T511IdRubro')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T511IdPlan')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T511IdMeta')
     id_fuente = models.ForeignKey("FuenteFinanciacionIndicadores", on_delete=models.CASCADE, db_column='T511IdFuente')
