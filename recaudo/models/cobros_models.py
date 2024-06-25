@@ -90,7 +90,7 @@ class VistaCarteraTua(models.Model):
     corte_desde = models.CharField(max_length=100)
     corte_hasta = models.CharField(max_length=100)
     num_factura = models.CharField(max_length=255)
-    num_liquidacion = models.IntegerField()
+    num_liquidacion = models.IntegerField(primary_key=True)
     periodo = models.CharField(max_length=100)
     agno = models.IntegerField()
     expediente = models.CharField(max_length=100)
