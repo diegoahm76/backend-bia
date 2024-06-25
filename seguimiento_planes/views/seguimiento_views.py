@@ -33,11 +33,13 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPAIDocumentosSerializer, 
                                                                    SeguimientoPOAISerializer, 
                                                                    PrioridadPOAISerializer,
-                                                                   ConceptoPOAISerializerGet)
+                                                                   ConceptoPOAISerializerGet,
+                                                                   SeguimientoPOAISerializerGet)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 from transversal.models import UnidadesOrganizacionales
+# from seguimiento_planes.views.planes_views import ParametrosFuentesCreate
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
 
@@ -73,22 +75,17 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearFuentesFinanciacionIndicadores]
 
     def post(self, request):
+
+        nombre_fuente = request.data['nombre_fuente']
+
+        if not nombre_fuente or nombre_fuente == "":
+            raise ValidationError("El nombre de la fuente de financiación es requerido.")
+
         try:
             plan = Planes.objects.get(id_plan=request.data['id_plan'])
         except Planes.DoesNotExist:
             raise ValidationError("No se encontró un plan con este ID.")
         
-        fuentes = FuenteFinanciacionIndicadores.objects.filter(id_plan=plan.id_plan)
-
-        # valor_fuentes = 0
-        # valor_total = 0
-        # for fuente in fuentes:
-        #     valor_fuentes = valor_fuentes + fuente.valor_total
-        # valor_total = valor_fuentes + request.data['valor_total']
-        
-
-
-
         serializer = FuenteFinanciacionIndicadoresSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -804,6 +801,25 @@ class ConceptoPOAIListTable(generics.ListAPIView):
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+class ConceptoPOAIListIdRubro(generics.ListAPIView):
+    serializer_class = ConceptoPOAISerializerGet
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_rubro):
+        conceptos = ConceptoPOAI.objects.all()
+        
+        try:
+            rubro = Rubro.objects.get(id_rubro=id_rubro)
+        except Rubro.DoesNotExist:
+            raise NotFound("No se encontró un rubro con este ID.")
+        
+        conceptos = conceptos.filter(id_rubro=rubro.id_rubro)
+        serializer = self.serializer_class(conceptos, many=True)
+
+        if not conceptos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 # Crear un registro de concepto POAI
 
 class ConceptoPOAICreate(generics.CreateAPIView):
@@ -855,28 +871,35 @@ class ConceptoPOAIDelete(generics.DestroyAPIView):
 # busqueda avanzada de conceptos POAI por concepto, nombre y nombre indicador
 
 class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
-    queryset = ConceptoPOAI.objects.all()
-    serializer_class = ConceptoPOAISerializer
+    serializer_class = ConceptoPOAISerializerGet
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        concepto = request.GET.get('concepto')
-        nombre = request.GET.get('nombre')
-        nombre_indicador = request.GET.get('nombre_indicador')
-        if concepto:
-            conceptos = self.queryset.filter(concepto__icontains=concepto)
-        elif nombre:
-            conceptos = self.queryset.filter(nombre__icontains=nombre)
-        elif nombre_indicador:
-            conceptos = self.queryset.filter(nombre_indicador__icontains=nombre_indicador)
-        else:
-            conceptos = self.queryset.all()
-        serializer = ConceptoPOAISerializer(conceptos, many=True)
-        if not conceptos:
-            raise NotFound("No se encontraron resultados para esta consulta.")
-        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros de conceptos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+        conceptos = ConceptoPOAI.objects.all()
+        rubros = Rubro.objects.all()
+        cod_pre = request.query_params.get('cod_pre', '')
+        cuenta_in = request.query_params.get('cuenta', '')
 
-   
+        if cod_pre == '' and cuenta_in == '':
+            raise ValidationError("Por favor, ingresa los parámetros necesarios.")
+        
+        cuenta_split = cuenta_in.split(' ')
+
+        rubros = rubros.filter(cod_pre__icontains=cod_pre)
+
+        for cuenta in cuenta_split:
+            if cuenta is not None or cuenta != '':
+                rubros = rubros.filter(cuenta__icontains=cuenta)
+
+        ids_rubros = [rubro_id.id_rubro for rubro_id in rubros]
+
+        conceptos = conceptos.filter(id_rubro__in=ids_rubros)
+
+        if not conceptos:
+            raise NotFound('No se encontraron resultados.')        
+        serializer = self.serializer_class(conceptos, many=True)
+        return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+
 # ---------------------------------------- Banco Proyecto ----------------------------------------
 
 # Listar todos los registros de bancos de proyecto
@@ -1504,7 +1527,7 @@ class PrioridadList(generics.ListAPIView):
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
 
 class SeguimientoPOAIList(generics.ListAPIView):
-    serializer_class = SeguimientoPOAISerializer
+    serializer_class = SeguimientoPOAISerializerGet
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_concepto):

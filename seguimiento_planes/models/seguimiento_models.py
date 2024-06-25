@@ -11,15 +11,16 @@ from transversal.models.base_models import (
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
-    vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T516vano1')
-    vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T516vano2')
-    vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T516vano3')
-    vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T516vano4')
+    nombre_fuente = models.CharField(max_length=255, db_column='T516nombreFuente')
+    vano_1 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano1')
+    vano_2 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano2')
+    vano_3 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano3')
+    vano_4 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano4')
     vadicion1 = models.BooleanField(default=False, db_column='T516adicion1')
     vadicion2 = models.BooleanField(default=False, db_column='T516adicion2')
     vadicion3 = models.BooleanField(default=False, db_column='T516adicion3')
     vadicion4 = models.BooleanField(default=False, db_column='T516adicion4')
-    valor_total = models.BigIntegerField(null=True, blank=True, db_column='T516valorTotal')
+    valor_total = models.DecimalField(null=True, blank=True, db_column='T516valorTotal')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T516IdPlan')
 
     def __str__(self):

@@ -525,20 +525,6 @@ class SeguimientoPGAR(models.Model):
 #         verbose_name_plural = 'Actividades Ejes'
 
 
-
-class ParametricaFuente(models.Model):
-    id_fuente = models.AutoField( primary_key=True, editable=False, db_column='T540IdFuente')
-    nombre_fuente = models.CharField( max_length=255, db_column='T540nombreFuente')
-    
-    def __str__(self):
-        return str(self.id_fuente)
-
-    class Meta:
-        db_table = 'T540Fuentes'
-        verbose_name = 'Fuente'
-        verbose_name_plural = 'Fuentes'
-
-
 class ParametricaRubro(models.Model):
     id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T541IdRubro')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T541IdPlan')
