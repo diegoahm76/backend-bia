@@ -189,11 +189,11 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
         intereses_total = 0
         monto_total = sum(float(cartera["monto_inicial"]) for cartera in carteras)
         intereses_total = sum(cartera["valor_intereses"] for cartera in carteras)
-        print("aaaaaaaaaaaaaaaaaaaaa",monto_total,intereses_total,intereses_total+intereses_total)
+        # print("aaaaaaaaaaaaaaaaaaaaa",monto_total,intereses_total,intereses_total+intereses_total)
         monto_total_con_intereses = monto_total + intereses_total
         return monto_total, intereses_total, monto_total_con_intereses
      
-    def cartera_selecionada(self, id_facilidad_pago, fecha):
+    def cartera_selecionada(self, id_facilidad_pago, fecha,abono=0):
         
         facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
         if not facilidad_pago:
@@ -204,9 +204,14 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
         if not deudor:
             raise NotFound("No existe deudor con la informacion ingresada")
         
+
+
+
         cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
         ids_cartera = [int(cartera_id.id_cartera.id) for cartera_id in cartera_ids if cartera_id]
         cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
+
+
 
         obligaciones = self.serializer_class(cartera_seleccion, many=True).data
 
@@ -229,6 +234,16 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
 
                 facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
                 abono_facilidad = round(float(facilidad_pago.valor_abonado), 2)
+
+
+
+
+                if abono != 0:
+                    abono_facilidad = abono
+                print(f"El valor final de abono es: {abono_facilidad}")
+                print(f"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx: {valor_intereses}")
+
+
                 saldo_capital=dato*1000-((dato/(dato+intereses_total))*abono_facilidad)
 
               
@@ -237,9 +252,6 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
                 valor_intereses = round(((0.12 / 360 * monto_inicial) * dias_mora),2)
                 valor_interesesdos = round(((0.12 / 360 *dias_mora ) * saldo_capital),2)
                 InteresMoratorio = round(valor_interesesdos/100, 2)
-                print("daaaaaaaaaaaaaaaaaaaa",((0.12 / 360 *dias_mora ) * saldo_capital),dias_mora,InteresMoratorio,monto_total,intereses_total,monto_inicial,valor_intereses,round(saldo_capital/1000,2),abono_facilidad,intereses_total,valor_interesesdos)
-                print("xxxxxxxxxxxxxxxxxxxx",round(saldo_capital/1000,2))
-                print("zzzzzzzzzzzzzzzzzzzz",monto_total-round(saldo_capital/1000,2))
                 abono_30=monto_total-(saldo_capital/1000)
         
 
@@ -311,6 +323,7 @@ class PlanPagosAmortizacionListaViews(generics.ListAPIView):
     def get(self, request, id_facilidad_pago):
         fecha_final_str = str(self.request.query_params.get('fecha_final', ''))
         cuotas = int(self.request.query_params.get('cuotas', ''))
+        abono = int(self.request.query_params.get('abono', ''))
         periodicidad = int(self.request.query_params.get('periodicidad', ''))
         fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()
 
@@ -321,10 +334,10 @@ class PlanPagosAmortizacionListaViews(generics.ListAPIView):
         
         # TABLA 1
         instancia_cartera = CarteraSeleccionadaListViews()
-        data_cartera = instancia_cartera.cartera_selecionada(facilidad.id, facilidad.fecha_abono)
+        data_cartera = instancia_cartera.cartera_selecionada(facilidad.id, facilidad.fecha_abono,abono)
         # TABLA 2
         instancia_cartera_modificada = CarteraSeleccionadaListViews()
-        data_cartera_modificada = instancia_cartera_modificada.cartera_selecionada(facilidad.id, fecha_final)
+        data_cartera_modificada = instancia_cartera_modificada.cartera_selecionada(facilidad.id, fecha_final,abono)
 
         # RESUMEN DE LA FACILIDAD
         resumen_inicial = {
