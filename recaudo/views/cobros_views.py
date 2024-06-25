@@ -1,11 +1,13 @@
 from recaudo.models.cobros_models import (
-    Cartera
+    Cartera,
+    VistaCarteraTua
 )
 from recaudo.models.liquidaciones_models import (
     Deudores
 )
 from recaudo.serializers.cobros_serializers import (
-    CarteraGeneralSerializer
+    CarteraGeneralSerializer,
+    VistaCarteraTuaSerializer
 )
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -51,6 +53,25 @@ class CarteraDeudoresView(generics.ListAPIView):
 
 
         queryset = Cartera.objects.filter(id_deudor__in=deudores)
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class VistaCarteraTuaView(generics.ListAPIView):
+    queryset = VistaCarteraTua.objects.all()
+    serializer_class = VistaCarteraTuaSerializer
+    pagination_class = LimitOffsetPagination
+    page_size = 10
+
+    def get(self, request):
+        self.pagination_class.default_limit = self.page_size
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.serializer_class(page, many=True)
+            return self.get_paginated_response({'success': True, 'data': serializer.data})
         serializer = self.serializer_class(queryset, many=True)
 
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)

@@ -4,4 +4,5 @@ from recaudo.views import cobros_views as views
 urlpatterns = [
     path('carteras/', views.CarteraGeneralView.as_view(), name='carteras-todos'),
     path('filtrar-carteras/', views.CarteraDeudoresView.as_view(), name='carteras-por-deudores'),
+    path('carteras-tua/', views.VistaCarteraTuaView.as_view(), name='carteras-tua'),
 ]
