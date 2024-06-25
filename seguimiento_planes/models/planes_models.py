@@ -437,7 +437,7 @@ class ParametricaRubro(models.Model):
 
 class Rubro(models.Model):
     id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T511IdRubro')
-    id_rubro_pa = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T511IdRubro')
+    id_rubro_parametrica = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T511IdRubroParametrica')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T511IdPlan')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T511IdMeta')
     id_fuente = models.ForeignKey("FuenteFinanciacionIndicadores", on_delete=models.CASCADE, db_column='T511IdFuente')
@@ -452,7 +452,7 @@ class Rubro(models.Model):
         db_table = 'T511Rubro'
         verbose_name = 'Rubro'
         verbose_name_plural = 'Rubros'
-        unique_together = ('id_rubro', 'id_plan', 'id_meta', 'id_fuente')
+        unique_together = ('id_rubro_parametrica', 'id_plan', 'id_meta', 'id_fuente')
 
 
 class Subprograma(models.Model):
