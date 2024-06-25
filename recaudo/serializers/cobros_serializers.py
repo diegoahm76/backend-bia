@@ -60,7 +60,12 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
 class CarteraCompararSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cartera
-        fields = ('numero_factura')
+        fields = ['numero_factura']
+
+class CarteraPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cartera
+        fields = ('__all__')
     
 class VistaCarteraTuaSerializer(serializers.ModelSerializer):
     class Meta:
