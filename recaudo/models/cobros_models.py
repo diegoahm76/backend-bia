@@ -103,4 +103,4 @@ class VistaCarteraTua(models.Model):
 
     class Meta:
         managed = False  # No permite a Django crear, modificar o borrar esta tabla
-        db_table = 'vcaterabiatua'  # El nombre de la vista en la base de datos
+        db_table = 'vcarterabiatua'  # El nombre de la vista en la base de datos

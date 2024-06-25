@@ -1560,6 +1560,15 @@ class SolicitudesTramitesGetSerializer(serializers.ModelSerializer):
     persona_asignada = serializers.SerializerMethodField()
     unidad_asignada = serializers.SerializerMethodField()
     id_liquidacion = serializers.SerializerMethodField()
+    es_permiso_menor = serializers.SerializerMethodField()
+
+    def get_es_permiso_menor(self, obj):
+        tipo_permiso = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite = obj.id_solicitud_tramite).first()
+        if tipo_permiso.id_permiso_ambiental.cod_tipo_permiso_ambiental == 'PM':
+            return True
+        else:
+            return False
+
     
     def get_cantidad_anexos(self, obj):
         conteo_anexos = AnexosTramite.objects.filter(id_solicitud_tramite=obj.id_solicitud_tramite).count()
