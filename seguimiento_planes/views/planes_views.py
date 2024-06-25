@@ -1352,7 +1352,7 @@ class RubroBusquedaAvanzada(generics.ListAPIView):
         rubros = Rubro.objects.all()
         cod_pre = request.query_params.get('cod_pre', '')
         cuenta_in = request.query_params.get('cuenta', '')
-        cuenta_split = cuenta_in.split('-')
+        cuenta_split = cuenta_in.split(' ')
 
         rubros = rubros.filter(cod_pre__icontains=cod_pre)
 

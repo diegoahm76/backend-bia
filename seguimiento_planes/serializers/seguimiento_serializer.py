@@ -247,3 +247,12 @@ class SeguimientoPOAISerializer(serializers.ModelSerializer):
     class Meta:
             model = SeguimientoPOAI
             fields = '__all__'
+
+class SeguimientoPOAISerializerGet(serializers.ModelSerializer):
+    nombre_responsable = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.nombre_modalidad', default=None)
+    
+
+    class Meta:
+            model = SeguimientoPOAI
+            fields = '__all__'
