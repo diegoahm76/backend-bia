@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recaudo.models.cobros_models import Cartera
+from recaudo.models.cobros_models import Cartera, VistaCarteraTua
 from recaudo.models.liquidaciones_models import (
     Deudores
 )
@@ -56,3 +56,8 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
         procesos_cartera = obj.proceso_cartera.filter(fin__isnull=True)
         serializer = ProcesosSerializer(instance=procesos_cartera, many=True)
         return serializer.data
+    
+class VistaCarteraTuaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VistaCarteraTua
+        fields = '__all__' #['fecha', 'cod_cia', 'tipo_renta', 'cuenta_contable', 'nit', 'nombre_deudor', 'fecha_fac', 'fecha_notificacion', 'fecha_en_firme', 'corte_desde', 'corte_hasta', 'num_factura', 'num_liquidacion', 'periodo', 'agno', 'expediente', 'num_resolucion', 'recurso', 'doc_auto', 'saldo_capital', 'saldo_intereses', 'dias_mora']
