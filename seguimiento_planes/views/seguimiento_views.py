@@ -68,6 +68,8 @@ class FuenteFinanciacionIndicadoresList(generics.ListAPIView):
             raise NotFound("No se encontraron resultados para esta consulta.")
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+
 # Crear un registro de fuente de financiacion indicadores
 
 class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
@@ -86,24 +88,6 @@ class FuenteFinanciacionIndicadoresCreate(generics.CreateAPIView):
         except Planes.DoesNotExist:
             raise ValidationError("No se encontró un plan con este ID.")
         
-        # para_dict = {"nombre_fuente": nombre_fuente}    
-        # instancia_parametrica = ParametrosFuentesCreate()
-        # datos = instancia_parametrica.create_parametrica(para_dict)
-        # print("PASO ", datos)
-
-        # if datos['success'] == False:
-        #     raise ValidationError("No se pudo crear la fuente de financiación indicadores.")
-
-
-        # valor_fuentes = 0
-        # valor_total = 0
-        # for fuente in fuentes:
-        #     valor_fuentes = valor_fuentes + fuente.valor_total
-        # valor_total = valor_fuentes + request.data['valor_total']
-        
-
-
-
         serializer = FuenteFinanciacionIndicadoresSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -196,20 +180,24 @@ class FuenteFinanciacionIndicadoresPorIndicadorList(generics.ListAPIView):
 
 # Listar todos los registros de fuentes de financiacion indicadores por id_meta
 
-class FuenteFinanciacionIndicadoresPorMetaList(generics.ListAPIView):
-    queryset = FuenteFinanciacionIndicadores.objects.all()
+class FuenteFinanciacionIndicadoresIdPlan(generics.ListAPIView):
+
     serializer_class = FuenteFinanciacionIndicadoresSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        id_meta = request.GET.get('id_meta')
-        if id_meta:
-            fuentes = self.queryset.filter(id_meta=id_meta)
-        else:
-            raise ValidationError("No se proporcionó el ID de la meta.")
-        serializer = FuenteFinanciacionIndicadoresSerializer(fuentes, many=True)
+    def get(self, request, id_plan):
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise ValidationError("No se encontró un plan con este ID.")
+        
+        fuentes = FuenteFinanciacionIndicadores.objects.filter(id_plan=id_plan)
+        serializer = self.serializer_class(fuentes, many=True)
+
         if not fuentes:
             raise NotFound("No se encontraron resultados para esta consulta.")
+        
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 # ---------------------------------------- Sectores tabla básica ----------------------------------------

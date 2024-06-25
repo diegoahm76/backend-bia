@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR, ParametricaFuente
+from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR, ParametricaRubro
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,7 +104,11 @@ class TipoSerializer(serializers.ModelSerializer):
         model = Tipo
         fields = '__all__'
 
-class RubroSerializer(serializers.ModelSerializer):                
+class RubroSerializer(serializers.ModelSerializer):   
+    cod_presupuestal = serializers.ReadOnlyField(source='id_rubro_parametrica.cod_pre', default=None) 
+    cuenta = serializers.ReadOnlyField(source='id_rubro_parametrica.cuenta', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
+
     class Meta:
         model = Rubro
         fields = '__all__'
@@ -580,11 +584,8 @@ class TableroPGARObjetivoGeneralSerializer(serializers.ModelSerializer):
                 agnos.append(porcenjates_año)
 
         return agnos
-    
 
-class ParametricaFuentesSerializer(serializers.Serializer):
-
+class ParametricaRubroSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ParametricaFuente
+        model = ParametricaRubro
         fields = '__all__'
-    

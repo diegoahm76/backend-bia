@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import Sector, ParametricaFuente
+from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores,
                                                           Modalidad,
                                                           Prioridad,
@@ -218,24 +218,9 @@ class SeguimientoPAIDocumentosSerializer(serializers.ModelSerializer):
 
 
 class FuentesFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
-    nombre_fuente = serializers.SerializerMethodField()
     class Meta:
         model = FuenteFinanciacionIndicadores
         fields = '__all__'
-
-    def get_nombre_fuente(self, obj):
-        nombre_fuente = ""
-        if obj.id_fuente:
-            fuente = None
-            try:
-                fuente = ParametricaFuente.objects.get(id_fuente=obj.id_fuente)
-            except:
-                fuente = None
-            
-            if fuente is not None:
-                nombre_fuente= fuente.nombre_fuente
-
-        return nombre_fuente
 
 
 class PrioridadPOAISerializer(serializers.ModelSerializer):

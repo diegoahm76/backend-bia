@@ -423,14 +423,24 @@ class Metas(models.Model):
         verbose_name_plural = 'Metas'
 
 
+class ParametricaRubro(models.Model):
+    id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T541IdRubro')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T541IdPlan')
+    cod_pre = models.CharField(max_length=255, db_column='T541codPre')
+    cuenta = models.CharField(max_length=255, db_column='T541cuenta')
+
+    class Meta:
+        db_table = 'T541ParametricaRubro'
+        verbose_name = 'Parametrica Rubro'
+        verbose_name_plural = 'Parametricas Rubros'
+
+
 class Rubro(models.Model):
     id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T511IdRubro')
-    cod_pre = models.CharField(max_length=255, db_column='T511codPre')
-    cuenta = models.CharField(max_length=255, db_column='T511cuenta')
-    valcuenta = models.CharField(max_length=255, db_column='T511valcuenta') 
+    id_rubro_parametrica = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T511IdRubroParametrica')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T511IdPlan')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T511IdMeta')
-    id_fuente = models.ForeignKey("FuenteFinanciacionIndicadores", on_delete=models.SET_NULL,null=True, blank=True, db_column='T511IdFuente')
+    id_fuente = models.ForeignKey("FuenteFinanciacionIndicadores", on_delete=models.CASCADE, db_column='T511IdFuente')
     valor_fuentes = models.BigIntegerField(db_column='T511valorFuentes')
     agno = models.IntegerField(db_column='T511agno')
     adicion = models.BooleanField(db_column='T511adicion')
@@ -442,6 +452,7 @@ class Rubro(models.Model):
         db_table = 'T511Rubro'
         verbose_name = 'Rubro'
         verbose_name_plural = 'Rubros'
+        unique_together = ('id_rubro_parametrica', 'id_plan', 'id_meta', 'id_fuente')
 
 
 class Subprograma(models.Model):
@@ -523,32 +534,5 @@ class SeguimientoPGAR(models.Model):
 #         db_table = 'T535ActividadesEjePGAR'
 #         verbose_name = 'Actividad Eje'
 #         verbose_name_plural = 'Actividades Ejes'
-
-
-
-class ParametricaFuente(models.Model):
-    id_fuente = models.AutoField( primary_key=True, editable=False, db_column='T540IdFuente')
-    nombre_fuente = models.CharField( max_length=255, db_column='T540nombreFuente')
-    
-    def __str__(self):
-        return str(self.id_fuente)
-
-    class Meta:
-        db_table = 'T540Fuentes'
-        verbose_name = 'Fuente'
-        verbose_name_plural = 'Fuentes'
-
-
-class ParametricaRubro(models.Model):
-    id_rubro = models.AutoField(primary_key=True, editable=False, db_column='T541IdRubro')
-    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T541IdPlan')
-    cod_pre = models.CharField(max_length=255, db_column='T541codPre')
-    cuenta = models.CharField(max_length=255, db_column='T541cuenta')
-
-    class Meta:
-        db_table = 'T541ParametricaRubro'
-        verbose_name = 'Parametrica Rubro'
-        verbose_name_plural = 'Parametricas Rubros'
-
 
 
