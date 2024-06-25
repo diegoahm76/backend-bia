@@ -15,7 +15,7 @@ from recaudo.models.facilidades_pagos_models import (
 from recaudo.models.planes_pagos_models import PlanPagos
 from recaudo.models.base_models import TiposBien, TipoActuacion
 from recaudo.models.cobros_models import Deudores, Cartera
-
+from recaudo.models.procesos_models import Procesos
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import Municipio
 
@@ -230,9 +230,19 @@ class CarteraSerializer(serializers.ModelSerializer):
     nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
     nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
     estado = serializers.ReadOnlyField(source='id_expediente.estado',default=None)
+    procesos = serializers.SerializerMethodField()
+
+    def get_procesos(self, obj):
+        procesos = Procesos.objects.filter(id_cartera=obj.id)
+        serializers_procesos = ProcesosCarteraSerializer(procesos, many = True)
+        return serializers_procesos.data
+
+
     class Meta:
         model = Cartera
-        fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora','estado')
+        fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora','estado', 'procesos')
+
+
 
 
 class ConsultaCarteraSerializer(serializers.ModelSerializer):
@@ -266,3 +276,15 @@ class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
         else:
             estado = respuesta_solicitud.estado
         return estado
+    
+
+class ProcesosCarteraSerializer(serializers.ModelSerializer):
+    nombre_etapa = serializers.ReadOnlyField(source='id_etapa.etapa',default=None)
+    descripcion_etapa = serializers.ReadOnlyField(source='id_etapa.descripcion',default=None)
+    nombre_categoria = serializers.ReadOnlyField(source='id_categoria.categoria',default=None)
+    orden_categoria= serializers.ReadOnlyField(source='id_categoria.orden',default=None)
+
+
+    class Meta:
+        model = Procesos
+        fields = '__all__'

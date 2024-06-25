@@ -106,7 +106,6 @@ class TareasAsignadasGetTramitesByPersona(generics.ListAPIView):
     queryset = TareaBandejaTareasPersona.objects.all()
     permission_classes = [IsAuthenticated]
 
-    
     def get(self, request,id):
         filter={}
        
@@ -116,8 +115,6 @@ class TareasAsignadasGetTramitesByPersona(generics.ListAPIView):
             raise NotFound('No se encontro la bandeja de tareas')
         id_bandeja = bandeja_tareas.id_bandeja_tareas_persona
         #Buscamos la asignacion de tareas de la bandeja de tareas
-
-
        
         # if not tareas_asignadas:
         #     raise NotFound('No se encontro tareas asignadas')
