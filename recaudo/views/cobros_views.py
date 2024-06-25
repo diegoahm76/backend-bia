@@ -3,10 +3,13 @@ from recaudo.models.cobros_models import (
     Cartera,
     VistaCarteraTua
 )
+from recaudo.models.extraccion_model_recaudo import T920Expediente, Tercero
 from recaudo.models.liquidaciones_models import (
-    Deudores
+    Deudores,
+    Expedientes
 )
 from recaudo.serializers.cobros_serializers import (
+    CarteraCompararSerializer,
     CarteraGeneralSerializer,
     VistaCarteraTuaSerializer
 )
@@ -68,6 +71,8 @@ class VistaCarteraTuaView(generics.ListAPIView):
     def get(self, request):
         self.pagination_class.default_limit = self.page_size
         queryset = self.get_results()
+        cartera = self.insertar_cartera(queryset)
+        print(cartera)
         print(queryset)
         page = self.paginate_queryset(queryset)
 
@@ -84,8 +89,67 @@ class VistaCarteraTuaView(generics.ListAPIView):
             columns = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
 
-        results = []
+        results_vcartera = []
         for row in rows:
-            results.append(dict(zip(columns, row)))
+            results_vcartera.append(dict(zip(columns, row)))
+
+        cartera = Cartera.objects.all()
+        cartera = CarteraCompararSerializer(cartera, many=True)
+
+        i = 0
+        data_cartera = []
+        for item_vcartera in results_vcartera:
+            if not item_vcartera['numfactura'] in cartera.data[i]['numero_factura']:
+                data_cartera.append(item_vcartera)
+            i += 1
+        return data_cartera
+
+    def insertar_cartera(self, cartera):
+        for item_cartera in cartera:
+            print(item_cartera)
+            data = {
+                'numero_factura': item_cartera['num_factura'],
+                'nombre': item_cartera['nombre_deudor'],
+                'dias_mora': item_cartera['dias_mora'],
+                'valor_intereses': item_cartera['saldo_intereses'],
+                'valor_sancion': 0,
+                'inicio': item_cartera['corte_desde'],
+                'fin': item_cartera['corte_hasta'],
+                'codigo_contable': item_cartera['cuenta_contable'],
+                'fecha_facturacion': item_cartera['fecha_fac'],
+                'fecha_notificacion': item_cartera['fecha_notificacion'],
+                'fecha_ejecutoriado': item_cartera['fecha_en_firme'],
+                'numero_factura': item_cartera['num_factura'],
+                'monto_inicial': item_cartera['saldo_capital'],
+                'tipo_renta': item_cartera['tipo_renta'],
+                'id_rango': 1
+            
+            }
+            deudor = Deudores.objects.get(id_persona_deudor_pymisis__t03nit=item_cartera['nit'])
+            if deudor:
+                data['id_deudor'] = deudor.id
+            else:
+                tercero = Tercero.objects.get(t03nit=item_cartera['nit'])
+                deudor = Deudores.objects.create(
+                    id_persona_deudor_pymisis=tercero
+                )
+                data['id_deudor'] = deudor.id
+
+            expediente = Expedientes.objects.get(id_expediente_pimisys__cod_expediente=item_cartera['expediente'])
+            if expediente:
+                data['id_expediente'] = expediente.id
+            else:
+                expediente_pimisys = T920Expediente.objects.get(t920codexpediente=item_cartera['expediente'])
+                expediente = Expedientes.objects.create(
+                    id_deudor=deudor,
+                    id_expediente_pimisys=expediente_pimisys
+                )
+                data['id_expediente'] = expediente.id
+            cartera = CarteraCompararSerializer(data=item_cartera)
+            if cartera.is_valid():
+                cartera.save()
+            else:
+                print(cartera.errors)
+                return 'Error al guardar la cartera'
+        return cartera
         
-        return results
