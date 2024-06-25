@@ -75,3 +75,32 @@ class Cartera(models.Model):
         db_table = 'T413Carteras'
         verbose_name = 'Cartera'
         verbose_name_plural = 'Cartera'
+
+
+class VistaCarteraTua(models.Model):
+    fecha = models.DateTimeField()
+    cod_cia = models.CharField(max_length=5)
+    tipo_renta = models.CharField(max_length=100)
+    cuenta_contable = models.CharField(max_length=100)
+    nit = models.CharField(max_length=15)
+    nombre_deudor = models.CharField(max_length=255)
+    fecha_fac = models.DateTimeField()
+    fecha_notificacion = models.DateTimeField()
+    fecha_en_firme = models.DateTimeField()
+    corte_desde = models.CharField(max_length=100)
+    corte_hasta = models.CharField(max_length=100)
+    num_factura = models.CharField(max_length=255)
+    num_liquidacion = models.IntegerField()
+    periodo = models.CharField(max_length=100)
+    agno = models.IntegerField()
+    expediente = models.CharField(max_length=100)
+    num_resolucion = models.CharField(max_length=100)
+    recurso = models.CharField(max_length=100)
+    doc_auto = models.CharField(max_length=100)
+    saldo_capital = models.DecimalField(max_digits=30, decimal_places=2)
+    saldo_intereses = models.DecimalField(max_digits=30, decimal_places=2)
+    dias_mora = models.IntegerField()
+
+    class Meta:
+        managed = False  # No permite a Django crear, modificar o borrar esta tabla
+        db_table = 'vcaterabiatua'  # El nombre de la vista en la base de datos
