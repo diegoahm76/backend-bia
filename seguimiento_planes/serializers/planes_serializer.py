@@ -104,7 +104,11 @@ class TipoSerializer(serializers.ModelSerializer):
         model = Tipo
         fields = '__all__'
 
-class RubroSerializer(serializers.ModelSerializer):                
+class RubroSerializer(serializers.ModelSerializer):   
+    cod_presupuestal = serializers.ReadOnlyField(source='id_rubro_parametrica.cod_pre', default=None) 
+    cuenta = serializers.ReadOnlyField(source='id_rubro_parametrica.cuenta', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
+
     class Meta:
         model = Rubro
         fields = '__all__'
