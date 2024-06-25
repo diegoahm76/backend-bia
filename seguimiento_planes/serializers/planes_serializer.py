@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR, ParametricaFuente
+from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR, ParametricaRubro
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -580,11 +580,9 @@ class TableroPGARObjetivoGeneralSerializer(serializers.ModelSerializer):
                 agnos.append(porcenjates_año)
 
         return agnos
-    
 
-class ParametricaFuentesSerializer(serializers.Serializer):
 
+class ParametricaRubroSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ParametricaFuente
+        model = ParametricaRubro
         fields = '__all__'
-    

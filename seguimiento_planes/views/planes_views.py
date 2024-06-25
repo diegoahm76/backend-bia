@@ -5,9 +5,10 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer, ParametricaFuentesSerializer
-from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma
+from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer, ParametricaRubroSerializer
+from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, ParametricaRubro
 from seguridad.permissions.permissions_planes import PermisoActualizarActividades, PermisoActualizarActividadesPGAR, PermisoActualizarAdministracionPlanes, PermisoActualizarArmonizacionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarIndicadores, PermisoActualizarIndicadoresPGAR, PermisoActualizarLineasBasePGAR, PermisoActualizarMedicionIndicador, PermisoActualizarMetas, PermisoActualizarMetasPGAR, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarRubros, PermisoActualizarSeguimientoPGAR, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearActividades, PermisoCrearActividadesPGAR, PermisoCrearAdministracionPlanes, PermisoCrearArmonizacionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearIndicadores, PermisoCrearIndicadoresPGAR, PermisoCrearLineasBasePGAR, PermisoCrearMedicionIndicador, PermisoCrearMetas, PermisoCrearMetasPGAR, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearRubros, PermisoCrearSeguimientoPGAR, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
+from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores
 
 # ---------------------------------------- Objetivos Desarrollo Sostenible Tabla Básica ----------------------------------------
 
@@ -1267,12 +1268,32 @@ class RubroList(generics.ListCreateAPIView):
 # Crear un Rubro
 
 class RubroCreate(generics.ListCreateAPIView):
-    queryset = Rubro.objects.all()
     serializer_class = RubroSerializer
     permission_classes = [IsAuthenticated, PermisoCrearRubros]
 
     def post(self,request):
         data = request.data
+        try:
+            rubro = ParametricaRubro.objects.get(id_rubro=data['id_rubro'])
+        except ParametricaRubro.DoesNotExist:
+            raise NotFound('No se encontraron rubros.')
+        
+        try:
+            meta = Metas.objects.get(id_meta=data['id_meta'])
+        except Metas.DoesNotExist:
+            raise NotFound('No se encontraron metas.')
+        
+        try:
+            plan = Planes.objects.get(id_plan=data['id_plan'])
+        except Planes.DoesNotExist:
+            raise NotFound('No se encontraron planes.')
+        
+        try:
+            fuente = FuenteFinanciacionIndicadores.objects.get(id_fuente=data['id_fuente'])
+        except FuenteFinanciacionIndicadores.DoesNotExist:
+            raise NotFound('No se encontraron fuentes.')
+        
+
         serializador = self.serializer_class(data=data)
         serializador.is_valid(raise_exception=True)
         serializador.save()
@@ -1285,11 +1306,19 @@ class RubroUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = RubroSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarRubros]
 
-    def put(self, request, pk):
+    def put(self, request, id_rubro, id_fuente):
         data = request.data
-        rubro = self.queryset.all().filter(id_rubro=pk).first()
-        if not rubro:
-            return Response({'success': False, 'detail': 'El Rubro ingresado no existe'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            rubro = Rubro.objects.get(id_rubro=id_rubro, id_fuente=id_fuente)
+        except Rubro.DoesNotExist:
+            raise NotFound('No se encontraron rubros.')
+         
+        try:
+            fuente = FuenteFinanciacionIndicadores.objects.get(id_fuente=data['id_fuente'])
+        except FuenteFinanciacionIndicadores.DoesNotExist:
+            raise NotFound('No se encontraron fuentes.')
+        
         serializer = RubroSerializer(rubro, data=data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -2508,63 +2537,87 @@ class TableroControlGeneralObjeivos(generics.ListAPIView):
                 porcenjates_generales['años'].append(año)
             response.append(porcenjates_generales)
         return Response({'success': True, 'detail': 'Listado de Tableros de Control PGAR.', 'data': response}, status=status.HTTP_200_OK)
+ 
+
+class ParametricaRubroList(generics.ListAPIView):
+    serializer_class = ParametricaRubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rubros = ParametricaRubro.objects.all()
+        serializer = self.serializer_class(rubros, many=True)
+        if not rubros:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Rubros.', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-# class ParametrosFuentesCreate(generics.CreateAPIView):
-#     serializer_class = ParametricaFuentesSerializer
-#     permission_classes = [IsAuthenticated, ParametricaFuentesSerializer]
-#     def create_parametrica(self, data):
-#         serializer = self.serializer_class(data=data)
-#         serializer.is_valid(raise_exception=True)
-#         parametrica_fuente = serializer.save()
-#         return parametrica_fuente
+class ParametricaRubroCreate(generics.CreateAPIView):
+    serializer_class = ParametricaRubroSerializer
+    permission_classes = [IsAuthenticated]
 
-#     def post(self, request):
-#         data = request.data
-#         parametrica_fuente = self.create_parametrica(data)
-
-#         return Response({'success': True, 'detail': 'Parametro de Fuente creado correctamente.', 'data': parametrica_fuente}, status=status.HTTP_201_CREATED)
-    
-# class ParametrosFuentesCreate(generics.CreateAPIView):
-#     serializer_class = ParametricaFuentesSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def create_parametrica(self, data):
-#         serializer = self.serializer_class(data=data)
-#         if serializer.is_valid():
-#             serializer.save()
-#         return serializer.data
-
-#     def post(self, request):
-#         data = request.data
-#         parametrica_fuente = self.create_parametrica(data)
-#         return Response({'success': True, 'detail': 'Parametro de Fuente creado correctamente.', 'data': parametrica_fuente}, status=status.HTTP_201_CREATED)
-
-
-# class ParametrosFuentesCreate(generics.CreateAPIView):
-#     serializer_class = ParametricaFuentesSerializer
-#     permission_classes = [IsAuthenticated]
-
-#     def create(self, request, data_in):
-#         data = data_in
-#         if request:
-#             data = request.data
-#         # Crear el serializer con los datos del request
-#         serializer = self.serializer_class(data=data)
+    def post(self, request):
+        data = request.data
+        id_plan = data.get('id_plan', None)
+        if not id_plan:
+            raise ValidationError('El id_plan es requerido.')
         
-#         # Validar los datos del serializer
-#         if serializer.is_valid():
-#             # Guardar los datos si son válidos
-#             serializer.save()
-            
-#             # Retornar la respuesta con el objeto creado
-#             return Response(
-#                 {'success': True, 'detail': 'Parametro de Fuente creado correctamente.', 'data': serializer.data},
-#                 status=status.HTTP_201_CREATED
-#             )
-#         else:
-#             # Si los datos no son válidos, retornar los errores
-#             return Response(
-#                 {'success': False, 'detail': 'Error en la creación del Parametro de Fuente.', 'errors': serializer.errors},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound('El Plan ingresado no existe.')
+        
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Rubro creado correctamente.', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+    
+
+class ParametricaRubroUpdate(generics.UpdateAPIView):
+    serializer_class = ParametricaRubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, id_rubro):
+        data = request.data
+
+        try:
+            rubro = ParametricaRubro.objects.get(id_rubro=id_rubro)
+        except ParametricaRubro.DoesNotExist:
+            raise NotFound('El Rubro ingresado no existe.')
+
+        serializer = self.serializer_class(rubro, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'success': True, 'detail': 'Rubro actualizado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ParametricaRubroDelete(generics.DestroyAPIView):
+    serializer_class = ParametricaRubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, id_rubro):
+        try:
+            rubro = ParametricaRubro.objects.get(id_rubro=id_rubro)
+        except ParametricaRubro.DoesNotExist:
+            raise NotFound('El Rubro ingresado no existe.')
+
+        rubro.delete()
+        return Response({'success': True, 'detail': 'Rubro eliminado correctamente.'}, status=status.HTTP_204_NO_CONTENT)
+    
+
+class ParametricaRubroIdPlan(generics.ListAPIView):
+    serializer_class = ParametricaRubroSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_plan):
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound('El Plan ingresado no existe.')
+        
+        rubros = ParametricaRubro.objects.filter(id_plan=plan.id_plan)
+
+        serializer = self.serializer_class(rubros, many=True)
+        if not rubros:
+            raise NotFound('No se encontraron resultados.')
+        return Response({'success': True, 'detail': 'Listado de Rubros.', 'data': serializer.data}, status=status.HTTP_200_OK)
