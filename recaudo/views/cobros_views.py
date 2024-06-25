@@ -72,14 +72,20 @@ class VistaCarteraTuaView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
 
         if page is not None:
-            serializer = self.serializer_class(page, many=True)
-            return self.get_paginated_response({'success': True, 'data': serializer.data})
-        serializer = self.serializer_class(queryset, many=True)
+            #serializer = self.serializer_class(page, many=True)
+            return self.get_paginated_response({'success': True, 'data': page})
+        #serializer = self.serializer_class(queryset, many=True)
 
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'data': queryset}, status=status.HTTP_200_OK)
     
     def get_results(self):
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM public.vcarterabiatua")
+            columns = [col[0] for col in cursor.description]
             rows = cursor.fetchall()
-        return rows
+
+        results = []
+        for row in rows:
+            results.append(dict(zip(columns, row)))
+        
+        return results
