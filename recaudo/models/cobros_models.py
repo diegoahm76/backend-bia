@@ -39,7 +39,7 @@ class DetalleDocumentosCobro(models.Model):
 class ConceptoContable(models.Model):
     id = models.AutoField(primary_key=True, db_column='T412IdConceptoContable')
     codigo_contable = models.CharField(max_length=255, db_column='T412codigoContable')
-    descripcion = models.CharField(max_length=255, db_column='T412descripcion')
+    descripcion = models.CharField(max_length=255, null=True, blank=True, db_column='T412descripcion')
 
     class Meta: 
         db_table = 'T412ConceptosContable'
@@ -53,15 +53,15 @@ class Cartera(models.Model):
     dias_mora = models.IntegerField(db_column='T413diasMora')
     valor_intereses = models.DecimalField(max_digits=30, decimal_places=2, null=True, blank=True, db_column='T413valorIntereses')
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=2, null=True, blank=True, db_column='T413valorSancion')
-    inicio = models.DateField(db_column='T413inicio')
-    fin = models.DateField(null=True, blank=True,db_column='T413fin')
+    inicio = models.DateTimeField(db_column='T413inicio', null=True, blank=True)
+    fin = models.DateTimeField(null=True, blank=True,db_column='T413fin')
     id_rango = models.ForeignKey(RangosEdad, on_delete=models.CASCADE, db_column='T413Id_RangoEdad')
     codigo_contable = models.ForeignKey(ConceptoContable, on_delete=models.CASCADE, db_column='T413Id_ConceptoContable')
-    fecha_facturacion = models.DateField(null=True, blank=True, db_column='T413fechaFacturacion')
-    fecha_notificacion = models.DateField(null=True, blank=True, db_column='T413fechaNotificacion')
-    fecha_ejecutoriado = models.DateField(null=True, blank=True, db_column='T413fechaEjecutoriado')
+    fecha_facturacion = models.DateTimeField(null=True, blank=True, db_column='T413fechaFacturacion')
+    fecha_notificacion = models.DateTimeField(null=True, blank=True, db_column='T413fechaNotificacion')
+    fecha_ejecutoriado = models.DateTimeField(null=True, blank=True, db_column='T413fechaEjecutoriado')
     numero_factura = models.CharField(max_length=255, null=True, blank=True, db_column='T413numeroFactura')
-    monto_inicial = models.DecimalField(max_digits=30, decimal_places=2, db_column='T413montoInicial')
+    monto_inicial = models.DecimalField(max_digits=30, decimal_places=4, db_column='T413montoInicial')
     tipo_cobro = models.CharField(max_length=255, db_column='T413tipoCobro')
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T413Id_Deudor')
     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_DocumentoCobro')

@@ -57,6 +57,16 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
         serializer = ProcesosSerializer(instance=procesos_cartera, many=True)
         return serializer.data
     
+class CarteraCompararSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cartera
+        fields = ['numero_factura']
+
+class CarteraPostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cartera
+        fields = ('__all__')
+    
 class VistaCarteraTuaSerializer(serializers.ModelSerializer):
     class Meta:
         model = VistaCarteraTua
