@@ -1,5 +1,5 @@
 from django.db import models
-from seguimiento_planes.models.planes_models import Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
+from seguimiento_planes.models.planes_models import Planes, Programa, Proyecto, Productos, Actividad, ParametricaRubro, Indicador, Metas, Subprograma
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -133,7 +133,7 @@ class ConceptoPOAI(models.Model):
     valor_inicial = models.BigIntegerField(null=True, blank=True, db_column='T525valorInicial')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T525IdPlan')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T525IdProyecto')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T525IdRubro')
+    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T525IdRubro')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T525IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T525IdMeta')
     id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T525IdModaliad')
@@ -156,7 +156,7 @@ class BancoProyecto(models.Model):
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T527IdActividad')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T527IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T527IdMeta')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T527IdRubro')
+    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T527IdRubro')
     id_fuente_financiacion = models.ForeignKey(FuenteFinanciacionIndicadores, on_delete=models.CASCADE, db_column='T527IdFuenteFinanciacion')
 
     def __str__(self):
@@ -403,7 +403,7 @@ class SeguimientoPOAI(models.Model):
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T537IdActividad')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T537IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T537IdMeta')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T537IdRubro')
+    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T537IdRubro')
     descripcion = models.CharField(max_length=255, db_column='T537descripcion')
     id_prioridad = models.ForeignKey(Prioridad, null=True, blank=True, on_delete=models.SET_NULL, db_column='T537IdPrioridad')
     codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')
