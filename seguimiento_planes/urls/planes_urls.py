@@ -112,7 +112,7 @@ urlpatterns=[
     # Rubros
     path('consultar-rubros/',views.RubroList.as_view(),name='consultarrubros'),
     path('crear-rubros/',views.RubroCreate.as_view(),name='crearrubros'),
-    path('actualizar-rubros/<str:id_rubro>/<str:id_fuente>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
+    path('actualizar-rubros/<str:id_rubro>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
     path('eliminar-rubros/<str:pk>/',views.RubroDelete.as_view(),name='eliminarrubros'),
     path('consultar-rubros-id/<str:pk>/',views.RubroDetail.as_view(),name='consultarrubrosid'),
     path('consultar-rubros-id-meta/<str:id_meta>/',views.RubroListIdMeta.as_view(),name='consultarrubrosidmeta'),

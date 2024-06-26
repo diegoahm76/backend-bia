@@ -112,9 +112,11 @@ class RubroSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RubroSerializerGet(serializers.ModelSerializer):   
-    cod_presupuestal = serializers.ReadOnlyField(source='id_rubro.cod_pre', default=None) 
-    cuenta = serializers.ReadOnlyField(source='id_rubro.cuenta', default=None)
+    cod_presupuestal = serializers.ReadOnlyField(source='id_rubro_parametrica.cod_pre', default=None) 
+    cuenta = serializers.ReadOnlyField(source='id_rubro_parametrica.cuenta', default=None)
     nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_meta.id_indicador.nombre_indicador', default=None)
 
     class Meta:
         model = Rubro

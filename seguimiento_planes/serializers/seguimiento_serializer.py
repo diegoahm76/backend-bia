@@ -16,6 +16,7 @@ from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndi
                                                           SeguimientoPAIDocumentos,
                                                           SeguimientoPOAI)
 class FuenteFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
 
     class Meta:
         model = FuenteFinanciacionIndicadores
