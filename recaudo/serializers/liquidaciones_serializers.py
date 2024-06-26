@@ -32,9 +32,27 @@ class OpcionesLiquidacionBasePutSerializer(serializers.ModelSerializer):
 
 
 class DeudoresSerializer(serializers.ModelSerializer):
+    identificacion = serializers.SerializerMethodField()
+    nombres = serializers.SerializerMethodField()
     class Meta:
         model = Deudores
-        fields = ('id', 'identificacion', 'nombres', 'apellidos')
+        fields = ('id', 'identificacion', 'nombres')
+
+    def get_nombres(self, obj):
+        if obj.id_persona_deudor:
+            return f"{obj.id_persona_deudor.priner_nombre} {obj.id_persona_deudor.segundo_nombre} {obj.id_persona_deudor.primer_apellido} {obj.id_persona_deudor.segundo_apellido}"
+        elif obj.id_persona_deudor_pymisis:
+            return f"{obj.id_persona_deudor_pymisis.t03nombre}"
+        else:
+            return None
+    
+    def get_identificacion(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.numero_documento
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
 
 
 class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):
