@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import serializers
 from recaudo.models.procesos_models import (
     Avaluos, 
@@ -254,10 +255,13 @@ class ConsultaCarteraSerializer(serializers.ModelSerializer):
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
     identificacion = serializers.SerializerMethodField()
+    obligaciones = serializers.SerializerMethodField()
+    monto_total = serializers.SerializerMethodField()
+    monto_total_con_intereses = serializers.SerializerMethodField()
 
     class Meta:
         model = Deudores
-        fields = ('id','nombre_contribuyente','identificacion')
+        fields = ('id','nombre_contribuyente','identificacion', 'obligaciones', 'monto_total', 'monto_total_con_intereses')
 
     def get_nombre_contribuyente(self, obj):
         if obj.id_persona_deudor:
@@ -274,6 +278,29 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
             return obj.id_persona_deudor_pymisis.t03nit
         else:
             return None
+        
+    def get_obligaciones(self, obj):
+        cartera = Cartera.objects.filter(id_deudor=obj.id)
+        if cartera:
+            return True
+        else:
+            return False
+    
+    def get_monto_total(self, obj):
+        monto_total = Decimal('0.0')
+        cartera = Cartera.objects.filter(id_deudor=obj.id)
+        for item in cartera:
+            monto_total += item.monto_inicial if item.monto_inicial else Decimal('0.0')
+        return monto_total
+
+    def get_monto_total_con_intereses(self, obj):
+        monto_total = Decimal('0.0')
+        cartera = Cartera.objects.filter(id_deudor=obj.id)
+        for item in cartera:
+            monto_inicial = item.monto_inicial if item.monto_inicial else Decimal('0.0')
+            valor_intereses = item.valor_intereses if item.valor_intereses else Decimal('0.0')
+            monto_total += monto_inicial + valor_intereses
+        return monto_total
 
 
 class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):

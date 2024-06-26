@@ -219,28 +219,28 @@ class ListadoDeudoresViews(generics.ListAPIView):
 
         deudores = Deudores.objects.all()
         if identificacion:
-            deudores = deudores.filter(id_persona_deudor_pymisis__t03nit__icontains=identificacion)
-            deudores = deudores.filter(id_persona_deudor__numero_documento__icontains=identificacion)
+            deudores = deudores.filter(id_persona_deudor_pymisis__t03nit__icontains=identificacion) | deudores.filter(id_persona_deudor__numero_documento__icontains=identificacion)
+            #deudores = deudores.filter(id_persona_deudor__numero_documento__icontains=identificacion)
 
         if nombre_contribuyente:
-            deudores = deudores.filter(id_persona_deudor__primer_nombre__icontains=nombre_contribuyente)
-            deudores = deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=nombre_contribuyente)
+            deudores = deudores.filter(id_persona_deudor__primer_nombre__icontains=nombre_contribuyente) | deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=nombre_contribuyente)
+            #deudores = deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=nombre_contribuyente)
         
         serializer = self.serializer_class(deudores, many=True)
         data_deudores = serializer.data
-        instancia_obligaciones = CarteraDeudorListViews()
+        # instancia_obligaciones = CarteraDeudorListViews()
         
 
-        for data in data_deudores:
-            response_data = instancia_obligaciones.obligaciones_deudor(data['identificacion'])
-            if response_data['obligaciones']:
-                data['obligaciones'] = True
-                data['monto_total'] = response_data.get('monto_total')
-                data['monto_total_con_intereses'] = response_data.get('monto_total_con_intereses')
-            else:
-                data['obligaciones'] = False
-                data['monto_total'] = None
-                data['monto_total_con_intereses'] = None
+        # for data in data_deudores:
+        #     response_data = instancia_obligaciones.obligaciones_deudor(data['identificacion'])
+        #     if response_data['obligaciones']:
+        #         data['obligaciones'] = True
+        #         data['monto_total'] = response_data.get('monto_total')
+        #         data['monto_total_con_intereses'] = response_data.get('monto_total_con_intereses')
+        #     else:
+        #         data['obligaciones'] = False
+        #         data['monto_total'] = None
+        #         data['monto_total_con_intereses'] = None
 
         return Response({'success': True, 'detail': 'Se muestra los deudores', 'data': data_deudores}, status=status.HTTP_200_OK)
   
