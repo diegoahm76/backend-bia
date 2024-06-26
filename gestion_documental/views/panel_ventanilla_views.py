@@ -3435,6 +3435,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         instancia_consecutivo.id_tramite=tramite
         instancia_consecutivo.variables=context_auto
         instancia_consecutivo.id_archivo_digital = instance_archivo
+        instancia_consecutivo.id_plantilla_doc = plantilla # VALIDAR
         instancia_consecutivo.save()
 
         return Response({'success': True, 'detail':'Se creo el auto de inicio','data':{'auto':serializer.data,'archivo':data_archivo,'cosecutivo_tipologia':data_consecutivo}}, status=status.HTTP_200_OK)
