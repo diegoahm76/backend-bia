@@ -5,7 +5,7 @@ from rest_framework import generics, status
 from django.db.models.functions import Concat
 from django.db.models import Q, Value as V
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
-from seguimiento_planes.serializers.planes_serializer import TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer, ParametricaRubroSerializer
+from seguimiento_planes.serializers.planes_serializer import RubroSerializerGet, TableroPGARObjetivoGeneralSerializer, TableroPGARGeneralEjeSerializer, TableroPGARObjetivoEjeSerializer, TableroPGARByEjeSerializer, TableroPGARByObjetivoSerializer, SeguiemientoPGARSerializer, ArmonizarPAIPGARSerializer, IndicadoresPGARSerializer, ActividadesPGARSerializer, LineasBasePGARSerializer, MetasPGARSerializer, ObjetivoDesarrolloSostenibleSerializer, Planes, EjeEstractegicoSerializer, ObjetivoSerializer, PlanesSerializer, PlanesSerializerGet, ProgramaSerializer, ProyectoSerializer, ProductosSerializer, ActividadSerializer, EntidadSerializer, MedicionSerializer, TipoEjeSerializer, TipoSerializer, RubroSerializer, IndicadorSerializer, MetasSerializer, SubprogramaSerializer, ParametricaRubroSerializer
 from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, MetasEjePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, ParametricaRubro
 from seguridad.permissions.permissions_planes import PermisoActualizarActividades, PermisoActualizarActividadesPGAR, PermisoActualizarAdministracionPlanes, PermisoActualizarArmonizacionPlanes, PermisoActualizarEjesEstrategicos, PermisoActualizarEntidades, PermisoActualizarIndicadores, PermisoActualizarIndicadoresPGAR, PermisoActualizarLineasBasePGAR, PermisoActualizarMedicionIndicador, PermisoActualizarMetas, PermisoActualizarMetasPGAR, PermisoActualizarObjetivos, PermisoActualizarObjetivosDesarrolloSostenible, PermisoActualizarProductos, PermisoActualizarProgramas, PermisoActualizarProyectos, PermisoActualizarRubros, PermisoActualizarSeguimientoPGAR, PermisoActualizarSubprogramas, PermisoActualizarTipoIndicador, PermisoActualizarTiposEjeEstrategico, PermisoBorrarEntidades, PermisoBorrarMedicionIndicador, PermisoBorrarObjetivosDesarrolloSostenible, PermisoBorrarTipoIndicador, PermisoBorrarTiposEjeEstrategico, PermisoCrearActividades, PermisoCrearActividadesPGAR, PermisoCrearAdministracionPlanes, PermisoCrearArmonizacionPlanes, PermisoCrearEjesEstrategicos, PermisoCrearEntidades, PermisoCrearIndicadores, PermisoCrearIndicadoresPGAR, PermisoCrearLineasBasePGAR, PermisoCrearMedicionIndicador, PermisoCrearMetas, PermisoCrearMetasPGAR, PermisoCrearObjetivos, PermisoCrearObjetivosDesarrolloSostenible, PermisoCrearProductos, PermisoCrearProgramas, PermisoCrearProyectos, PermisoCrearRubros, PermisoCrearSeguimientoPGAR, PermisoCrearSubprogramas, PermisoCrearTipoIndicador, PermisoCrearTiposEjeEstrategico
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores
@@ -1254,13 +1254,12 @@ class TipoDetail(generics.RetrieveAPIView):
 # Listar todos los Rubros
 
 class RubroList(generics.ListCreateAPIView):
-    queryset = Rubro.objects.all()
-    serializer_class = RubroSerializer
+    serializer_class = RubroSerializerGet
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         rubros = Rubro.objects.all()
-        serializer = RubroSerializer(rubros, many=True)
+        serializer = self.serializer_class(rubros, many=True)
         if not rubros:
             raise NotFound('No se encontraron resultados.')
         return Response({'success': True, 'detail': 'Listado de rubros.', 'data': serializer.data}, status=status.HTTP_200_OK)
@@ -1274,7 +1273,7 @@ class RubroCreate(generics.ListCreateAPIView):
     def post(self,request):
         data = request.data
         try:
-            rubro = ParametricaRubro.objects.get(id_rubro=data['id_rubro'])
+            rubro = ParametricaRubro.objects.get(id_rubro=data['id_rubro_parametrica'])
         except ParametricaRubro.DoesNotExist:
             raise NotFound('No se encontraron rubros.')
         
@@ -1306,11 +1305,11 @@ class RubroUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = RubroSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarRubros]
 
-    def put(self, request, id_rubro, id_fuente):
+    def put(self, request, id_rubro):
         data = request.data
 
         try:
-            rubro = Rubro.objects.get(id_rubro=id_rubro, id_fuente=id_fuente)
+            rubro = Rubro.objects.get(id_rubro=id_rubro)
         except Rubro.DoesNotExist:
             raise NotFound('No se encontraron rubros.')
          
@@ -1354,7 +1353,7 @@ class RubroDetail(generics.RetrieveAPIView):
 
 
 class RubroListIdMeta(generics.ListAPIView):
-    serializer_class = RubroSerializer
+    serializer_class = RubroSerializerGet
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_meta):
@@ -1369,7 +1368,8 @@ class RubroListIdMeta(generics.ListAPIView):
         if not rubro:
             raise NotFound('No se encontraron resultados.')
         
-        serializer = RubroSerializer(rubro, many=True)
+        serializer = RubroSerializerGet(rubro, many=True)
+
         return Response({'success': True, 'detail': 'Rubro encontrado correctamente.', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
