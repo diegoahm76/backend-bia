@@ -72,23 +72,36 @@ class CarteraDeudorListViews(generics.ListAPIView):
     
     def obligaciones_deudor(self, numero_identificacion):
         try: 
-            deudor = Deudores.objects.get(identificacion=numero_identificacion)
+            deudor = Deudores.objects.filter(Q(id_persona_deudor_pymisis__t03nit=numero_identificacion) | Q(id_persona_deudor__numero_documento = numero_identificacion)).first()
         except Deudores.DoesNotExist: 
             #raise ValidationError('No se encontraron deudas asociadas para este usuario.')        
             return False
-        estado = Expedientes.objects.filter(id_deudor=deudor.id).first()
-        print(estado)
-        if deudor:     
-            nombre_completo = deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
+        #estado = Expedientes.objects.filter(id_deudor=deudor.id).first()
+        if deudor:    
+            nombre_completo = '' 
+            if deudor.id_persona_deudor_pymisis:
+                nombre_completo = f"{deudor.id_persona_deudor_pymisis.t03nombre}"
+            elif deudor.id_persona_deudor:
+                nombre_completo = f"{deudor.id_persona_deudor.primer_nombre} {deudor.id_persona_deudor.segundo_nombre} {deudor.id_persona_deudor.primer_apellido} {deudor.id_persona_deudor.segundo_apellido}"#deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
             cartera = Cartera.objects.filter(id_deudor=deudor)
             serializer = self.serializer_class(cartera, many=True)
             monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
+            numero_identificacion = ''
+            email = ''
+
+            if deudor.id_persona_deudor_pymisis:
+                numero_identificacion = deudor.id_persona_deudor_pymisis.t03nit
+                email = deudor.id_persona_deudor_pymisis.t03email
+            elif deudor.id_persona_deudor:
+                numero_identificacion = deudor.id_persona_deudor.numero_documento
+                email = deudor.id_persona_deudor.email
+
 
             data = {
                 'id_deudor': deudor.id,
                 'nombre_completo': nombre_completo,
-                'numero_identificacion': deudor.identificacion,
-                'email': deudor.email,
+                'numero_identificacion': numero_identificacion,#deudor.id_persona_deudor.numero_documento if deudor.id_persona_deudor else deudor.id_persona_deudor_pymisis.t03nit,
+                'email': email,#deudor.id_persona_deudor.email if deudor.id_persona_deudor else deudor.id_persona_deudor_pymisis.t03email,
                 'obligaciones': serializer.data,
                 'monto_total': monto_total,
                 'intereses_total': intereses_total,
@@ -152,23 +165,68 @@ class ConsultaCarteraViews(generics.ListAPIView):
         return queryset
 
 
+# class ListadoDeudoresViews(generics.ListAPIView):
+#     serializer_class = ListadoDeudoresUltSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_lista_deudores(self):
+
+#         identificacion = self.request.query_params.get('identificacion', '')
+#         nombre_contribuyente = self.request.query_params.get('nombre_contribuyente', '')
+#         nombres_apellidos = nombre_contribuyente.split()
+
+#         deudores = Deudores.objects.annotate(nombre_contribuyente=Concat('nombres', V(' '), 'apellidos')).filter(identificacion__icontains=identificacion)
+
+#         for nombre_apellido in nombres_apellidos:
+#             deudores = deudores.filter(nombre_contribuyente__icontains=nombre_apellido)
+
+#         serializer = self.serializer_class(deudores, many=True)
+
+#         data_deudores = serializer.data
+#         instancia_obligaciones = CarteraDeudorListViews()
+        
+
+#         for data in data_deudores:
+#             response_data = instancia_obligaciones.obligaciones_deudor(data['identificacion'])
+#             if response_data['obligaciones']:
+#                 data['obligaciones'] = True
+#                 data['monto_total'] = response_data.get('monto_total')
+#                 data['monto_total_con_intereses'] = response_data.get('monto_total_con_intereses')
+#             else:
+#                 data['obligaciones'] = False
+#                 data['monto_total'] = None
+#                 data['monto_total_con_intereses'] = None
+
+#         return data_deudores
+  
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_lista_deudores()
+
+#         if not queryset:
+#             raise NotFound('No se encontraron resultados.')
+    
+#         return Response({'success': True, 'detail': 'Se muestra los deudores', 'data': queryset}, status=status.HTTP_200_OK)
+
+
 class ListadoDeudoresViews(generics.ListAPIView):
     serializer_class = ListadoDeudoresUltSerializer
     permission_classes = [IsAuthenticated]
-
-    def get_lista_deudores(self):
-
+    
+    def get(self, request):
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_contribuyente = self.request.query_params.get('nombre_contribuyente', '')
-        nombres_apellidos = nombre_contribuyente.split()
 
-        deudores = Deudores.objects.annotate(nombre_contribuyente=Concat('nombres', V(' '), 'apellidos')).filter(identificacion__icontains=identificacion)
+        deudores = Deudores.objects.all()
+        if identificacion:
+            deudores = deudores.filter(id_persona_deudor_pymisis__t03nit__icontains=identificacion)
+            deudores = deudores.filter(id_persona_deudor__numero_documento__icontains=identificacion)
 
-        for nombre_apellido in nombres_apellidos:
-            deudores = deudores.filter(nombre_contribuyente__icontains=nombre_apellido)
-
+        if nombre_contribuyente:
+            deudores = deudores.filter(id_persona_deudor__primer_nombre__icontains=nombre_contribuyente)
+            deudores = deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=nombre_contribuyente)
+        
         serializer = self.serializer_class(deudores, many=True)
-
         data_deudores = serializer.data
         instancia_obligaciones = CarteraDeudorListViews()
         
@@ -184,16 +242,10 @@ class ListadoDeudoresViews(generics.ListAPIView):
                 data['monto_total'] = None
                 data['monto_total_con_intereses'] = None
 
-        return data_deudores
+        return Response({'success': True, 'detail': 'Se muestra los deudores', 'data': data_deudores}, status=status.HTTP_200_OK)
   
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_lista_deudores()
 
-        if not queryset:
-            raise NotFound('No se encontraron resultados.')
-    
-        return Response({'success': True, 'detail': 'Se muestra los deudores', 'data': queryset}, status=status.HTTP_200_OK)
 
 
 ### VISTAS QUE SE MUESTRAN AL MOMENTO DE CREAR UNA FACILIDAD
