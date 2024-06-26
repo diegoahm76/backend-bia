@@ -101,12 +101,13 @@ class VistaCarteraTuaView(generics.ListAPIView):
         i = 0
         data_cartera = []
         for item_vcartera in results_vcartera:
-            if not item_vcartera['numfactura'] in cartera.data[i]['numero_factura']:
+            if not item_vcartera['numfactura']== cartera.data[i]['numero_factura']:
                 data_cartera.append(item_vcartera)
             i += 1
         return data_cartera
 
     def insertar_cartera(self, cartera):
+        data_list = []
         for item_cartera in cartera:
             print(item_cartera)
             data = {
@@ -169,14 +170,16 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 data['codigo_contable'] = concepto.id
                 
             print('cartera: ', data)
-            cartera = self.serializer_class(data=data)
-            #cartera = CarteraCompararSerializer(data=item_cartera)
-            if cartera.is_valid():
-                cartera.save()
-                print('Cartera guardada')
-            else:
-                print(cartera.errors)
-                print('else')
-                return 'Error al guardar la cartera'
+
+            data_list.append(data)
+        cartera = self.serializer_class(data=data_list, many=True)
+        #cartera = CarteraCompararSerializer(data=item_cartera)
+        if cartera.is_valid():
+            cartera.save()
+            print('Cartera guardada')
+        else:
+            print(cartera.errors)
+            print('else')
+            return 'Error al guardar la cartera'
         return cartera
         

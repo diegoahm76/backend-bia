@@ -253,13 +253,27 @@ class ConsultaCarteraSerializer(serializers.ModelSerializer):
 
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
+    identificacion = serializers.SerializerMethodField()
 
     class Meta:
         model = Deudores
         fields = ('id','nombre_contribuyente','identificacion')
 
     def get_nombre_contribuyente(self, obj):
-        return f"{obj.nombres} {obj.apellidos}"
+        if obj.id_persona_deudor:
+            return f"{obj.id_persona_deudor.priner_nombre} {obj.id_persona_deudor.segundo_nombre} {obj.id_persona_deudor.primer_apellido} {obj.id_persona_deudor.segundo_apellido}"
+        elif obj.id_persona_deudor_pymisis:
+            return f"{obj.id_persona_deudor_pymisis.t03nombre}"
+        else:
+            return None
+    
+    def get_identificacion(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.numero_documento
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
 
 
 class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
