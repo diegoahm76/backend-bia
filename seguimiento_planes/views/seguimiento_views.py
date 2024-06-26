@@ -9,7 +9,7 @@ from rest_framework.pagination import PageNumberPagination
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.serializers.expedientes_serializers import ArchivosDigitalesCreateSerializer
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
-from seguimiento_planes.models.planes_models import Sector
+from seguimiento_planes.models.planes_models import Sector, ParametricaRubro
 from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecursosPaaSerializerUpdate, 
                                                                    FuenteFinanciacionIndicadoresSerializer,
                                                                    FuentesFinanciacionIndicadoresSerializer, 
@@ -882,7 +882,7 @@ class BusquedaAvanzadaConceptoPOAI(generics.ListAPIView):
 
     def get(self, request):
         conceptos = ConceptoPOAI.objects.all()
-        rubros = Rubro.objects.all()
+        rubros = ParametricaRubro.objects.all()
         cod_pre = request.query_params.get('cod_pre', '')
         cuenta_in = request.query_params.get('cuenta', '')
 
