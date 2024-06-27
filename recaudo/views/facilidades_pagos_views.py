@@ -772,21 +772,16 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
     serializer_class = ListadoFacilidadesPagoSerializer
 
     def lista_facilidades(self, data):
-        facilidades_pago = FacilidadesPago.objects.annotate(nombre_de_usuario=Concat('id_deudor__nombres', V(' '), 'id_deudor__apellidos'))
+        facilidades_pago = FacilidadesPago.objects.all()
         
         identificacion = data['identificacion']
         nombre_de_usuario = data['nombre_de_usuario']
-        nombres_apellidos = nombre_de_usuario.split()
 
         if identificacion:
-            facilidades_pago = facilidades_pago.filter(id_deudor__identificacion__icontains=identificacion)
+            facilidades_pago = facilidades_pago.filter(id_deudor__id_persona_deudor__numero_documento__icontains=identificacion) | facilidades_pago.filter(id_deudor__id_persona_deudor_pymisis__t03nit__icontains=identificacion)
 
-        if nombres_apellidos:
-            q = Q()
-            for nombre_apellido in nombres_apellidos:
-                q |= Q(nombre_de_usuario__icontains=nombre_apellido)
-            facilidades_pago = facilidades_pago.filter(q)
-
+        if nombre_de_usuario:
+            facilidades_pago = facilidades_pago.filter(id_deudor__id_persona_deudor__primer_nombre__icontains=nombre_de_usuario) | facilidades_pago.filter(id_deudor__id_persona_deudor_pymisis__t03nombre__icontains=nombre_de_usuario)
         return facilidades_pago.order_by('-fecha_generacion')
     
 
