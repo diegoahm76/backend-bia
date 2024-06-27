@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import Sector, ParametricaFuente
+from seguimiento_planes.models.planes_models import Sector
 from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores,
                                                           Modalidad,
                                                           Prioridad,
@@ -16,6 +16,7 @@ from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndi
                                                           SeguimientoPAIDocumentos,
                                                           SeguimientoPOAI)
 class FuenteFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
 
     class Meta:
         model = FuenteFinanciacionIndicadores
@@ -218,18 +219,9 @@ class SeguimientoPAIDocumentosSerializer(serializers.ModelSerializer):
 
 
 class FuentesFinanciacionIndicadoresSerializer(serializers.ModelSerializer):
-    nombre_fuente = serializers.SerializerMethodField()
     class Meta:
         model = FuenteFinanciacionIndicadores
         fields = '__all__'
-
-    def get_nombre_fuente(self, obj):
-        nombre_fuente = None
-        if obj.id_fuente:
-            fuente = ParametricaFuente.objects.get(id_fuente=obj.id_fuente)
-        nombre_fuente = fuente.nombre_fuente
-
-        return nombre_fuente
 
 
 class PrioridadPOAISerializer(serializers.ModelSerializer):
@@ -238,6 +230,15 @@ class PrioridadPOAISerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SeguimientoPOAISerializer(serializers.ModelSerializer):
+    class Meta:
+            model = SeguimientoPOAI
+            fields = '__all__'
+
+class SeguimientoPOAISerializerGet(serializers.ModelSerializer):
+    nombre_responsable = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.nombre_modalidad', default=None)
+    
+
     class Meta:
             model = SeguimientoPOAI
             fields = '__all__'

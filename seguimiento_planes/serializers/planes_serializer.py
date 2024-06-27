@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR
+from seguimiento_planes.models.planes_models import SeguimientoPGAR, ArmonizarPAIPGAR, LineasBasePGAR, ObjetivoDesarrolloSostenible, Planes, EjeEstractegico, Objetivo, Programa, Proyecto, Productos, Actividad, Entidad, Medicion, Tipo, Rubro, Indicador, Metas, TipoEje, Subprograma, MetasEjePGAR, ParametricaRubro
 
 class ObjetivoDesarrolloSostenibleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -104,7 +104,20 @@ class TipoSerializer(serializers.ModelSerializer):
         model = Tipo
         fields = '__all__'
 
-class RubroSerializer(serializers.ModelSerializer):                
+
+class RubroSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Rubro
+        fields = '__all__'
+
+class RubroSerializerGet(serializers.ModelSerializer):   
+    cod_presupuestal = serializers.ReadOnlyField(source='id_rubro_parametrica.cod_pre', default=None) 
+    cuenta = serializers.ReadOnlyField(source='id_rubro_parametrica.cuenta', default=None)
+    nombre_fuente = serializers.ReadOnlyField(source='id_fuente.nombre_fuente', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_meta.id_indicador.nombre_indicador', default=None)
+
     class Meta:
         model = Rubro
         fields = '__all__'
@@ -580,4 +593,9 @@ class TableroPGARObjetivoGeneralSerializer(serializers.ModelSerializer):
                 agnos.append(porcenjates_año)
 
         return agnos
-    
+
+
+class ParametricaRubroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ParametricaRubro
+        fields = '__all__'

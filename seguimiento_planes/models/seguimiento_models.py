@@ -1,5 +1,5 @@
 from django.db import models
-from seguimiento_planes.models.planes_models import Planes, Programa, Proyecto, Productos, Actividad, Rubro, Indicador, Metas, Subprograma
+from seguimiento_planes.models.planes_models import Planes, Programa, Proyecto, Productos, Actividad, ParametricaRubro, Indicador, Metas, Subprograma
 from recurso_hidrico.models.bibliotecas_models import Cuencas
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from transversal.models.personas_models import Personas
@@ -11,15 +11,16 @@ from transversal.models.base_models import (
 
 class FuenteFinanciacionIndicadores(models.Model):
     id_fuente = models.AutoField(primary_key=True, editable=False, db_column='T516IdFuente')
-    vano_1 = models.BigIntegerField(null=True, blank=True, db_column='T516vano1')
-    vano_2 = models.BigIntegerField(null=True, blank=True, db_column='T516vano2')
-    vano_3 = models.BigIntegerField(null=True, blank=True, db_column='T516vano3')
-    vano_4 = models.BigIntegerField(null=True, blank=True, db_column='T516vano4')
+    nombre_fuente = models.CharField(max_length=255, db_column='T516nombreFuente')
+    vano_1 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano1')
+    vano_2 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano2')
+    vano_3 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano3')
+    vano_4 = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516vano4')
     vadicion1 = models.BooleanField(default=False, db_column='T516adicion1')
     vadicion2 = models.BooleanField(default=False, db_column='T516adicion2')
     vadicion3 = models.BooleanField(default=False, db_column='T516adicion3')
     vadicion4 = models.BooleanField(default=False, db_column='T516adicion4')
-    valor_total = models.BigIntegerField(null=True, blank=True, db_column='T516valorTotal')
+    valor_total = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True, db_column='T516valorTotal')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T516IdPlan')
 
     def __str__(self):
@@ -132,7 +133,7 @@ class ConceptoPOAI(models.Model):
     valor_inicial = models.BigIntegerField(null=True, blank=True, db_column='T525valorInicial')
     id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T525IdPlan')
     id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T525IdProyecto')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T525IdRubro')
+    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T525IdRubro')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T525IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T525IdMeta')
     id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T525IdModaliad')
@@ -155,7 +156,7 @@ class BancoProyecto(models.Model):
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T527IdActividad')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T527IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T527IdMeta')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T527IdRubro')
+    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T527IdRubro')
     id_fuente_financiacion = models.ForeignKey(FuenteFinanciacionIndicadores, on_delete=models.CASCADE, db_column='T527IdFuenteFinanciacion')
 
     def __str__(self):
@@ -402,7 +403,7 @@ class SeguimientoPOAI(models.Model):
     id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T537IdActividad')
     id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T537IdIndicador')
     id_meta = models.ForeignKey(Metas, on_delete=models.CASCADE, db_column='T537IdMeta')
-    id_rubro = models.ForeignKey(Rubro, on_delete=models.CASCADE, db_column='T537IdRubro')
+    id_rubro = models.ForeignKey(ParametricaRubro, on_delete=models.CASCADE, db_column='T537IdRubro')
     descripcion = models.CharField(max_length=255, db_column='T537descripcion')
     id_prioridad = models.ForeignKey(Prioridad, null=True, blank=True, on_delete=models.SET_NULL, db_column='T537IdPrioridad')
     codigo_pre = models.CharField(max_length=100, db_column='T537codigoPre')

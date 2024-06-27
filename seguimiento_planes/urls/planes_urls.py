@@ -102,10 +102,17 @@ urlpatterns=[
     path('actualizar-tipos/<str:pk>/',views.TipoUpdate.as_view(),name='actualizartipos'),
     path('eliminar-tipos/<str:pk>/',views.TipoDelete.as_view(),name='eliminartipos'),
     path('consultar-tipos-id/<str:pk>/',views.TipoDetail.as_view(),name='consultartiposid'),
+    # Parametrica Rubros
+    path('consultar-parametrica-rubros/',views.ParametricaRubroList.as_view(),name='consultarparametricarubros'),
+    path('crear-parametrica-rubros/',views.ParametricaRubroCreate.as_view(),name='crearparametricarubros'),
+    path('actualizar-parametrica-rubros/<str:id_rubro>/',views.ParametricaRubroUpdate.as_view(),name='actualizarparametricarubros'),
+    path('eliminar-parametrica-rubros/<str:id_rubro>/',views.ParametricaRubroDelete.as_view(),name='eliminarparametricarubros'),
+    path('consultar-parametrica-rubros-id-plan/<str:id_plan>/',views.ParametricaRubroIdPlan.as_view(),name='consultarparametricarubrosid'),
+
     # Rubros
     path('consultar-rubros/',views.RubroList.as_view(),name='consultarrubros'),
     path('crear-rubros/',views.RubroCreate.as_view(),name='crearrubros'),
-    path('actualizar-rubros/<str:pk>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
+    path('actualizar-rubros/<str:id_rubro>/',views.RubroUpdate.as_view(),name='actualizarrubros'),
     path('eliminar-rubros/<str:pk>/',views.RubroDelete.as_view(),name='eliminarrubros'),
     path('consultar-rubros-id/<str:pk>/',views.RubroDetail.as_view(),name='consultarrubrosid'),
     path('consultar-rubros-id-meta/<str:id_meta>/',views.RubroListIdMeta.as_view(),name='consultarrubrosidmeta'),

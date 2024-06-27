@@ -3,14 +3,15 @@ import hashlib
 import json
 import logging
 import subprocess
-
+from io import BytesIO
+from docx.shared import Mm
 from django.http import JsonResponse
 # import pypandoc
 import requests
 import http.client
 from gestion_documental.models.expedientes_models import ArchivosDigitales, DobleVerificacionTmp
 from backend.settings.base import MEDIA_ROOT
-from docxtpl import DocxTemplate
+from docxtpl import DocxTemplate, InlineImage
 import os
 import secrets
 import uuid
@@ -3510,6 +3511,19 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
         except ValidationError as e:
             error_message = {'error': e.detail}
             raise ValidationError(e.detail)
+    
+    def addInlineImgsSignatures(self, doc, payload):
+        firmas = [ k for k, v in payload.items() if k.startswith('Firma')]
+        newPayload = payload.copy()
+
+        for firma in firmas:
+            if payload[firma]:
+                imgDecoded = base64.b64decode(payload[firma])
+                image = BytesIO(imgDecoded)
+
+                newPayload[firma] = InlineImage(doc, image, width=Mm(20))
+
+        return newPayload
         
     def generarDocCopia(self, payload, plantilla):
         try:
@@ -3521,7 +3535,10 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
             if ruta_archivo and os.path.exists(ruta_archivo):
                 doc = DocxTemplate(ruta_archivo)
 
-                doc.render(payload)
+                # REPLACE SIGNATURES
+                newPayload = self.addInlineImgsSignatures(doc, payload)
+
+                doc.render(newPayload)
 
                 file_uuid = uuid.uuid4()
 
@@ -4027,6 +4044,9 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 img = self.get_firmas_funcionarios_sasoft(persona.nombre_de_usuario, token_camunda)
                 print(img)
 
+                if img:
+                    self.update_signing(request, id_consecutivo, None, img)
+
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
         if finalizo:
@@ -4038,6 +4058,8 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             print(ruta)
             pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
             print(pdf)
+
+            # ENVIAR PAQUETE A SASOFTCO - AUTOS
             
             return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
         else:
@@ -4054,6 +4076,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         ruta_output = f'{MEDIA_ROOT}{os.sep}home{os.sep}BIA{os.sep}Otros{os.sep}Documentos'
 
         command = ['libreoffice', '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', ruta_output, word_file_path]
+        # command = ['C:\Program Files\LibreOffice\program\soffice.bin', '--headless', '--convert-to', 'pdf:writer_pdf_Export', '--outdir', ruta_output, word_file_path]
 
         try:
             result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -4222,6 +4245,21 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         except requests.RequestException as e:
             print(f"Error en la solicitud: {e}")
             return None  # Manejo de errores de solicitud
+        
+    def update_signing(self, request, id_consecutivo, cod_tipo_radicado, img):
+        # AÑADIR FIRMA A DOCUMENTO
+        img = img['contentFile']
+        
+        context = {
+            f'Firma_{request.user.persona.tipo_documento.cod_tipo_documento}_{request.user.persona.numero_documento}': img
+        }
+
+        request.data['consecutivo'] = False
+        # request.data['cod_tipo_radicado'] = cod_tipo_radicado
+
+        ### VALIDAR EL USO DE ESTO - AC
+        consecutivo_tipologia_class = ConsecutivoTipologiaDoc()
+        consecutivo_tipologia_class.ActualizarDocCargado(request, context, id_consecutivo)
     
 
 class DocumentosFinalizadosList(generics.ListAPIView):

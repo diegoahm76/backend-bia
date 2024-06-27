@@ -11,7 +11,7 @@ urlpatterns=[
     # Listar todos los registros de fuentes de financiacion indicadores por id_indicador
     path('consultar-fuentes-financiacion-indicadores-id-indicador/<str:pk>/', views.FuenteFinanciacionIndicadoresPorIndicadorList.as_view(),name='consultaridindicadorfuentesfinanciacionindicadores'),
     # Listar todos los registros de fuentes de financiacion indicadores por id_meta
-    path('consultar-fuentes-financiacion-indicadores-id-meta/<str:pk>/', views.FuenteFinanciacionIndicadoresPorMetaList.as_view(),name='consultaridmetafuentesfinanciacionindicadores'),
+    path('consultar-fuentes-financiacion-indicadores-id-plan/<str:id_plan>/', views.FuenteFinanciacionIndicadoresIdPlan.as_view(),name='consultaridmetafuentesfinanciacionindicadores'),
     # Busqueda avanzada de fuentes de financiacion indicadores por nombre fuente, nombre proyecto, nombre producto, nombre actividad, nombre indicador
     path('consultar-fuentes-financiacion-indicadores-avanzado/',views.BusquedaAvanzadaFuentesFinanciacionIndicadores.as_view(),name='consultarfuentesfinanciacionindicadoresavanzado'),
     # Sectores
@@ -57,6 +57,7 @@ urlpatterns=[
     path('eliminar-conceptos-poai/<str:pk>/',views.ConceptoPOAIDelete.as_view(),name='eliminarconceptospoai'),
     # busqueda avanzada de conceptos POAI por concepto, nombre y nombre indicador
     path('consultar-conceptos-poai-avanzado/',views.BusquedaAvanzadaConceptoPOAI.as_view(),name='consultarconceptospoaiavanzado'),
+    path('consultar-conceptos-poai-id-rubro/<str:id_rubro>/', views.ConceptoPOAIListIdRubro.as_view(),name='consultaridindicadorconceptospoai'),
     # Banco de proyectos
     path('consultar-banco-proyectos/<str:pk>/',views.BancoProyectoList.as_view(),name='consultarbanco_proyectos'),
     path('crear-banco-proyectos/',views.BancoProyectoCreate.as_view(),name='crearbanco_proyectos'),

@@ -3,6 +3,9 @@ from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.base_models import RangosEdad
+from gestion_documental.models import ExpedientesDocumentales
+from recaudo.models import extraccion_model_recaudo , Rt970Tramite
+
 
 
 # class CarteraGeneralSerializer(serializers.ModelSerializer):
@@ -48,28 +51,57 @@ class CarteraGeneralDetalleSerializer(serializers.ModelSerializer):
     concepto_deuda = serializers.ReadOnlyField(source='codigo_contable.descripcion')
 
     def get_nombre_deudor(self, obj):
-        deudor = obj.id_deudor
-        return f"{deudor.nombres} {deudor.apellidos}" if deudor else None
+        if obj.id_deudor.id_persona_deudor:
+            return f"{obj.id_deudor.id_persona_deudor.primer_nombre} {obj.id_deudor.id_persona_deudor.segundo_nombre} {obj.id_deudor.id_persona_deudor.primer_apellido} {obj.id_deudor.id_persona_deudor.segundo_apellido}"
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return obj.id_deudor.id_persona_deudor_pymisis.t03nombre
+        else:
+            return None
         
     def get_identificacion(self, obj):
-        deudor = obj.id_deudor
-        return deudor.identificacion if deudor else None
+        if obj.id_deudor.id_persona_deudor:
+            return obj.id_deudor.id_persona_deudor.numero_documento
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
     
     def get_expediente(self, obj):
-        expediente = obj.id_expediente
-        return expediente.cod_expediente if expediente else None
+        expediente_doc = obj.id_expediente.id_expediente_doc
+        if expediente_doc:
+            codigo_exp = f"{expediente_doc.codigo_exp_und_serie_subserie}{expediente_doc.codigo_exp_Agno}{expediente_doc.codigo_exp_consec_por_agno}"
+            return codigo_exp
+        else:
+            expediente_pimisys = obj.id_expediente.id_expediente_pimisys
+            if expediente_pimisys:
+                return expediente_pimisys.t920codexpediente
+            else:
+                return None
 
     def get_resolucion(self, obj):
-        expediente = obj.id_expediente
-        return expediente.numero_resolucion if expediente else None
+        expediente_doc = obj.id_expediente.id_expediente_doc
+        if expediente_doc:
+            codigo_exp = f"{expediente_doc.codigo_exp_und_serie_subserie}{expediente_doc.codigo_exp_Agno}{expediente_doc.codigo_exp_consec_por_agno}"
+            return codigo_exp
+        else:
+            expediente_pimisys = obj.id_expediente.id_expediente_pimisys
+            if expediente_pimisys:
+                tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente_pimisys.t920codexpediente).first()
+                if tramite:
+                    return tramite.t970numresolperm
+                else:
+                    return None
+            else:
+                return None
+            
     
     def get_auto(self, obj):
-        expediente = obj.id_expediente
-        return expediente.cod_auto if expediente else None
-
+        expediente_doc = obj.id_expediente.id_expediente_doc
+        return expediente_doc.cod_auto if expediente_doc else None
+    
     def get_recurso(self, obj):
-        expediente = obj.id_expediente
-        return expediente.cod_recurso if expediente else None
+        expediente_doc = obj.id_expediente.id_expediente_doc
+        return expediente_doc.cod_recurso if expediente_doc else None
      
     class Meta:
         model = Cartera
