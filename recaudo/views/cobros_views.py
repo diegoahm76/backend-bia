@@ -98,12 +98,13 @@ class VistaCarteraTuaView(generics.ListAPIView):
         cartera = Cartera.objects.all()
         cartera = CarteraCompararSerializer(cartera, many=True)
 
-        i = 0
         data_cartera = []
-        for item_vcartera in results_vcartera:
-            if not item_vcartera['numfactura']== cartera.data[i]['numero_factura']:
-                data_cartera.append(item_vcartera)
-            i += 1
+
+        numeros_factura_existentes = {item['numero_factura'] for item in cartera.data}
+        print('numeros_factura_existentes', numeros_factura_existentes)
+
+        data_cartera = [item_vcartera for item_vcartera in results_vcartera if item_vcartera['numfactura'] not in numeros_factura_existentes]
+
         return data_cartera
 
     def insertar_cartera(self, cartera):
@@ -173,7 +174,6 @@ class VistaCarteraTuaView(generics.ListAPIView):
 
             data_list.append(data)
         cartera = self.serializer_class(data=data_list, many=True)
-        #cartera = CarteraCompararSerializer(data=item_cartera)
         if cartera.is_valid():
             cartera.save()
             print('Cartera guardada')

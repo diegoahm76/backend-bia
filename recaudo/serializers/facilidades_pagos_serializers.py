@@ -129,15 +129,28 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
 
 
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
-    identificacion = serializers.ReadOnlyField(source='id_deudor.identificacion',default=None)
+    identificacion = serializers.SerializerMethodField()
     nombre_de_usuario = serializers.SerializerMethodField()
     nombre_funcionario = serializers.SerializerMethodField()
     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
     tiene_plan_pago = serializers.SerializerMethodField()
     id_persona = serializers.SerializerMethodField()
 
+    def get_identificacion(self, obj):
+        if obj.id_deudor.id_persona_deudor:
+            return obj.id_deudor.id_persona_deudor.numero_documento
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
+
     def get_nombre_de_usuario(self, obj):
-        return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
+        if obj.id_deudor.id_persona_deudor:
+            return f"{obj.id_deudor.id_persona_deudor.primer_nombre} {obj.id_deudor.id_persona_deudor.segundo_nombre} {obj.id_deudor.id_persona_deudor.primer_apellido} {obj.id_deudor.id_persona_deudor.segundo_apellido}"
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
+        else:
+            return None
 
     def get_nombre_funcionario(self, obj):      
         return f"{obj.id_funcionario.primer_nombre} {obj.id_funcionario.primer_apellido}"
@@ -149,7 +162,12 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
         return tiene_plan_pago
     
     def get_id_persona(self, obj):
-        persona = Personas.objects.filter(numero_documento=obj.id_deudor.identificacion).first()
+        if obj.id_deudor.id_persona_deudor:
+            persona = Personas.objects.filter(numero_documento=obj.id_deudor.id_persona_deudor.numero_documento).first()
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            persona = Personas.objects.filter(numero_documento=obj.id_deudor.id_persona_deudor_pymisis.t03nit).first()
+        else:
+            persona = None
         if persona:
             id_persona = persona.id_persona
         else:
