@@ -13,9 +13,27 @@ from recaudo.models.procesos_models import (
 
 
 class CarteraSerializer(serializers.ModelSerializer):
+    identificacion = serializers.SerializerMethodField()
+    nombres = serializers.SerializerMethodField()
     class Meta:
         model = Cartera
         fields = '__all__'
+
+    def get_nombres(self, obj):
+        if obj.id_deudor.id_persona_deudor:
+            return f"{obj.id_deudor.id_persona_deudor.primer_nombre} {obj.id_deudor.id_persona_deudor.segundo_nombre} {obj.id_deudor.id_persona_deudor.primer_apellido} {obj.id_deudor.id_persona_deudor.segundo_apellido}"
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
+        else:
+            return None
+    
+    def get_identificacion(self, obj):
+        if obj.id_deudor.id_persona_deudor:
+            return obj.id_deudor.id_persona_deudor.numero_documento
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
 
 
 class DeudorSerializer(serializers.ModelSerializer):
@@ -46,16 +64,39 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
     id_deudor = DeudorSerializer(many=False)
     id_rango = RangosEdadSerializer(many=False)
     proceso_cartera = serializers.SerializerMethodField()
+    fecha_facturacion = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    fecha_notificacion = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    fecha_ejecutoriado = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    inicio = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    fin = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    nombre_deudor = serializers.SerializerMethodField()
+    identificacion = serializers.SerializerMethodField()
 
     class Meta:
         model = Cartera
         fields = ('id', 'nombre', 'dias_mora', 'valor_intereses', 'valor_sancion', 'inicio', 'fin', 'id_rango', 'codigo_contable', 'fecha_facturacion', 'fecha_notificacion',
-                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera', 'tipo_renta')
+                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera', 'tipo_renta','nombre_deudor','identificacion')
 
     def get_proceso_cartera(self, obj):
         procesos_cartera = obj.proceso_cartera.filter(fin__isnull=True)
         serializer = ProcesosSerializer(instance=procesos_cartera, many=True)
         return serializer.data
+    
+    def get_nombre_deudor(self, obj):
+        if obj.id_deudor.id_persona_deudor:
+            return f"{obj.id_deudor.id_persona_deudor.primer_nombre} {obj.id_deudor.id_persona_deudor.segundo_nombre} {obj.id_deudor.id_persona_deudor.primer_apellido} {obj.id_deudor.id_persona_deudor.segundo_apellido}"
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return obj.id_deudor.id_persona_deudor_pymisis.t03nombre
+        else:
+            return None
+        
+    def get_identificacion(self, obj):
+        if obj.id_deudor.id_persona_deudor:
+            return obj.id_deudor.id_persona_deudor.numero_documento
+        elif obj.id_deudor.id_persona_deudor_pymisis:
+            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
     
 class CarteraCompararSerializer(serializers.ModelSerializer):
     class Meta:

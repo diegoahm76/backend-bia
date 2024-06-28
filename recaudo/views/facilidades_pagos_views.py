@@ -1049,8 +1049,14 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
 
     def get(self, request):
         user = request.user
-        numero_identificacion = user.persona.numero_documento
-        deudor =  Deudores.objects.get(identificacion=numero_identificacion)
+        
+        try:
+            deudor =  Deudores.objects.get(
+                Q(id_persona_deudor__numero_documento=user.persona.numero_documento) | 
+                Q(id_persona_deudor_pymisis__t03nit=user.persona.numero_documento)
+            )
+        except Deudores.DoesNotExist:
+            raise NotFound('No se encontró ningún registro en deudores con el número de documento proporcionado')
         data = []
 
         if not deudor:

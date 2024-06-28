@@ -40,7 +40,7 @@ class DeudoresSerializer(serializers.ModelSerializer):
 
     def get_nombres(self, obj):
         if obj.id_persona_deudor:
-            return f"{obj.id_persona_deudor.priner_nombre} {obj.id_persona_deudor.segundo_nombre} {obj.id_persona_deudor.primer_apellido} {obj.id_persona_deudor.segundo_apellido}"
+            return f"{obj.id_persona_deudor.primer_nombre} {obj.id_persona_deudor.segundo_nombre} {obj.id_persona_deudor.primer_apellido} {obj.id_persona_deudor.segundo_apellido}"
         elif obj.id_persona_deudor_pymisis:
             return f"{obj.id_persona_deudor_pymisis.t03nombre}"
         else:
