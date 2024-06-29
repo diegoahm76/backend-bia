@@ -56,6 +56,62 @@ from datetime import datetime, date, timedelta
 import random
 import string
 
+@staticmethod
+def get_info_deudor(id_deudor_in, numero_identificacion_in, nombre_completo_in):
+    data = {}
+    id_deudor = None
+    id_persona_deudor = None
+    id_persona_deudor_pymisis = None
+    numero_identificacion = ''
+    nombre_completo = ''
+
+    if id_deudor_in:
+        try:
+            deudor = Deudores.objects.get(id=id_deudor_in)
+        except Deudores.DoesNotExist:
+            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
+        
+        id_deudor = deudor.id
+        id_persona_deudor = deudor.id_persona_deudor.id_persona if deudor.id_persona_deudor else None
+        id_persona_deudor_pymisis = deudor.id_persona_deudor_pymisis.id if deudor.id_persona_deudor_pymisis else None
+        numero_identificacion = deudor.id_persona_deudor.numero_documento if id_persona_deudor else deudor.id_persona_deudor_pymisis.t03nit
+
+        if id_persona_deudor:
+            if id_persona_deudor.razon_social:
+                nombre_completo = id_persona_deudor.razon_social
+            else:
+                nombre_completo = f"{id_persona_deudor.primer_nombre} {id_persona_deudor.segundo_nombre} {id_persona_deudor.primer_apellido} {id_persona_deudor.segundo_apellido}"
+        elif id_persona_deudor_pymisis:
+            nombre_completo = deudor.id_persona_deudor_pymisis.t03nombre
+        
+        data = {
+            'id_deudor': id_deudor,
+            'id_persona_deudor': id_persona_deudor,
+            'id_persona_deudor_pymisis': id_persona_deudor_pymisis,
+            'numero_identificacion': numero_identificacion,
+            'nombre_completo': nombre_completo
+        }
+
+    elif numero_identificacion_in or nombre_completo_in:
+        deudor = Deudores.objects.all()
+
+        if numero_identificacion_in:
+            deudor = deudor.filter(Q(id_persona_deudor_pymisis__t03nit=numero_identificacion_in) | Q(id_persona_deudor__numero_documento = numero_identificacion_in)).first()
+
+        if nombre_completo_in:
+            nombre_completo_split = str(nombre_completo_in).split()
+            for nombre in nombre_completo_split:
+                deudor = deudor.filter(Q(id_persona_deudor_pymisis__t03nombre__icontains=nombre) |
+                                       Q(id_persona_deudor__primer_nombre__icontains=nombre) | 
+                                       Q(id_persona_deudor__segundo_nombre__icontains=nombre) | 
+                                       Q(id_persona_deudor__primer_apellido__icontains=nombre) | 
+                                       Q(id_persona_deudor__segundo_apellido__icontains=nombre) |
+                                       Q(id_persona_deudor__razon_social__icontains=nombre)).first()
+                
+        
+    
+    return data
+
 
 ### VISTAS QUE MUESTRAN LAS OBLIGACIONES
 
