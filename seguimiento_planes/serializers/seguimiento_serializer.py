@@ -231,8 +231,8 @@ class PrioridadPOAISerializer(serializers.ModelSerializer):
 
 class SeguimientoPOAISerializer(serializers.ModelSerializer):
     class Meta:
-            model = SeguimientoPOAI
-            fields = '__all__'
+        model = SeguimientoPOAI
+        fields = '__all__'
 
 class SeguimientoPOAISerializerGet(serializers.ModelSerializer):
     nombre_responsable = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
@@ -242,3 +242,26 @@ class SeguimientoPOAISerializerGet(serializers.ModelSerializer):
     class Meta:
             model = SeguimientoPOAI
             fields = '__all__'
+
+class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    nombre_programa = serializers.ReadOnlyField(source='id_producto.id_proyecto.id_programa.nombre_programa', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_producto.id_proyecto.nombre_proyecto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
+    nombre_unidad = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+    codigo_modalidad = serializers.ReadOnlyField(source='id_modalidad.codigo_modalidad', default=None)
+    concepto = serializers.ReadOnlyField(source='id_concepto.concepto', default=None)
+    sector = serializers.ReadOnlyField(source='id_sector.nombre_sector', default=None)
+    nombre_fuente1 = serializers.ReadOnlyField(source='id_fuente1.nombre_fuente', default=None)
+    nombre_fuente2 = serializers.ReadOnlyField(source='id_fuente2.nombre_fuente', default=None)
+    nombre_fuente3 = serializers.ReadOnlyField(source='id_fuente3.nombre_fuente', default=None)
+    nombre_fuente4 = serializers.ReadOnlyField(source='id_fuente4.nombre_fuente', default=None)
+
+    
+    class Meta:
+        model = SeguimientoPOAI
+        fields = '__all__'
+

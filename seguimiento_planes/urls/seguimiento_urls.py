@@ -99,6 +99,7 @@ urlpatterns=[
     path('consultar-seguimiento-poai/<str:id_concepto>/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
     path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
     path('actualizar-seguimiento-poai/<str:id_seguimiento>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
+    path('consultar-seguimiento-poai-reporte/',views.SeguimientoPOAIConsultaReporte.as_view(),name='consultarseguimientopoaireporte'),
 
 
 
