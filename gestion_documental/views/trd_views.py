@@ -20,6 +20,7 @@ from gestion_documental.serializers.notificaciones_serializers import AnexosNoti
 from gestion_documental.serializers.pqr_serializers import AnexosSerializer, MetadatosSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.panel_ventanilla_views import CreateValidacionTareaTramite
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
@@ -4062,8 +4063,20 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             print(pdf)
 
             # ENVIAR PAQUETE A SASOFTCO - AUTOS
+            tramite = consecutivo_tipologia.id_tramite
+            envio_sasoftco = False
+            if tramite:
+                radicado = None
+                if tramite.id_radicado:
+                    radicado = str(tramite.id_radicado.prefijo_radicado)+'-'+str(tramite.id_radicado.agno_radicado)+'-'+str(tramite.id_radicado.nro_radicado)
+                
+                    request.data['radicado'] = radicado
+                    tarea_tramite_class = CreateValidacionTareaTramite()
+                    respuesta_data = tarea_tramite_class.post(request)
+                    if respuesta_data.status_code == status.HTTP_201_CREATED:
+                        envio_sasoftco = True
             
-            return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'El código es válido', 'finalizo': True, 'envio_sasoftco': envio_sasoftco}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
         

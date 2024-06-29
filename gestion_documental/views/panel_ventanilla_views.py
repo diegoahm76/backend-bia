@@ -3702,13 +3702,13 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
         contenido =None
         contenido_base64=None
-        if   os.path.exists(pathToTemplate):
+        if os.path.exists(pathToTemplate):
                 print("EXISTE")
                 with open(pathToTemplate, 'rb') as file:
                     contenido = file.read()
                     contenido_base64 = base64.b64encode(contenido).decode('utf-8')
         else:
-            raise ValidationError(" No se encontro el documento del auto")
+            raise ValidationError("No se encontro el documento del auto")
 
             # print('NO EXISTE')
             # auto_consecutivo = auto.id_consec_por_nivel_tipologias_doc_agno
@@ -3761,27 +3761,57 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         pago = tramite.id_pago_evaluacion
 
         if not pago:
-            
             data_respuesta['NumeroPago']={
-
-            "type": "string",
-            "value": '00000',
-            "valueInfo": {
-                "filename": "string",
-                "mimetype": "string",
-                "encoding": "string"
-            }
+                "type": "string",
+                "value": '00000',
+                "valueInfo": {
+                    "filename": "string",
+                    "mimetype": "string",
+                    "encoding": "string"
+                }
             }
 
             data_respuesta['SoportePago'] = {
-            "type": "File",
-            "value": contenido_base64,
-            "valueInfo": {
-            "mimetype": "application/octet-stream",
-            "encoding": "utf-8",
-            "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
+                    "type": "File",
+                    "value": contenido_base64,
+                    "valueInfo": {
+                        "mimetype": "application/octet-stream",
+                        "encoding": "utf-8",
+                        "filename": str(archivo.nombre_de_Guardado)+'.'+str(archivo.formato)
+                    }
             }
+        else:
+            data_respuesta['NumeroPago'] = {
+                "type": "string",
+                "value": pago.id_pago,
+                "valueInfo": {
+                    "filename": "string",
+                    "mimetype": "string",
+                    "encoding": "string"
+                }
             }
+            if pago.comprobante_pago:
+                # OBTENER PAGO FILE
+                contenido_pago =None
+                contenido_base64_pago = None
+                pathToFilePago = pago.comprobante_pago.ruta_archivo.path
+                if os.path.exists(pathToFilePago):
+                        print("EXISTE")
+                        with open(pathToFilePago, 'rb') as file:
+                            contenido_pago = file.read()
+                            contenido_base64_pago = base64.b64encode(contenido_pago).decode('utf-8')
+                else:
+                    raise ValidationError("No se encontro el documento del auto")
+
+                data_respuesta['SoportePago'] = {
+                        "type": "File",
+                        "value": contenido_base64_pago,
+                        "valueInfo": {
+                            "mimetype": "application/octet-stream",
+                            "encoding": "utf-8",
+                            "filename": str(pago.comprobante_pago.nombre_de_Guardado)+'.'+str(pago.comprobante_pago.formato)
+                        }
+                }
             
         # numero_pago = pago.id_liquidacion.num_liquidacion
         # SoportePago 
