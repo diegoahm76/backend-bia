@@ -14,6 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 
 
 from gestion_documental.serializers.reporte_indices_archivos_carpetas_serializers import ReporteIndicesTodosGetSerializer,SucursalesEmpresasSerializer,UnidadesGetSerializer,CatalogosSeriesUnidadGetSerializer
+from gestion_documental.views.permisos_views import UnidadesPermisosGetView
 from transversal.models.entidades_models import SucursalesEmpresas
 from transversal.models.organigrama_models import Organigramas, UnidadesOrganizacionales
 
@@ -47,8 +48,21 @@ class UnidadesOrganigramaActualGet(generics.ListAPIView):
             raise PermissionDenied('Existe más de un organigrama actual, contacte a soporte')
         
         organigrama_actual = organigrama.first()
-        unidades_organigrama_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama)
+        unidades_organigrama_actual = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama).exclude(cod_agrupacion_documental=None)
         serializer = self.serializer_class(unidades_organigrama_actual, many=True)
+        return Response({'success':True, 'detail':'Consulta Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+
+class UnidadesGruposGet(generics.ListAPIView):
+    serializer_class = UnidadesGetSerializer
+    queryset = UnidadesOrganizacionales.objects.all()
+
+    def get(self, request, uni):
+        grupos = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=uni, cod_agrupacion_documental=None)
+        if not grupos:
+            raise NotFound('No se encontraron grupos para la unidad elegida')
+        
+        serializer = self.serializer_class(grupos, many=True)
         return Response({'success':True, 'detail':'Consulta Exitosa', 'data': serializer.data}, status=status.HTTP_200_OK)
 
 
@@ -174,8 +188,9 @@ class ReporteUnidadGet(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = None
     def get(self, request, uni):
-        
-        unidades_hijas = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=uni).values_list('id_unidad_organizacional','nombre', named=True)
+        grupos = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=uni, cod_agrupacion_documental=None).values_list('id_unidad_organizacional', flat=True)
+        unidades_ids = list(grupos)+[int(uni)] if grupos else [int(uni)]
+        unidades_total = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional__in=unidades_ids).values_list('id_unidad_organizacional','nombre', named=True)
         creados =[]
         abiertos =[]
         cerrados = []
@@ -190,18 +205,17 @@ class ReporteUnidadGet(generics.ListAPIView):
 
             if key == 'fecha_inicio':
                 if value != '':
-                    
-                    filter['fecha_apertura_expediente__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
                     fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__gte'] = fecha_inicio
             if key == 'fecha_fin':
                 if value != '':
                     fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
-                    filter['fecha_apertura_expediente__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__lte'] = fecha_fin
 
         
    
 
-        for unidad,nombre in unidades_hijas:
+        for unidad,nombre in unidades_total:
             filter['id_und_org_oficina_respon_actual'] = unidad
             expedientes = ExpedientesDocumentales.objects.filter(**filter)
             creados.append(expedientes.count())
@@ -235,23 +249,28 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
         if not unidad:
             raise NotFound('No existe registro')
         
+        filter['id_und_org_oficina_respon_actual'] = uni 
 
         for key, value in request.query_params.items():
-
             if key == 'fecha_inicio':
                 if value != '':
-                    
-                    filter['fecha_apertura_expediente__gte'] = datetime.strptime(value, '%Y-%m-%d').date()
                     fecha_inicio = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__gte'] = fecha_inicio
             if key == 'fecha_fin':
                 if value != '':
                     fecha_fin = datetime.strptime(value, '%Y-%m-%d').date()
-                    filter['fecha_apertura_expediente__lte'] = datetime.strptime(value, '%Y-%m-%d').date()
+                    filter['fecha_apertura_expediente__lte'] = fecha_fin
             if key == 'serie_suberie':
                 if value != '':
                     filter['id_cat_serie_und_org_ccd_trd_prop__id_cat_serie_und'] = value
-        
-        filter['id_und_org_oficina_respon_actual'] = uni
+            if key == 'serie_suberie':
+                if value != '':
+                    filter['id_cat_serie_und_org_ccd_trd_prop__id_cat_serie_und'] = value
+            if key == 'grupo':
+                if value != '':
+                    filter['id_und_org_oficina_respon_actual'] = value
+                    filter['id_und_org_oficina_respon_actual__cod_agrupacion_documental'] = None
+                    unidad = UnidadesOrganizacionales.objects.filter(id_unidad_organizacional=value).first()
         
         expedientes = ExpedientesDocumentales.objects.filter(**filter)
         ids_expedientes = expedientes.values_list('id_expediente_documental', flat=True)

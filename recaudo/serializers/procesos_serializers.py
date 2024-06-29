@@ -90,10 +90,13 @@ class ProcesosSerializer(serializers.ModelSerializer):
     id_cartera = CarteraSerializer(many=False)
     id_etapa = EtapasProcesoSerializer(many=False)
     id_categoria = CategoriaAtributoSerializer(many=False)
+    
 
     class Meta:
         model = Procesos
         fields = '__all__'
+
+    
 
 
 class ProcesosPostSerializer(serializers.ModelSerializer):

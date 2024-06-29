@@ -20,6 +20,7 @@ from gestion_documental.serializers.notificaciones_serializers import AnexosNoti
 from gestion_documental.serializers.pqr_serializers import AnexosSerializer, MetadatosSerializer
 from gestion_documental.utils import UtilsGestor
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from gestion_documental.views.panel_ventanilla_views import CreateValidacionTareaTramite
 from seguridad.permissions.permissions_gestor import PermisoActualizarConfiguracionTipologiasDocumentalesActual, PermisoActualizarFormatosArchivos, PermisoActualizarRegistrarCambiosTipologiasProximoAnio, PermisoActualizarTRD, PermisoActualizarTipologiasDocumentales, PermisoBorrarFormatosArchivos, PermisoBorrarTipologiasDocumentales, PermisoCrearConfiguracionTipologiasDocumentalesActual, PermisoCrearFormatosArchivos, PermisoCrearRegistrarCambiosTipologiasProximoAnio, PermisoCrearTRD, PermisoCrearTipologiasDocumentales
 from transversal.serializers.organigrama_serializers import UnidadesGetSerializer
 from django.shortcuts import get_object_or_404
@@ -4045,7 +4046,9 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                 print(img)
 
                 if img:
-                    self.update_signing(request, id_consecutivo, None, img)
+                    self.update_signing(request, consecutivo_tipologia, img)
+                else:
+                    raise ValidationError('No tiene una firma cargada en el sistema')
 
                 finalizo = self.DocumentoFinalizado(request, consecutivo_tipologia)
             
@@ -4054,14 +4057,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             #ruta = r'{}'.format(consecutivo_tipologia.id_archivo_digital.ruta_archivo.path)
 
             #Para Linux
-            ruta =  f'{consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
+            ruta =  f'{consecutivo_tipologia.id_archivo_digital_copia.ruta_archivo.path if consecutivo_tipologia.id_archivo_digital_copia else consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
             pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
             print(pdf)
 
             # ENVIAR PAQUETE A SASOFTCO - AUTOS
+            tramite = consecutivo_tipologia.id_tramite
+            envio_sasoftco = False
+            if tramite:
+                radicado = None
+                if tramite.id_radicado:
+                    radicado = str(tramite.id_radicado.prefijo_radicado)+'-'+str(tramite.id_radicado.agno_radicado)+'-'+str(tramite.id_radicado.nro_radicado)
+                
+                    request.data['radicado'] = radicado
+                    tarea_tramite_class = CreateValidacionTareaTramite()
+                    respuesta_data = tarea_tramite_class.post(request)
+                    if respuesta_data.status_code == status.HTTP_201_CREATED:
+                        envio_sasoftco = True
             
-            return Response({'success':True, 'detail':'El código es válido', 'finalizo': True}, status=status.HTTP_200_OK)
+            return Response({'success':True, 'detail':'El código es válido', 'finalizo': True, 'envio_sasoftco': envio_sasoftco}, status=status.HTTP_200_OK)
         else:
             return Response({'success':True, 'detail':'El código es válido'}, status=status.HTTP_200_OK)
         
@@ -4094,8 +4109,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             # Get the path of the PDF file
             pdf_file_path = os.path.join(r'home{}BIA{}Otros{}Documentos'.format(os.sep, os.sep, os.sep), pdf_file_name)
 
-
-            archivo_digital = ArchivosDigitales.objects.get(id_archivo_digital=consecutivo_tipologia.id_archivo_digital.id_archivo_digital)
+            archivo_digital = consecutivo_tipologia.id_archivo_digital_copia if consecutivo_tipologia.id_archivo_digital_copia else consecutivo_tipologia.id_archivo_digital
             archivo_digital.ruta_archivo = pdf_file_path
             archivo_digital.formato = 'pdf'
             archivo_digital.save()
@@ -4246,20 +4260,26 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             print(f"Error en la solicitud: {e}")
             return None  # Manejo de errores de solicitud
         
-    def update_signing(self, request, id_consecutivo, cod_tipo_radicado, img):
+    def update_signing(self, request, consecutivo, img):
         # AÑADIR FIRMA A DOCUMENTO
         img = img['contentFile']
         
         context = {
-            f'Firma_{request.user.persona.tipo_documento.cod_tipo_documento}_{request.user.persona.numero_documento}': img
+            f'Firma_{request.user.persona.numero_documento}': img
         }
 
-        request.data['consecutivo'] = False
-        # request.data['cod_tipo_radicado'] = cod_tipo_radicado
+        if consecutivo.variables:
+            variables_obj = consecutivo.variables
+            variables_obj.update(context) # REVISAR DESPUÉS SI ESTO AFECTA ALGO
 
-        ### VALIDAR EL USO DE ESTO - AC
+        print(consecutivo.id_plantilla_doc.id_plantilla_doc)
         consecutivo_tipologia_class = ConsecutivoTipologiaDoc()
-        consecutivo_tipologia_class.ActualizarDocCargado(request, context, id_consecutivo)
+        documento = consecutivo_tipologia_class.generarDocCopia(variables_obj, consecutivo).data
+        
+        id_archivo_digital = ArchivosDigitales.objects.filter(id_archivo_digital=documento['data']['id_archivo_digital']).first()
+        consecutivo.id_archivo_digital_copia = id_archivo_digital
+        consecutivo.variables = variables_obj
+        consecutivo.save() # REVISAR!
     
 
 class DocumentosFinalizadosList(generics.ListAPIView):
