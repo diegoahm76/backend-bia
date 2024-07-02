@@ -34,7 +34,6 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPOAISerializer, 
                                                                    PrioridadPOAISerializer,
                                                                    ConceptoPOAISerializerGet,
-                                                                   SeguimientoPOAISerializerGet,
                                                                    SeguimientoPOAITotalSerializer)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
@@ -1536,7 +1535,7 @@ class PrioridadList(generics.ListAPIView):
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
 
 class SeguimientoPOAIList(generics.ListAPIView):
-    serializer_class = SeguimientoPOAISerializerGet
+    serializer_class = SeguimientoPOAITotalSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_concepto):
@@ -1569,6 +1568,7 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
         id_prioridad = data_seguimiento['id_prioridad']
         id_unidad_organizacional = data_seguimiento['id_unidad_organizacional']
         id_modalidad = data_seguimiento['id_modalidad']
+        id_codigo_unsp = data_seguimiento['id_codigo_unsp']
 
         campos_vacios = [key for key, value in data_seguimiento.items() if value == '']
         if campos_vacios:
@@ -1627,6 +1627,13 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
             modalidad = Modalidad.objects.get(id_modalidad=id_modalidad)
         except Modalidad.DoesNotExist:
             raise NotFound("No se encontró una modalidad")
+        
+        try:
+            codigo_unsp = CodigosUNSP.objects.get(id_codigo=id_codigo_unsp)
+        except CodigosUNSP.DoesNotExist:
+            raise NotFound("No se encontró un código UNSP")
+        
+
         
         serializer = self.serializer_class(data=data_seguimiento)
 
