@@ -251,10 +251,14 @@ class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
     nombre_fuente2 = serializers.ReadOnlyField(source='id_fuente2.nombre_fuente', default=None)
     nombre_fuente3 = serializers.ReadOnlyField(source='id_fuente3.nombre_fuente', default=None)
     nombre_fuente4 = serializers.ReadOnlyField(source='id_fuente4.nombre_fuente', default=None)
-    codigo_unsp = serializers.ReadOnlyField(source='id_codigo_unsp.codigo_unsp', default=None)
-    nombre_producto_unsp = serializers.ReadOnlyField(source='id_codigo_unsp.nombre_producto_unsp', default=None)
+    nombre_codigo_unsp = serializers.SerializerMethodField()
     
     class Meta:
         model = SeguimientoPOAI
         fields = '__all__'
+
+    def get_nombre_codigo_unsp(self, obj):
+        nombre_codigo_unsp = None
+        nombre_codigo_unsp = f"{obj.id_codigo_unsp.codigo_unsp} - {obj.id_codigo_unsp.nombre_producto_unsp}"
+        return nombre_codigo_unsp.upper() if nombre_codigo_unsp else None
 
