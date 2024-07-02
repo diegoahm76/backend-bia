@@ -410,18 +410,18 @@ class SeguimientoPOAI(models.Model):
     cuenta = models.CharField(max_length=255, db_column='T537cuenta')
     id_unidad_organizacional = models.ForeignKey(UnidadesOrganizacionales, on_delete=models.CASCADE, db_column='T537IdUnidadOrganizacional')
     id_modalidad = models.ForeignKey(Modalidad, on_delete=models.CASCADE, db_column='T537Modalidad')
-    id_fuente1 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente1', on_delete=models.CASCADE, db_column='T537IdFuente1')
+    id_fuente1 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente1', on_delete=models.SET_NULL, null=True, blank=True, db_column='T537IdFuente1')
     valor_fte1 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte1')
-    adicion1 = models.BooleanField(default=False, db_column='T537adicion1')
-    id_fuente2 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente2', on_delete=models.CASCADE, db_column='T537IdFuente2')
+    adicion1 = models.BooleanField(null=True, blank=True, db_column='T537adicion1')
+    id_fuente2 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente2', on_delete=models.SET_NULL, null=True, blank=True, db_column='T537IdFuente2')
     valor_fte2 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte2')
-    adicion2 = models.BooleanField(default=False, db_column='T537adicion2')
-    id_fuente3 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente3', on_delete=models.CASCADE, db_column='T537IdFuente3')
+    adicion2 = models.BooleanField(null=True, blank=True, db_column='T537adicion2')
+    id_fuente3 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente3', on_delete=models.SET_NULL, null=True, blank=True, db_column='T537IdFuente3')
     valor_fte3 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte3')
-    adicion3 = models.BooleanField(default=False, db_column='T537adicion3')
-    id_fuente4 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente4', on_delete=models.CASCADE, db_column='T537IdFuente4')
+    adicion3 = models.BooleanField(null=True, blank=True, db_column='T537adicion3')
+    id_fuente4 = models.ForeignKey(FuenteFinanciacionIndicadores, related_name='fuente4', on_delete=models.SET_NULL, null=True, blank=True, db_column='T537IdFuente4')
     valor_fte4 = models.BigIntegerField(null=True, blank=True, db_column='T537valorFte4')
-    adicion4 = models.BooleanField(default=False, db_column='T537adicion4')
+    adicion4 = models.BooleanField(null=True, blank=True, db_column='T537adicion4')
     valor_banco = models.BigIntegerField(null=True, blank=True, db_column='T537valorBanco')
     valor_cdp = models.BigIntegerField(null=True, blank=True, db_column='T537valorCDP')
     valor_rp = models.BigIntegerField(null=True, blank=True, db_column='T537valorRP')
@@ -457,4 +457,4 @@ class SeguimientoPOAI(models.Model):
         verbose_name = "Seguimiento POAI"
         verbose_name_plural = "Registros Seguimiento POAI"
 
-    
+        

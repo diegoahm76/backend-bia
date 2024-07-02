@@ -253,13 +253,29 @@ class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
     nombre_fuente4 = serializers.ReadOnlyField(source='id_fuente4.nombre_fuente', default=None)
     nombre_codigo_unsp = serializers.SerializerMethodField()
     valor_inicial = serializers.ReadOnlyField(source='id_concepto.valor_inicial', default=None)
+    adicion1 = serializers.SerializerMethodField()
+    adicion2 = serializers.SerializerMethodField()
+    adicion3 = serializers.SerializerMethodField()
+    adicion4 = serializers.SerializerMethodField()
     
     class Meta:
         model = SeguimientoPOAI
-        fields = '__all__'
+        fields = '_all_'
 
     def get_nombre_codigo_unsp(self, obj):
         nombre_codigo_unsp = None
         nombre_codigo_unsp = f"{obj.id_codigo_unsp.codigo_unsp} - {obj.id_codigo_unsp.nombre_producto_unsp}"
         return nombre_codigo_unsp.upper() if nombre_codigo_unsp else None
-
+    
+    def get_adicion1(self, obj):
+        return 'SI' if obj.adicion1 else 'NO'
+        
+    def get_adicion2(self, obj):
+        return 'SI' if obj.adicion2 else 'NO'
+        
+    def get_adicion3(self, obj):
+        return 'SI' if obj.adicion3 else 'NO'
+    
+    def get_adicion4(self, obj):
+        return 'SI' if obj.adicion4 else 'NO'
+    
