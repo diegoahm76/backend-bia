@@ -260,7 +260,7 @@ class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SeguimientoPOAI
-        fields = '_all_'
+        fields = '__all__'
 
     def get_nombre_codigo_unsp(self, obj):
         nombre_codigo_unsp = None
