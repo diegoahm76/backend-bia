@@ -252,6 +252,7 @@ class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
     nombre_fuente3 = serializers.ReadOnlyField(source='id_fuente3.nombre_fuente', default=None)
     nombre_fuente4 = serializers.ReadOnlyField(source='id_fuente4.nombre_fuente', default=None)
     nombre_codigo_unsp = serializers.SerializerMethodField()
+    valor_inicial = serializers.ReadOnlyField(source='id_concepto.valor_inicial', default=None)
     
     class Meta:
         model = SeguimientoPOAI
