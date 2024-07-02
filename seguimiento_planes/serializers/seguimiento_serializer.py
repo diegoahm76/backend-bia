@@ -231,14 +231,34 @@ class PrioridadPOAISerializer(serializers.ModelSerializer):
 
 class SeguimientoPOAISerializer(serializers.ModelSerializer):
     class Meta:
-            model = SeguimientoPOAI
-            fields = '__all__'
+        model = SeguimientoPOAI
+        fields = '__all__'
 
-class SeguimientoPOAISerializerGet(serializers.ModelSerializer):
+
+class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
+    nombre_plan = serializers.ReadOnlyField(source='id_plan.nombre_plan', default=None)
+    nombre_programa = serializers.ReadOnlyField(source='id_producto.id_proyecto.id_programa.nombre_programa', default=None)
+    nombre_proyecto = serializers.ReadOnlyField(source='id_producto.id_proyecto.nombre_proyecto', default=None)
+    nombre_producto = serializers.ReadOnlyField(source='id_producto.nombre_producto', default=None)
+    nombre_actividad = serializers.ReadOnlyField(source='id_actividad.nombre_actividad', default=None)
     nombre_responsable = serializers.ReadOnlyField(source='id_unidad_organizacional.nombre', default=None)
-    nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.nombre_modalidad', default=None)
+    nombre_indicador = serializers.ReadOnlyField(source='id_indicador.nombre_indicador', default=None)
+    nombre_meta = serializers.ReadOnlyField(source='id_meta.nombre_meta', default=None)
+    nombre_modalidad = serializers.ReadOnlyField(source='id_modalidad.codigo_modalidad', default=None)
+    nombre_concepto = serializers.ReadOnlyField(source='id_concepto.nombre_concepto', default=None)
+    nombre_prioridad = serializers.ReadOnlyField(source='id_prioridad.nombre_prioridad', default=None)
+    nombre_fuente1 = serializers.ReadOnlyField(source='id_fuente1.nombre_fuente', default=None)
+    nombre_fuente2 = serializers.ReadOnlyField(source='id_fuente2.nombre_fuente', default=None)
+    nombre_fuente3 = serializers.ReadOnlyField(source='id_fuente3.nombre_fuente', default=None)
+    nombre_fuente4 = serializers.ReadOnlyField(source='id_fuente4.nombre_fuente', default=None)
+    nombre_codigo_unsp = serializers.SerializerMethodField()
     
-
     class Meta:
-            model = SeguimientoPOAI
-            fields = '__all__'
+        model = SeguimientoPOAI
+        fields = '__all__'
+
+    def get_nombre_codigo_unsp(self, obj):
+        nombre_codigo_unsp = None
+        nombre_codigo_unsp = f"{obj.id_codigo_unsp.codigo_unsp} - {obj.id_codigo_unsp.nombre_producto_unsp}"
+        return nombre_codigo_unsp.upper() if nombre_codigo_unsp else None
+

@@ -34,11 +34,14 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPOAISerializer, 
                                                                    PrioridadPOAISerializer,
                                                                    ConceptoPOAISerializerGet,
-                                                                   SeguimientoPOAISerializerGet)
+                                                                   SeguimientoPOAISerializerGet,
+                                                                   SeguimientoPOAITotalSerializer)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 from transversal.models import UnidadesOrganizacionales
+from datetime import datetime
+
 # from seguimiento_planes.views.planes_views import ParametrosFuentesCreate
 
 # ---------------------------------------- Fuentes de financiacion indicadores ----------------------------------------
@@ -1533,7 +1536,7 @@ class PrioridadList(generics.ListAPIView):
 # ---------------------------------------- Seguimiento POAI ----------------------------------------
 
 class SeguimientoPOAIList(generics.ListAPIView):
-    serializer_class = SeguimientoPOAISerializerGet
+    serializer_class = SeguimientoPOAITotalSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id_concepto):
@@ -1566,6 +1569,7 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
         id_prioridad = data_seguimiento['id_prioridad']
         id_unidad_organizacional = data_seguimiento['id_unidad_organizacional']
         id_modalidad = data_seguimiento['id_modalidad']
+        id_codigo_unsp = data_seguimiento['id_codigo_unsp']
 
         campos_vacios = [key for key, value in data_seguimiento.items() if value == '']
         if campos_vacios:
@@ -1625,6 +1629,13 @@ class SeguimientoPOAICreate(generics.CreateAPIView):
         except Modalidad.DoesNotExist:
             raise NotFound("No se encontró una modalidad")
         
+        try:
+            codigo_unsp = CodigosUNSP.objects.get(id_codigo=id_codigo_unsp)
+        except CodigosUNSP.DoesNotExist:
+            raise NotFound("No se encontró un código UNSP")
+        
+
+        
         serializer = self.serializer_class(data=data_seguimiento)
 
         if serializer.is_valid():
@@ -1663,4 +1674,32 @@ class SeguimientoPOAIUpdate(generics.UpdateAPIView):
         
 
 
-    
+class SeguimientoPOAIConsultaReporte(generics.ListAPIView):
+    serializer_class = SeguimientoPOAITotalSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        id_plan = request.query_params.get('id_plan', None)
+        fecha_registro_inicio = request.GET.get('fecha_registro_inicio', None)
+        fecha_registro_fin = request.GET.get('fecha_registro_fin', None)
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan con este ID.")
+        
+        if fecha_registro_inicio is None or fecha_registro_fin is None:
+            raise ValidationError('Debes proporcionar una fecha de inicio y una fecha de fin para realizar la consulta.')
+        
+        if fecha_registro_inicio > fecha_registro_fin:
+            raise ValidationError('La fecha de inicio no puede ser mayor a la fecha de fin.')
+
+        seguimientos = SeguimientoPOAI.objects.filter(id_plan=plan.id_plan, fecha_registro__gte=fecha_registro_inicio, fecha_registro__lte=fecha_registro_fin)
+
+        serializer = self.serializer_class(seguimientos, many=True)
+
+        if not seguimientos:
+            raise NotFound("No se encontraron resultados para esta consulta.")
+        
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
+
