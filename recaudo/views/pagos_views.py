@@ -242,6 +242,8 @@ class NotificarPagoView(generics.CreateAPIView):
 
     def create(self, request):
         print("Entró a servicio de Notificar Pago")
+        print("idcomercio: ", id_comercio)
+        print("id_pago: ", id_pago)
         id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
 
@@ -330,12 +332,13 @@ class NotificarPagoView(generics.CreateAPIView):
                         serializer_historico.is_valid(raise_exception=True)
                         serializer_historico.save()
                 else:
+                    print("ENTRO A CASO DE PIMISYS")
                     url_get_pimisys = "http://cormacarenatest.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
                     params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
                     # ENVIAR NOTIFICACION A PIMYSIS
-                    notificacion_pimisys = requests.get(url_get_pimisys, params=params)
-                    print("NOTIFICACION PIMISYS: ", notificacion_pimisys)
+                    # notificacion_pimisys = requests.get(url_get_pimisys, params=params)
+                    print("NOTIFICACION PIMISYS")
         else:
             raise ValidationError("Ocurrió un error en la verificación del pago")
 
