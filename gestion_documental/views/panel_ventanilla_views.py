@@ -3421,28 +3421,23 @@ class CreateAutoInicio(generics.CreateAPIView):
         if respuesta_archivo.status_code != status.HTTP_201_CREATED:
             return respuesta_archivo
         
-        print("ANTES DE data_in['fecha_acto_administrativo']")
-        
         data_in['id_archivo_acto_administrativo'] =data_archivo['id_archivo_digital']
         data_in['fecha_acto_administrativo'] = datetime.now()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
-        print("ANTES DE SERIALIZAR AUTO")
+        
         instance = serializer.save()
         instance_archivo = ArchivosDigitales.objects.filter(id_archivo_digital=data_archivo['id_archivo_digital']).first()
         if not instance_archivo:
             raise NotFound("No se encontro el archivo")
         tramite.id_auto_inicio = instance
         tramite.fecha_inicio = datetime.now()
-        print("ANTES DE GUARDAR TRAMITE")
         tramite.save()
         instancia_consecutivo.id_tramite=tramite
         instancia_consecutivo.variables=context_auto
         instancia_consecutivo.id_archivo_digital = instance_archivo
         instancia_consecutivo.id_plantilla_doc = plantilla # VALIDAR
-        print("ANTES DE GUARDAR INSTANCIA CONSECUTIVO")
         instancia_consecutivo.save()
-        print("FINAL POST AUTO INICIO")
 
         return Response({'success': True, 'detail':'Se creo el auto de inicio','data':{'auto':serializer.data,'archivo':data_archivo,'cosecutivo_tipologia':data_consecutivo}}, status=status.HTTP_200_OK)
 
