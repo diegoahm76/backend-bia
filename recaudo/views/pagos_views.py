@@ -235,12 +235,12 @@ class VerificarPagoView(generics.CreateAPIView):
         else:
             raise ValidationError(f'Ocurrió un error: {error_detail.text}')
         
-class NotificarPagoView(generics.CreateAPIView):
+class NotificarPagoView(generics.ListAPIView):
     def generar_comprobante_pago(self, info_archivo, id_liquidacion):
         archivo_creado =  UtilsGestor.generar_archivo_blanco(info_archivo, f"Comprobante de Pago - Liquidacion {id_liquidacion}.pdf", "home,BIA,Recaudo,GDEA,Pagos")
         return archivo_creado
 
-    def create(self, request):
+    def get(self, request):
         id_comercio = request.query_params.get('idcomercio')
         id_pago = request.query_params.get('id_pago')
         print("Entró a servicio de Notificar Pago")
