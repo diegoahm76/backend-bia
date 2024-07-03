@@ -117,6 +117,7 @@ class IniciarPagoView(generics.CreateAPIView):
                             </inicio_pagoV2>
                         </soap:Body>
                     </soap:Envelope>"""
+        print("xml_data: ", xml_data)
         
         response = requests.post(target_url, data=xml_data, headers=headers)
         
