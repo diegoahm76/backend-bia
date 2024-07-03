@@ -4059,8 +4059,8 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             #Para Linux
             ruta =  f'{consecutivo_tipologia.id_archivo_digital_copia.ruta_archivo.path if consecutivo_tipologia.id_archivo_digital_copia else consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
-            # pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
-            # print(pdf)
+            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            print(pdf)
 
             # ENVIAR PAQUETE A SASOFTCO - AUTOS
             tramite = consecutivo_tipologia.id_tramite
@@ -4075,7 +4075,6 @@ class ValidacionCodigoView(generics.UpdateAPIView):
                     instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=tramite.id_radicado.agno_radicado,cod_tipo_radicado=tramite.id_radicado.cod_tipo_radicado).first()
                     numero_con_ceros = str(tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
                     radicado = instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
-                    # radicado = str(tramite.id_radicado.prefijo_radicado)+'-'+str(tramite.id_radicado.agno_radicado)+'-'+str(tramite.id_radicado.nro_radicado)
                 
                     request.data['radicado'] = radicado
                     tarea_tramite_class = CreateValidacionTareaTramite()
