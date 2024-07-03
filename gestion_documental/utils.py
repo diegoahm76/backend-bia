@@ -525,11 +525,13 @@ class UtilsGestor:
     
     @staticmethod
     def get_desc_fecha(fecha):
+        print("ENTRÓ A get_desc_fecha")
         meses = ("Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre",
            "Diciembre")
         dia = fecha.day
         mes = meses[fecha.month - 1]
         anio = fecha.year
+        print("ANTES DE RETURN DE get_desc_fecha")
 
         return f"{dia} de {mes} del {anio}"
