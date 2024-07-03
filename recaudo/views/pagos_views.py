@@ -241,11 +241,11 @@ class NotificarPagoView(generics.CreateAPIView):
         return archivo_creado
 
     def create(self, request):
+        id_comercio = request.query_params.get('idcomercio')
+        id_pago = request.query_params.get('id_pago')
         print("Entró a servicio de Notificar Pago")
         print("idcomercio: ", id_comercio)
         print("id_pago: ", id_pago)
-        id_comercio = request.query_params.get('idcomercio')
-        id_pago = request.query_params.get('id_pago')
 
         if not id_comercio or not id_pago:
             raise ValidationError('El ID del comercio y el ID del pago son requeridos')
