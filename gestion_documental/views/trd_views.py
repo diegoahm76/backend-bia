@@ -4059,13 +4059,17 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             #Para Linux
             ruta =  f'{consecutivo_tipologia.id_archivo_digital_copia.ruta_archivo.path if consecutivo_tipologia.id_archivo_digital_copia else consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
-            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
-            print(pdf)
+            # pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            # print(pdf)
 
             # ENVIAR PAQUETE A SASOFTCO - AUTOS
             tramite = consecutivo_tipologia.id_tramite
             envio_sasoftco = False
             if tramite:
+                # ACTUALIZAR ARCHIVO AUTO A PDF FILE
+                tramite.id_auto_inicio.id_archivo_acto_administrativo = consecutivo_tipologia.id_archivo_digital_copia if consecutivo_tipologia.id_archivo_digital_copia else tramite.id_auto_inicio.id_archivo_acto_administrativo
+                tramite.id_auto_inicio.save()
+
                 radicado = None
                 if tramite.id_radicado:
                     radicado = str(tramite.id_radicado.prefijo_radicado)+'-'+str(tramite.id_radicado.agno_radicado)+'-'+str(tramite.id_radicado.nro_radicado)
