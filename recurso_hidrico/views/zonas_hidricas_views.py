@@ -474,8 +474,8 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
 
             #GEOREFERENCIACION DEL PREDIO
             if 'Mapa1' in tramite_data:
-                latitud = tramite_data['predios'][0]['Mapa1'].split(',')[0]
-                longitud = tramite_data['predios'][0]['Mapa1'].split(',')[1]
+                latitud = tramite_data['Mapa1'].split(',')[0]
+                longitud = tramite_data['Mapa1'].split(',')[1]
                 grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
                 grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
@@ -578,8 +578,8 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
 
             #GEOREFERENCIACION DEL PREDIO
             if 'Mapa1' in tramite_data:
-                latitud = tramite_data['predios'][0]['Mapa1'].split(',')[0]
-                longitud = tramite_data['predios'][0]['Mapa1'].split(',')[1]
+                latitud = tramite_data['Mapa1'].split(',')[0]
+                longitud = tramite_data['Mapa1'].split(',')[1]
                 grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
                 grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
@@ -693,8 +693,8 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
 
             #GEOREFERENCIACION DEL PREDIO
             if 'Mapa1' in tramite_data:
-                latitud = tramite_data['predios'][0]['Mapa1'].split(',')[0]
-                longitud = tramite_data['predios'][0]['Mapa1'].split(',')[1]
+                latitud = tramite_data['Mapa1'].split(',')[0]
+                longitud = tramite_data['Mapa1'].split(',')[1]
                 grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
                 grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
