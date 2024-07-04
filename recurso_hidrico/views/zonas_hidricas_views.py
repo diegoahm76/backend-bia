@@ -15,6 +15,7 @@ from django.core.mail import EmailMessage
 
 from tramites.models.tramites_models import SolicitudesTramites, Tramites, PermisosAmbSolicitudesTramite
 from tramites.views.tramites_views import TramitesPivotGetView
+from transversal.models.base_models import Municipio
 
 # Vista get para las 4 tablas de zonas hidricas
 class MacroCuencasListView (generics.ListAPIView):
@@ -296,7 +297,10 @@ class FuncionesAuxiliares:
         return organized_data
 
     def convertir_coordenadas_dms(self, valor_decimal):
-        valor_absoluto = abs(valor_decimal)
+        print(valor_decimal)
+        print(type(valor_decimal))
+        #valor_absoluto = abs(int(valor_decimal))
+        valor_decimal = float(valor_decimal)
         grados = int(valor_decimal)
         resto_decimal = (valor_decimal - grados) * 60
         minutos = int(resto_decimal)
@@ -305,12 +309,17 @@ class FuncionesAuxiliares:
     
 
     def obtener_altitud(self, latitud, longitud):
+        print('aqui')
         url = f"https://api.open-elevation.com/api/v1/lookup?locations={latitud},{longitud}"
         respuesta = requests.get(url)
+        respuesta.raise_for_status()
+        print('es el json', respuesta)
         resultado = respuesta.json()
-        
+        print('holaaa')
         if resultado and 'results' in resultado and len(resultado['results']) > 0:
+            print('hola', resultado)
             altitud = resultado['results'][0]['elevation']
+            print('holaa')
             return altitud
         else:
             return None        
@@ -354,7 +363,7 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
-                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'] if 'MatriInmobi' in tramite_data else None,
                     'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
 
                 },
@@ -362,9 +371,16 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
                     'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
                 },
                 'INFORMACION PERMISO': {
-                    'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'],
-                    'CAUDAL CONCESIONADO': tramite_data['Caudal_concesionado'],
+                    'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
+                    'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'FECHA EXPEDICION': tramite_data['Fecha_Resolu'] if 'Fecha_Resolu' in tramite_data else None,
+                    'CAUDAL CONCESIONADO': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
                     
+                },
+                'INFORMACION CAPTACION': {
+                    'FUENTE ABASTECEDORA': tramite_data['FuenCapTa'] if 'FuenCapTa' in tramite_data else None,
+                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'] if 'Dep_fuente' in tramite_data else None,
+                    'MUNICIPIO CAPTACION': tramite_data['Mun_fuente'] if 'Mun_fuente' in tramite_data else None,
                 },
 
                 'GEOREFERENCIACION DE LA CAPTACION': {
@@ -386,8 +402,8 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
                 data['GEOREFERENCIACION DEL PREDIO']['MIN LONG'] = minutos_longitud
                 data['GEOREFERENCIACION DEL PREDIO']['SEG LONG'] = segundos_longitud
 
-                altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
-                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
+                #altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = tramite_data['Altura_mnsnm'] if 'Altura_mnsnm' in tramite_data else None
 
             #GEOREFERENCIACION DE LA FUENTE DE CAPTACION
             if 'Mapa2' in tramite_data:
@@ -402,8 +418,8 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
                 data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
                 data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
 
-                altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
-                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
+                #altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = 0
                 data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
 
 
@@ -446,7 +462,7 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
-                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'] if 'MatriInmobi' in tramite_data else None,
                     'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
 
                 },
@@ -456,14 +472,15 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
                 'INFORMACION PERMISO': {
                     'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
                     'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'FECHA EXPEDICION': tramite_data['Fecha_Resolu'] if 'Fecha_Resolu' in tramite_data else None,
                     'CAUDAL CONCESIONADO': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
                     
                 },
 
                 'INFORMACION CAPTACION': {
-                    'FUENTE ABASTECEDORA': tramite_data['FuenCapTa'],
-                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'],
-                    'MUNICIPIO CAPTACION': tramite_data['Mun_fuente'],
+                    'FUENTE ABASTECEDORA': tramite_data['FuenCapTa'] if 'FuenCapTa' in tramite_data else None,
+                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'] if 'Dep_fuente' in tramite_data else None,
+                    'MUNICIPIO CAPTACION': tramite_data['Mun_fuente'] if 'Mun_fuente' in tramite_data else None,
                 },
 
                 'GEOREFERENCIACION DE LA CAPTACION': {
@@ -485,8 +502,8 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
                 data['GEOREFERENCIACION DEL PREDIO']['MIN LONG'] = minutos_longitud
                 data['GEOREFERENCIACION DEL PREDIO']['SEG LONG'] = segundos_longitud
 
-                altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
-                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
+                #altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = tramite_data['Altura_mnsnm'] if 'Altura_mnsnm' in tramite_data else None
 
             #GEOREFERENCIACION DE LA FUENTE DE CAPTACION
             if 'Mapa2' in tramite_data:
@@ -501,9 +518,9 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
                 data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
                 data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
 
-                altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
-                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
-                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+               # altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = 0
+                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta'] if 'DesCapta' in tramite_data else None
 
 
             data_list.append(data)
@@ -553,21 +570,22 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
                 'INFORMACION PERMISO': {
                     'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
                     'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'FECHA EXPEDICION': tramite_data['Fecha_Resolu'] if 'Fecha_Resolu' in tramite_data else None,
                     'CAUDAL AUTORIZADO VERTER': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
                     
                 },
 
                 'INFORMACION VERTIMIENTO': {
-                    'TIPO VERTIMIENTO': tramite_data['TipVert'],
-                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'],
-                    'MUNICIPIO CAPTACION': tramite_data['Muni_local_vertimiento'],
+                    'TIPO VERTIMIENTO': tramite_data['TipVert'] if 'TipVert' in tramite_data else None,
+                    #'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'] if 'Dep_fuente' in tramite_data else None,
+                    'MUNICIPIO CAPTACION': tramite_data['Muni_local_vertimiento'] if 'Muni_local_vertimiento' in tramite_data else None,
                 },
 
                 'CARACTERISTICAS DEL VERTIMIENTO': {
-                    'Tipo de flujo': tramite_data['TipFlujDes'],
-                    'Tiempo de descarga': tramite_data['TiemDescar'],
-                    'Frecuencia': tramite_data['FeqCap'],
-                    'Caudal diseño STD': tramite_data['CaudAprox'],
+                    'Tipo de flujo': tramite_data['TipFlujDes'] if 'TipFlujDes' in tramite_data else None,
+                    'Tiempo de descarga': tramite_data['TiemDescar'] if 'TiemDescar' in tramite_data else None,
+                    'Frecuencia': tramite_data['FeqCap'] if 'FeqCap' in tramite_data else None,
+                    'Caudal diseño STD': tramite_data['CaudAprox'] if 'CaudAprox' in tramite_data else None,
                 },
 
                 'GEOREFERENCIACION DEL VERTIMIENTO': {
@@ -575,6 +593,11 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
                 }
                 
             }
+
+            if 'Muni_local_vertimiento' in tramite_data:
+                departamento = Municipio.objects.filter(nombre = tramite_data['Muni_local_vertimiento']).first()
+            
+            data['INFORMACION VERTIMIENTO']['DEPARTAMENTO CAPTACION'] = departamento.cod_departamento.nombre if departamento else None
 
             #GEOREFERENCIACION DEL PREDIO
             if 'Mapa1' in tramite_data:
@@ -598,16 +621,16 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
                 longitud_captacion = tramite_data['Mapa2'].split(',')[1]
                 grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
                 grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
-                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LONG'] = grados_longitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['GRAD LAT'] = grados_latitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['MIN LAT'] = minutos_latitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['SEG LAT'] = segundos_latitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['GRAD LONG'] = grados_longitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['MIN LONG'] = minutos_longitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['SEG LONG'] = segundos_longitu_c
 
                 altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
-                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
-                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['ALTITUD'] = altitud_captacion
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['Descripcion acceso captación'] = tramite_data['DesCapta'] if 'DesCapta' in tramite_data else None
 
 
             data_list.append(data)
@@ -658,7 +681,7 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
-                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'] if 'MatriInmobi' in tramite_data else None,
                     'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
 
                 },
@@ -668,21 +691,22 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
                 'INFORMACION PERMISO': {
                     'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
                     'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'FECHA EXPEDICION': tramite_data['Fecha_Resolu'] if 'Fecha_Resolu' in tramite_data else None,
                     'CAUDAL AUTORIZADO VERTER': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
                     
                 },
 
                 'INFORMACION VERTIMIENTO': {
-                    'TIPO VERTIMIENTO': tramite_data['TipVert'],
-                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'],
-                    'MUNICIPIO CAPTACION': tramite_data['Muni_local_vertimiento'],
+                    'TIPO VERTIMIENTO': tramite_data['TipVert'] if 'TipVert' in tramite_data else None,
+                    #'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'] if 'Dep_fuente' in tramite_data else None,
+                    'MUNICIPIO CAPTACION': tramite_data['Muni_local_vertimiento'] if 'Muni_local_vertimiento' in tramite_data else None,
                 },
 
                 'CARACTERISTICAS DEL VERTIMIENTO': {
-                    'Tipo de flujo': tramite_data['TipFlujDes'],
-                    'Tiempo de descarga': tramite_data['TiemDescar'],
-                    'Frecuencia': tramite_data['FeqCap'],
-                    'Caudal diseño STD': tramite_data['CaudAprox'],
+                    'Tipo de flujo': tramite_data['TipFlujDes'] if 'TipFlujDes' in tramite_data else None,
+                    'Tiempo de descarga': tramite_data['TiemDescar'] if 'TiemDescar' in tramite_data else None,
+                    'Frecuencia': tramite_data['FeqCap'] if 'FeqCap' in tramite_data else None,
+                    'Caudal diseño STD': tramite_data['CaudAprox'] if 'CaudAprox' in tramite_data else None,
                 },
 
                 'GEOREFERENCIACION DEL VERTIMIENTO': {
@@ -690,6 +714,12 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
                 }
                 
             }
+
+            
+            if 'Muni_local_vertimiento' in tramite_data:
+                departamento = Municipio.objects.filter(nombre = tramite_data['Muni_local_vertimiento']).first()
+            
+            data['INFORMACION VERTIMIENTO']['DEPARTAMENTO CAPTACION'] = departamento.cod_departamento.nombre if departamento else None
 
             #GEOREFERENCIACION DEL PREDIO
             if 'Mapa1' in tramite_data:
@@ -708,21 +738,21 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
                 data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
 
             #GEOREFERENCIACION VERTIMIENTO
-            if 'Mapa2' in tramite_data:
+            if 'Mapa2' in tramite_data: 
                 latitud_captacion = tramite_data['Mapa2'].split(',')[0]
                 longitud_captacion = tramite_data['Mapa2'].split(',')[1]
                 grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
                 grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
-                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LONG'] = grados_longitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
-                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['GRAD LAT'] = grados_latitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['MIN LAT'] = minutos_latitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['SEG LAT'] = segundos_latitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['GRAD LONG'] = grados_longitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['MIN LONG'] = minutos_longitud_c
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['SEG LONG'] = segundos_longitu_c
 
                 altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
-                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
-                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['ALTITUD'] = altitud_captacion
+                data['GEOREFERENCIACION DEL VERTIMIENTO']['Descripcion acceso captación'] = tramite_data['DesCapta'] if 'DesCapta' in tramite_data else None
 
 
             data_list.append(data)
