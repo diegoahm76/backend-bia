@@ -350,7 +350,7 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
                 },
 
                 'INFORMACION DEL PREDIO': {
-                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'NOMBRE PREDIO': tramite_data['Npredio'] if 'Npredio' in tramite_data else None,
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
@@ -442,7 +442,7 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
                 },
 
                 'INFORMACION DEL PREDIO': {
-                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'NOMBRE PREDIO': tramite_data['Npredio'] if 'Npredio' in tramite_data else None,
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
@@ -539,7 +539,7 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
                 },
 
                 'INFORMACION DEL PREDIO': {
-                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'NOMBRE PREDIO': tramite_data['Npredio'] if 'Npredio' in tramite_data else None,
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
@@ -654,7 +654,7 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
                 },
 
                 'INFORMACION DEL PREDIO': {
-                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'NOMBRE PREDIO': tramite_data['Npredio'] if 'Npredio' in tramite_data else None,
                     'DEPTO PREDIO': tramite_data['DepPredio'],
                     'MUNICIPIO PREDIO': tramite_data['MunPredio'],
                     'CEDULA CATASTRAL': tramite_data['CCatas'],
