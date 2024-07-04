@@ -3268,7 +3268,7 @@ class CreateAutoInicio(generics.CreateAPIView):
 
             context_auto['ValorLiquidacion '] = liquidacion_tramite.valor_liq
             context_auto['NumeroReferencia'] = liquidacion_tramite.num_liquidacion
-            context_auto['FechaReferenciaPago']  = liquidacion_tramite.fecha_liquidacion
+            context_auto['FechaReferenciaPago']  = UtilsGestor.get_desc_fecha(liquidacion_tramite.fecha_liquidacion.date()) #liquidacion_tramite.fecha_liquidacion
         else:
             context_auto['ValorLiquidacion '] = '{{ValorLiquidacion }}'
             context_auto['NumeroReferencia'] = '{{NumeroReferencia}}'
@@ -3425,6 +3425,7 @@ class CreateAutoInicio(generics.CreateAPIView):
         data_in['fecha_acto_administrativo'] = datetime.now()
         serializer = self.serializer_class(data=data_in)
         serializer.is_valid(raise_exception=True)
+        
         instance = serializer.save()
         instance_archivo = ArchivosDigitales.objects.filter(id_archivo_digital=data_archivo['id_archivo_digital']).first()
         if not instance_archivo:

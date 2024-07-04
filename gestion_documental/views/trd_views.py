@@ -29,7 +29,7 @@ from django.core.serializers import serialize
 from django.shortcuts import get_list_or_404
 from transversal.models.organigrama_models import UnidadesOrganizacionales
 from gestion_documental.views.pqr_views import RadicadoCreate
-from gestion_documental.models.radicados_models import T262Radicados, AsignacionDocs
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno, T262Radicados, AsignacionDocs
 from django.db.models import Q
 import copy
 from django.db import transaction
@@ -4066,9 +4066,15 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             tramite = consecutivo_tipologia.id_tramite
             envio_sasoftco = False
             if tramite:
+                # ACTUALIZAR ARCHIVO AUTO A PDF FILE
+                tramite.id_auto_inicio.id_archivo_acto_administrativo = consecutivo_tipologia.id_archivo_digital_copia if consecutivo_tipologia.id_archivo_digital_copia else tramite.id_auto_inicio.id_archivo_acto_administrativo
+                tramite.id_auto_inicio.save()
+
                 radicado = None
                 if tramite.id_radicado:
-                    radicado = str(tramite.id_radicado.prefijo_radicado)+'-'+str(tramite.id_radicado.agno_radicado)+'-'+str(tramite.id_radicado.nro_radicado)
+                    instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=tramite.id_radicado.agno_radicado,cod_tipo_radicado=tramite.id_radicado.cod_tipo_radicado).first()
+                    numero_con_ceros = str(tramite.id_radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+                    radicado = instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
                 
                     request.data['radicado'] = radicado
                     tarea_tramite_class = CreateValidacionTareaTramite()
