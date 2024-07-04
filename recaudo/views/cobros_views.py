@@ -1,4 +1,5 @@
 from django.db import connection
+from recaudo.models.base_models import RangosEdad
 from recaudo.models.cobros_models import (
     Cartera,
     ConceptoContable,
@@ -9,10 +10,16 @@ from recaudo.models.liquidaciones_models import (
     Deudores,
     Expedientes
 )
+from recaudo.models.procesos_models import CategoriaAtributo, EtapasProceso, TiposAtributos
 from recaudo.serializers.cobros_serializers import (
     CarteraCompararSerializer,
     CarteraGeneralSerializer,
     CarteraPostSerializer,
+    ConceptoContableSerializer,
+    EtapasSerializer,
+    RangosSerializer,
+    SubEtapasSerializer,
+    TiposAtributosSerializer,
     VistaCarteraTuaSerializer
 )
 from rest_framework import generics, status
@@ -182,4 +189,60 @@ class VistaCarteraTuaView(generics.ListAPIView):
             print('else')
             return 'Error al guardar la cartera'
         return cartera
+    
+
+class RangosGetView(generics.ListAPIView):
+    queryset = RangosEdad.objects.all()
+    serializer_class = RangosSerializer
+
+    def get(self, request):
+        queryset = self.get_queryset()
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class ConceptoContableGetView(generics.ListAPIView):
+    queryset = ConceptoContable.objects.all()
+    serializer_class = ConceptoContableSerializer
+
+    def get(self, request):
+        queryset = self.get_queryset()
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class EtapasGetView(generics.ListAPIView):
+    queryset = EtapasProceso.objects.all()
+    serializer_class = EtapasSerializer
+
+    def get(self, request):
+        queryset = self.get_queryset()
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class SubEtapasGetView(generics.ListAPIView):
+    queryset = CategoriaAtributo.objects.all()
+    serializer_class = SubEtapasSerializer
+
+    def get(self, request, id_etapa):
+        queryset = self.get_queryset().filter(id_etapa=id_etapa)
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+class TiposAtributosGetView(generics.ListAPIView):
+    queryset = TiposAtributos.objects.all()
+    serializer_class = TiposAtributosSerializer
+
+    def get(self, request):
+        queryset = self.get_queryset()
+
+        serializer = self.serializer_class(queryset, many=True)
+
+        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
         

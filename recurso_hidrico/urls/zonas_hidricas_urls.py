@@ -29,6 +29,12 @@ urlpatterns = [
         path('data_rios_completa/tua/', views.SubZonaHidricaTuaListVieww.as_view(), name='subzonashidricas-list-tua'),
         path('data_rios_completa/tr/', views.SubZonaHidricaTrListVieww.as_view(), name='subzonashidricas-list-tr'),
 
+        path('SIRH/captacionPJ/', views.ServicioCaptacionJuridicaView.as_view(), name='captacionPJ'),
+        path('SIRH/captacionPN/', views.ServicioCaptacionNaturalView.as_view(), name='captacionPN'),
+        path('SIRH/vertimientoPN/', views.ServicioVertimientoNaturalView.as_view(), name='vertimientoPN'),
+        path('SIRH/vertimientoPJ/', views.ServicioVertimientoJuridicaView.as_view(), name='vertimientoPJ'),
+
+
 ]
     
 
