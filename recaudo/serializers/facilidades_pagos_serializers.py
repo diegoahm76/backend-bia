@@ -90,29 +90,71 @@ class CumplimientoRequisitosGetSerializer (serializers.ModelSerializer):
         fields = '__all__'
 
 
-class DeudorFacilidadPagoSerializer(serializers.ModelSerializer):
-    ubicacion = serializers.SerializerMethodField()
-    
-    def get_ubicacion(self, obj):
-        ubicacion = obj.ubicacion_id.nombre
-        return ubicacion
+class DeudorDatosSerializer(serializers.ModelSerializer):
+    identificacion = serializers.SerializerMethodField()
+    nombre_completo = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    direccion_notificaciones = serializers.SerializerMethodField()
+    telefono_celular = serializers.SerializerMethodField()
+    ciudad = serializers.SerializerMethodField()
 
     class Meta:
         model = Deudores
-        fields = ('id', 'identificacion', 'nombres', 'apellidos', 'email', 'ubicacion')
+        fields = ('id', 'identificacion', 'nombre_completo', 'email', 'direccion_notificaciones', 'telefono_celular', 'ciudad')
 
+    def get_identificacion(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.numero_documento
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
 
-class DatosContactoDeudorSerializer(serializers.ModelSerializer):
-    ciudad = serializers.SerializerMethodField()
-
-    def get_ciudad(self, obj):
-        ubicacion = Municipio.objects.filter(cod_municipio=obj.municipio_residencia.cod_municipio).first()
-        ubicacion = ubicacion.nombre
-        return ubicacion
+    def get_nombre_completo(self, obj):
+        if obj.id_persona_deudor:
+            if obj.id_persona_deudor.razon_social:
+                nombre_completo = obj.id_persona_deudor.razon_social
+            else:
+                nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
+            return nombre_completo
+        elif obj.id_persona_deudor_pymisis:
+            return f"{obj.id_persona_deudor_pymisis.t03nombre}"
+        else:
+            return None
+    
+    def get_email(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.email
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03email
+        else:
+            return None
         
-    class Meta:
-        model = Personas
-        fields = ('direccion_notificaciones', 'ciudad', 'telefono_celular')
+    def get_direccion_notificaciones(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.direccion_notificaciones
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03direccion
+        else:
+            return None
+        
+    def get_telefono_celular(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.telefono_celular
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03telefono
+        else:
+            return None
+        
+    def get_ciudad(self, obj):
+        if obj.id_persona_deudor:
+            ubicacion = Municipio.objects.filter(cod_municipio=obj.id_persona_deudor.municipio_residencia.cod_municipio).first()
+            return ubicacion.nombre
+        elif obj.id_persona_deudor_pymisis:
+            ubicacion = Municipio.objects.filter(cod_municipio=obj.id_persona_deudor_pymisis.t03codmpio).first()
+            return ubicacion.nombre
+        else:
+            return None
 
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
@@ -283,7 +325,11 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
 
     def get_nombre_contribuyente(self, obj):
         if obj.id_persona_deudor:
-            return f"{obj.id_persona_deudor.priner_nombre} {obj.id_persona_deudor.segundo_nombre} {obj.id_persona_deudor.primer_apellido} {obj.id_persona_deudor.segundo_apellido}"
+            if obj.id_persona_deudor.razon_social:
+                nombre_completo = obj.id_persona_deudor.razon_social
+            else:
+                nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
+            return nombre_completo
         elif obj.id_persona_deudor_pymisis:
             return f"{obj.id_persona_deudor_pymisis.t03nombre}"
         else:
