@@ -11,6 +11,7 @@ from tramites.models.tramites_models import PermisosAmbSolicitudesTramite, Permi
 from transversal.funtions.alertas import  generar_alerta_segundo_plano
 from transversal.models.alertas_models import AlertasProgramadas
 from datetime import datetime, timedelta
+from recaudo.utils import UtilsRecaudo
 
 from transversal.models.base_models import Municipio
 # from recaudo.Extraccion.ExtraccionBaseDatosPimisis import  extraccion_pimisis_job  # Importa la función ExtraccionBaseDatosPimisis
@@ -136,11 +137,8 @@ def update_estado_pago(id_pago, request, scheduler, VerificarPagoView):
 				pago.fecha_pago = datetime.now()
 				pago.notificacion = True
 				pago.save()
-			# else:
-			# 	url_get_pimysis = "http://cormacarena.myvnc.com/SoliciDocs/ASP/PIMISICARResponsePasarela.asp"
-			# 	params = {'id_pago': id_pago, 'id_comercio': id_comercio}
 
-			# 	# ENVIAR NOTIFICACION A PIMYSIS
-			# 	notificacion_pimysis = requests.get(url_get_pimysis, params=params)
+				if estado_pago == "1":
+					UtilsRecaudo.pago_exitoso(request, pago)
 	else:
 		print("Ocurrió un error al intententar obtener el estado del pago")

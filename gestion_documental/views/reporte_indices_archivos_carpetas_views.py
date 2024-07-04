@@ -263,9 +263,6 @@ class ReporteUnidadOficinaGet(generics.ListAPIView):
             if key == 'serie_suberie':
                 if value != '':
                     filter['id_cat_serie_und_org_ccd_trd_prop__id_cat_serie_und'] = value
-            if key == 'serie_suberie':
-                if value != '':
-                    filter['id_cat_serie_und_org_ccd_trd_prop__id_cat_serie_und'] = value
             if key == 'grupo':
                 if value != '':
                     filter['id_und_org_oficina_respon_actual'] = value
