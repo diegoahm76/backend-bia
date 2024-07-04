@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recaudo.models.cobros_models import Cartera, VistaCarteraTua
+from recaudo.models.cobros_models import Cartera, ConceptoContable, VistaCarteraTua
 from recaudo.models.liquidaciones_models import (
     Deudores
 )
@@ -8,7 +8,10 @@ from recaudo.models.base_models import (
     TipoRenta
 )
 from recaudo.models.procesos_models import (
-    Procesos
+    CategoriaAtributo,
+    EtapasProceso,
+    Procesos,
+    TiposAtributos
 )
 
 
@@ -112,3 +115,30 @@ class VistaCarteraTuaSerializer(serializers.ModelSerializer):
     class Meta:
         model = VistaCarteraTua
         fields = '__all__' #['fecha', 'cod_cia', 'tipo_renta', 'cuenta_contable', 'nit', 'nombre_deudor', 'fecha_fac', 'fecha_notificacion', 'fecha_en_firme', 'corte_desde', 'corte_hasta', 'num_factura', 'num_liquidacion', 'periodo', 'agno', 'expediente', 'num_resolucion', 'recurso', 'doc_auto', 'saldo_capital', 'saldo_intereses', 'dias_mora']
+
+
+class RangosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RangosEdad
+        fields = '__all__'
+
+class ConceptoContableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ConceptoContable
+        fields = '__all__'
+
+class EtapasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EtapasProceso
+        fields = '__all__'
+
+class SubEtapasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoriaAtributo
+        fields = '__all__'
+    
+class TiposAtributosSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TiposAtributos
+        fields = '__all__'
+

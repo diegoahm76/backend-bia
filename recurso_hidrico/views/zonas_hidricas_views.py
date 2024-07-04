@@ -1,3 +1,7 @@
+import json
+
+import requests
+from gestion_documental.models.radicados_models import ConfigTiposRadicadoAgno
 from seguridad.utils import Util
 from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
@@ -8,6 +12,9 @@ from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidric
 import copy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
+
+from tramites.models.tramites_models import SolicitudesTramites, Tramites, PermisosAmbSolicitudesTramite
+from tramites.views.tramites_views import TramitesPivotGetView
 
 # Vista get para las 4 tablas de zonas hidricas
 class MacroCuencasListView (generics.ListAPIView):
@@ -254,5 +261,472 @@ class SubZonaHidricaTrListVieww(generics.ListAPIView):
         serializer = self.serializer_class(dato_rios,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
 
+class FuncionesAuxiliares:
+    def get_tramite_sasoftco(self, tramite):
+        cadena = ""
+        radicado = tramite.id_solicitud_tramite.id_radicado
+        organized_data = {}
+        if radicado:
+            instance_config_tipo_radicado = ConfigTiposRadicadoAgno.objects.filter(agno_radicado=radicado.agno_radicado,cod_tipo_radicado=radicado.cod_tipo_radicado).first()
+            numero_con_ceros = str(radicado.nro_radicado).zfill(instance_config_tipo_radicado.cantidad_digitos)
+            cadena= instance_config_tipo_radicado.prefijo_consecutivo+'-'+str(instance_config_tipo_radicado.agno_radicado)+'-'+numero_con_ceros
+
+            tramites_values = Tramites.objects.filter(radicate_bia=cadena).values()
+
+                
+            if tramites_values:
+                organized_data = {
+                    'procedure_id': tramites_values[0]['procedure_id'],
+                    'radicate_bia': tramites_values[0]['radicate_bia'],
+                    'proceeding_id': tramites_values[0]['proceeding_id'],
+                }
+                
+                for item in tramites_values:
+                    field_name = item['name_key']
+                    if item['type_key'] == 'json':
+                        value = json.loads(item['value_key'])
+                    else:
+                        value = item['value_key']
+                    organized_data[field_name] = value
+            else:
+                raise NotFound('No se encontró el detalle del trámite elegido')
+            
+        return organized_data
+
+    def convertir_coordenadas_dms(self, valor_decimal):
+        valor_absoluto = abs(valor_decimal)
+        grados = int(valor_decimal)
+        resto_decimal = (valor_decimal - grados) * 60
+        minutos = int(resto_decimal)
+        segundos = (resto_decimal - minutos) * 60
+        return grados, minutos, segundos
+    
+
+    def obtener_altitud(self, latitud, longitud):
+        url = f"https://api.open-elevation.com/api/v1/lookup?locations={latitud},{longitud}"
+        respuesta = requests.get(url)
+        resultado = respuesta.json()
+        
+        if resultado and 'results' in resultado and len(resultado['results']) > 0:
+            altitud = resultado['results'][0]['elevation']
+            return altitud
+        else:
+            return None        
+
+
+class ServicioCaptacionJuridicaView(generics.ListAPIView):
+    def get(self, request):
+
+        tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Concesión para el uso de aguas superficiales')
+        tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='J')
+        funciones_auxiliares = FuncionesAuxiliares()
+        data_list = []
+
+        for tramite in tramites:
+            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            
+            data = {
+                'INFORMACION DE USUARIO': {
+                    'TIPO DE USUARIO': tramite.id_solicitud_tramite.id_persona_titular.tipo_persona,
+                    'RAZON SOCIAL': tramite.id_solicitud_tramite.id_persona_titular.razon_social,
+                    'TIPO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.tipo_documento.nombre,
+                    'NUMERO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.numero_documento,
+                    'DIRECCION CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.direccion_notificaciones,
+                    'E-MAIL': tramite.id_solicitud_tramite.id_persona_titular.email,
+                    'TEL': tramite.id_solicitud_tramite.id_persona_titular.telefono_empresa,
+                },
+
+                'REPRESENTANTE LEGAL': {
+                    'NOMBRE': f"{tramite.id_solicitud_tramite.id_persona_titular.representante_legal.primer_nombre} {tramite.id_solicitud_tramite.id_persona_titular.representante_legal.segundo_nombre}",
+                    'APELLIDO': f"{tramite.id_solicitud_tramite.id_persona_titular.representante_legal.primer_apellido} {tramite.id_solicitud_tramite.id_persona_titular.representante_legal.segundo_apellido}",
+                    'TIPO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.tipo_documento.nombre,
+                    'NUMERO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.numero_documento,
+                    'DEPTO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.cod_municipio_notificacion_nal.cod_departamento.nombre,
+                    'MUNICIPIO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.cod_municipio_notificacion_nal.nombre,
+                    'DIRECCION CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.direccion_notificaciones,
+                    'Telefono': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.telefono_celular,
+                },
+
+                'INFORMACION DEL PREDIO': {
+                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'DEPTO PREDIO': tramite_data['DepPredio'],
+                    'MUNICIPIO PREDIO': tramite_data['MunPredio'],
+                    'CEDULA CATASTRAL': tramite_data['CCatas'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'],
+                    'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
+
+                },
+                'GEOREFERENCIACION DEL PREDIO': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                },
+                'INFORMACION PERMISO': {
+                    'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'],
+                    'CAUDAL CONCESIONADO': tramite_data['Caudal_concesionado'],
+                    
+                },
+
+                'GEOREFERENCIACION DE LA CAPTACION': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                }
+                
+            }
+
+            #GEOREFERENCIACION DEL PREDIO
+            if 'Mapa1' in tramite_data:
+                latitud = tramite_data['Mapa1'].split(',')[0]
+                longitud = tramite_data['Mapa1'].split(',')[1]
+                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LONG'] = grados_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LONG'] = minutos_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LONG'] = segundos_longitud
+
+                altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
+
+            #GEOREFERENCIACION DE LA FUENTE DE CAPTACION
+            if 'Mapa2' in tramite_data:
+                latitud_captacion = tramite_data['Mapa2'].split(',')[0]
+                longitud_captacion = tramite_data['Mapa2'].split(',')[1]
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LONG'] = grados_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
+
+                altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
+                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+
+
+            data_list.append(data)
+
+            
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data_list}, status=status.HTTP_200_OK)
+
+
+
+
+
+class ServicioCaptacionNaturalView(generics.ListAPIView):
+    def get(self, request):
+
+        tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Concesión para el uso de aguas superficiales')
+        tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='N')
+        funciones_auxiliares = FuncionesAuxiliares()
+        data_list = []
+
+        for tramite in tramites:
+            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            
+            data = {
+                'INFORMACION DE USUARIO': {
+                    'TIPO DE USUARIO': tramite.id_solicitud_tramite.id_persona_titular.tipo_persona,
+                    'NOMBRE': f"{tramite.id_solicitud_tramite.id_persona_titular.primer_nombre} {tramite.id_solicitud_tramite.id_persona_titular.segundo_nombre}",
+                    'APELLIDO': f"{tramite.id_solicitud_tramite.id_persona_titular.primer_apellido} {tramite.id_solicitud_tramite.id_persona_titular.segundo_apellido}",
+                    'TIPO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.tipo_documento.nombre,
+                    'NUMERO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.numero_documento,
+                    'DEPTO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.cod_municipio_notificacion_nal.cod_departamento.nombre,
+                    'MUNICIPIO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.cod_municipio_notificacion_nal.nombre,
+                    'DIRECCION CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.direccion_notificaciones,
+                    'E-MAIL': tramite.id_solicitud_tramite.id_persona_titular.email,
+                    'TEL': tramite.id_solicitud_tramite.id_persona_titular.telefono_empresa,
+                },
+
+                'INFORMACION DEL PREDIO': {
+                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'DEPTO PREDIO': tramite_data['DepPredio'],
+                    'MUNICIPIO PREDIO': tramite_data['MunPredio'],
+                    'CEDULA CATASTRAL': tramite_data['CCatas'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'],
+                    'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
+
+                },
+                'GEOREFERENCIACION DEL PREDIO': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                },
+                'INFORMACION PERMISO': {
+                    'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
+                    'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'CAUDAL CONCESIONADO': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
+                    
+                },
+
+                'INFORMACION CAPTACION': {
+                    'FUENTE ABASTECEDORA': tramite_data['FuenCapTa'],
+                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'],
+                    'MUNICIPIO CAPTACION': tramite_data['Mun_fuente'],
+                },
+
+                'GEOREFERENCIACION DE LA CAPTACION': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                }
+                
+            }
+
+            #GEOREFERENCIACION DEL PREDIO
+            if 'Mapa1' in tramite_data:
+                latitud = tramite_data['predios'][0]['Mapa1'].split(',')[0]
+                longitud = tramite_data['predios'][0]['Mapa1'].split(',')[1]
+                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LONG'] = grados_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LONG'] = minutos_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LONG'] = segundos_longitud
+
+                altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
+
+            #GEOREFERENCIACION DE LA FUENTE DE CAPTACION
+            if 'Mapa2' in tramite_data:
+                latitud_captacion = tramite_data['Mapa2'].split(',')[0]
+                longitud_captacion = tramite_data['Mapa2'].split(',')[1]
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LONG'] = grados_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
+
+                altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
+                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+
+
+            data_list.append(data)
+
+            
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data_list}, status=status.HTTP_200_OK)
+    
+
+
+class ServicioVertimientoNaturalView(generics.ListAPIView):
+    def get(self, request):
+
+        tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Permiso de vertimientos al agua')
+        tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='N')
+        funciones_auxiliares = FuncionesAuxiliares()
+        data_list = []
+
+        for tramite in tramites:
+            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            
+            data = {
+                'INFORMACION DE USUARIO': {
+                    'TIPO DE USUARIO': tramite.id_solicitud_tramite.id_persona_titular.tipo_persona,
+                    'NOMBRE': f"{tramite.id_solicitud_tramite.id_persona_titular.primer_nombre} {tramite.id_solicitud_tramite.id_persona_titular.segundo_nombre}",
+                    'APELLIDO': f"{tramite.id_solicitud_tramite.id_persona_titular.primer_apellido} {tramite.id_solicitud_tramite.id_persona_titular.segundo_apellido}",
+                    'TIPO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.tipo_documento.nombre,
+                    'NUMERO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.numero_documento,
+                    'DEPTO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.cod_municipio_notificacion_nal.cod_departamento.nombre,
+                    'MUNICIPIO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.cod_municipio_notificacion_nal.nombre,
+                    'DIRECCION CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.direccion_notificaciones,
+                    'E-MAIL': tramite.id_solicitud_tramite.id_persona_titular.email,
+                    'TEL': tramite.id_solicitud_tramite.id_persona_titular.telefono_empresa,
+                },
+
+                'INFORMACION DEL PREDIO': {
+                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'DEPTO PREDIO': tramite_data['DepPredio'],
+                    'MUNICIPIO PREDIO': tramite_data['MunPredio'],
+                    'CEDULA CATASTRAL': tramite_data['CCatas'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'] if 'MatriInmobi' in tramite_data else None,
+                    'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
+
+                },
+                'GEOREFERENCIACION DEL PREDIO': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                },
+                'INFORMACION PERMISO': {
+                    'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
+                    'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'CAUDAL AUTORIZADO VERTER': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
+                    
+                },
+
+                'INFORMACION VERTIMIENTO': {
+                    'TIPO VERTIMIENTO': tramite_data['TipVert'],
+                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'],
+                    'MUNICIPIO CAPTACION': tramite_data['Muni_local_vertimiento'],
+                },
+
+                'CARACTERISTICAS DEL VERTIMIENTO': {
+                    'Tipo de flujo': tramite_data['TipFlujDes'],
+                    'Tiempo de descarga': tramite_data['TiemDescar'],
+                    'Frecuencia': tramite_data['FeqCap'],
+                    'Caudal diseño STD': tramite_data['CaudAprox'],
+                },
+
+                'GEOREFERENCIACION DEL VERTIMIENTO': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                }
+                
+            }
+
+            #GEOREFERENCIACION DEL PREDIO
+            if 'Mapa1' in tramite_data:
+                latitud = tramite_data['predios'][0]['Mapa1'].split(',')[0]
+                longitud = tramite_data['predios'][0]['Mapa1'].split(',')[1]
+                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LONG'] = grados_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LONG'] = minutos_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LONG'] = segundos_longitud
+
+                altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
+
+            #GEOREFERENCIACION VERTIMIENTO
+            if 'Mapa2' in tramite_data:
+                latitud_captacion = tramite_data['Mapa2'].split(',')[0]
+                longitud_captacion = tramite_data['Mapa2'].split(',')[1]
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LONG'] = grados_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
+
+                altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
+                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+
+
+            data_list.append(data)
+
+            
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data_list}, status=status.HTTP_200_OK)
+    
+
+
+class ServicioVertimientoJuridicaView(generics.ListAPIView):
+    def get(self, request):
+
+        tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Permiso de vertimientos al agua')
+        tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='J')
+        print(tramites)
+        funciones_auxiliares = FuncionesAuxiliares()
+        data_list = []
+
+        for tramite in tramites:
+            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            print(tramite)
+            print(tramite_data)
+            
+            data = {
+                'INFORMACION DE USUARIO': {
+                    'TIPO DE USUARIO': tramite.id_solicitud_tramite.id_persona_titular.tipo_persona,
+                    'RAZON SOCIAL': tramite.id_solicitud_tramite.id_persona_titular.razon_social,
+                    'TIPO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.tipo_documento.nombre,
+                    'NUMERO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.numero_documento,
+                    'DIRECCION CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.direccion_notificaciones,
+                    'E-MAIL': tramite.id_solicitud_tramite.id_persona_titular.email,
+                    'TEL': tramite.id_solicitud_tramite.id_persona_titular.telefono_empresa,
+                },
+
+                'REPRESENTANTE LEGAL': {
+                    'NOMBRE': f"{tramite.id_solicitud_tramite.id_persona_titular.representante_legal.primer_nombre} {tramite.id_solicitud_tramite.id_persona_titular.representante_legal.segundo_nombre}",
+                    'APELLIDO': f"{tramite.id_solicitud_tramite.id_persona_titular.representante_legal.primer_apellido} {tramite.id_solicitud_tramite.id_persona_titular.representante_legal.segundo_apellido}",
+                    'TIPO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.tipo_documento.nombre,
+                    'NUMERO DE IDENTIFICACION': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.numero_documento,
+                    'DEPTO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.cod_municipio_notificacion_nal.cod_departamento.nombre if tramite.id_solicitud_tramite.id_persona_titular.representante_legal else None,
+                    'MUNICIPIO DE CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.cod_municipio_notificacion_nal.nombre,
+                    'DIRECCION CORRESPONDENCIA': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.direccion_notificaciones,
+                    'Telefono': tramite.id_solicitud_tramite.id_persona_titular.representante_legal.telefono_celular,
+                },
+
+                'INFORMACION DEL PREDIO': {
+                    'NOMBRE PREDIO': tramite_data['Npredio'],
+                    'DEPTO PREDIO': tramite_data['DepPredio'],
+                    'MUNICIPIO PREDIO': tramite_data['MunPredio'],
+                    'CEDULA CATASTRAL': tramite_data['CCatas'],
+                    'MATRICULA INMOBILIARIA': tramite_data['MatriInmobi'],
+                    'DIRECCION DEL PREDIO': tramite_data['Dpredio'],
+
+                },
+                'GEOREFERENCIACION DEL PREDIO': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                },
+                'INFORMACION PERMISO': {
+                    'NÚMERO DEL EXPEDIENTE': tramite_data['NumExp'] if 'NumExp' in tramite_data else None,
+                    'No. RESOLUCION': tramite_data['NumResol'] if 'NumResol' in tramite_data else None,
+                    'CAUDAL AUTORIZADO VERTER': tramite_data['Caudal_concesionado'] if 'Caudal_concesionado' in tramite_data else None,
+                    
+                },
+
+                'INFORMACION VERTIMIENTO': {
+                    'TIPO VERTIMIENTO': tramite_data['TipVert'],
+                    'DEPARTAMENTO CAPTACION': tramite_data['Dep_fuente'],
+                    'MUNICIPIO CAPTACION': tramite_data['Muni_local_vertimiento'],
+                },
+
+                'CARACTERISTICAS DEL VERTIMIENTO': {
+                    'Tipo de flujo': tramite_data['TipFlujDes'],
+                    'Tiempo de descarga': tramite_data['TiemDescar'],
+                    'Frecuencia': tramite_data['FeqCap'],
+                    'Caudal diseño STD': tramite_data['CaudAprox'],
+                },
+
+                'GEOREFERENCIACION DEL VERTIMIENTO': {
+                    'SISTEMA REF': 'Sistema GRS 1980 Magna Sirgas'
+                }
+                
+            }
+
+            #GEOREFERENCIACION DEL PREDIO
+            if 'Mapa1' in tramite_data:
+                latitud = tramite_data['predios'][0]['Mapa1'].split(',')[0]
+                longitud = tramite_data['predios'][0]['Mapa1'].split(',')[1]
+                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud
+                data['GEOREFERENCIACION DEL PREDIO']['GRAD LONG'] = grados_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['MIN LONG'] = minutos_longitud
+                data['GEOREFERENCIACION DEL PREDIO']['SEG LONG'] = segundos_longitud
+
+                altitud = funciones_auxiliares.obtener_altitud(latitud, longitud)
+                data['GEOREFERENCIACION DEL PREDIO']['ALTITUD'] = altitud
+
+            #GEOREFERENCIACION VERTIMIENTO
+            if 'Mapa2' in tramite_data:
+                latitud_captacion = tramite_data['Mapa2'].split(',')[0]
+                longitud_captacion = tramite_data['Mapa2'].split(',')[1]
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LONG'] = grados_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['MIN LONG'] = minutos_longitud_c
+                data['GEOREFERENCIACION DE LA CAPTACION']['SEG LONG'] = segundos_longitu_c
+
+                altitud_captacion = funciones_auxiliares.obtener_altitud(latitud_captacion, longitud_captacion)
+                data['GEOREFERENCIACION DE LA CAPTACION']['ALTITUD'] = altitud_captacion
+                data['GEOREFERENCIACION DE LA CAPTACION']['Descripcion acceso captación'] = tramite_data['DesCapta']
+
+
+            data_list.append(data)
+
+            
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data_list}, status=status.HTTP_200_OK)
 
