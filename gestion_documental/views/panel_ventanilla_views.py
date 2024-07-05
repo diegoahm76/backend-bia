@@ -3517,7 +3517,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
             "Content-Type": "application/json-patch+json"
         }   
         #TOKEN PARA SASOFTCO
-        url_login_token = f'{os.environ.get('URL_SASOFTCO')}/api/Authentication/login-token-bia'
+        url_login_token = f"{os.environ.get('URL_SASOFTCO')}/api/Authentication/login-token-bia"
      
         payload={
             "access":token
@@ -3543,8 +3543,8 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
 
     def get_tramite_ventanilla_sasoft(self,radicado,token):
 
-        #url = f'{os.environ.get('URL_SASOFTCO')}/api/Interoperability/tasks'
-        url = f'{os.environ.get('URL_SASOFTCO')}/api/Interoperability/task-by-number-radicate/{radicado}'
+        #url = f"{os.environ.get('URL_SASOFTCO')}/api/Interoperability/tasks"
+        url = f"{os.environ.get('URL_SASOFTCO')}/api/Interoperability/task-by-number-radicate/{radicado}"
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {token}"
@@ -3592,7 +3592,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         #TOKEN PARA SASOFTCO
 
         #print(data)
-        url_login_token = f'{os.environ.get('URL_SASOFTCO')}/api/Interoperability/complete-task-assignee-group/{id}'
+        url_login_token = f"{os.environ.get('URL_SASOFTCO')}/api/Interoperability/complete-task-assignee-group/{id}"
         payload={"variables":data}
         auth_headers = {
             "accept": "application/json",
