@@ -55,7 +55,7 @@ class Cartera(models.Model):
     valor_sancion = models.DecimalField(max_digits=30, decimal_places=4, null=True, blank=True, db_column='T413valorSancion')
     inicio = models.DateTimeField(db_column='T413inicio', null=True, blank=True)
     fin = models.DateTimeField(null=True, blank=True,db_column='T413fin')
-    id_rango = models.ForeignKey(RangosEdad, on_delete=models.CASCADE, db_column='T413Id_RangoEdad')
+    id_rango = models.ForeignKey(RangosEdad, on_delete=models.SET_NULL, null= True, blank=True, db_column='T413Id_RangoEdad')
     codigo_contable = models.ForeignKey(ConceptoContable, on_delete=models.CASCADE, db_column='T413Id_ConceptoContable')
     fecha_facturacion = models.DateTimeField(null=True, blank=True, db_column='T413fechaFacturacion')
     fecha_notificacion = models.DateTimeField(null=True, blank=True, db_column='T413fechaNotificacion')
