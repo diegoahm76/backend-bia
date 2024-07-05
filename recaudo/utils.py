@@ -10,7 +10,6 @@ from seguridad.utils import Util
 class UtilsRecaudo:
     @staticmethod
     def pago_exitoso(request, pago):
-        print("ENTRÓ A UTIL DE PAGO EXITOSO")
         # GENERAR COMPROBANTE DE PAGO
         client_ip = Util.get_client_ip(request)
         pago_serializado = ConsultarPagosSerializer(pago)
@@ -42,40 +41,30 @@ class UtilsRecaudo:
             "Fecha Solicitud": datetime.now().strftime('%d-%m-%Y'),
             "Código Servicio": "2701"
         }
-        print("INFO COMPROBANTE: ", info_archivo)
-        print("ANTES CREAR COMPROBANTE")
         comprobante = UtilsGestor.generar_archivo_blanco(info_archivo, f"Comprobante de Pago - Liquidacion {pago.id_liquidacion.id}.pdf", "home,BIA,Recaudo,GDEA,Pagos")
         comprobante_instance = ArchivosDigitales.objects.filter(id_archivo_digital=comprobante.data.get('data').get('id_archivo_digital')).first()
-        print("DESPUES CREAR COMPROBANTE")
 
         pago.comprobante_pago = comprobante_instance
         pago.save()
-        print("GUARDAR COMPROBANTE EN PAGO INSTANCE")
 
         # Actualizar info en tramite
-        print("ANTES ACTUALIZAR TRAMITE")
         tramite = pago.id_liquidacion.id_solicitud_tramite
         if tramite:
             if not tramite.pago:
                 tramite.pago = True
                 tramite.id_pago_evaluacion = pago
                 tramite.save()
-        print("DESPUES ACTUALIZAR TRAMITE")
 
         # Actualizar estado en liquidacion
-        print("ANTES ACTUALIZAR LIQUIDACION")
         pago.id_liquidacion.estado = 'PAGADO'
         pago.id_liquidacion.save()
-        print("DESPUES ACTUALIZAR LIQUIDACION")
 
         # Guardar historico liquidacion
-        print("ANTES CREAR HISTORICO LIQUIDACION")
         data_historico = {
-            'liquidacion_base': pago.id_liquidacion.id,
+            'id_liquidacion_base': pago.id_liquidacion.id,
             'estado_liq': 'PAGADO',
             'fecha_estado': datetime.now()
         }
         serializer_historico = HistEstadosLiqPostSerializer(data=data_historico)
         serializer_historico.is_valid(raise_exception=True)
         serializer_historico.save()
-        print("DESPUES CREAR HISTORICO LIQUIDACION")
