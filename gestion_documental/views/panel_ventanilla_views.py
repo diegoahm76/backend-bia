@@ -3872,6 +3872,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
                 "encoding": "boolean"
             }
         }
+        print("DATA RESPUESTA SASOFTCO: ", data_respuesta)
         respuesta = self.post_tramite_camunda(token_camunda,data_respuesta,id_instancia)
         print(respuesta)
 
