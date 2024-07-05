@@ -4059,8 +4059,8 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             #Para Linux
             ruta =  f'{consecutivo_tipologia.id_archivo_digital_copia.ruta_archivo.path if consecutivo_tipologia.id_archivo_digital_copia else consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
-            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
-            print(pdf)
+            # pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            # print(pdf)
 
             # ENVIAR PAQUETE A SASOFTCO - AUTOS
             tramite = consecutivo_tipologia.id_tramite

@@ -61,7 +61,7 @@ class UtilsRecaudo:
 
         # Guardar historico liquidacion
         data_historico = {
-            'liquidacion_base': pago.id_liquidacion.id,
+            'id_liquidacion_base': pago.id_liquidacion.id,
             'estado_liq': 'PAGADO',
             'fecha_estado': datetime.now()
         }

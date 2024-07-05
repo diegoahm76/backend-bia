@@ -50,7 +50,7 @@ def actualizar_estados_liquidaciones():
 
 		# Guardar historico liquidacion
 		data_historico = {
-			'liquidacion_base': liquidacion.id,
+			'id_liquidacion_base': liquidacion.id,
 			'estado_liq': 'NO PAGADO',
 			'fecha_estado': current_date
 		}

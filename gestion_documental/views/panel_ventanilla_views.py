@@ -3619,7 +3619,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
                 except ValueError:
                     error_message += f" | Respuesta del servidor: {e.response.text}"
 
-            print("ERROR")
+            print("ERROR: ", e)
             raise ValidationError(error_message)
         
         except ValueError as e:
@@ -3674,7 +3674,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
         #BUSCAR ASIGNACION
         asignacion = AsignacionTramites.objects.filter(id_solicitud_tramite=tramite,cod_estado_asignacion='Ac').first()
         if not asignacion:
-            raise ValidationError("El tramite no a sigo aceptado por la unidad organizacional")
+            raise ValidationError("El tramite no a sido aceptado por la unidad organizacional")
 
 
 
@@ -3872,6 +3872,7 @@ class CreateValidacionTareaTramite(generics.CreateAPIView):
                 "encoding": "boolean"
             }
         }
+        print("DATA RESPUESTA SASOFTCO: ", data_respuesta)
         respuesta = self.post_tramite_camunda(token_camunda,data_respuesta,id_instancia)
         print(respuesta)
 
