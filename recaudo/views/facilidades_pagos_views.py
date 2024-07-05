@@ -99,7 +99,7 @@ def get_info_deudor(id_deudor_in, numero_identificacion_in, nombre_completo_in):
         deudor = Deudores.objects.all()
 
         if numero_identificacion_in:
-            deudor = deudor.filter(Q(id_persona_deudor_pymisis__t03nit__icontains=numero_identificacion_in) | Q(id_persona_deudor__numero_documento__icontains = numero_identificacion_in))
+            deudor = deudor.filter(Q(id_persona_deudor_pymisis__t03nit=numero_identificacion_in) | Q(id_persona_deudor__numero_documento = numero_identificacion_in))
 
         if nombre_completo_in:
             nombre_completo_split = str(nombre_completo_in).split()
@@ -136,7 +136,7 @@ class CarteraDeudorListViews(generics.ListAPIView):
         deudor = get_info_deudor(None, numero_identificacion, None)
 
         if deudor and len(deudor) == 1: 
-            deudor = deudor[0] 
+            deudor = deudor[0]
             cartera = Cartera.objects.filter(id_deudor=Deudores.objects.get(id=deudor['id_deudor']))
             serializer = self.serializer_class(cartera, many=True)
             monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
@@ -144,8 +144,8 @@ class CarteraDeudorListViews(generics.ListAPIView):
             data = {
                 'id_deudor': deudor['id_deudor'],
                 'nombre_completo': deudor['nombre_completo'],
-                'numero_identificacion': deudor['numero_identificacion'],#deudor.id_persona_deudor.numero_documento if deudor.id_persona_deudor else deudor.id_persona_deudor_pymisis.t03nit,
-                'email': deudor['email'],#deudor.id_persona_deudor.email if deudor.id_persona_deudor else deudor.id_persona_deudor_pymisis.t03email,
+                'numero_identificacion': deudor['numero_identificacion'],
+                'email': deudor['email'],
                 'obligaciones': serializer.data,
                 'monto_total': monto_total,
                 'intereses_total': intereses_total,
@@ -812,15 +812,16 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
     def lista_facilidades(self, data):
         facilidades_pago = FacilidadesPago.objects.all()
-        
         identificacion = data['identificacion']
         nombre_de_usuario = data['nombre_de_usuario']
 
-        if identificacion:
-            facilidades_pago = facilidades_pago.filter(id_deudor__id_persona_deudor__numero_documento__icontains=identificacion) | facilidades_pago.filter(id_deudor__id_persona_deudor_pymisis__t03nit__icontains=identificacion)
+        deudores = None
+        deudores = get_info_deudor(None, identificacion, nombre_de_usuario)
+        deudor_ids = [deudor['id_deudor'] for deudor in deudores]
 
-        if nombre_de_usuario:
-            facilidades_pago = facilidades_pago.filter(id_deudor__id_persona_deudor__primer_nombre__icontains=nombre_de_usuario) | facilidades_pago.filter(id_deudor__id_persona_deudor_pymisis__t03nombre__icontains=nombre_de_usuario)
+        if deudor_ids:
+            facilidades_pago = facilidades_pago.filter(id_deudor__in=deudor_ids)        
+
         return facilidades_pago.order_by('-fecha_generacion')
     
 
@@ -1109,7 +1110,5 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
             data.append(facilidad_data)
         
         return Response({'success': True, 'detail':'Se registra la respuesta dada por el funcionario', 'data': data}, status=status.HTTP_201_CREATED)
-
-
 
 

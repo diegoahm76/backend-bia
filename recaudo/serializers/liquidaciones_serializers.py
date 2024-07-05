@@ -40,7 +40,11 @@ class DeudoresSerializer(serializers.ModelSerializer):
 
     def get_nombres(self, obj):
         if obj.id_persona_deudor:
-            return f"{obj.id_persona_deudor.primer_nombre} {obj.id_persona_deudor.segundo_nombre} {obj.id_persona_deudor.primer_apellido} {obj.id_persona_deudor.segundo_apellido}"
+            if obj.id_persona_deudor.razon_social:
+                nombre_completo = obj.id_persona_deudor.razon_social
+            else:
+                nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
+            return nombre_completo
         elif obj.id_persona_deudor_pymisis:
             return f"{obj.id_persona_deudor_pymisis.t03nombre}"
         else:
