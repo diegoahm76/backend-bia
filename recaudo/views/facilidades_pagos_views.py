@@ -7,7 +7,7 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     CumplimientoRequisitosGetSerializer,
     GarantiasFacilidadGetSerializer,
     ListadoDeudoresUltSerializer,
-    DeudorFacilidadPagoSerializer,
+    DeudorDatosSerializer,
     FacilidadesPagoSerializer,
     GarantiasFacilidadSerializer,
     RequisitosActuacionSerializer,
@@ -17,7 +17,6 @@ from recaudo.serializers.facilidades_pagos_serializers import (
     RespuestaSolicitudGetSerializer,
     TipoBienSerializer,
     TipoActuacionSerializer,
-    DatosContactoDeudorSerializer,
     ListadoFacilidadesPagoSerializer,
     FacilidadesPagoFuncionarioPutSerializer,
     FuncionariosSerializer,
@@ -57,46 +56,50 @@ import random
 import string
 
 @staticmethod
+def get_data_deudor(id_deudor):
+    try:
+        deudor = Deudores.objects.get(id=id_deudor)
+    except Deudores.DoesNotExist:
+        raise NotFound('No se encontró ningun registro con el parámetro ingresado')
+    
+    id_deudor = deudor.id
+    id_persona_deudor = deudor.id_persona_deudor if deudor.id_persona_deudor else None
+    id_persona_deudor_pymisis = deudor.id_persona_deudor_pymisis if deudor.id_persona_deudor_pymisis else None
+    numero_identificacion = deudor.id_persona_deudor.numero_documento if id_persona_deudor else deudor.id_persona_deudor_pymisis.t03nit
+
+    if id_persona_deudor:
+        if id_persona_deudor.razon_social:
+            nombre_completo = id_persona_deudor.razon_social
+            email = id_persona_deudor.email
+        else:
+            nombre_completo = ' '.join(filter(None, [id_persona_deudor.primer_nombre, id_persona_deudor.segundo_nombre, id_persona_deudor.primer_apellido, id_persona_deudor.segundo_apellido]))
+            email = id_persona_deudor.email
+    elif id_persona_deudor_pymisis:
+        nombre_completo = deudor.id_persona_deudor_pymisis.t03nombre
+        email = deudor.id_persona_deudor_pymisis.t03email
+
+    data = {
+        'id_deudor': id_deudor,
+        'numero_identificacion': numero_identificacion,
+        'nombre_completo': nombre_completo,
+        'email': email
+    }
+
+    return data
+    
+
+@staticmethod
 def get_info_deudor(id_deudor_in, numero_identificacion_in, nombre_completo_in):
-    data = {}
-    id_deudor = None
-    id_persona_deudor = None
-    id_persona_deudor_pymisis = None
-    numero_identificacion = ''
-    nombre_completo = ''
-
+    
     if id_deudor_in:
-        try:
-            deudor = Deudores.objects.get(id=id_deudor_in)
-        except Deudores.DoesNotExist:
-            raise NotFound('No se encontró ningun registro con el parámetro ingresado')
+        return get_data_deudor(id_deudor_in)
         
-        id_deudor = deudor.id
-        id_persona_deudor = deudor.id_persona_deudor.id_persona if deudor.id_persona_deudor else None
-        id_persona_deudor_pymisis = deudor.id_persona_deudor_pymisis.id if deudor.id_persona_deudor_pymisis else None
-        numero_identificacion = deudor.id_persona_deudor.numero_documento if id_persona_deudor else deudor.id_persona_deudor_pymisis.t03nit
-
-        if id_persona_deudor:
-            if id_persona_deudor.razon_social:
-                nombre_completo = id_persona_deudor.razon_social
-            else:
-                nombre_completo = f"{id_persona_deudor.primer_nombre} {id_persona_deudor.segundo_nombre} {id_persona_deudor.primer_apellido} {id_persona_deudor.segundo_apellido}"
-        elif id_persona_deudor_pymisis:
-            nombre_completo = deudor.id_persona_deudor_pymisis.t03nombre
-        
-        data = {
-            'id_deudor': id_deudor,
-            'id_persona_deudor': id_persona_deudor,
-            'id_persona_deudor_pymisis': id_persona_deudor_pymisis,
-            'numero_identificacion': numero_identificacion,
-            'nombre_completo': nombre_completo
-        }
-
     elif numero_identificacion_in or nombre_completo_in:
+        data = []
         deudor = Deudores.objects.all()
 
         if numero_identificacion_in:
-            deudor = deudor.filter(Q(id_persona_deudor_pymisis__t03nit=numero_identificacion_in) | Q(id_persona_deudor__numero_documento = numero_identificacion_in)).first()
+            deudor = deudor.filter(Q(id_persona_deudor_pymisis__t03nit=numero_identificacion_in) | Q(id_persona_deudor__numero_documento = numero_identificacion_in))
 
         if nombre_completo_in:
             nombre_completo_split = str(nombre_completo_in).split()
@@ -106,11 +109,12 @@ def get_info_deudor(id_deudor_in, numero_identificacion_in, nombre_completo_in):
                                        Q(id_persona_deudor__segundo_nombre__icontains=nombre) | 
                                        Q(id_persona_deudor__primer_apellido__icontains=nombre) | 
                                        Q(id_persona_deudor__segundo_apellido__icontains=nombre) |
-                                       Q(id_persona_deudor__razon_social__icontains=nombre)).first()
+                                       Q(id_persona_deudor__razon_social__icontains=nombre))
                 
+        for deud in deudor:
+            data.append(get_data_deudor(deud.id))
         
-    
-    return data
+        return data
 
 
 ### VISTAS QUE MUESTRAN LAS OBLIGACIONES
@@ -127,37 +131,21 @@ class CarteraDeudorListViews(generics.ListAPIView):
         return monto_total, intereses_total, monto_total_con_intereses
     
     def obligaciones_deudor(self, numero_identificacion):
-        try: 
-            deudor = Deudores.objects.filter(Q(id_persona_deudor_pymisis__t03nit=numero_identificacion) | Q(id_persona_deudor__numero_documento = numero_identificacion)).first()
-        except Deudores.DoesNotExist: 
-            #raise ValidationError('No se encontraron deudas asociadas para este usuario.')        
-            return False
-        #estado = Expedientes.objects.filter(id_deudor=deudor.id).first()
-        if deudor:    
-            nombre_completo = '' 
-            if deudor.id_persona_deudor_pymisis:
-                nombre_completo = f"{deudor.id_persona_deudor_pymisis.t03nombre}"
-            elif deudor.id_persona_deudor:
-                nombre_completo = f"{deudor.id_persona_deudor.primer_nombre} {deudor.id_persona_deudor.segundo_nombre} {deudor.id_persona_deudor.primer_apellido} {deudor.id_persona_deudor.segundo_apellido}"#deudor.nombres + ' ' + deudor.apellidos if deudor.nombres and deudor.apellidos else deudor.nombres 
-            cartera = Cartera.objects.filter(id_deudor=deudor)
+
+        deudor = None
+        deudor = get_info_deudor(None, numero_identificacion, None)
+
+        if deudor and len(deudor) == 1: 
+            deudor = deudor[0]
+            cartera = Cartera.objects.filter(id_deudor=Deudores.objects.get(id=deudor['id_deudor']))
             serializer = self.serializer_class(cartera, many=True)
             monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(cartera)
-            numero_identificacion = ''
-            email = ''
-
-            if deudor.id_persona_deudor_pymisis:
-                numero_identificacion = deudor.id_persona_deudor_pymisis.t03nit
-                email = deudor.id_persona_deudor_pymisis.t03email
-            elif deudor.id_persona_deudor:
-                numero_identificacion = deudor.id_persona_deudor.numero_documento
-                email = deudor.id_persona_deudor.email
-
-
+            
             data = {
-                'id_deudor': deudor.id,
-                'nombre_completo': nombre_completo,
-                'numero_identificacion': numero_identificacion,#deudor.id_persona_deudor.numero_documento if deudor.id_persona_deudor else deudor.id_persona_deudor_pymisis.t03nit,
-                'email': email,#deudor.id_persona_deudor.email if deudor.id_persona_deudor else deudor.id_persona_deudor_pymisis.t03email,
+                'id_deudor': deudor['id_deudor'],
+                'nombre_completo': deudor['nombre_completo'],
+                'numero_identificacion': deudor['numero_identificacion'],
+                'email': deudor['email'],
                 'obligaciones': serializer.data,
                 'monto_total': monto_total,
                 'intereses_total': intereses_total,
@@ -186,7 +174,6 @@ class ListadoCarteraViews(generics.ListAPIView):
     def get(self, request):
         user = request.user
         numero_identificacion = user.persona.numero_documento
-        print("cedula :",numero_identificacion)
         instancia_obligaciones = CarteraDeudorListViews()
         response_data = instancia_obligaciones.obligaciones_deudor(numero_identificacion)
         if response_data:
@@ -272,33 +259,28 @@ class ListadoDeudoresViews(generics.ListAPIView):
     def get(self, request):
         identificacion = self.request.query_params.get('identificacion', '')
         nombre_contribuyente = self.request.query_params.get('nombre_contribuyente', '')
-
         deudores = Deudores.objects.all()
-        if identificacion:
-            deudores = deudores.filter(id_persona_deudor_pymisis__t03nit__icontains=identificacion) | deudores.filter(id_persona_deudor__numero_documento__icontains=identificacion)
 
-        if nombre_contribuyente:
-            deudores = deudores.filter(id_persona_deudor__primer_nombre__icontains=nombre_contribuyente) | deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=nombre_contribuyente)
-        
+        deudores_data = get_info_deudor(None, identificacion, nombre_contribuyente)
+        if deudores_data:
+            deudores = deudores.filter(id__in=[deudor['id_deudor'] for deudor in deudores_data])
+            
         serializer = self.serializer_class(deudores, many=True)
         data_deudores = serializer.data
    
         return Response({'success': True, 'detail': 'Se muestra los deudores', 'data': data_deudores}, status=status.HTTP_200_OK)
-  
-
-
 
 
 ### VISTAS QUE SE MUESTRAN AL MOMENTO DE CREAR UNA FACILIDAD
 
 class DatosDeudorView(generics.ListAPIView):
     queryset = Deudores.objects.all()
-    serializer_class = DeudorFacilidadPagoSerializer
+    serializer_class = DeudorDatosSerializer
 
     def get_datos_deudor(self, id):
-        deudor = Deudores.objects.filter(id=id).first()
-
-        if not deudor:
+        try:
+            deudor = Deudores.objects.get(id=id)
+        except Deudores.DoesNotExist:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
 
         serializer = self.serializer_class(deudor)
@@ -349,14 +331,15 @@ class TipoActuacionView(generics.ListAPIView):
     
 
 class DatosContactoDeudorView(generics.ListAPIView):
-    serializer_class = DatosContactoDeudorSerializer
+    serializer_class = DeudorDatosSerializer
 
     def get_datos_deudor(self, id_deudor):
-        deudor = Deudores.objects.filter(id=id_deudor).first()
-        if not deudor:
+        try:
+            deudor = Deudores.objects.get(id=id_deudor)
+        except Deudores.DoesNotExist:
             raise NotFound('No se encontró ningun registro con el parámetro ingresado')
-        personas_deudor = Personas.objects.filter(numero_documento = deudor.identificacion).first()
-        serializer = self.serializer_class(personas_deudor)
+    
+        serializer = self.serializer_class(deudor)
         return serializer.data
     
     def get(self, request, id):
@@ -829,15 +812,16 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
 
     def lista_facilidades(self, data):
         facilidades_pago = FacilidadesPago.objects.all()
-        
         identificacion = data['identificacion']
         nombre_de_usuario = data['nombre_de_usuario']
 
-        if identificacion:
-            facilidades_pago = facilidades_pago.filter(id_deudor__id_persona_deudor__numero_documento__icontains=identificacion) | facilidades_pago.filter(id_deudor__id_persona_deudor_pymisis__t03nit__icontains=identificacion)
+        deudores = None
+        deudores = get_info_deudor(None, identificacion, nombre_de_usuario)
+        deudor_ids = [deudor['id_deudor'] for deudor in deudores]
 
-        if nombre_de_usuario:
-            facilidades_pago = facilidades_pago.filter(id_deudor__id_persona_deudor__primer_nombre__icontains=nombre_de_usuario) | facilidades_pago.filter(id_deudor__id_persona_deudor_pymisis__t03nombre__icontains=nombre_de_usuario)
+        if deudor_ids:
+            facilidades_pago = facilidades_pago.filter(id_deudor__in=deudor_ids)        
+
         return facilidades_pago.order_by('-fecha_generacion')
     
 
@@ -1105,18 +1089,11 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
 
     def get(self, request):
         user = request.user
-        
-        try:
-            deudor =  Deudores.objects.get(
-                Q(id_persona_deudor__numero_documento=user.persona.numero_documento) | 
-                Q(id_persona_deudor_pymisis__t03nit=user.persona.numero_documento)
-            )
-        except Deudores.DoesNotExist:
-            raise NotFound('No se encontró ningún registro en deudores con el número de documento proporcionado')
         data = []
 
-        if not deudor:
-            raise NotFound('No se encontró ningún registro en deudores con el parámetro ingresado')
+        deudor = get_info_deudor(None, user.persona.numero_documento, None)
+        deudor = deudor[0] if deudor and len(deudor) == 1 else None
+        deudor = Deudores.objects.get(id=deudor['id_deudor'])
 
         facilidades_pago = FacilidadesPago.objects.filter(id_deudor=deudor.id)
 
@@ -1133,7 +1110,5 @@ class FacilidadesPagosSeguimientoListView(generics.ListAPIView):
             data.append(facilidad_data)
         
         return Response({'success': True, 'detail':'Se registra la respuesta dada por el funcionario', 'data': data}, status=status.HTTP_201_CREATED)
-
-
 
 
