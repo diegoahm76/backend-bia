@@ -255,9 +255,11 @@ class NotificarPagoView(generics.GenericAPIView):
         if verificar_pago_response.status_code == 201:
             response_verificar_data = verificar_pago_response.data.get('data').get('res_pago')[0]
             estado_pago = response_verificar_data.get('int_estado_pago').strip()
-
+            print("ESTADO PAGO: ", estado_pago)
             if estado_pago in ["1","1000","4000","4003"]:
                 if id_comercio == id_comercio_bia:
+                    print("ID COMERCIO: ", id_comercio)
+                    print("ID COMERCIO BIA: ", id_comercio_bia)
                     pago = Pagos.objects.filter(id_pago=id_pago).first()
                     if not pago:
                         raise ValidationError("No existe el pago en Bia con el ID enviado")
