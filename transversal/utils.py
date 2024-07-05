@@ -12,7 +12,7 @@ class UtilsTransversal:
             "Authorization": f"Bearer {token}"
         }
 
-        url = f'{os.environ.get('URL_SASOFTCO')}/api/functional-groups'
+        url = f"{os.environ.get('URL_SASOFTCO')}/api/functional-groups"
   
         try:
             response = requests.post(url, json=grupos, headers=headers)
@@ -76,7 +76,7 @@ class UtilsTransversal:
             "Authorization": f"Bearer {token}"
         }
 
-        url = f'{os.environ.get('URL_SASOFTCO')}/api/functional-groups'
+        url = f"{os.environ.get('URL_SASOFTCO')}/api/functional-groups"
   
         try:
             response = requests.get(url, headers=headers)

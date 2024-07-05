@@ -4154,7 +4154,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             "Content-Type": "application/json"
         }   
         #TOKEN PARA SASOFTCO
-        url_login_token = f'{os.environ.get('URL_SASOFTCO')}/api/Authentication/login-token-bia'
+        url_login_token = f"{os.environ.get('URL_SASOFTCO')}/api/Authentication/login-token-bia"
 
 
         payload={
@@ -4217,7 +4217,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         # except requests.exceptions.RequestException as err:
         #     print(f"Error occurred: {err}")
 
-        # url = f'{os.environ.get('URL_SASOFTCO')}/api/Authentication/Login'
+        # url = f"{os.environ.get('URL_SASOFTCO')}/api/Authentication/Login"
 
         # payload={
 
@@ -4249,7 +4249,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
     def get_firmas_funcionarios_sasoft(self,username,token):
 
         print(username)
-        url = f'{os.environ.get('URL_SASOFTCO')}/api/Documents/download-signature-by-username/{username}'
+        url = f"{os.environ.get('URL_SASOFTCO')}/api/Documents/download-signature-by-username/{username}"
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {token}"
