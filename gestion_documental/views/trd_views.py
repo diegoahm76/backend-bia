@@ -4059,8 +4059,8 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             #Para Linux
             ruta =  f'{consecutivo_tipologia.id_archivo_digital_copia.ruta_archivo.path if consecutivo_tipologia.id_archivo_digital_copia else consecutivo_tipologia.id_archivo_digital.ruta_archivo.path}'
             print(ruta)
-            # pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
-            # print(pdf)
+            pdf = self.convert_word_to_pdf(ruta, consecutivo_tipologia)
+            print(pdf)
 
             # ENVIAR PAQUETE A SASOFTCO - AUTOS
             tramite = consecutivo_tipologia.id_tramite
@@ -4154,7 +4154,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
             "Content-Type": "application/json"
         }   
         #TOKEN PARA SASOFTCO
-        url_login_token = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/login-token-bia"
+        url_login_token = f"{os.environ.get('URL_SASOFTCO')}/api/Authentication/login-token-bia"
 
 
         payload={
@@ -4217,7 +4217,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
         # except requests.exceptions.RequestException as err:
         #     print(f"Error occurred: {err}")
 
-        # url = "https://backendclerkapi.sedeselectronicas.com/api/Authentication/Login"
+        # url = f"{os.environ.get('URL_SASOFTCO')}/api/Authentication/Login"
 
         # payload={
 
@@ -4249,7 +4249,7 @@ class ValidacionCodigoView(generics.UpdateAPIView):
     def get_firmas_funcionarios_sasoft(self,username,token):
 
         print(username)
-        url = "https://backendclerkapi.sedeselectronicas.com/api/Documents/download-signature-by-username/"+username
+        url = f"{os.environ.get('URL_SASOFTCO')}/api/Documents/download-signature-by-username/{username}"
         headers = {
             "accept": "application/json",
             "Authorization": f"Bearer {token}"
