@@ -10,6 +10,7 @@ from seguridad.utils import Util
 class UtilsRecaudo:
     @staticmethod
     def pago_exitoso(request, pago):
+        print("ENTRÓ A UTIL DE PAGO EXITOSO")
         # GENERAR COMPROBANTE DE PAGO
         client_ip = Util.get_client_ip(request)
         pago_serializado = ConsultarPagosSerializer(pago)
