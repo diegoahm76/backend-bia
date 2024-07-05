@@ -760,3 +760,27 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
             
         return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': data_list}, status=status.HTTP_200_OK)
 
+
+
+class ServicioFuentesHidricasView(generics.ListAPIView):
+    def get(self, request):
+
+        fuentes = CuencasSubZonas.objects.all()
+        funciones_auxiliares = FuncionesAuxiliares()
+        data_list = []
+
+        for fuente in fuentes:            
+            data = {
+                'FUENTE': {
+                    'CODIGO DE LA FUENTE': fuente.codigo_cuenca,
+                    'TIPO': fuente.tipo_fuente.nombre,
+                    'NOMBRE DE LA FUENTE': fuente.nombre,
+                    
+                },
+                'TRAMO': {
+                    'AREA H': fuente.id_sub_zona_hidrica.id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca,
+                    'ZONA H': fuente.id_sub_zona_hidrica.id_zona_hidrica.nombre_zona_hidrica,
+                    'SUBZONA H': fuente.id_sub_zona_hidrica.nombre_sub_zona_hidrica,
+                }
+            }
+                

@@ -132,6 +132,7 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'fecha_ejecutoriado': item_cartera['fechaenfirme'],
                 'numero_factura': item_cartera['numfactura'],
                 'monto_inicial': item_cartera['saldocapital'],
+                'num_resolucion': item_cartera['numresolucion'],
                 'tipo_cobro': item_cartera['tiporenta'],
                 'tipo_renta': item_cartera['tiporenta'],
                 'id_rango': 1

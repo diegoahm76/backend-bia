@@ -62,6 +62,7 @@ class Cartera(models.Model):
     fecha_ejecutoriado = models.DateTimeField(null=True, blank=True, db_column='T413fechaEjecutoriado')
     numero_factura = models.CharField(max_length=255, null=True, blank=True, db_column='T413numeroFactura')
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=4, db_column='T413montoInicial')
+    num_resolucion = models.CharField(max_length=255, null=True, blank=True, db_column='T413numResolucion')
     tipo_cobro = models.CharField(max_length=255, db_column='T413tipoCobro')
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T413Id_Deudor')
     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_DocumentoCobro')
