@@ -74,15 +74,17 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
     fecha_facturacion = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
     fecha_notificacion = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
     fecha_ejecutoriado = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    concepto_contable = serializers.ReadOnlyField(source='concepto_contable.codigo_contable', default=None)
     inicio = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
+    expediente = serializers.SerializerMethodField()
     fin = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
     nombre_deudor = serializers.SerializerMethodField()
     identificacion = serializers.SerializerMethodField()
 
     class Meta:
         model = Cartera
-        fields = ('id', 'nombre', 'dias_mora', 'valor_intereses', 'valor_sancion', 'inicio', 'fin', 'id_rango', 'codigo_contable', 'fecha_facturacion', 'fecha_notificacion',
-                  'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera', 'tipo_renta','nombre_deudor','identificacion')
+        fields = ('__all__')#('id', 'nombre', 'dias_mora', 'valor_intereses', 'valor_sancion', 'inicio', 'fin', 'id_rango', 'codigo_contable', 'fecha_facturacion', 'fecha_notificacion',
+                  #'fecha_ejecutoriado', 'numero_factura', 'monto_inicial', 'tipo_cobro', 'id_deudor', 'proceso_cartera', 'tipo_renta','nombre_deudor','identificacion')
 
     def get_proceso_cartera(self, obj):
         procesos_cartera = obj.proceso_cartera.filter(fin__isnull=True)
@@ -106,6 +108,17 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
             return obj.id_deudor.id_persona_deudor.numero_documento
         elif obj.id_deudor.id_persona_deudor_pymisis:
             return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
+        
+    def get_expediente(self, obj):
+        if obj.id_expediente:
+            if obj.id_expediente.id_expediente_pimisys:
+                return obj.id_expediente.id_expediente_pimisys.t920codexpediente
+            elif obj.id_expediente.id_expediente_doc:
+                return f"{obj.id_expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{obj.id_expediente.id_expediente_doc.codigo_exp_Agno}-{obj.id_expediente.id_expediente_doc.codigo_exp_consec_por_agno}"
+            else:
+                return None
         else:
             return None
     
