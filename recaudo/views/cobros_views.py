@@ -135,8 +135,6 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'num_resolucion': item_cartera['numresolucion'],
                 'tipo_cobro': item_cartera['tiporenta'],
                 'tipo_renta': item_cartera['tiporenta'],
-                'id_rango': 1
-            
             }
             print('holaaaa')
             deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
