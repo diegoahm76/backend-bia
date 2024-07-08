@@ -328,8 +328,16 @@ class FuncionesAuxiliares:
 class ServicioCaptacionJuridicaView(generics.ListAPIView):
     def get(self, request):
 
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
         tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Concesión para el uso de aguas superficiales')
         tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='J')
+        
+        if fecha_inicio:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
+        if fecha_fin:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
         funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
@@ -435,8 +443,15 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
 class ServicioCaptacionNaturalView(generics.ListAPIView):
     def get(self, request):
 
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
         tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Concesión para el uso de aguas superficiales')
         tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='N')
+        if fecha_inicio:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
+        if fecha_fin:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
         funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
@@ -533,8 +548,16 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
 class ServicioVertimientoNaturalView(generics.ListAPIView):
     def get(self, request):
 
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
         tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Permiso de vertimientos al agua')
         tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='N')
+
+        if fecha_inicio:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
+        if fecha_fin:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
         funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
@@ -594,6 +617,8 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
                 
             }
 
+            departamento = None
+
             if 'Muni_local_vertimiento' in tramite_data:
                 departamento = Municipio.objects.filter(nombre = tramite_data['Muni_local_vertimiento']).first()
             
@@ -643,8 +668,15 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
 class ServicioVertimientoJuridicaView(generics.ListAPIView):
     def get(self, request):
 
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
         tramites = PermisosAmbSolicitudesTramite.objects.filter(id_permiso_ambiental__nombre='Permiso de vertimientos al agua')
         tramites = tramites.filter(id_solicitud_tramite__id_persona_titular__tipo_persona='J')
+        if fecha_inicio:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
+        if fecha_fin:
+            tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
         print(tramites)
         funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
