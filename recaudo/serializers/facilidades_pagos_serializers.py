@@ -292,20 +292,31 @@ class RespuestaSolicitudGetSerializer(serializers.ModelSerializer):
 
 
 class CarteraSerializer(serializers.ModelSerializer):
-    nro_expediente = serializers.ReadOnlyField(source='id_expediente.cod_expediente',default=None)
-    nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
-    estado = serializers.ReadOnlyField(source='id_expediente.estado',default=None)
+    # nro_resolucion = serializers.ReadOnlyField(source='id_expediente.numero_resolucion',default=None)
+    # estado = serializers.ReadOnlyField(source='id_expediente.estado',default=None)
     procesos = serializers.SerializerMethodField()
+    expediente = serializers.SerializerMethodField()
+
 
     def get_procesos(self, obj):
         procesos = Procesos.objects.filter(id_cartera=obj.id)
         serializers_procesos = ProcesosCarteraSerializer(procesos, many = True)
         return serializers_procesos.data
-
+    
+    def get_expediente(self, obj):
+        if obj.id_expediente:
+            if obj.id_expediente.id_expediente_pimisys:
+                return obj.id_expediente.id_expediente_pimisys.t920codexpediente
+            elif obj.id_expediente.id_expediente_doc:
+                return f"{obj.id_expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{obj.id_expediente.id_expediente_doc.codigo_exp_Agno}-{obj.id_expediente.id_expediente_doc.codigo_exp_consec_por_agno}"
+            else:
+                return None
+        else:
+            return None
 
     class Meta:
         model = Cartera
-        fields = ('id','nombre','inicio','nro_expediente','nro_resolucion','monto_inicial','valor_intereses', 'dias_mora','estado', 'procesos')
+        fields = '__all__'
 
 
 
@@ -319,13 +330,16 @@ class ConsultaCarteraSerializer(serializers.ModelSerializer):
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
     identificacion = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    telefono = serializers.SerializerMethodField()
+    direccion = serializers.SerializerMethodField()
     obligaciones = serializers.SerializerMethodField()
     monto_total = serializers.SerializerMethodField()
     monto_total_con_intereses = serializers.SerializerMethodField()
 
     class Meta:
         model = Deudores
-        fields = ('id','nombre_contribuyente','identificacion', 'obligaciones', 'monto_total', 'monto_total_con_intereses')
+        fields = ('id','nombre_contribuyente','identificacion', 'obligaciones', 'monto_total', 'monto_total_con_intereses','email','telefono','direccion')
 
     def get_nombre_contribuyente(self, obj):
         if obj.id_persona_deudor:
@@ -344,6 +358,34 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
             return obj.id_persona_deudor.numero_documento
         elif obj.id_persona_deudor_pymisis:
             return obj.id_persona_deudor_pymisis.t03nit
+        else:
+            return None
+        
+    def get_telefeno(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.telefono_celular
+        elif obj.id_persona_deudor:
+            return obj.id_persona_deudor.telefono_empresa
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03telefono
+        else:
+            return None
+        
+    def get_direccion(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.direccion_residencia
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03direccion
+        else:
+            return None
+        
+    def get_email(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.email
+        elif obj.id_persona_deudor:
+            return obj.id_persona_deudor.email_empresarial
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03email
         else:
             return None
         
