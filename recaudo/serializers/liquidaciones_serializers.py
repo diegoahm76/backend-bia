@@ -41,12 +41,13 @@ class DeudoresSerializer(serializers.ModelSerializer):
     telefono = serializers.SerializerMethodField()
     direccion = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
+    fecha_nacimiento = serializers.SerializerMethodField()
     # carteras = serializers.SerializerMethodField()
     # liquidaciones = serializers.SerializerMethodField()
 
     class Meta:
         model = Deudores
-        fields = ('id', 'identificacion', 'nombres', 'telefono', 'direccion', 'email')
+        fields = ('id', 'identificacion', 'nombres', 'telefono', 'direccion', 'email','fecha_nacimiento')
 
     def get_nombres(self, obj):
         if obj.id_persona_deudor:
@@ -83,6 +84,14 @@ class DeudoresSerializer(serializers.ModelSerializer):
             return obj.id_persona_deudor.direccion_residencia
         elif obj.id_persona_deudor_pymisis:
             return obj.id_persona_deudor_pymisis.t03direccion
+        else:
+            return None
+        
+    def get_fecha_nacimiento(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.fecha_nacimiento
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03fechanacimiento
         else:
             return None
         
