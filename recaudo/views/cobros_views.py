@@ -117,7 +117,7 @@ class VistaCarteraTuaView(generics.ListAPIView):
     def insertar_cartera(self, cartera):
         data_list = []
         for item_cartera in cartera:
-            print(item_cartera)
+            #print(item_cartera)
             data = {
                 'numero_factura': item_cartera['numfactura'],
                 'nombre': item_cartera['nombredeudor'],
@@ -136,14 +136,11 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'tipo_cobro': item_cartera['tiporenta'],
                 'tipo_renta': item_cartera['tiporenta'],
             }
-            print('holaaaa')
             deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
-            print('no pase')
             if deudor:
                 data['id_deudor'] = deudor.id
             else:
                 tercero = Tercero.objects.filter(t03nit=item_cartera['nit']).first()
-                print('tercero', tercero)
                 deudor = Deudores.objects.create(
                     id_persona_deudor_pymisis=tercero
                 )
@@ -160,9 +157,10 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 )
                 data['id_expediente'] = expediente.id
 
-        
             if item_cartera['cuentacontable']:
                 cuenta_contable = item_cartera['cuentacontable']
+            elif item_cartera['cuentacontable'] == '' or item_cartera['cuentacontable'] == None:
+                cuenta_contable = '0'
             else:
                 cuenta_contable = '0'
 
@@ -172,17 +170,15 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 data['codigo_contable'] = concepto.id
             else:
                 concepto = ConceptoContable.objects.create(
-                    codigo_contable=item_cartera['cuentacontable']
+                    codigo_contable=cuenta_contable
                 )
                 data['codigo_contable'] = concepto.id
                 
-            print('cartera: ', data)
 
             data_list.append(data)
         cartera = self.serializer_class(data=data_list, many=True)
         if cartera.is_valid():
             cartera.save()
-            print('Cartera guardada')
         else:
             print(cartera.errors)
             print('else')
