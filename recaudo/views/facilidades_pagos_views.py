@@ -149,7 +149,7 @@ class CarteraDeudorListViews(generics.ListAPIView):
                 'obligaciones': serializer.data,
                 'monto_total': monto_total,
                 'intereses_total': intereses_total,
-                'monto_total_con_intereses': monto_total_con_intereses
+                'monto_total_con_intereses': monto_total_con_intereses,
             }
             return data
         else:
