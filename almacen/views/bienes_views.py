@@ -1,6 +1,8 @@
 import math
 import json
 import os
+
+import requests
 from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
 from rest_framework.views import APIView
@@ -1352,6 +1354,65 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
     serializer_class = EntradaCreateSerializer
     queryset = EntradasAlmacen.objects.all()
     permission_classes = [IsAuthenticated, PermisoCrearEntradaAlmacen]
+
+
+    def guardar_movimiento(self, request):
+        headers = {'Content-Type': 'text/xml'}
+        target_url = 'http://svrprueba/PIMIPYG/T85DOCUMENTO.asmx?op=iSave'
+        
+        xml_data = f"""<?xml version="1.0" encoding="utf-8"?>
+                        <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+                        <soap:Body>
+                            <iSave xmlns="http://tempuri.org/">
+                            <sCodTipoDoc>string</sCodTipoDoc>
+                            <lNumeroDoc>int</lNumeroDoc>
+                            <dtFecha>dateTime</dtFecha>
+                            <sConcepto>string</sConcepto>
+                            <sCodTipoOrigenDoc>string</sCodTipoOrigenDoc>
+                            <lNumeroOrigenDoc>int</lNumeroOrigenDoc>
+                            <sReferenciaOrigenDoc>string</sReferenciaOrigenDoc>
+                            <bContabLocal>boolean</bContabLocal>
+                            <bContabNIIF>boolean</bContabNIIF>
+                            <sAppName>string</sAppName>
+                            <audtMovimientos>
+                                <udtMovimiento>
+                                <sCodCta>string</sCodCta>
+                                <sCodCentro>string</sCodCentro>
+                                <sNit>string</sNit>
+                                <sReferencia>string</sReferencia>
+                                <sDetalle>string</sDetalle>
+                                <sCodTipoDocCruce>string</sCodTipoDocCruce>
+                                <sNumeroDocCruce>string</sNumeroDocCruce>
+                                <cValorBase>decimal</cValorBase>
+                                <cValorDebito>decimal</cValorDebito>
+                                <cValorCredito>decimal</cValorCredito>
+                                <bContabLocal>boolean</bContabLocal>
+                                <bContabNIIF>boolean</bContabNIIF>
+                                </udtMovimiento>
+                                <udtMovimiento>
+                                <sCodCta>string</sCodCta>
+                                <sCodCentro>string</sCodCentro>
+                                <sNit>string</sNit>
+                                <sReferencia>string</sReferencia>
+                                <sDetalle>string</sDetalle>
+                                <sCodTipoDocCruce>string</sCodTipoDocCruce>
+                                <sNumeroDocCruce>string</sNumeroDocCruce>
+                                <cValorBase>decimal</cValorBase>
+                                <cValorDebito>decimal</cValorDebito>
+                                <cValorCredito>decimal</cValorCredito>
+                                <bContabLocal>boolean</bContabLocal>
+                                <bContabNIIF>boolean</bContabNIIF>
+                                </udtMovimiento>
+                            </audtMovimientos>
+                            <sErrors>string</sErrors>
+                            </iSave>
+                        </soap:Body>
+                        </soap:Envelope>"""
+        
+        response = requests.post(target_url, data=xml_data, headers=headers)
+        
+        if response.status_code != 200:
+            raise ValidationError('Ocurrió un error al crear el movimiento contable')
 
     def post(self, request):
         data = request.data

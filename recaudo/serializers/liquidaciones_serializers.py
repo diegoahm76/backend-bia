@@ -8,7 +8,11 @@ from recaudo.models.liquidaciones_models import (
     Expedientes,
     CalculosLiquidacionBase
 )
-
+from recaudo.models.cobros_models import (
+    Cartera,
+    ConceptoContable,
+    VistaCarteraTua
+)
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
     usada = serializers.SerializerMethodField()
@@ -34,9 +38,15 @@ class OpcionesLiquidacionBasePutSerializer(serializers.ModelSerializer):
 class DeudoresSerializer(serializers.ModelSerializer):
     identificacion = serializers.SerializerMethodField()
     nombres = serializers.SerializerMethodField()
+    telefono = serializers.SerializerMethodField()
+    direccion = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    # carteras = serializers.SerializerMethodField()
+    # liquidaciones = serializers.SerializerMethodField()
+
     class Meta:
         model = Deudores
-        fields = ('id', 'identificacion', 'nombres')
+        fields = ('id', 'identificacion', 'nombres', 'telefono', 'direccion', 'email')
 
     def get_nombres(self, obj):
         if obj.id_persona_deudor:
@@ -49,7 +59,7 @@ class DeudoresSerializer(serializers.ModelSerializer):
             return f"{obj.id_persona_deudor_pymisis.t03nombre}"
         else:
             return None
-    
+
     def get_identificacion(self, obj):
         if obj.id_persona_deudor:
             return obj.id_persona_deudor.numero_documento
@@ -57,6 +67,63 @@ class DeudoresSerializer(serializers.ModelSerializer):
             return obj.id_persona_deudor_pymisis.t03nit
         else:
             return None
+        
+    def get_telefono(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.telefono_celular
+        elif obj.id_persona_deudor:
+            return obj.id_persona_deudor.telefono_empresa
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03telefono
+        else:
+            return None
+        
+    def get_direccion(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.direccion_residencia
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03direccion
+        else:
+            return None
+        
+    def get_email(self, obj):
+        if obj.id_persona_deudor:
+            return obj.id_persona_deudor.email
+        elif obj.id_persona_deudor:
+            return obj.id_persona_deudor.email_empresarial
+        elif obj.id_persona_deudor_pymisis:
+            return obj.id_persona_deudor_pymisis.t03email
+        else:
+            return None
+
+
+    # def get_carteras(self, obj):
+    #     carteras = Cartera.objects.filter(id_deudor=obj.id)
+    #     cartera_data = []
+
+    #     for cartera in carteras:
+    #         cartera_data.append({
+    #             'tipo_renta': cartera.tipo_renta,
+    #             'tipo_cobro': cartera.tipo_cobro,
+    #             'dias_mora': cartera.dias_mora,
+    #             'fecha_facturacion': cartera.fecha_facturacion,
+    #             'resolucion': cartera.num_resolucion,
+    #         })
+
+    #     return cartera_data
+    
+    # def get_liquidaciones(self, obj):
+    #     liquidaciones = LiquidacionesBase.objects.filter(id_deudor=obj.id)
+    #     liquidacion_data = []
+
+    #     for liquidacion in liquidaciones:
+    #         liquidacion_data.append({
+    #             'estado': liquidacion.estado
+    #         })
+
+    #     return liquidacion_data
+    
+    
 
 
 class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):
