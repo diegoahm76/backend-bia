@@ -53,6 +53,7 @@ from transversal.serializers.activacion_organigrama_serializers import (
     ConsecPorNivelesTipologiasDocAgnoSerializer,
     TemporalPersonasUnidadSerializer
 )
+from transversal.utils import UtilsTransversal
 
 
 class OrganigramaActualGetView(generics.ListAPIView):
@@ -91,7 +92,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
     serializer_class = OrganigramaCambioActualSerializer
     permission_classes = [IsAuthenticated]
 
-    def activar_organigrama(self, organigrama_seleccionado, data_desactivar, data_activar, data_auditoria):
+    def activar_organigrama(self, request, organigrama_seleccionado, data_desactivar, data_activar, data_auditoria):
 
         organigrama_seleccionado = Organigramas.objects.get(id_organigrama=organigrama_seleccionado)
         previous_activacion_organigrama = copy.copy(organigrama_seleccionado)
@@ -119,6 +120,17 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
             data_auditoria['valores_actualizados'] = valores_actualizados
             Util.save_auditoria(data_auditoria)
 
+            # Eliminar grupos en sasoftco
+            grupos_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama, cod_agrupacion_documental=None)
+            for unidad in grupos_eliminar:
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                token_camunda = UtilsTransversal.get_token_camunda(token)
+                grupos_sasoftco = UtilsTransversal.get_grupo_funcional_camunda(token_camunda)
+                grupo_eliminar_sasoftco = [grupo['id'] for grupo in grupos_sasoftco if grupo['groupName'] == unidad.nombre]
+                if grupo_eliminar_sasoftco:
+                    UtilsTransversal.delete_grupo_funcional_camunda(token_camunda, grupo_eliminar_sasoftco[0])
+
         serializer = self.serializer_class(organigrama_seleccionado, data=data_activar)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -129,6 +141,23 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
         data_auditoria['descripcion'] = descripcion
         data_auditoria['valores_actualizados'] = valores_actualizados
         Util.save_auditoria(data_auditoria)
+            
+        # Guardar grupos en Sasoftco
+        grupos = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_seleccionado.id_organigrama, cod_agrupacion_documental=None)
+        for grupo in grupos:
+            grupo_obj = {
+                'groupName': grupo.nombre,
+                'groupCoordinator': 'test',
+                'groupCoordinator': 'test',
+                'assignedProfessional': 'test',
+                'assignedReviewer': 'test',
+                'assignedLegalCounsel': 'test'
+            }
+            authorization_header = request.META.get('HTTP_AUTHORIZATION')
+            token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+            token_camunda = UtilsTransversal.get_token_camunda(token)
+            
+            UtilsTransversal.create_grupo_funcional_camunda(token_camunda, grupo_obj)
 
         return Response({'success':True, 'detail':'Organigrama Activado'}, status=status.HTTP_200_OK)
 
@@ -164,7 +193,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
         if not ccd_actual:
 
             data_activar['justificacion_nueva_version'] = data['justificacion']
-            response_org = self.activar_organigrama(organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+            response_org = self.activar_organigrama(request, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
         
         else:
             if not data.get('id_ccd'):
@@ -227,7 +256,7 @@ class OrganigramaCambioActualPutView(generics.UpdateAPIView):
 
                 # Activar Organigrama
                 data_activar['justificacion_nueva_version'] = data['justificacion']
-                response_org = self.activar_organigrama(organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
+                response_org = self.activar_organigrama(request, organigrama_seleccionado.id_organigrama, data_desactivar, data_activar, data_auditoria)
 
                 # Activar CCD
                 data_activar_ccd = data_activar
