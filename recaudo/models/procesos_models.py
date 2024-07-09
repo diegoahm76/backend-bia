@@ -10,7 +10,7 @@ class Bienes(models.Model):
     direccion = models.CharField(max_length=255, db_column='T416direccion')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T416Id_TipoBien')
     documento_soporte = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T416documentoSoporte')
-    id_ubicacion = models.ForeignKey(Ubicaciones, on_delete=models.CASCADE, db_column='T416Id_Ubicacion')
+    id_ubicacion = models.ForeignKey('transversal.Municipio', on_delete=models.SET_NULL, null=True, blank=True, db_column='T416Cod_MunicipioResidenciaNal')
 
     class Meta:
         db_table = 'T416Bienes'
