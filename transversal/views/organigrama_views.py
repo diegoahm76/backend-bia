@@ -50,6 +50,8 @@ from transversal.models.personas_models import Personas
 from datetime import datetime
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 
+from transversal.utils import UtilsTransversal
+
 # VIEWS FOR NIVELES ORGANIGRAMA
 class UpdateNiveles(generics.UpdateAPIView):
     serializer_class = NivelesUpdateSerializer
@@ -337,15 +339,24 @@ class UpdateUnidades(generics.UpdateAPIView):
                 
                 if unidades_eliminar_usados:
                     raise PermissionDenied('No puede eliminar unidades que ya se encuentran en uso')
+                    
+                unidades_eliminar_sec_sub = unidades_eliminar.exclude(cod_agrupacion_documental=None)
+                if unidades_eliminar_sec_sub:
+                    raise PermissionDenied('No puede eliminar unidades de tipo Sección o Subsección')
                 
                 for unidad in unidades_eliminar:
                     unidad_eliminar_padre = UnidadesOrganizacionales.objects.filter(id_unidad_org_padre=unidad.id_unidad_organizacional)
                     if unidad_eliminar_padre:
                         raise PermissionDenied('No puede eliminar unidades que tengan hijos')
-                    
-                unidades_eliminar_sec_sub = unidades_eliminar.exclude(cod_agrupacion_documental=None)
-                if unidades_eliminar_sec_sub:
-                    raise PermissionDenied('No puede eliminar unidades de tipo Sección o Subsección')
+                
+                    # Eliminar grupos en sasoftco
+                    authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                    token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                    token_camunda = UtilsTransversal.get_token_camunda(token)
+                    grupos_sasoftco = UtilsTransversal.get_grupo_funcional_camunda(token_camunda)
+                    grupo_eliminar_sasoftco = [grupo['id'] for grupo in grupos_sasoftco if grupo['groupName'] == unidad.nombre]
+                    if grupo_eliminar_sasoftco:
+                        UtilsTransversal.delete_grupo_funcional_camunda(token_camunda, grupo_eliminar_sasoftco[0])
                 
                 unidades_eliminar.delete()
                 
@@ -495,6 +506,21 @@ class UpdateUnidades(generics.UpdateAPIView):
                                 id_organigrama=organigrama,
                                 id_unidad_org_padre=unidad_org
                             )
+
+                            # Crear grupos en Sasoftco
+                            if not unidad['cod_agrupacion_documental']:
+                                grupo_obj = {
+                                    'groupName': unidad['nombre'],
+                                    'groupCoordinator': 'test',
+                                    'groupCoordinator': 'test',
+                                    'assignedProfessional': 'test',
+                                    'assignedReviewer': 'test',
+                                    'assignedLegalCounsel': 'test'
+                                }
+                                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                                token_camunda = UtilsTransversal.get_token_camunda(token)
+                                UtilsTransversal.create_grupo_funcional_camunda(token_camunda, grupo_obj)
                 
                 # ACTIVAR/DESACTIVAR UNIDADES
                 unidades_actualizar_instances = unidades_instances.filter(id_unidad_organizacional__in=unidades_actualizar_list)
@@ -1037,6 +1063,17 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                 valores_actualizados={'previous':previous_desactivacion_organigrama, 'current':organigrama_actual}
                 auditoria_data = {'id_usuario': user_logeado,'id_modulo': 15,'cod_permiso': 'AC','subsistema': 'GEST','dirip': dirip, 'descripcion': descripcion,'valores_actualizados': valores_actualizados}
                 Util.save_auditoria(auditoria_data)
+
+                # Eliminar grupos en sasoftco
+                grupos_eliminar = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_actual.id_organigrama, cod_agrupacion_documental=None)
+                for unidad in grupos_eliminar:
+                    authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                    token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                    token_camunda = UtilsTransversal.get_token_camunda(token)
+                    grupos_sasoftco = UtilsTransversal.get_grupo_funcional_camunda(token_camunda)
+                    grupo_eliminar_sasoftco = [grupo['id'] for grupo in grupos_sasoftco if grupo['groupName'] == unidad.nombre]
+                    if grupo_eliminar_sasoftco:
+                        UtilsTransversal.delete_grupo_funcional_camunda(token_camunda, grupo_eliminar_sasoftco[0])
             
             organigrama_seleccionado.save()
             if temporal_all:
@@ -1044,6 +1081,22 @@ class CambioDeOrganigramaActual(generics.UpdateAPIView):
                 # id_organigrama_nuevo = organigrama_nuevo
                 if organigrama_seleccionado.id_organigrama not in organigrama_nuevo:
                     temporal_all.delete()
+            
+            # Guardar grupos en Sasoftco
+            grupos = UnidadesOrganizacionales.objects.filter(id_organigrama=organigrama_seleccionado.id_organigrama, cod_agrupacion_documental=None)
+            for grupo in grupos:
+                grupo_obj = {
+                    'groupName': grupo.nombre,
+                    'groupCoordinator': 'test',
+                    'groupCoordinator': 'test',
+                    'assignedProfessional': 'test',
+                    'assignedReviewer': 'test',
+                    'assignedLegalCounsel': 'test'
+                }
+                authorization_header = request.META.get('HTTP_AUTHORIZATION')
+                token = authorization_header.split(' ')[1] if ' ' in authorization_header else authorization_header
+                token_camunda = UtilsTransversal.get_token_camunda(token)
+                UtilsTransversal.create_grupo_funcional_camunda(token_camunda, grupo_obj)
 
             # Auditoria Organigrama activado
             descripcion = {"NombreOrganigrama":str(organigrama_seleccionado.nombre),"VersionOrganigrama":str(organigrama_seleccionado.version)}
