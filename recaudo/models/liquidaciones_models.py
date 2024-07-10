@@ -1,5 +1,5 @@
 from django.db import models
-from recaudo.models.base_models import NaturalezaJuridica, TipoRenta, Ubicaciones
+from recaudo.models.base_models import TipoRenta
 from recaudo.models.extraccion_model_recaudo import T920Expediente, Tercero
 from recaudo.choices.estados_liquidacion_choices import estados_liquidacion_CHOICES
 

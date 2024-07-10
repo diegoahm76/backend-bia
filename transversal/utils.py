@@ -4,6 +4,33 @@ from rest_framework.exceptions import ValidationError
 
 
 class UtilsTransversal:
+
+    @staticmethod
+    def get_token_camunda(token):
+        auth_headers = {
+            "accept": "application/json",
+            "Content-Type": "application/json"
+        }
+
+        #TOKEN PARA SASOFTCO
+        url_login_token = f"{os.environ.get('URL_SASOFTCO')}/api/Authentication/login-token-bia"
+        payload={
+            "access": token
+        }
+
+        try:
+            response = requests.post(url_login_token,json=payload,headers=auth_headers)
+            response.raise_for_status()
+            data = response.json()
+
+            if 'userinfo' in data:
+                if 'userinfo' in data['userinfo']:
+                    info = data['userinfo']['userinfo']
+                    token = info['tokens']['access']
+                    return token
+            return None
+        except requests.RequestException as e:
+            raise ValidationError(f"Error en la solicitud: {e}")
     
     @staticmethod
     def create_grupo_funcional_camunda(token, grupos):
@@ -81,9 +108,10 @@ class UtilsTransversal:
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()  # Si hay un error en la solicitud, generará una excepción
+            data = response.json()
             
             if response.status_code == 200:
-                return True
+                return data
             else:
                 raise ValidationError('Ocurrió un error al crear el grupo en el sistema de Camunda, comuniquese con un administrador')
         except requests.RequestException as e:
