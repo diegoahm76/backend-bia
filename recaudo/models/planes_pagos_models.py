@@ -114,7 +114,7 @@ class FacPagoProyeccion(models.Model):
 
 class HistorialAbonoCartera(models.Model):
     id_historial = models.AutoField(primary_key=True, db_column='T445IdHistorialAbonoCartera')
-    id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T445Id_Cartera')
+    id_cartera = models.ForeignKey('recaudo.Cartera', on_delete=models.CASCADE, db_column='T445Id_Cartera')
     id_plan_pago = models.ForeignKey(PlanPagos, on_delete=models.CASCADE, db_column='T445Id_PlanPago')
     id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T445Id_Funcionario')
     valor_abonado = models.DecimalField(max_digits=30, decimal_places=2, db_column='T445valorAbonado')
