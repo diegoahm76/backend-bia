@@ -1,6 +1,7 @@
 from django.db import models
 from recaudo.models.base_models import TiposPago
 from recaudo.models.facilidades_pagos_models import FacilidadesPago
+from recaudo.models.cobros_models import Cartera
 #from seguridad.models import Personas
 
 
@@ -109,3 +110,18 @@ class FacPagoProyeccion(models.Model):
         db_table = 'T439FacPagoProyeccion'
         verbose_name = 'Fac Pago Proyeccion'
         verbose_name_plural = 'Fac Pagos Proyeccion'
+
+
+class HistorialAbonoCartera(models.Model):
+    id_historial = models.AutoField(primary_key=True, db_column='T445IdHistorialAbonoCartera')
+    id_cartera = models.ForeignKey(Cartera, on_delete=models.CASCADE, db_column='T445Id_Cartera')
+    id_plan_pago = models.ForeignKey(PlanPagos, on_delete=models.CASCADE, db_column='T445Id_PlanPago')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T445Id_Funcionario')
+    valor_abonado = models.DecimalField(max_digits=30, decimal_places=2, db_column='T445valorAbonado')
+    fecha_abono = models.DateField(db_column='T445fechaAbono')
+    fecha_creacion_registro = models.DateTimeField(auto_now_add=True, db_column='T445fechaCreacionRegistro')
+
+    class Meta:
+        db_table = 'T445HistorialAbonoCartera'
+        verbose_name = 'Historial abono cartera'
+        verbose_name_plural = 'Historial abonos cartera'

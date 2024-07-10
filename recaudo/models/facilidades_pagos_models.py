@@ -1,10 +1,8 @@
 from django.db import models
 from recaudo.models.base_models import TipoActuacion
 from recaudo.models.liquidaciones_models import Deudores
-#from recaudo.models.cobros_models import Cartera
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.garantias_models import RolesGarantias
-#from seguridad.models import Personas
 
 
 class FacilidadesPago(models.Model):
