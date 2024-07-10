@@ -1,7 +1,7 @@
 from django.db import models
 from recaudo.models.base_models import TiposPago
 from recaudo.models.facilidades_pagos_models import FacilidadesPago
-from recaudo.models.cobros_models import Cartera
+# from recaudo.models.cobros_models import Cartera
 #from seguridad.models import Personas
 
 
