@@ -1,5 +1,5 @@
 from django.db import models
-from recaudo.models.base_models import TiposBien, Ubicaciones
+from recaudo.models.base_models import TiposBien
 from recaudo.models.liquidaciones_models import Deudores
 
 
