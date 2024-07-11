@@ -265,6 +265,7 @@ class SubZonaHidricaTrListVieww(generics.ListAPIView):
     
 
 class FuncionesAuxiliares:
+    @staticmethod
     def get_tramite_sasoftco(self, tramite):
         cadena = ""
         radicado = tramite.id_solicitud_tramite.id_radicado
@@ -296,6 +297,7 @@ class FuncionesAuxiliares:
             
         return organized_data
 
+    @staticmethod
     def convertir_coordenadas_dms(self, valor_decimal):
         print(valor_decimal)
         print(type(valor_decimal))
@@ -338,11 +340,11 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
         if fecha_fin:
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
-        funciones_auxiliares = FuncionesAuxiliares()
+        #funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
         for tramite in tramites:
-            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            tramite_data = FuncionesAuxiliares.get_tramite_sasoftco(tramite)
             
             data = {
                 'INFORMACION DE USUARIO': {
@@ -401,8 +403,8 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
             if 'Mapa1' in tramite_data:
                 latitud = tramite_data['Mapa1'].split(',')[0]
                 longitud = tramite_data['Mapa1'].split(',')[1]
-                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
-                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                grados_latitud, minutos_latitud, segundos_latitud = FuncionesAuxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = FuncionesAuxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud if grados_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud if minutos_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud if segundos_latitud else None
@@ -417,8 +419,8 @@ class ServicioCaptacionJuridicaView(generics.ListAPIView):
             if 'Mapa2' in tramite_data:
                 latitud_captacion = tramite_data['Mapa2'].split(',')[0]
                 longitud_captacion = tramite_data['Mapa2'].split(',')[1]
-                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
-                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = FuncionesAuxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = FuncionesAuxiliares.convertir_coordenadas_dms(longitud_captacion)
                 data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c if grados_latitud_c else None
                 data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c if minutos_latitud_c else None
                 data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c if segundos_latitud_c else None
@@ -452,11 +454,11 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
         if fecha_fin:
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
-        funciones_auxiliares = FuncionesAuxiliares()
+        #funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
         for tramite in tramites:
-            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            tramite_data = FuncionesAuxiliares.get_tramite_sasoftco(tramite)
             
             data = {
                 'INFORMACION DE USUARIO': {
@@ -508,8 +510,8 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
             if 'Mapa1' in tramite_data:
                 latitud = tramite_data['Mapa1'].split(',')[0]
                 longitud = tramite_data['Mapa1'].split(',')[1]
-                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
-                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                grados_latitud, minutos_latitud, segundos_latitud = FuncionesAuxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = FuncionesAuxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud if grados_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud if minutos_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud if segundos_latitud else None
@@ -524,8 +526,8 @@ class ServicioCaptacionNaturalView(generics.ListAPIView):
             if 'Mapa2' in tramite_data:
                 latitud_captacion = tramite_data['Mapa2'].split(',')[0]
                 longitud_captacion = tramite_data['Mapa2'].split(',')[1]
-                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
-                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = FuncionesAuxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = FuncionesAuxiliares.convertir_coordenadas_dms(longitud_captacion)
                 data['GEOREFERENCIACION DE LA CAPTACION']['GRAD LAT'] = grados_latitud_c if grados_latitud_c else None
                 data['GEOREFERENCIACION DE LA CAPTACION']['MIN LAT'] = minutos_latitud_c if minutos_latitud_c else None
                 data['GEOREFERENCIACION DE LA CAPTACION']['SEG LAT'] = segundos_latitud_c if segundos_latitud_c else None
@@ -558,11 +560,11 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__gte=fecha_inicio)
         if fecha_fin:
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
-        funciones_auxiliares = FuncionesAuxiliares()
+        #funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
         for tramite in tramites:
-            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            tramite_data = FuncionesAuxiliares.get_tramite_sasoftco(tramite)
             
             data = {
                 'INFORMACION DE USUARIO': {
@@ -628,8 +630,8 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
             if 'Mapa1' in tramite_data:
                 latitud = tramite_data['Mapa1'].split(',')[0]
                 longitud = tramite_data['Mapa1'].split(',')[1]
-                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
-                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                grados_latitud, minutos_latitud, segundos_latitud = FuncionesAuxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = FuncionesAuxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud if grados_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud if minutos_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud if segundos_latitud else None
@@ -644,8 +646,8 @@ class ServicioVertimientoNaturalView(generics.ListAPIView):
             if 'Mapa2' in tramite_data:
                 latitud_captacion = tramite_data['Mapa2'].split(',')[0]
                 longitud_captacion = tramite_data['Mapa2'].split(',')[1]
-                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
-                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = FuncionesAuxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = FuncionesAuxiliares.convertir_coordenadas_dms(longitud_captacion)
                 data['GEOREFERENCIACION DEL VERTIMIENTO']['GRAD LAT'] = grados_latitud_c if grados_latitud_c else None
                 data['GEOREFERENCIACION DEL VERTIMIENTO']['MIN LAT'] = minutos_latitud_c if minutos_latitud_c else None
                 data['GEOREFERENCIACION DEL VERTIMIENTO']['SEG LAT'] = segundos_latitud_c if segundos_latitud_c else None
@@ -678,11 +680,11 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
         if fecha_fin:
             tramites = tramites.filter(id_solicitud_tramite__fecha_radicado__lte=fecha_fin)
         print(tramites)
-        funciones_auxiliares = FuncionesAuxiliares()
+        #funciones_auxiliares = FuncionesAuxiliares()
         data_list = []
 
         for tramite in tramites:
-            tramite_data = funciones_auxiliares.get_tramite_sasoftco(tramite)
+            tramite_data = FuncionesAuxiliares.get_tramite_sasoftco(tramite)
             print(tramite)
             print(tramite_data)
             
@@ -757,8 +759,8 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
             if 'Mapa1' in tramite_data:
                 latitud = tramite_data['Mapa1'].split(',')[0]
                 longitud = tramite_data['Mapa1'].split(',')[1]
-                grados_latitud, minutos_latitud, segundos_latitud = funciones_auxiliares.convertir_coordenadas_dms(latitud)
-                grados_longitud, minutos_longitud, segundos_longitud = funciones_auxiliares.convertir_coordenadas_dms(longitud)
+                grados_latitud, minutos_latitud, segundos_latitud = FuncionesAuxiliares.convertir_coordenadas_dms(latitud)
+                grados_longitud, minutos_longitud, segundos_longitud = FuncionesAuxiliares.convertir_coordenadas_dms(longitud)
                 data['GEOREFERENCIACION DEL PREDIO']['GRAD LAT'] = grados_latitud if grados_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['MIN LAT'] = minutos_latitud if minutos_latitud else None
                 data['GEOREFERENCIACION DEL PREDIO']['SEG LAT'] = segundos_latitud if segundos_latitud else None
@@ -773,8 +775,8 @@ class ServicioVertimientoJuridicaView(generics.ListAPIView):
             if 'Mapa2' in tramite_data: 
                 latitud_captacion = tramite_data['Mapa2'].split(',')[0]
                 longitud_captacion = tramite_data['Mapa2'].split(',')[1]
-                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = funciones_auxiliares.convertir_coordenadas_dms(latitud_captacion)
-                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = funciones_auxiliares.convertir_coordenadas_dms(longitud_captacion)
+                grados_latitud_c, minutos_latitud_c, segundos_latitud_c = FuncionesAuxiliares.convertir_coordenadas_dms(latitud_captacion)
+                grados_longitud_c, minutos_longitud_c, segundos_longitu_c = FuncionesAuxiliares.convertir_coordenadas_dms(longitud_captacion)
                 data['GEOREFERENCIACION DEL VERTIMIENTO']['GRAD LAT'] = grados_latitud_c if grados_latitud_c else None
                 data['GEOREFERENCIACION DEL VERTIMIENTO']['MIN LAT'] = minutos_latitud_c if minutos_latitud_c else None
                 data['GEOREFERENCIACION DEL VERTIMIENTO']['SEG LAT'] = segundos_latitud_c  if segundos_latitud_c else None
