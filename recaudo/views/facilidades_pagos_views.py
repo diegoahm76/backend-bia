@@ -1,5 +1,6 @@
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from gestion_documental.utils import UtilsGestor
+from gestion_documental.views.pqr_views import RadicadoCreate
 from recaudo.serializers.facilidades_pagos_serializers import (
     AvaluosSerializer,
     CarteraSerializer,
@@ -552,13 +553,14 @@ class DetallesFacilidadPagoCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearSolicitudFacilidadPago]
 
     def crear_cartera_facilidad(self, data):
-        cartera = Cartera.objects.filter(id=data['id_cartera']).first()
-        facilidad_pago = FacilidadesPago.objects.filter(id=data['id_facilidad_pago']).first()
-        
-        if not cartera:
+        try:
+            cartera = Cartera.objects.get(id=data['id_cartera'])
+        except Cartera.DoesNotExist:
             raise NotFound('No existe cartera relacionado con la informacion ingresada')
         
-        if not facilidad_pago:
+        try:
+            facilidad_pago = FacilidadesPago.objects.get(id=data['id_facilidad_pago'])
+        except FacilidadesPago.DoesNotExist:
             raise NotFound('No existe facilidad de pago relacionada con la informacion ingresada')
         
         if cartera.id_deudor != facilidad_pago.id_deudor:
@@ -598,16 +600,11 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         facilidad_pago = serializer.save()
         return facilidad_pago, total_plazos
     
-    def generar_numero_radicacion(self):
-        # letras = ''.join(random.choices(string.ascii_uppercase, k=3))
-        letras = 'FDP'
-        numeros = ''.join(random.choices(string.digits, k=7))
-        numero_radicacion = f"{letras}{numeros}"
-        return numero_radicacion
-    
     def post(self, request):
         data_in = request.data
         data_in._mutable=True
+        print(data_in)
+        fecha_actual =datetime.now()
         instancia_bien = BienCreateView()
         instancia_avaluo = AvaluoCreateView()
         instancia_det_bien_facilidad = DetallesBienFacilidadPagoCreateView()
@@ -615,8 +612,21 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
         consignacion_soporte = request.FILES.get('consignacion_soporte')
         documento_no_enajenacion = request.FILES.get('documento_no_enajenacion')
 
+        data_radicado = {}
+        data_radicado['fecha_actual'] = fecha_actual
+        data_radicado['id_persona'] = request.user.persona.id_persona
+        data_radicado['tipo_radicado'] = "E" #validar cual tipo de radicado
+        data_radicado['modulo_radica'] = 'Solicitudes para realizar facilidades de pago'
+
+        radicadoCreate = RadicadoCreate()
+                
+        respuesta_radicado = radicadoCreate.post(data_radicado)
+        print(respuesta_radicado)
+
+        data_in['id_radicado'] = respuesta_radicado['id_radicado']
+        data_in['fecha_radicado'] = respuesta_radicado['fecha_radicado']
+
         #CREAR FACILIDAD DE PAGO
-        numero_radicado = self.generar_numero_radicacion()
         facilidad_pago = None
 
         fecha_abono_a = data_in['fecha_abono']
@@ -661,7 +671,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
             'documento_no_enajenacion':data_in['documento_no_enajenacion'],
             'id_funcionario':data_in['id_funcionario'],
             'notificaciones':data_in['notificaciones'],
-            'numero_radicacion': numero_radicado
+            'id_radicado': respuesta_radicado['id_radicado']
         }
 
         descripciones_bien = data_in.getlist('descripcion')
@@ -761,6 +771,7 @@ class FacilidadPagoCreateView(generics.CreateAPIView):
                 
         documentos_deudor = request.FILES.getlist('documento_deudor')
         requisitos = RequisitosActuacion.objects.filter(id_tipo_actuacion=data_in['id_tipo_actuacion'])
+        print("requisitos = ", len(requisitos), "Documentos = ", len(documentos_deudor))
 
         if len(documentos_deudor) != len(requisitos):
             raise ValidationError('No se pudo crear la solicitud por falta de documentos del deudor')
