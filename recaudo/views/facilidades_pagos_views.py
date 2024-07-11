@@ -826,12 +826,15 @@ class ListadoFacilidadesPagoViews(generics.ListAPIView):
         identificacion = data['identificacion']
         nombre_de_usuario = data['nombre_de_usuario']
 
+
         deudores = None
         deudores = get_info_deudor(None, identificacion, nombre_de_usuario)
-        deudor_ids = [deudor['id_deudor'] for deudor in deudores]
+        deudor_ids = [deudor['id_deudor'] for deudor in deudores] if deudores else None
+
 
         if deudor_ids:
-            facilidades_pago = facilidades_pago.filter(id_deudor__in=deudor_ids)        
+            facilidades_pago = facilidades_pago.filter(id_deudor__in=deudor_ids)   
+               
 
         return facilidades_pago.order_by('-fecha_generacion')
     
@@ -864,11 +867,11 @@ class ListadoFacilidadesPagoAdminViews(generics.ListAPIView):
 
         serializer = self.serializer_class(facilidades_pago, many=True)
         id_user = request.user.persona
-        asignar = [id_user == facilidad.id_funcionario for facilidad in facilidades_pago]
+        #asignar = [id_user == facilidad.id_funcionario for facilidad in facilidades_pago]
         data = serializer.data
 
-        for i in range(len(data)):
-            data[i]['asignar'] = asignar[i]
+        # for i in range(len(data)):
+        #     data[i]['asignar'] = asignar[i]
         
         return Response({'success': True, 'detail': 'Se muestra las facilidades de pago de los deudores', 'data':data}, status=status.HTTP_200_OK)
 

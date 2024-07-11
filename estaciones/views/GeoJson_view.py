@@ -26,8 +26,8 @@ class GeoJsonConcesionAguasSuperficialesView(generics.ListAPIView):
                         "coordinates": [tramite_sasoftco['longitud'], tramite_sasoftco['latitud']]
                     },
                     "properties": {
-                        "municipio": tramite.id,
-                        "tipo_determinante": tramite_sasoftco['nombre'],
+                        "municipio": tramite_sasoftco['Mun_fuente'],
+                        "tipo_determinante": tramite.id_permiso_ambiental.nombre,
                         "tipo_elementos_proteccion": tramite_sasoftco['tipo'],
                         "nombre_geografico": tramite.fecha_creacion,
                         "area": tramite.estado,
