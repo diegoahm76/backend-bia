@@ -1,4 +1,5 @@
 from django.db import models
+from gestion_documental.models.radicados_models import T262Radicados
 from recaudo.models.base_models import TipoActuacion
 from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.procesos_models import Bienes
@@ -20,7 +21,7 @@ class FacilidadesPago(models.Model):
     observaciones = models.TextField(db_column='T426observaciones')
     id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
-    numero_radicacion = models.CharField(max_length=255, db_column='T426numeroRadicacion')
+    id_radicado = models.ForeignKey(T262Radicados, null=True, blank=True, on_delete=models.SET_NULL, db_column='T426Id_Radicado')
 
     class Meta:
         db_table = 'T426FacilidadesPago'
