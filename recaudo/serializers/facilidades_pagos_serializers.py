@@ -158,6 +158,8 @@ class DeudorDatosSerializer(serializers.ModelSerializer):
 
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
+    numero_radicado = serializers.SerializerMethodField()
+
     class Meta:
         model = FacilidadesPago
         fields = '__all__'
@@ -169,6 +171,13 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
             'consignacion_soporte': {'required':True}
         }
 
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
+
 
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     identificacion = serializers.SerializerMethodField()
@@ -177,6 +186,7 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
     tiene_plan_pago = serializers.SerializerMethodField()
     id_persona = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
 
     def get_identificacion(self, obj):
         if obj.id_deudor.id_persona_deudor:
@@ -220,10 +230,17 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
             id_persona = None
         return id_persona
     
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
+    
     
     class Meta:
         model = FacilidadesPago
-        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicacion','fecha_generacion','nombre_funcionario', 'id_persona','tiene_plan_pago')
+        fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicado','fecha_generacion','nombre_funcionario', 'id_persona','tiene_plan_pago')
 
 
 class FacilidadesPagoFuncionarioPutSerializer(serializers.ModelSerializer):
@@ -251,14 +268,22 @@ class FacilidadPagoGetByIdSerializer(serializers.ModelSerializer):
     documento_soporte = serializers.ReadOnlyField(source='documento_soporte.ruta_archivo.url', default=None)
     consignacion_soporte = serializers.ReadOnlyField(source='consignacion_soporte.ruta_archivo.url', default=None)
     documento_no_enajenacion = serializers.ReadOnlyField(source='documento_no_enajenacion.ruta_archivo.url', default=None)
+    numero_radicado = serializers.SerializerMethodField()
 
     class Meta:
         model = FacilidadesPago
         fields = ('id', 'id_deudor', 'id_tipo_actuacion', 'tipo_actuacion', 'fecha_generacion',
                   'observaciones', 'periodicidad', 'cuotas', 'documento_soporte', 'consignacion_soporte',
                   'valor_abonado', 'fecha_abono', 'documento_no_enajenacion', 'id_funcionario',
-                  'notificaciones', 'numero_radicacion'
+                  'notificaciones', 'numero_radicado'
                   )
+        
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
 
 
 class BienesDeudorSerializer(serializers.ModelSerializer):
@@ -415,10 +440,11 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
 
 class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
     estado = serializers.SerializerMethodField()
+    numero_radicado = serializers.SerializerMethodField()
 
     class Meta:
         model = FacilidadesPago
-        fields = ('id','numero_radicacion','estado')
+        fields = ('id','numero_radicado','estado')
 
     def get_estado(self, obj):
         respuesta_solicitud = RespuestaSolicitud.objects.filter(id_facilidad_pago=obj.id).first()
@@ -427,6 +453,13 @@ class ListadoFacilidadesSeguimientoSerializer(serializers.ModelSerializer):
         else:
             estado = respuesta_solicitud.estado
         return estado
+    
+    def get_numero_radicado(self,obj):
+        cadena = ""
+        if obj.id_radicado:
+            cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
+            return cadena
+        return 'SIN RADICAR'
     
 
 class ProcesosCarteraSerializer(serializers.ModelSerializer):
