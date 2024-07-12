@@ -3524,6 +3524,20 @@ class ConsecutivoTipologiaDoc(generics.CreateAPIView):
 
                 newPayload[firma] = InlineImage(doc, image, width=Mm(20))
 
+                # Validar nombre firma
+                doc_firma = firma.split('_')[1]
+                persona = Personas.objects.filter(numero_documento=doc_firma).first()
+                if persona:
+                    nombre_completo_persona = None
+                    if persona.tipo_persona == 'J':
+                        nombre_completo_persona = persona.razon_social
+                    else:
+                        nombre_list = [persona.primer_nombre, persona.segundo_nombre,
+                                        persona.primer_apellido, persona.segundo_apellido]
+                        nombre_completo_persona = ' '.join(item for item in nombre_list if item is not None)
+                        nombre_completo_persona = nombre_completo_persona if nombre_completo_persona != "" else None
+                    newPayload[f"Nombre_{doc_firma}"] = nombre_completo_persona
+
         return newPayload
         
     def generarDocCopia(self, payload, plantilla):
