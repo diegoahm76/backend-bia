@@ -266,7 +266,7 @@ class SubZonaHidricaTrListVieww(generics.ListAPIView):
 
 class FuncionesAuxiliares:
     @staticmethod
-    def get_tramite_sasoftco(self, tramite):
+    def get_tramite_sasoftco(tramite):
         cadena = ""
         radicado = tramite.id_solicitud_tramite.id_radicado
         organized_data = {}
@@ -298,7 +298,7 @@ class FuncionesAuxiliares:
         return organized_data
 
     @staticmethod
-    def convertir_coordenadas_dms(self, valor_decimal):
+    def convertir_coordenadas_dms(valor_decimal):
         print(valor_decimal)
         print(type(valor_decimal))
         #valor_absoluto = abs(int(valor_decimal))
