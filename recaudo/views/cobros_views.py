@@ -35,7 +35,7 @@ class CarteraGeneralView(generics.ListAPIView):
 
     def get(self, request):
         self.pagination_class.default_limit = self.page_size
-        queryset = self.get_queryset()
+        queryset = self.get_queryset().order_by('-fecha_facturacion')
         page = self.paginate_queryset(queryset)
 
         if page is not None:
