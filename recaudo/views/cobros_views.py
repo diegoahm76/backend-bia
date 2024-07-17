@@ -269,11 +269,13 @@ class InfoTuaView(generics.ListAPIView):
         tramite_fuente = T973TramiteFteHidTra.objects.filter(t973idtramite=tramite.t970idtramite).first()
         fuente_hidrica = None
         municipio = None
+        clase_uso_agua = None
         if tramite_fuente:
             fuente_hidrica = Rt956FuenteHid.objects.filter(t956codfuentehid=tramite_fuente.t973codfuentehid).first()
         tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
         tua_captacion = Rt982Tuacaptacion.objects.filter(t982numtua=tua.t980numtua).first()
-        clase_uso_agua = RtClaseUsoAgua.objects.filter(cod_clase_uso_agua=tua_captacion.t982codclaseusoagua).first()
+        if tua_captacion:
+            clase_uso_agua = RtClaseUsoAgua.objects.filter(cod_clase_uso_agua=tua_captacion.t982codclaseusoagua).first()
         cobro = Rt954Cobro.objects.filter(t954idcobro=tua.t980idcobro).first()
         tramite_ubicacion = T972TramiteUbicacion.objects.filter(t972idtramite=tramite.t970idtramite).first()
         if tramite_ubicacion:
@@ -289,7 +291,7 @@ class InfoTuaView(generics.ListAPIView):
             'fecha_resolucion': tramite.t970fecharesperm,
             'nombre_fuente_hidrica': fuente_hidrica.t956nombre if fuente_hidrica else None,
             'caudal_concesionado': tramite.t970tuacaudalconcesi,
-            'clase_uso_agua': clase_uso_agua.nombre,
+            'clase_uso_agua': clase_uso_agua.nombre if clase_uso_agua else None,
             'factor_regional': cobro.t954tuafr,
             'predio': tramite.t970tuapredio,
             'municipio': municipio.t25nombre if municipio else None,
