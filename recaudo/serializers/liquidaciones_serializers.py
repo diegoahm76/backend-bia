@@ -10,8 +10,7 @@ from recaudo.models.liquidaciones_models import (
 )
 from recaudo.models.cobros_models import (
     Cartera,
-    ConceptoContable,
-    VistaCarteraTua
+    ConceptoContable
 )
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):

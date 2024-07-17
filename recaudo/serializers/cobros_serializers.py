@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from recaudo.models.cobros_models import Cartera, ConceptoContable, VistaCarteraTua
+from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.models.liquidaciones_models import (
     Deudores
 )
@@ -132,10 +132,6 @@ class CarteraPostSerializer(serializers.ModelSerializer):
         model = Cartera
         fields = ('__all__')
     
-class VistaCarteraTuaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VistaCarteraTua
-        fields = '__all__' #['fecha', 'cod_cia', 'tipo_renta', 'cuenta_contable', 'nit', 'nombre_deudor', 'fecha_fac', 'fecha_notificacion', 'fecha_en_firme', 'corte_desde', 'corte_hasta', 'num_factura', 'num_liquidacion', 'periodo', 'agno', 'expediente', 'num_resolucion', 'recurso', 'doc_auto', 'saldo_capital', 'saldo_intereses', 'dias_mora']
 
 
 class RangosSerializer(serializers.ModelSerializer):

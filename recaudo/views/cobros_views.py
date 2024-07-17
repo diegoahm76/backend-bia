@@ -1,11 +1,12 @@
 from django.db import connection
+from django.forms import ValidationError
 from recaudo.models.base_models import RangosEdad
+
 from recaudo.models.cobros_models import (
     Cartera,
-    ConceptoContable,
-    VistaCarteraTua
+    ConceptoContable
 )
-from recaudo.models.extraccion_model_recaudo import T920Expediente, Tercero
+from recaudo.models.extraccion_model_recaudo import Rt954Cobro, Rt956FuenteHid, Rt970Tramite, Rt980Tua, Rt982Tuacaptacion, RtClaseUsoAgua, T920Expediente, T971TramiteTercero, T973TramiteFteHidTra, Tercero
 from recaudo.models.liquidaciones_models import (
     Deudores,
     Expedientes
@@ -19,9 +20,7 @@ from recaudo.serializers.cobros_serializers import (
     EtapasSerializer,
     RangosSerializer,
     SubEtapasSerializer,
-    TiposAtributosSerializer,
-    VistaCarteraTuaSerializer
-)
+    TiposAtributosSerializer)
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
@@ -134,6 +133,8 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'monto_inicial': item_cartera['saldocapital'],
                 'num_resolucion': item_cartera['numresolucion'],
                 'tipo_cobro': item_cartera['tiporenta'],
+                'caudal_concesionado': item_cartera['caudalconcesionado'] if item_cartera['caudalconcesionado'] else None,
+                'tipo_agua': item_cartera['claseusoagua'] if item_cartera['claseusoagua'] else None,
                 'tipo_renta': item_cartera['tiporenta'],
             }
             deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
@@ -240,4 +241,53 @@ class TiposAtributosGetView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
 
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class InfoTuaView(generics.ListAPIView):
+
+    def get(self, request, id_expediente):
+        expediente = Expedientes.objects.filter(id=id_expediente).first()
+
+        data = None
+
+        if expediente:
+            if expediente.id_expediente_pimisys:
+                data = self.pymisis(expediente.id_expediente_pimisys)
+            else:
+                data = self.bia(expediente.id_expediente_doc)
+        else:
+            raise ValidationError('Expediente no encontrado')
+
+        return Response({'success': True, 'data': data}, status=status.HTTP_200_OK)
+    
+    def pymisis(self, expediente):
+        tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.t920codexpediente, t970codtipotramite = 'TUAIM').first()
+        tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
+        titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
+        tramite_fuente = T973TramiteFteHidTra.objects.filter(t973idtramite=tramite.t970idtramite).first()
+        if tramite_fuente:
+            fuente_hidrica = Rt956FuenteHid.objects.filter(t956codfuentehid=tramite_fuente.t973codfuentehid).first()
+        tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
+        tua_captacion = Rt982Tuacaptacion.objects.filter(t982numtua=tua.t980numtua).first()
+        clase_uso_agua = RtClaseUsoAgua.objects.filter(cod_clase_uso_agua=tua_captacion.t982codclaseusoagua).first()
+        cobro = Rt954Cobro.objects.filter(t954idcobro=tua.t980idcobro).first()
+        data = {
+            'nit_titular': titular.t03nit,
+            'nombre_titular': titular.t03nombre,
+            'direccion_titular': titular.t03direccion,
+            'telefono_titular': titular.t03telefono,
+            'expediente': expediente.t920codexpediente,
+            'num_resolucion': tramite.t970numresolperm,
+            'fecha_resolucion': tramite.t970fecharesperm,
+            'nombre_fuente_hidrica': fuente_hidrica.t956nombre if fuente_hidrica.t956nombre else None,
+            #'municipio': fuente_hidrica.t956municipio,
+            'caudal_concesionado': tramite.t970tuacaudalconcesi,
+            'clase_uso_agua': clase_uso_agua.nombre,
+            'factor_regional': cobro.t954tuafr,
+
+        }
+        return data
+
+    def bia(self):
+        pass
         
