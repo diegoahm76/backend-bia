@@ -673,7 +673,7 @@ class CarteraListView(generics.ListAPIView):
         grouped_data = {}
         for key, group in groupby(serializer.data, key=itemgetter('id_rango')):
             nombre_rango = nombres_rangos.get(key, "Desconocido")
-            total_sancion = sum(float(item['valor_sancion']) for item in group)
+            total_sancion = sum(float(item['valor_sancion']) if item['valor_sancion'] is not None else 0 for item in group)
             grouped_data[nombre_rango] = total_sancion
 
         # Retornar la respuesta con los datos procesados
@@ -729,7 +729,6 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
         id_rango = self.request.query_params.get('id_rango')
         etapa = self.request.query_params.get('etapa')
 
-
         if fecha_facturacion_desde:
             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
 
@@ -750,10 +749,25 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        # Obtener la suma total de valor_sancion para cada codigo_contable
-        total_por_codigo_contable = queryset.values('codigo_contable', 'codigo_contable__descripcion').annotate(total_sancion=Sum('valor_sancion'))
+        # Obtener la suma total de valor_sancion para cada codigo_contable, incluyendo 'codigo_contable_valor'
+        total_por_codigo_contable = queryset.values(
+            'codigo_contable', 
+            'codigo_contable__descripcion',
+            'codigo_contable__codigo_contable' 
+        ).annotate(total_sancion=Sum('valor_sancion'))
 
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_codigo_contable}, status=status.HTTP_200_OK)
+        # Formatear la respuesta para incluir 'codigo_contable_valor'
+        response_data = [
+            {
+                'codigo_contable': item['codigo_contable'],
+                'descripcion': item['codigo_contable__descripcion'],
+                'codigo_contable_valor': item['codigo_contable__codigo_contable'],
+                'total_sancion': item['total_sancion']
+            }
+            for item in total_por_codigo_contable
+        ]
+
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': response_data}, status=status.HTTP_200_OK)
     
 
 class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
@@ -789,7 +803,8 @@ class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
         # Crear un diccionario para almacenar la suma total de valor_sancion por cada codigo_contable
         total_sancion_por_codigo_contable = defaultdict(float)
         for data in serializer.data:
-            total_sancion_por_codigo_contable[data['codigo_contable__descripcion']] += float(data['valor_sancion'])
+            valor_sancion = float(data['valor_sancion']) if data['valor_sancion'] is not None else 0.0
+            total_sancion_por_codigo_contable[data['codigo_contable__descripcion']] += valor_sancion
 
         # Obtener los top 5 basados en la suma total de valor_sancion para cada codigo_contable
         top_5 = nlargest(5, total_sancion_por_codigo_contable.items(), key=lambda x: x[1])
@@ -801,18 +816,19 @@ class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
         grouped_data_top_5 = {}
         for key, group in groupby(serializer.data, key=itemgetter('codigo_contable__descripcion')):
             if key in top_5_dict:
-                group_data = list(group) 
-                descripcion = group_data[0]['codigo_contable__descripcion']  
-                codigo_contable = group_data[0]['codigo_contable']  
-                codigo_contable = group_data[0]['codigo_contable']  
+                group_data = list(group)
+                descripcion = group_data[0]['codigo_contable__descripcion']
+                codigo_contable = group_data[0]['codigo_contable']
                 # Calcular el total_sancion solo para los datos del top 5 de cada codigo_contable
-                total_sancion_top_5 = sum(float(item['valor_sancion']) for item in group_data)
+                total_sancion_top_5 = sum(float(item['valor_sancion']) if item['valor_sancion'] is not None else 0.0 for item in group_data)
                 # Agregar la suma total de valor_sancion de los datos del top 5
                 total_sancion_total = total_sancion_por_codigo_contable[descripcion]
                 grouped_data_top_5[descripcion] = {'codigo_contable': codigo_contable, 'total_sancion': total_sancion_total}
 
         # Retornar la respuesta con los datos procesados
         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': grouped_data_top_5, 'top_5_por_codigo_contable': top_5_dict}, status=status.HTTP_200_OK)
+
+
 
 class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
     serializer_class = CarteraSerializer
@@ -854,7 +870,7 @@ class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
             codigo_contable = data['codigo_contable']
             descripcion = data['codigo_contable__descripcion']
             rango_id = data['id_rango']
-            total_sancion = float(data['valor_sancion'])
+            total_sancion = float(data['valor_sancion']) if data['valor_sancion'] is not None else 0.0
 
             # Obtener la descripción del rango
             descripcion_rango = rangos.get(rango_id, 'Desconocido')
@@ -868,7 +884,7 @@ class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
             detalles_por_codigo_contable[descripcion][descripcion_rango] += total_sancion
 
         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': detalles_por_codigo_contable}, status=status.HTTP_200_OK)
-
+    
 
 # class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
 #     serializer_class = CarteraSerializer
@@ -964,9 +980,9 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
         # Crear un diccionario para almacenar la suma de total_sancion para cada combinación de codigo_contable e id_rango
         grouped_data = defaultdict(float)
         for item in serializer.data:
-            descripcion = item['codigo_contable__descripcion']  # Acceder al campo 'codigo_contable__descripcion' desde el serializador
+            descripcion = item['codigo_contable__descripcion'] 
             id_rango = item['id_rango']
-            total_sancion = float(item['valor_sancion'])
+            total_sancion = float(item['valor_sancion']) if item['valor_sancion'] is not None else 0.0
             grouped_data[(descripcion, id_rango)] += total_sancion
 
         # Calcular la suma total de total_sancion para cada codigo_contable
@@ -987,7 +1003,8 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
             for key, value in grouped_data.items():
                 descripcion, id_rango = key
                 if descripcion == codigo_contable:
-                    detalles_por_codigo_contable[codigo_contable][rangos[id_rango]] = value  # Utilizar el id_rango como clave para obtener la descripción del rango desde el diccionario 'rangos'
+                    if id_rango in rangos:
+                        detalles_por_codigo_contable[codigo_contable][rangos[id_rango]] = value  
 
         # Retornar la respuesta con los datos procesados
         return Response({
@@ -1031,24 +1048,18 @@ class CarteraDeudoresTop(generics.ListAPIView):
         # Obtener los top 10 deudores basados en la suma total del valor_sancion
         top_10_deudores = queryset.values('id_deudor').annotate(total_sancion=models.Sum('valor_sancion')).order_by('-total_sancion')[:10]
 
-        # Obtener la información detallada de los deudores en el top 10
+        # Obtener las instancias de los deudores en el top 10
+        deudores_ids = [deudor['id_deudor'] for deudor in top_10_deudores]
+        deudores_objs = Deudores.objects.filter(id__in=deudores_ids)
+
+        # Crear un diccionario para mapear deudor_id a total_sancion
+        deudores_total_sancion = {deudor['id_deudor']: deudor['total_sancion'] for deudor in top_10_deudores}
+
+        # Serializar los datos de los deudores
         deudores_data = []
-        for deudor_info in top_10_deudores:
-            deudor_id = deudor_info['id_deudor']
-            deudor_obj = Deudores.objects.get(id=deudor_id)
-            total_sancion = deudor_info['total_sancion']
-            deudor_data = {
-                'id': deudor_obj.id,
-                'identificacion': deudor_obj.identificacion,
-                'nombres': deudor_obj.nombres,
-                'apellidos': deudor_obj.apellidos,
-                'telefono': deudor_obj.telefono,
-                'email': deudor_obj.email,
-                'ubicacion_id': deudor_obj.ubicacion_id.id,
-                'naturaleza_juridica_id': deudor_obj.naturaleza_juridica_id.id,
-                'id_persona_deudor': deudor_obj.id_persona_deudor,
-                'total_sancion': total_sancion
-            }
-            deudores_data.append(deudor_data)
+        for deudor in deudores_objs:
+            deudor.total_sancion = deudores_total_sancion[deudor.id]
+            deudores_data.append(DeudorSumSerializer(deudor).data)
 
         return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)
+
