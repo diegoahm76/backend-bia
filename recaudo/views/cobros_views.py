@@ -262,9 +262,12 @@ class InfoTuaView(generics.ListAPIView):
     
     def pymisis(self, expediente):
         tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.t920codexpediente, t970codtipotramite = 'TUAIM').first()
+        if not tramite:
+            raise ValidationError('Tramite no encontrado')
         tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
         titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
         tramite_fuente = T973TramiteFteHidTra.objects.filter(t973idtramite=tramite.t970idtramite).first()
+        fuente_hidrica = None
         if tramite_fuente:
             fuente_hidrica = Rt956FuenteHid.objects.filter(t956codfuentehid=tramite_fuente.t973codfuentehid).first()
         tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
@@ -279,7 +282,7 @@ class InfoTuaView(generics.ListAPIView):
             'expediente': expediente.t920codexpediente,
             'num_resolucion': tramite.t970numresolperm,
             'fecha_resolucion': tramite.t970fecharesperm,
-            'nombre_fuente_hidrica': fuente_hidrica.t956nombre if fuente_hidrica.t956nombre else None,
+            'nombre_fuente_hidrica': fuente_hidrica.t956nombre if fuente_hidrica else None,
             #'municipio': fuente_hidrica.t956municipio,
             'caudal_concesionado': tramite.t970tuacaudalconcesi,
             'clase_uso_agua': clase_uso_agua.nombre,
