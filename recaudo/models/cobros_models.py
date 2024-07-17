@@ -2,6 +2,7 @@ from django.db import models
 from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores, Expedientes
 from recaudo.models.planes_pagos_models import TasasInteres
 from recaudo.models.base_models import RangosEdad, TipoRenta
+from recaudo.models.extraccion_model_recaudo import RtClaseUsoAgua
 
 
 class DocumentosCobro(models.Model):
@@ -64,6 +65,8 @@ class Cartera(models.Model):
     monto_inicial = models.DecimalField(max_digits=30, decimal_places=4, db_column='T413montoInicial')
     num_resolucion = models.CharField(max_length=255, null=True, blank=True, db_column='T413numResolucion')
     tipo_cobro = models.CharField(max_length=255, db_column='T413tipoCobro')
+    caudal_concesionado = models.CharField(max_length=255, null=True, blank=True, db_column='T413caudalConcesionado')
+    tipo_agua = models.ForeignKey(RtClaseUsoAgua, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_ClaseUsoAgua')
     id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T413Id_Deudor')
     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_DocumentoCobro')
     id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T413Id_Expediente')
@@ -77,31 +80,3 @@ class Cartera(models.Model):
         verbose_name = 'Cartera'
         verbose_name_plural = 'Cartera'
 
-
-class VistaCarteraTua(models.Model):
-    fecha = models.DateTimeField()
-    cod_cia = models.CharField(max_length=5)
-    tipo_renta = models.CharField(max_length=100)
-    cuenta_contable = models.CharField(max_length=100)
-    nit = models.CharField(max_length=15)
-    nombre_deudor = models.CharField(max_length=255)
-    fecha_fac = models.DateTimeField()
-    fecha_notificacion = models.DateTimeField()
-    fecha_en_firme = models.DateTimeField()
-    corte_desde = models.CharField(max_length=100)
-    corte_hasta = models.CharField(max_length=100)
-    num_factura = models.CharField(max_length=255)
-    num_liquidacion = models.IntegerField(primary_key=True)
-    periodo = models.CharField(max_length=100)
-    agno = models.IntegerField()
-    expediente = models.CharField(max_length=100)
-    num_resolucion = models.CharField(max_length=100)
-    recurso = models.CharField(max_length=100)
-    doc_auto = models.CharField(max_length=100)
-    saldo_capital = models.DecimalField(max_digits=30, decimal_places=2)
-    saldo_intereses = models.DecimalField(max_digits=30, decimal_places=2)
-    dias_mora = models.IntegerField()
-
-    class Meta:
-        managed = False  # No permite a Django crear, modificar o borrar esta tabla
-        db_table = 'vcarterabiatua'  # El nombre de la vista en la base de datos
