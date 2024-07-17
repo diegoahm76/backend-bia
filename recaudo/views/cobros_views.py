@@ -6,7 +6,7 @@ from recaudo.models.cobros_models import (
     Cartera,
     ConceptoContable
 )
-from recaudo.models.extraccion_model_recaudo import Rt954Cobro, Rt956FuenteHid, Rt970Tramite, Rt980Tua, Rt982Tuacaptacion, RtClaseUsoAgua, T920Expediente, T971TramiteTercero, T973TramiteFteHidTra, Tercero
+from recaudo.models.extraccion_model_recaudo import Rt25Municipio, Rt954Cobro, Rt956FuenteHid, Rt970Tramite, Rt980Tua, Rt982Tuacaptacion, RtClaseUsoAgua, T920Expediente, T971TramiteTercero, T972TramiteUbicacion, T973TramiteFteHidTra, Tercero
 from recaudo.models.liquidaciones_models import (
     Deudores,
     Expedientes
@@ -268,12 +268,16 @@ class InfoTuaView(generics.ListAPIView):
         titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
         tramite_fuente = T973TramiteFteHidTra.objects.filter(t973idtramite=tramite.t970idtramite).first()
         fuente_hidrica = None
+        municipio = None
         if tramite_fuente:
             fuente_hidrica = Rt956FuenteHid.objects.filter(t956codfuentehid=tramite_fuente.t973codfuentehid).first()
         tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
         tua_captacion = Rt982Tuacaptacion.objects.filter(t982numtua=tua.t980numtua).first()
         clase_uso_agua = RtClaseUsoAgua.objects.filter(cod_clase_uso_agua=tua_captacion.t982codclaseusoagua).first()
         cobro = Rt954Cobro.objects.filter(t954idcobro=tua.t980idcobro).first()
+        tramite_ubicacion = T972TramiteUbicacion.objects.filter(t972idtramite=tramite.t970idtramite).first()
+        if tramite_ubicacion:
+            municipio = Rt25Municipio.objects.filter(t25codmpio=tramite_ubicacion.t972codubicacion).first()
         data = {
             'nit_titular': titular.t03nit,
             'nombre_titular': titular.t03nombre,
@@ -284,10 +288,11 @@ class InfoTuaView(generics.ListAPIView):
             'num_resolucion': tramite.t970numresolperm,
             'fecha_resolucion': tramite.t970fecharesperm,
             'nombre_fuente_hidrica': fuente_hidrica.t956nombre if fuente_hidrica else None,
-            #'municipio': fuente_hidrica.t956municipio,
             'caudal_concesionado': tramite.t970tuacaudalconcesi,
             'clase_uso_agua': clase_uso_agua.nombre,
             'factor_regional': cobro.t954tuafr,
+            'predio': tramite.t970tuapredio,
+            'municipio': municipio.t25nombre if municipio else None,
 
         }
         return data
