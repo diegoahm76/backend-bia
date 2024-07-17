@@ -74,7 +74,7 @@ class IniciarPagoView(generics.CreateAPIView):
                         <soap:Body>
                             <inicio_pagoV2 xmlns="http://www.zonapagos.com">
                                 <!--Required:-->
-                                <id_tienda>{os.environ.get('ZPAGOS_ID_TIENDA')}</id_tienda>
+                                <id_tienda>{os.environ.get('ZPAGOS_ID_TIENDA_PRUEBAS')}</id_tienda>
                                 <!--Required:-->
                                 <clave>{os.environ.get('ZPAGOS_CLAVE')}</clave>
                                 <!--Required:-->
@@ -104,7 +104,7 @@ class IniciarPagoView(generics.CreateAPIView):
                                 <!--Required:-->
                                 <info_opcional3>0</info_opcional3>
                                 <!--Required:-->
-                                <codigo_servicio_principal>{os.environ.get('ZPAGOS_CODIGO_SERVICIO_PRINCIPAL')}</codigo_servicio_principal>
+                                <codigo_servicio_principal>{os.environ.get('ZPAGOS_CODIGO_SERVICIO_PRUEBAS')}</codigo_servicio_principal>
                                 <!--Optional:-->
                                 <lista_codigos_servicio_multicredito>
                                     <!--Zero or more repetitions:-->
@@ -156,7 +156,7 @@ class VerificarPagoView(generics.CreateAPIView):
     
     def create(self, request):
         id_pago = request.query_params.get('id_pago')
-        id_comercio = request.query_params.get('idcomercio', os.environ.get('ZPAGOS_ID_TIENDA'))
+        id_comercio = request.query_params.get('idcomercio', os.environ.get('ZPAGOS_ID_TIENDA_PRUEBAS'))
         if not id_pago:
             raise ValidationError('El ID de la transacción es requerido')
 
@@ -246,7 +246,7 @@ class NotificarPagoView(generics.GenericAPIView):
         if not id_comercio or not id_pago:
             raise ValidationError('El ID del comercio y el ID del pago son requeridos')
         
-        id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA'))
+        id_comercio_bia = str(os.environ.get('ZPAGOS_ID_TIENDA_PRUEBAS'))
         
         verificar_pago = VerificarPagoView()
         verificar_pago_response = verificar_pago.create(request)
