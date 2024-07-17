@@ -750,3 +750,17 @@ class Rt17TipoRegimen(models.Model):
 
     class Meta:
         db_table = 'rt17tiporegimen'
+
+
+class RtClaseUsoAgua(models.Model):
+    id = models.AutoField(primary_key=True, db_column='t969IdClaseUsoAgua')
+    codcia = models.CharField(max_length=255, db_column='t969codcia')
+    cod_clase_uso_agua = models.CharField(max_length=255, db_column='t969codclaseusoagua')
+    nombre = models.CharField(max_length=255, db_column='t969nombre')
+    observacion = models.CharField(max_length=255, db_column='t969observacion')
+    delete = models.CharField(max_length=1, db_column='t969delete')
+
+    class Meta:
+        db_table = 'rt969ClaseUsoAgua'
+        verbose_name = 'Clase uso agua'
+        verbose_name_plural = 'Clases uso agua'

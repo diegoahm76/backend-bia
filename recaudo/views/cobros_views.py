@@ -1,11 +1,12 @@
 from django.db import connection
+from django.forms import ValidationError
 from recaudo.models.base_models import RangosEdad
+
 from recaudo.models.cobros_models import (
     Cartera,
-    ConceptoContable,
-    VistaCarteraTua
+    ConceptoContable
 )
-from recaudo.models.extraccion_model_recaudo import T920Expediente, Tercero
+from recaudo.models.extraccion_model_recaudo import Rt25Municipio, Rt954Cobro, Rt956FuenteHid, Rt970Tramite, Rt980Tua, Rt982Tuacaptacion, RtClaseUsoAgua, T920Expediente, T971TramiteTercero, T972TramiteUbicacion, T973TramiteFteHidTra, Tercero
 from recaudo.models.liquidaciones_models import (
     Deudores,
     Expedientes
@@ -19,9 +20,7 @@ from recaudo.serializers.cobros_serializers import (
     EtapasSerializer,
     RangosSerializer,
     SubEtapasSerializer,
-    TiposAtributosSerializer,
-    VistaCarteraTuaSerializer
-)
+    TiposAtributosSerializer)
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
@@ -55,15 +54,15 @@ class CarteraDeudoresView(generics.ListAPIView):
         identificacion = request.GET.get('identificacion', None)
 
         deudores = Deudores.objects.all()
-        if nombres is not None:
-            deudores = deudores.filter(nombres__contains=nombres)
+        if identificacion:
+            deudores = deudores.filter(id_persona_deudor_pymisis__t03nit__icontains=identificacion) | deudores.filter(id_persona_deudor__numero_documento__icontains = identificacion)
 
-        if apellidos is not None:
-            deudores = deudores.filter(apellidos__contains=apellidos)
+        if nombres:
+            deudores = deudores.filter(id_persona_deudor__primer_nombre__icontains=nombres) | deudores.filter(id_persona_deudor__segundo_nombre__icontains=nombres) | deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=nombres)
 
-        if identificacion is not None:
-            deudores = deudores.filter(identificacion__contains=identificacion)
-
+        if apellidos:
+            deudores = deudores.filter(id_persona_deudor__primer_apellido__icontains=apellidos) | deudores.filter(id_persona_deudor__segundo_apellido__icontains=apellidos) | deudores.filter(id_persona_deudor_pymisis__t03nombre__icontains=apellidos)
+        
 
         queryset = Cartera.objects.filter(id_deudor__in=deudores)
         serializer = self.serializer_class(queryset, many=True)
@@ -134,6 +133,8 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'monto_inicial': item_cartera['saldocapital'],
                 'num_resolucion': item_cartera['numresolucion'],
                 'tipo_cobro': item_cartera['tiporenta'],
+                'caudal_concesionado': item_cartera['caudalconcesionado'] if item_cartera['caudalconcesionado'] else None,
+                'tipo_agua': item_cartera['claseusoagua'] if item_cartera['claseusoagua'] else None,
                 'tipo_renta': item_cartera['tiporenta'],
             }
             deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
@@ -240,4 +241,64 @@ class TiposAtributosGetView(generics.ListAPIView):
         serializer = self.serializer_class(queryset, many=True)
 
         return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+    
+
+class InfoTuaView(generics.ListAPIView):
+
+    def get(self, request, id_expediente):
+        expediente = Expedientes.objects.filter(id=id_expediente).first()
+
+        data = None
+
+        if expediente:
+            if expediente.id_expediente_pimisys:
+                data = self.pymisis(expediente.id_expediente_pimisys)
+            else:
+                data = self.bia(expediente.id_expediente_doc)
+        else:
+            raise ValidationError('Expediente no encontrado')
+
+        return Response({'success': True, 'data': data}, status=status.HTTP_200_OK)
+    
+    def pymisis(self, expediente):
+        tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.t920codexpediente, t970codtipotramite = 'TUAIM').first()
+        if not tramite:
+            raise ValidationError('Tramite no encontrado')
+        tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
+        titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
+        tramite_fuente = T973TramiteFteHidTra.objects.filter(t973idtramite=tramite.t970idtramite).first()
+        fuente_hidrica = None
+        municipio = None
+        clase_uso_agua = None
+        if tramite_fuente:
+            fuente_hidrica = Rt956FuenteHid.objects.filter(t956codfuentehid=tramite_fuente.t973codfuentehid).first()
+        tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
+        tua_captacion = Rt982Tuacaptacion.objects.filter(t982numtua=tua.t980numtua).first()
+        if tua_captacion:
+            clase_uso_agua = RtClaseUsoAgua.objects.filter(cod_clase_uso_agua=tua_captacion.t982codclaseusoagua).first()
+        cobro = Rt954Cobro.objects.filter(t954idcobro=tua.t980idcobro).first()
+        tramite_ubicacion = T972TramiteUbicacion.objects.filter(t972idtramite=tramite.t970idtramite).first()
+        if tramite_ubicacion:
+            municipio = Rt25Municipio.objects.filter(t25codmpio=tramite_ubicacion.t972codubicacion).first()
+        data = {
+            'nit_titular': titular.t03nit,
+            'nombre_titular': titular.t03nombre,
+            'direccion_titular': titular.t03direccion,
+            'telefono_titular': titular.t03telefono,
+            'representante_legal': cobro.t954replegalimportad if cobro.t954replegalimportad else None,
+            'expediente': expediente.t920codexpediente,
+            'num_resolucion': tramite.t970numresolperm,
+            'fecha_resolucion': tramite.t970fecharesperm,
+            'nombre_fuente_hidrica': fuente_hidrica.t956nombre if fuente_hidrica else None,
+            'caudal_concesionado': tramite.t970tuacaudalconcesi,
+            'clase_uso_agua': clase_uso_agua.nombre if clase_uso_agua else None,
+            'factor_regional': cobro.t954tuafr,
+            'predio': tramite.t970tuapredio,
+            'municipio': municipio.t25nombre if municipio else None,
+
+        }
+        return data
+
+    def bia(self):
+        pass
         

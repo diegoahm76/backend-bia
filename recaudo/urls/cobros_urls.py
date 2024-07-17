@@ -5,6 +5,7 @@ urlpatterns = [
     path('carteras/', views.CarteraGeneralView.as_view(), name='carteras-todos'),
     path('filtrar-carteras/', views.CarteraDeudoresView.as_view(), name='carteras-por-deudores'),
     path('carteras-tua/', views.VistaCarteraTuaView.as_view(), name='carteras-tua'),
+    path('info-tua/<str:id_expediente>/', views.InfoTuaView.as_view(), name='info-tua'),
 
 
     path('conceptos-contables/', views.ConceptoContableGetView.as_view(), name='conceptos-contables'),

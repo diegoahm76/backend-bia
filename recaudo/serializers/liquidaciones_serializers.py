@@ -10,8 +10,7 @@ from recaudo.models.liquidaciones_models import (
 )
 from recaudo.models.cobros_models import (
     Cartera,
-    ConceptoContable,
-    VistaCarteraTua
+    ConceptoContable
 )
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
@@ -42,6 +41,7 @@ class DeudoresSerializer(serializers.ModelSerializer):
     direccion = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
     fecha_nacimiento = serializers.SerializerMethodField()
+    # genero = serializers.SerializerMethodField()
     # carteras = serializers.SerializerMethodField()
     # liquidaciones = serializers.SerializerMethodField()
 
@@ -95,6 +95,14 @@ class DeudoresSerializer(serializers.ModelSerializer):
         else:
             return None
         
+    # def get_genero(self, obj):
+    #     if obj.id_persona_deudor:
+    #         return obj.id_persona_deudor.sexo
+    #     elif obj.id_persona_deudor_pymisis:
+    #         return obj.id_persona_deudor_pymisis.t03genero
+    #     else:
+    #         return None
+        
     def get_email(self, obj):
         if obj.id_persona_deudor:
             return obj.id_persona_deudor.email
@@ -144,9 +152,23 @@ class DetallesLiquidacionBaseSerializer(serializers.ModelSerializer):
 
 
 class ExpedientesSerializer(serializers.ModelSerializer):
+    expediente = serializers.SerializerMethodField()
+
     class Meta:
         model = Expedientes
         fields = '__all__'
+
+    def get_expediente(self, obj):
+        expediente_doc = obj.id_expediente_doc
+        if expediente_doc:
+            codigo_exp = f"{expediente_doc.codigo_exp_und_serie_subserie}{expediente_doc.codigo_exp_Agno}{expediente_doc.codigo_exp_consec_por_agno}"
+            return codigo_exp
+        else:
+            expediente_pimisys = obj.id_expediente_pimisys
+            if expediente_pimisys:
+                return expediente_pimisys.t920codexpediente
+            else:
+                return None
 
 
 class LiquidacionesBaseSerializer(serializers.ModelSerializer):
