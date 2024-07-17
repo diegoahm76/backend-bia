@@ -758,7 +758,7 @@ class RtClaseUsoAgua(models.Model):
     cod_clase_uso_agua = models.CharField(max_length=255, db_column='t969codclaseusoagua')
     nombre = models.CharField(max_length=255, db_column='t969nombre')
     observacion = models.CharField(max_length=255, db_column='t969observacion')
-    delete = models.BooleanField(default=False, db_column='t969delete')
+    delete = models.CharField(max_length=1, db_column='t969delete')
 
     class Meta:
         db_table = 'rt969ClaseUsoAgua'
