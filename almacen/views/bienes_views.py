@@ -1362,53 +1362,53 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         
         xml_data = f"""<?xml version="1.0" encoding="utf-8"?>
                         <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-                        <soap:Body>
-                            <iSave xmlns="http://tempuri.org/">
-                            <sCodTipoDoc>string</sCodTipoDoc>
-                            <lNumeroDoc>int</lNumeroDoc>
-                            <dtFecha>dateTime</dtFecha>
-                            <sConcepto>string</sConcepto>
-                            <sCodTipoOrigenDoc>string</sCodTipoOrigenDoc>
-                            <lNumeroOrigenDoc>int</lNumeroOrigenDoc>
-                            <sReferenciaOrigenDoc>string</sReferenciaOrigenDoc>
-                            <bContabLocal>boolean</bContabLocal>
-                            <bContabNIIF>boolean</bContabNIIF>
-                            <sAppName>string</sAppName>
-                            <audtMovimientos>
-                                <udtMovimiento>
-                                <sCodCta>string</sCodCta>
-                                <sCodCentro>string</sCodCentro>
-                                <sNit>string</sNit>
-                                <sReferencia>string</sReferencia>
-                                <sDetalle>string</sDetalle>
-                                <sCodTipoDocCruce>string</sCodTipoDocCruce>
-                                <sNumeroDocCruce>string</sNumeroDocCruce>
-                                <cValorBase>decimal</cValorBase>
-                                <cValorDebito>decimal</cValorDebito>
-                                <cValorCredito>decimal</cValorCredito>
-                                <bContabLocal>boolean</bContabLocal>
-                                <bContabNIIF>boolean</bContabNIIF>
-                                </udtMovimiento>
-                                <udtMovimiento>
-                                <sCodCta>string</sCodCta>
-                                <sCodCentro>string</sCodCentro>
-                                <sNit>string</sNit>
-                                <sReferencia>string</sReferencia>
-                                <sDetalle>string</sDetalle>
-                                <sCodTipoDocCruce>string</sCodTipoDocCruce>
-                                <sNumeroDocCruce>string</sNumeroDocCruce>
-                                <cValorBase>decimal</cValorBase>
-                                <cValorDebito>decimal</cValorDebito>
-                                <cValorCredito>decimal</cValorCredito>
-                                <bContabLocal>boolean</bContabLocal>
-                                <bContabNIIF>boolean</bContabNIIF>
-                                </udtMovimiento>
-                            </audtMovimientos>
-                            <sErrors>string</sErrors>
-                            </iSave>
-                        </soap:Body>
+                            <soap:Body>
+                                <iSave xmlns="http://tempuri.org/">
+                                    <sCodTipoDoc>310</sCodTipoDoc>
+                                    <lNumeroDoc>0</lNumeroDoc>
+                                    <dtFecha>2024-07-08</dtFecha>
+                                    <sConcepto>Prueba de entrada al almacén</sConcepto>
+                                    <sCodTipoOrigenDoc>Factura</sCodTipoOrigenDoc>
+                                    <lNumeroOrigenDoc>87654321</lNumeroOrigenDoc>
+                                    <sReferenciaOrigenDoc>Ref123</sReferenciaOrigenDoc>
+                                    <bContabLocal>true</bContabLocal>
+                                    <bContabNIIF>true</bContabNIIF>
+                                    <sAppName>BIA</sAppName>
+                                    <audtMovimientos>
+                                        <udtMovimiento>
+                                        <sCodCta>11050101</sCodCta>
+                                        <sCodCentro>2501</sCodCentro>
+                                        <sNit>7787342</sNit>
+                                        <sReferencia>RefMov1</sReferencia>
+                                        <sDetalle>Detalle del movimiento 1</sDetalle>
+                                        <sCodTipoDocCruce>1</sCodTipoDocCruce>
+                                        <sNumeroDocCruce>12345</sNumeroDocCruce>
+                                        <cValorBase>1000.00</cValorBase>
+                                        <cValorDebito>1500.00</cValorDebito>
+                                        <cValorCredito>0.00</cValorCredito>
+                                        <bContabLocal>true</bContabLocal>
+                                        <bContabNIIF>true</bContabNIIF>
+                                        </udtMovimiento>
+                                        <udtMovimiento>
+                                        <sCodCta>51010101</sCodCta>
+                                        <sCodCentro>2501</sCodCentro>
+                                        <sNit>7787342</sNit>
+                                        <sReferencia>RefMov2</sReferencia>
+                                        <sDetalle>Detalle del movimiento 2</sDetalle>
+                                        <sCodTipoDocCruce>99</sCodTipoDocCruce>
+                                        <sNumeroDocCruce>54321</sNumeroDocCruce>
+                                        <cValorBase>2000.00</cValorBase>
+                                        <cValorDebito>0.00</cValorDebito>
+                                        <cValorCredito>1500.00</cValorCredito>
+                                        <bContabLocal>true</bContabLocal>
+                                        <bContabNIIF>true</bContabNIIF>
+                                        </udtMovimiento>
+                                    </audtMovimientos>
+                                    <sErrors></sErrors>
+                                </iSave>
+                            </soap:Body>
                         </soap:Envelope>"""
-        
+            
         response = requests.post(target_url, data=xml_data, headers=headers)
         
         if response.status_code != 200:
@@ -1419,6 +1419,9 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
         entrada_data = json.loads(data.get('info_entrada'))
         items_entrada = json.loads(data.get('info_items_entrada'))
         archivo_soporte = request.FILES.get('archivo_soporte')
+
+        # Llamamos a la función para "guardar el movimiento"
+        self.guardar_movimiento(request)
 
         # VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
         cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] < 1]
