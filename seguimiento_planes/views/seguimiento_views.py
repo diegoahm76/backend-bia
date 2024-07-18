@@ -34,6 +34,7 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPOAISerializer, 
                                                                    PrioridadPOAISerializer,
                                                                    ConceptoPOAISerializerGet,
+                                                                   TableroControlPOAISerializer,
                                                                    SeguimientoPOAITotalSerializer)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
 from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
@@ -1702,3 +1703,7 @@ class SeguimientoPOAIConsultaReporte(generics.ListAPIView):
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+class TableroControlPOAIGeneral(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TableroControlPOAISerializer

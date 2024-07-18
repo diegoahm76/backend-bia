@@ -283,15 +283,15 @@ class NotificarPagoView(generics.GenericAPIView):
         else:
             raise ValidationError("Ocurrió un error en la verificación del pago")
 
-        return Response({'success':True, 'detail':'Estado del pago actualizado correctamente'}, status=status.HTTP_201_CREATED)
+        return {'success':True, 'detail':'Estado del pago actualizado correctamente'}
 
     def get(self, request):
         response_data = self.peticion(request)
-        return Response(response_data)
+        return Response(response_data, status=status.HTTP_200_OK)
 
     def post(self, request):
         response_data = self.peticion(request)
-        return Response(response_data)
+        return Response(response_data, status=status.HTTP_200_OK)
     
 class ConsultarPagosView(generics.ListAPIView):
     queryset = Pagos.objects.all()

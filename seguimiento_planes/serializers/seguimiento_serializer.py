@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from seguimiento_planes.models.planes_models import Sector
+from seguimiento_planes.models.planes_models import Sector, Proyecto, Metas
 from seguimiento_planes.models.seguimiento_models import (FuenteFinanciacionIndicadores,
                                                           Modalidad,
                                                           Prioridad,
@@ -278,4 +278,25 @@ class SeguimientoPOAITotalSerializer(serializers.ModelSerializer):
     
     def get_adicion4(self, obj):
         return 'SI' if obj.adicion4 else 'NO'
+    
+class TableroControlPOAISerializer(serializers.ModelSerializer):
+    nombre_programa = serializers.ReadOnlyField(source='id_programa.nombre_programa', default=None)
+    valor_meta = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Proyecto
+        fields = ['id_programa','nombre_programa','id_proyecto','nombre_proyecto','numero_proyecto', 'valor_meta']
+
+    def get_valor_meta(self, obj):
+        valor_meta = 0
+        metas = Metas.objects.filter(id_proyecto=obj.id_proyecto)
+
+        if metas:
+            valor_meta = sum(meta.valor_meta for meta in metas)
+            
+        return valor_meta
+            
+
+    
+     
     
