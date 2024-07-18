@@ -16,7 +16,8 @@ from recaudo.models.cobros_models import (
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
     usada = serializers.SerializerMethodField()
-    tipo_renta = serializers.SerializerMethodField()
+    tipo_renta = serializers.ReadOnlyField(source='tipo_renta.nombre_tipo_renta', default=None)
+    tipo_cobro = serializers.ReadOnlyField(source='tipo_cobro.nombre_tipo_cobro', default=None)
 
     def get_usada(self, obj):
         detalles_liquidacion = DetalleLiquidacionBase.objects.filter(id_opcion_liq=obj.id)
@@ -25,13 +26,13 @@ class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
         else:
             return False
         
-    def get_tipo_renta(self, obj):
-        id_tipo_renta = int(obj.tipo_renta)
-        tipo_renta = TipoRenta.objects.filter(pk=id_tipo_renta).first()
-        if tipo_renta:
-            return tipo_renta.nombre_tipo_renta
-        else:
-            return None
+    # def get_tipo_renta(self, obj):
+    #     id_tipo_renta = int(obj.tipo_renta)
+    #     tipo_renta = TipoRenta.objects.filter(pk=id_tipo_renta).first()
+    #     if tipo_renta:
+    #         return tipo_renta.nombre_tipo_renta
+    #     else:
+    #         return None
 
     class Meta:
         model = OpcionesLiquidacionBase

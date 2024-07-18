@@ -1,5 +1,5 @@
 from django.db import models
-from recaudo.models.base_models import TipoRenta
+from recaudo.models.base_models import TipoRenta, TipoCobro
 from recaudo.models.extraccion_model_recaudo import T920Expediente, Tercero
 from recaudo.choices.estados_liquidacion_choices import estados_liquidacion_CHOICES
 
@@ -47,8 +47,8 @@ class OpcionesLiquidacionBase(models.Model):
     funcion = models.TextField(db_column='T402funcion')
     variables = models.JSONField(db_column='T402variables')
     bloques = models.TextField(db_column='T402bloques')
-    tipo_renta=models.CharField(max_length=255, db_column='T402tipoRenta',null=True, blank=True)
-    tipo_cobro=models.CharField(max_length=255, db_column='T402tipoCobro', null=True, blank=True)
+    tipo_cobro = models.ForeignKey(TipoCobro, on_delete=models.SET_NULL, blank=True, null=True, db_column='T402Id_TipoCobro')
+    tipo_renta=models.ForeignKey(TipoRenta, on_delete=models.SET_NULL, db_column='T402Id_TipoRenta',null=True, blank=True)
 
     class Meta:
         db_table = "T402OpcionesLiquidacionBase"
