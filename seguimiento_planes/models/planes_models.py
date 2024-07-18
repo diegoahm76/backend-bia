@@ -369,50 +369,23 @@ class Indicador(models.Model):
 
 
 class Metas(models.Model):
-    id_meta = models.AutoField(
-        primary_key=True, editable=False, db_column='T513IdMeta')
-    nombre_meta = models.CharField(
-        max_length=255, db_column='T513nombreMeta')
-    # numero_meta = models.CharField(
-    #     max_length=255, db_column='T513numeroMeta')
+    id_meta = models.AutoField(primary_key=True, editable=False, db_column='T513IdMeta')
+    nombre_meta = models.CharField(max_length=255, db_column='T513nombreMeta')
     unidad_meta = models.CharField(
         max_length=3, choices=[
             ('NUM', 'Numero'),
             ('POR', 'Porcentaje'),
         ], db_column='T513unidadMeta')
-    porcentaje_meta = models.IntegerField(
-        null=True, blank=True, db_column='T513porcentajeMeta')
-    valor_meta = models.CharField(
-        max_length=255, db_column='T513valorMeta')
+    porcentaje_meta = models.IntegerField(null=True, blank=True, db_column='T513porcentajeMeta')
+    valor_meta = models.DecimalField(max_digits=20, decimal_places=2, db_column='T513valorMeta')
     cumplio = models.BooleanField(default=False, db_column='T513cumplio')
-    fecha_creacion_meta = models.DateField(
-        null=True, blank=True, db_column='T513fechaCreacionMeta')
-    # agno_1 = models.IntegerField(
-    #     null=True, blank=True, db_column='T513agno1')
-    # agno_2 = models.IntegerField(
-    #     null=True, blank=True, db_column='T513agno2')
-    # agno_3 = models.IntegerField(
-    #     null=True, blank=True, db_column='T513agno3')
-    # agno_4 = models.IntegerField(
-    #     null=True, blank=True, db_column='T513agno4')
-    # valor_ejecutado_compromiso = models.BigIntegerField(
-    #     null=True, blank=True, db_column='T513valorEjecutadoCompromiso')
-    # valor_ejecutado_obligado = models.BigIntegerField(
-    #     null=True, blank=True, db_column='T513valorEjecutadoObligado')
-    # avance_fisico = models.IntegerField(
-    #     null=True, blank=True, db_column='T513avanceFisico')
-    id_indicador = models.ForeignKey(
-        Indicador, on_delete=models.CASCADE, db_column='T513IdIndicador')
-    id_plan = models.ForeignKey(
-        Planes, on_delete=models.CASCADE, db_column='T513IdPlan')
-    id_programa = models.ForeignKey(
-        Programa, on_delete=models.CASCADE, db_column='T513IdPrograma')
-    id_proyecto = models.ForeignKey(
-        Proyecto, on_delete=models.CASCADE, db_column='T513IdProyecto')
-    id_producto = models.ForeignKey(
-        Productos, on_delete=models.CASCADE, db_column='T513IdProducto')
-    id_actividad = models.ForeignKey(
-        Actividad, on_delete=models.CASCADE, db_column='T513IdActividad')
+    fecha_creacion_meta = models.DateField(null=True, blank=True, db_column='T513fechaCreacionMeta')
+    id_indicador = models.ForeignKey(Indicador, on_delete=models.CASCADE, db_column='T513IdIndicador')
+    id_plan = models.ForeignKey(Planes, on_delete=models.CASCADE, db_column='T513IdPlan')
+    id_programa = models.ForeignKey(Programa, on_delete=models.CASCADE, db_column='T513IdPrograma')
+    id_proyecto = models.ForeignKey(Proyecto, on_delete=models.CASCADE, db_column='T513IdProyecto')
+    id_producto = models.ForeignKey(Productos, on_delete=models.CASCADE, db_column='T513IdProducto')
+    id_actividad = models.ForeignKey(Actividad, on_delete=models.CASCADE, db_column='T513IdActividad')
 
     def __str__(self):
         return str(self.id_meta)
