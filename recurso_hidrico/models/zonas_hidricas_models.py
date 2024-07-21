@@ -71,3 +71,13 @@ class CuencasSubZonas(models.Model):
         verbose_name = 'Cuenca'
         verbose_name_plural = 'Cuencas'
         unique_together = ['codigo_cuenca', 'nombre_cuenca','id_sub_zona_hidrica']
+
+class TipoUsoAgua(models.Model):
+    id_tipo_uso_agua = models.AutoField(primary_key=True, db_column="T628IdTipoUsoAgua")
+    nombre_tipo_uso_agua = models.CharField(max_length=50, db_column="T628nombreTipoUsoAgua")
+    id_cuenca = models.ForeignKey(CuencasSubZonas, on_delete=models.CASCADE, db_column="T628Id_Cuenca")
+    
+    class Meta:
+        db_table = 'T628TipoUsoAgua'
+        verbose_name = 'Tipo Uso Agua'
+        verbose_name_plural = 'Tipo Uso Agua'

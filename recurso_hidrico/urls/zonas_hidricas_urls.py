@@ -34,6 +34,9 @@ urlpatterns = [
         path('SIRH/vertimientoPN/', views.ServicioVertimientoNaturalView.as_view(), name='vertimientoPN'),
         path('SIRH/vertimientoPJ/', views.ServicioVertimientoJuridicaView.as_view(), name='vertimientoPJ'),
 
+        path('tipos_uso_agua/', views.TipoUsoAguaView.as_view(), name='tipos_uso_agua-obener-crear'),
+        path('tipos_uso_agua/<str:pk>/', views.TipoUsoAguaView.as_view(), name='tipos_uso_agua-actualizar-borrar'),
+
 
 ]
     
