@@ -2,6 +2,7 @@ from django.db import models
 from recaudo.models.base_models import TipoRenta, TipoCobro
 from recaudo.models.extraccion_model_recaudo import T920Expediente, Tercero
 from recaudo.choices.estados_liquidacion_choices import estados_liquidacion_CHOICES
+from recurso_hidrico.models.zonas_hidricas_models import CuencasSubZonas, TipoUsoAgua
 
 
 class Deudores(models.Model):
@@ -47,6 +48,8 @@ class OpcionesLiquidacionBase(models.Model):
     funcion = models.TextField(db_column='T402funcion')
     variables = models.JSONField(db_column='T402variables')
     bloques = models.TextField(db_column='T402bloques')
+    #id_cuenca = models.ForeignKey(CuencasSubZonas, on_delete=models.SET_NULL, blank=True, null=True, db_column='T402Id_Cuenca')
+    id_tipo_uso_agua = models.ForeignKey(TipoUsoAgua, on_delete=models.SET_NULL, blank=True, null=True, db_column='T402Id_TipoUsoAgua')
     tipo_cobro = models.ForeignKey(TipoCobro, on_delete=models.SET_NULL, blank=True, null=True, db_column='T402Id_TipoCobro')
     tipo_renta=models.ForeignKey(TipoRenta, on_delete=models.SET_NULL, db_column='T402Id_TipoRenta',null=True, blank=True)
 
@@ -59,7 +62,7 @@ class OpcionesLiquidacionBase(models.Model):
 class LiquidacionesBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T403IdLiquidacionBase")
     fecha_liquidacion = models.DateTimeField(db_column="T403fechaLiquidacion")
-    vencimiento = models.DateTimeField(db_column="T403vencimiento")
+    vencimiento = models.DateTimeField(db_column="T403vencimiento") 
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
     valor = models.DecimalField(max_digits=20, decimal_places=4, default=0, db_column="T403Valor")
     estado = models.CharField(choices=estados_liquidacion_CHOICES, max_length=10, db_column="T403estado")
@@ -99,6 +102,8 @@ class DetalleLiquidacionBase(models.Model):
     id = models.AutoField(primary_key=True, db_column="T404IdDetalle_LiquidacionBase")
     id_opcion_liq = models.ForeignKey(OpcionesLiquidacionBase, db_column="T404Id_OpcionLiquidacionBase", on_delete=models.CASCADE)
     id_liquidacion = models.ForeignKey(LiquidacionesBase, on_delete=models.CASCADE, db_column="T404Id_LiquidacionBase", related_name='detalles')
+    caudal_concesionado = models.DecimalField(max_digits=20, decimal_places=4, default=0, null=True, blank=True, db_column="T404caudalConcesionado")
+    volumen_agua_utilizada = models.DecimalField(max_digits=20, decimal_places=4, default=0, null=True, blank=True, db_column="T404volumenAguaUtilizada")
     variables = models.JSONField(db_column="T404variables")
     valor = models.DecimalField(max_digits=20, decimal_places=4, default=0, db_column="T404valor")
     estado = models.IntegerField(default=1, db_column="T404estado")
