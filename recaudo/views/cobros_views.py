@@ -261,7 +261,7 @@ class InfoTuaView(generics.ListAPIView):
         return Response({'success': True, 'data': data}, status=status.HTTP_200_OK)
     
     def pymisis(self, expediente):
-        tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.t920codexpediente, t970codtipotramite = 'TUAIM').first()
+        tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.t920codexpediente, t970codtipotramite__in = ['TUAIM', 'TRIM']).first()
         if not tramite:
             raise ValidationError('Tramite no encontrado')
         tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()

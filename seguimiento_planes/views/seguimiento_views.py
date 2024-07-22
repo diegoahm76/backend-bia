@@ -34,9 +34,10 @@ from seguimiento_planes.serializers.seguimiento_serializer import (FuenteRecurso
                                                                    SeguimientoPOAISerializer, 
                                                                    PrioridadPOAISerializer,
                                                                    ConceptoPOAISerializerGet,
+                                                                   TableroControlPOAISerializer,
                                                                    SeguimientoPOAITotalSerializer)
 from seguimiento_planes.models.seguimiento_models import FuenteFinanciacionIndicadores, Modalidad, Ubicaciones, FuenteRecursosPaa, Intervalo, EstadoVF, CodigosUNSP, ConceptoPOAI, BancoProyecto, PlanAnualAdquisiciones, PAACodgigoUNSP, SeguimientoPAI, SeguimientoPAIDocumentos, Metas, Indicador, SeguimientoPOAI, Prioridad
-from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador
+from seguimiento_planes.models.planes_models import Metas, Rubro, Planes,Proyecto, Productos, Actividad, Indicador, Programa, EjeEstractegico
 from seguridad.permissions.permissions_planes import PermisoActualizarBancoProyectos, PermisoActualizarCodigosUnspsc, PermisoActualizarConceptoPOAI, PermisoActualizarDetalleInversionCuentas, PermisoActualizarEstadosVigenciaFutura, PermisoActualizarFuenteFinanciacionPOAI, PermisoActualizarFuentesFinanciacionIndicadores, PermisoActualizarFuentesFinanciacionPAA, PermisoActualizarIntervalos, PermisoActualizarModalidades, PermisoActualizarPlanAnualAdquisiciones, PermisoActualizarSector, PermisoActualizarSeguimientoTecnicoPAI, PermisoActualizarUbicaciones, PermisoBorrarCodigosUnspsc, PermisoBorrarEstadosVigenciaFutura, PermisoBorrarFuentesFinanciacionPAA, PermisoBorrarIntervalos, PermisoBorrarModalidades, PermisoBorrarSector, PermisoBorrarUbicaciones, PermisoCrearBancoProyectos, PermisoCrearCodigosUnspsc, PermisoCrearConceptoPOAI, PermisoCrearDetalleInversionCuentas, PermisoCrearEstadosVigenciaFutura, PermisoCrearFuenteFinanciacionPOAI, PermisoCrearFuentesFinanciacionIndicadores, PermisoCrearFuentesFinanciacionPAA, PermisoCrearIntervalos, PermisoCrearModalidades, PermisoCrearPlanAnualAdquisiciones, PermisoCrearSector, PermisoCrearSeguimientoTecnicoPAI, PermisoCrearUbicaciones, PermisoCrearSeguimientoPOAI, PermisoActualizarSeguimientoPOAI
 from transversal.models import UnidadesOrganizacionales
 from datetime import datetime
@@ -1702,3 +1703,205 @@ class SeguimientoPOAIConsultaReporte(generics.ListAPIView):
         
         return Response({'success': True, 'detail': 'Se encontraron los siguientes seguimientos POAI:', 'data': serializer.data}, status=status.HTTP_200_OK)
 
+
+class TableroControlPOAIGeneral(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TableroControlPOAISerializer
+
+    def get_tablero_control(self, id_plan, fecha_inicio, fecha_fin):
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan con este ID.")
+         
+        proyectos = Proyecto.objects.filter(id_plan=plan.id_plan).order_by('id_programa')
+
+        if not proyectos:
+            raise NotFound("No se encontraron proyectos para este plan.")
+        
+        if fecha_inicio is not None and fecha_fin is not None:
+
+            if fecha_inicio > fecha_fin:
+                raise ValidationError('La fecha de inicio no puede ser mayor a la fecha de fin.')
+        
+            proyectos = proyectos.filter(id_programa__fecha_creacion__gte=fecha_inicio, id_programa__fecha_creacion__lte=fecha_fin)
+
+        return proyectos  
+        
+    def get(self, request, numero_tablero):
+        id_plan = request.query_params.get('id_plan', None)
+        fecha_inicio = request.GET.get('fecha_inicio', None)
+        fecha_fin = request.GET.get('fecha_fin', None)
+        if fecha_inicio == "" or fecha_fin == "":
+            fecha_inicio = None
+            fecha_fin = None
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan con este ID.")
+        
+        
+        if numero_tablero == '1':
+            instancia_tablero = TableroControlPOAIGeneral()
+            tablero = instancia_tablero.get_tablero_control(plan.id_plan, fecha_inicio, fecha_fin)
+
+            serializer = self.serializer_class(tablero, many=True)
+
+            if not tablero:
+                raise NotFound("No se encontraron resultados para esta consulta.")
+            
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes proyectos:', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('El número de tablero proporcionado no es válido. Por favor, revisa los datos e intenta de nuevo.')
+
+
+class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TableroControlPOAISerializer
+
+    def get_tablero_control(self, id_plan, fecha_inicio, fecha_fin):
+
+        data, numero_programa, valor_programa, numero_proyecto, valor_proyecto = [], [], [], [], []
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan con este ID.")
+        
+        ejes_total = EjeEstractegico.objects.filter(id_plan=plan.id_plan)
+        ids_ejes = [eje.id_eje_estrategico for eje in ejes_total]
+        ejes_total = ejes_total.count()
+        programas = Programa.objects.filter(id_eje_estrategico__in=ids_ejes)
+        programas_total = programas.count()
+        proyectos_total = Proyecto.objects.filter(id_plan=plan.id_plan).count()
+        productos_total = Productos.objects.filter(id_plan=plan.id_plan).count()
+        actividades_total = Actividad.objects.filter(id_plan=plan.id_plan).count()
+        indicadores_total = Indicador.objects.filter(id_plan=plan.id_plan).count()
+        metas_total = Metas.objects.filter(id_plan=plan.id_plan).count()
+
+        data.append({'ejes': ejes_total, 'programas':programas_total, 'proyectos': proyectos_total, 'productos': productos_total, 'actividades': actividades_total, 'indicadores': indicadores_total, 'metas': metas_total})
+
+        meta = Metas.objects.filter(id_plan=plan.id_plan)
+        seguimientos_poai = SeguimientoPOAI.objects.filter(id_plan=plan.id_plan)
+        
+        proyectos = Proyecto.objects.filter(id_plan=plan.id_plan).order_by('numero_proyecto')
+
+        if fecha_inicio is not None and fecha_fin is not None:
+            if fecha_inicio > fecha_fin:
+                raise ValidationError('La fecha de inicio no puede ser mayor a la fecha de fin.')
+            proyectos = proyectos.filter(id_programa__fecha_creacion__gte=fecha_inicio, id_programa__fecha_creacion__lte=fecha_fin)
+            programas = programas.filter(fecha_creacion__gte=fecha_inicio, fecha_creacion__lte=fecha_fin)
+            meta = meta.filter(fecha_creacion_meta__gte=fecha_inicio, fecha_creacion_meta__lte=fecha_fin)
+            seguimientos_poai = seguimientos_poai.filter(fecha_registro__gte=fecha_inicio, fecha_registro__lte=fecha_fin)
+
+        total_presupuesto = sum(meta.valor_meta for meta in meta)
+        total_registro = sum(seguimiento.valor_rp for seguimiento in seguimientos_poai) 
+        total_disponible = total_presupuesto - total_registro
+        total_obligado = sum(seguimiento.valor_obligado for seguimiento in seguimientos_poai)
+
+        data.append({'total_presupuesto': total_presupuesto, 'total_registro': total_registro, 'total_disponible': total_disponible, 'total_obligado': total_obligado})
+                 
+        for proyecto in proyectos:
+            metas = Metas.objects.filter(id_proyecto=proyecto.id_proyecto)
+            valor_meta = 0
+            if metas:
+                valor_meta = sum(meta.valor_meta for meta in metas)
+            
+            numero_proyecto.append(proyecto.numero_proyecto)
+            valor_proyecto.append(valor_meta)
+
+        
+        for programa in programas:
+            metas = Metas.objects.filter(id_programa=programa.id_programa)
+            valor_meta = 0
+            if metas:
+                valor_meta = sum(meta.valor_meta for meta in metas)
+            
+            numero_programa.append(programa.numero_programa)
+            valor_programa.append(valor_meta)
+        
+        data_programas = {'numero_programa': numero_programa, 'valor': valor_programa}
+        data_proyectos = {'numero_proyecto': numero_proyecto, 'valor': valor_proyecto}
+        
+        data.append(data_programas)
+        data.append(data_proyectos)
+
+        return data  
+        
+    def get(self, request, numero_tablero):
+        id_plan = request.query_params.get('id_plan', None)
+        fecha_inicio = request.GET.get('fecha_inicio', None)
+        fecha_fin = request.GET.get('fecha_fin', None)
+        if fecha_inicio == "" or fecha_fin == "":
+            fecha_inicio = None
+            fecha_fin = None
+
+        try:
+            plan = Planes.objects.get(id_plan=id_plan)
+        except Planes.DoesNotExist:
+            raise NotFound("No se encontró un plan con este ID.")
+        
+        
+        if numero_tablero == '1':
+            instancia_tablero = TableroControlPOAIGeneralGrafica()
+            tablero = instancia_tablero.get_tablero_control(plan.id_plan, fecha_inicio, fecha_fin)
+      
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes proyectos:', 'data': tablero}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('El número de tablero proporcionado no es válido. Por favor, revisa los datos e intenta de nuevo.')
+
+
+class TableroControlPOAIPrograma(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TableroControlPOAISerializer
+
+    def get_tablero_control(self, id_programa, fecha_inicio, fecha_fin):
+
+        try:
+            programa = Programa.objects.get(id_programa=id_programa)
+        except Programa.DoesNotExist:
+            raise NotFound("No se encontró un programa con este ID.")
+         
+        proyectos = Proyecto.objects.filter(id_programa=programa.id_programa).order_by('id_proyecto')
+
+        if not proyectos:
+            raise NotFound("No se encontraron proyectos para este programa.")
+        
+        if fecha_inicio is not None and fecha_fin is not None:
+
+            if fecha_inicio > fecha_fin:
+                raise ValidationError('La fecha de inicio no puede ser mayor a la fecha de fin.')
+        
+            proyectos = proyectos.filter(id_programa__fecha_creacion__gte=fecha_inicio, id_programa__fecha_creacion__lte=fecha_fin)
+
+
+        return proyectos  
+        
+    def get(self, request, numero_tablero):
+        id_programa = request.query_params.get('id_programa', None)
+        fecha_inicio = request.GET.get('fecha_inicio', None)
+        fecha_fin = request.GET.get('fecha_fin', None)
+        if fecha_inicio == "" or fecha_fin == "":
+            fecha_inicio = None
+            fecha_fin = None
+
+        try:
+            programa = Programa.objects.get(id_programa=id_programa)
+        except Programa.DoesNotExist:
+            raise NotFound("No se encontró un programa con este ID.")
+        
+        
+        if numero_tablero == '1':
+            instancia_tablero = TableroControlPOAIPrograma()
+            tablero = instancia_tablero.get_tablero_control(programa.id_programa, fecha_inicio, fecha_fin)
+
+            serializer = self.serializer_class(tablero, many=True)
+
+            if not tablero:
+                raise NotFound("No se encontraron resultados para esta consulta.")
+            
+            return Response({'success': True, 'detail': 'Se encontraron los siguientes proyectos:', 'data': serializer.data}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('El número de tablero proporcionado no es válido. Por favor, revisa los datos e intenta de nuevo.')

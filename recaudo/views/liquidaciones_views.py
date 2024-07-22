@@ -4,6 +4,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
+from recaudo.models.extraccion_model_recaudo import Rt970Tramite
 from recaudo.models.liquidaciones_models import (
     HistEstadosLiq,
     OpcionesLiquidacionBase,
@@ -756,4 +757,136 @@ class  LiquidacionPdfpruebaMiguelUpdate(generics.UpdateAPIView):
         info.calculos['caudal_consecionado']=data.get('caudal_consecionado')
         info.save()
         return Response({'success': True, 'detail': 'Se actualizo la liquidacion'}, status=status.HTTP_200_OK)
+
+
+
+class LiquidacionObligacionCreateView(generics.CreateAPIView):
+    queryset = LiquidacionesBase.objects.all()
+    serializer_class = LiquidacionesTramitePostSerializer
+    serializer_detalles_class = DetallesLiquidacionBasePostSerializer
+    serializer_historico_class = HistEstadosLiqPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data_liquidacion = request.data.get('data_liquidacion')
+        data_detalles = request.data.get('data_detalles')
+        archivo_liquidacion = request.FILES.get('archivo_liquidacion')
+        current_date = datetime.now()
+
+        if not data_liquidacion:
+            raise ValidationError('Debe enviar la información de la liquidación')
+        
+        if not archivo_liquidacion:
+            raise ValidationError('Debe enviar el archivo generado para la liquidación')
+        
+        data_liquidacion = json.loads(data_liquidacion)
+        data_detalles = json.loads(data_detalles) if data_detalles else None
+        
+        # VALIDAR QUE NO EXISTA UNA LIQUIDACIÓN PENDIENTE PARA EL MISMO TRÁMITE
+        liquidacion_pendiente = LiquidacionesBase.objects.filter(id_expediente=data_liquidacion['id_expediente'], estado='PENDIENTE', fecha_liquidacion__year=current_date.year).first()
+        if liquidacion_pendiente:
+            raise ValidationError('El trámite elegido ya tiene una liquidación actual pendiente, si desea generar otro para este trámite debe anular el anterior')
+
+        # Guardar archivo
+        # VALIDAR FORMATO ARCHIVO 
+        archivo_nombre = archivo_liquidacion.name 
+        nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        
+        formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+        
+        if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+            raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+        
+        # CREAR ARCHIVO EN T238
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = current_date.year
+        ruta = os.path.join("home", "BIA", "Otros", "LiquidacionesTramites", str(current_year))
+        
+        # Calcula el hash MD5 del archivo
+        md5_hash = hashlib.md5()
+        for chunk in archivo_liquidacion.chunks():
+            md5_hash.update(chunk)
+
+        # Obtiene el valor hash MD5
+        md5_value = md5_hash.hexdigest()
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value  
+        }
+        
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, archivo_liquidacion)
+
+        # Validar que la fecha de vencimiento sea 
+        fecha_vencimiento = datetime.strptime(data_liquidacion['vencimiento'], "%Y-%m-%d")
+        fecha_actual = datetime.now()
+        if fecha_vencimiento.date() < fecha_actual.date():
+            raise ValidationError('La fecha de vencimiento no puede ser menor a la fecha actual')
+
+        # Asociar archivo creado a liquidación
+        data_liquidacion['id_persona_liquida'] = request.user.persona.id_persona
+        data_liquidacion['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
+        data_liquidacion['estado'] = 'PENDIENTE'
+
+        expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
+        if not expediente:
+            raise ValidationError('El expediente seleccionado no existe')
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id_deudor
+        data_expediente = self.obtener_resolucion(expediente)
+        data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
+        data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
+
+        serializer = self.serializer_class(data=data_liquidacion)
+        serializer.is_valid(raise_exception=True)
+        liquidacion_creada = serializer.save()
+
+        data_output = serializer.data
+        data_output['id_archivo_ruta'] = liquidacion_creada.id_archivo.ruta_archivo.url
+        data_output['detalles'] = []
+
+        if data_detalles:
+            for detalle in data_detalles:
+                detalle['id_liquidacion'] = liquidacion_creada.id
+                serializer_detalle = self.serializer_detalles_class(data=detalle)
+                serializer_detalle.is_valid(raise_exception=True)
+                serializer_detalle.save()
+
+                data_output['detalles'].append(serializer_detalle.data)
+
+        # Guardar historico
+        data_historico = {
+            'id_liquidacion_base': liquidacion_creada.id,
+            'estado_liq': 'PENDIENTE',
+            'fecha_estado': datetime.now()
+        }
+        serializer_historico = self.serializer_historico_class(data=data_historico)
+        serializer_historico.is_valid(raise_exception=True)
+        serializer_historico.save()
+
+        return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+
+    def obtener_resolucion(self, expediente):
+        if expediente.id_expediente_pimisys:
+            tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente).first()
+            data = {
+                'numero_resolucion': tramite.t970numresolperm,
+                'fecha_resolucion': tramite.t970fecharesperm
+            }
+            return data
+
+
+class ExpedientesDeudorGetView(generics.ListAPIView):
+    serializer_class = ExpedientesSerializer
+
+    def get(self, id_deudor):
+        expedientes = Expedientes.objects.filter(id_deudor=id_deudor)
+        if not expedientes:
+            raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
+        serializer = self.serializer_class(expedientes, many=True)
+        return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':serializer.data}, status=status.HTTP_200_OK)
 

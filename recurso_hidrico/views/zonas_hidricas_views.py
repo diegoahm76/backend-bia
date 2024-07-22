@@ -7,8 +7,8 @@ from rest_framework.exceptions import ValidationError,NotFound,PermissionDenied
 from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
-from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica, CuencasSubZonas
-from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,SubZonaHidricaTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer
+from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica, CuencasSubZonas, TipoUsoAgua
+from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,SubZonaHidricaTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer, TipoUsoAguaSerializer
 import copy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
@@ -817,4 +817,40 @@ class ServicioFuentesHidricasView(generics.ListAPIView):
                     'SUBZONA H': fuente.id_sub_zona_hidrica.nombre_sub_zona_hidrica,
                 }
             }
-                
+
+class TipoUsoAguaView(generics.GenericAPIView):
+    serializer_class = TipoUsoAguaSerializer
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        tipos_uso_agua = TipoUsoAgua.objects.all()
+        if not tipos_uso_agua:
+            raise NotFound('No se encontraron registros')
+        
+        serializer = self.serializer_class(tipos_uso_agua, many=True)
+        return Response({'success': True, 'detail': 'Se encontraron los siguientes registros', 'data': serializer.data}, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Registro creado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        return Response({'success': False, 'detail': 'Error al crear el registro', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk):
+        tipo_uso_agua = TipoUsoAgua.objects.filter(id_tipo_uso_agua=pk).first()
+        if not tipo_uso_agua:
+            raise NotFound('No se encontró el registro')
+        
+        serializer = self.serializer_class(tipo_uso_agua, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'success': True, 'detail': 'Registro actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
+        return Response({'success': False, 'detail': 'Error al actualizar el registro', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, pk):
+        tipo_uso_agua = TipoUsoAgua.objects.filter(id_tipo_uso_agua=pk).first()
+        if not tipo_uso_agua:
+            raise NotFound('No se encontró el registro')
+        
+        tipo_uso_agua.delete()
+        return Response({'success': True, 'detail': 'Registro eliminado exitosamente'}, status=status.HTTP_200_OK)

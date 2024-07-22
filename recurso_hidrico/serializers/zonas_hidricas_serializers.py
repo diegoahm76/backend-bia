@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from recurso_hidrico.models.zonas_hidricas_models import MacroCuencas, SubZonaHidrica, TipoAguaZonaHidrica, TipoZonaHidrica, ZonaHidrica, CuencasSubZonas
+from recurso_hidrico.models.zonas_hidricas_models import MacroCuencas, SubZonaHidrica, TipoAguaZonaHidrica, TipoZonaHidrica, ZonaHidrica, CuencasSubZonas, TipoUsoAgua
 
 
 class MacroCuencasSerializer(serializers.ModelSerializer):
@@ -68,3 +68,8 @@ class SubZonaHidricaValorRegionalSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubZonaHidrica
         fields = ['valor_regional_tr','valor_regional_tua', 'fecha_inicio', 'fecha_fin']
+
+class TipoUsoAguaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoUsoAgua
+        fields = '__all__'

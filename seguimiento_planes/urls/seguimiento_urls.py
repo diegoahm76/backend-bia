@@ -95,12 +95,15 @@ urlpatterns=[
     path('eliminar-seguimiento-pai-documentos/<str:pk>/',views.SeguimientoPAIDocumentosDelete.as_view(),name='eliminarseguimientopaidocumentos'),
     path('consltar-seguimiento-documentos-id-pai/<str:pk>/', views.SeguimientoPAIDocumentosListIdSeguimiento.as_view(),name='consultaridseguimientopai'),
     # Seguimiento POAI
-    path('consultar-prioridades/',views.PrioridadList.as_view(),name='consultarprioridades'),
-    path('consultar-seguimiento-poai/<str:id_concepto>/',views.SeguimientoPOAIList.as_view(),name='consultarseguimientopoai'),
-    path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crearseguimientopoai'),
-    path('actualizar-seguimiento-poai/<str:id_seguimiento>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizarseguimientopoai'),
-    path('consultar-seguimiento-poai-reporte/',views.SeguimientoPOAIConsultaReporte.as_view(),name='consultarseguimientopoaireporte'),
+    path('consultar-prioridades/',views.PrioridadList.as_view(),name='consultar-prioridades'),
+    path('consultar-seguimiento-poai/<str:id_concepto>/',views.SeguimientoPOAIList.as_view(),name='consultar-seguimiento-poai'),
+    path('crear-seguimiento-poai/',views.SeguimientoPOAICreate.as_view(),name='crear-seguimiento-poai'),
+    path('actualizar-seguimiento-poai/<str:id_seguimiento>/',views.SeguimientoPOAIUpdate.as_view(),name='actualizar-seguimiento-poai'),
+    path('consultar-seguimiento-poai-reporte/',views.SeguimientoPOAIConsultaReporte.as_view(),name='consultar-seguimiento-poai-reporte'),
 
+    # Tablero de control seguimiento POAI
+    path('tablero-control-poai-general/<str:numero_tablero>/',views.TableroControlPOAIGeneral.as_view(),name='tablerocontrolpoai'),
+    path('tablero-control-poai-general-grafica/<str:numero_tablero>/',views.TableroControlPOAIGeneralGrafica.as_view(),name='tablerocontrolpoaiactividades'),
 
 
 
