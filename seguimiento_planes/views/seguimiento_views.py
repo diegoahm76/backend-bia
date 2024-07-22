@@ -1783,6 +1783,9 @@ class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
 
         data.append({'ejes': ejes_total, 'programas':programas_total, 'proyectos': proyectos_total, 'productos': productos_total, 'actividades': actividades_total, 'indicadores': indicadores_total, 'metas': metas_total})
 
+        meta = Metas.objects.filter(id_plan=plan.id_plan)
+        seguimientos_poai = SeguimientoPOAI.objects.filter(id_plan=plan.id_plan)
+        
         proyectos = Proyecto.objects.filter(id_plan=plan.id_plan).order_by('numero_proyecto')
 
         if fecha_inicio is not None and fecha_fin is not None:
@@ -1790,6 +1793,15 @@ class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
                 raise ValidationError('La fecha de inicio no puede ser mayor a la fecha de fin.')
             proyectos = proyectos.filter(id_programa__fecha_creacion__gte=fecha_inicio, id_programa__fecha_creacion__lte=fecha_fin)
             programas = programas.filter(fecha_creacion__gte=fecha_inicio, fecha_creacion__lte=fecha_fin)
+            meta = meta.filter(fecha_creacion_meta__gte=fecha_inicio, fecha_creacion_meta__lte=fecha_fin)
+            seguimientos_poai = seguimientos_poai.filter(fecha_registro__gte=fecha_inicio, fecha_registro__lte=fecha_fin)
+
+        total_presupuesto = sum(meta.valor_meta for meta in meta)
+        total_registro = sum(seguimiento.valor_rp for seguimiento in seguimientos_poai) 
+        total_disponible = total_presupuesto - total_registro
+        total_obligado = sum(seguimiento.valor_obligado for seguimiento in seguimientos_poai)
+
+        data.append({'total_presupuesto': total_presupuesto, 'total_registro': total_registro, 'total_disponible': total_disponible, 'total_obligado': total_obligado})
                  
         for proyecto in proyectos:
             metas = Metas.objects.filter(id_proyecto=proyecto.id_proyecto)
