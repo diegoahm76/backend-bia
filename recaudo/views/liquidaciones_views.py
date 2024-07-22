@@ -4,6 +4,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
+from recaudo.models.extraccion_model_recaudo import Rt970Tramite
 from recaudo.models.liquidaciones_models import (
     HistEstadosLiq,
     OpcionesLiquidacionBase,
@@ -831,6 +832,14 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         data_liquidacion['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
         data_liquidacion['estado'] = 'PENDIENTE'
 
+        expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
+        if not expediente:
+            raise ValidationError('El expediente seleccionado no existe')
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id_deudor
+        data_expediente = self.obtener_resolucion(expediente)
+        data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
+        data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
+
         serializer = self.serializer_class(data=data_liquidacion)
         serializer.is_valid(raise_exception=True)
         liquidacion_creada = serializer.save()
@@ -859,3 +868,25 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         serializer_historico.save()
 
         return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+
+    def obtener_resolucion(self, expediente):
+        if expediente.id_expediente_pimisys:
+            tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente).first()
+            data = {
+                'numero_resolucion': tramite.t970numresolperm,
+                'fecha_resolucion': tramite.t970fecharesperm
+            }
+            return data
+
+
+class ExpedientesDeudorGetView(generics.ListAPIView):
+    serializer_class = ExpedientesSerializer
+
+    def get(self, id_deudor):
+        expedientes = Expedientes.objects.filter(id_deudor=id_deudor)
+        if not expedientes:
+            raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
+        serializer = self.serializer_class(expedientes, many=True)
+        return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':serializer.data}, status=status.HTTP_200_OK)
+
