@@ -69,6 +69,7 @@ class LiquidacionesBase(models.Model):
     id_deudor = models.ForeignKey(Deudores, blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Deudor")
     id_expediente = models.ForeignKey(Expedientes, blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Expediente")
     ciclo_liquidacion = models.CharField(max_length=255, blank=True, null=True, db_column="T403cicloliquidacion")
+    num_factura = models.CharField(max_length=255, blank=True, null=True, db_column="T403numFactura")
     id_solicitud_tramite = models.ForeignKey('tramites.SolicitudesTramites', blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_SolicitudTramite")
     id_archivo = models.ForeignKey('gestion_documental.ArchivosDigitales', blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Archivo")
     id_tipo_renta=models.ForeignKey(TipoRenta, on_delete=models.SET_NULL, db_column='T403Id_TipoRenta',null=True, blank=True)
@@ -82,7 +83,7 @@ class LiquidacionesBase(models.Model):
     valor_prescripcion = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True, db_column='T403valorPrescripcion')
     anulado = models.CharField(max_length=1, blank=True, null=True, db_column="T403Anulado")
     num_resolucion = models.IntegerField(blank=True, null=True, db_column="T403numResolucion")
-    agno_resolucion = models.SmallIntegerField(null=True, blank=True, db_column='T403AgnoResolucion')
+    fecha_resolucion = models.DateTimeField(null=True, blank=True, db_column="T403fechaResolucion")
     cod_origen_liq = models.CharField(max_length=1, blank=True, null=True, db_column="T403codOrigenLiq")
     observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T403Observacion")
     cod_tipo_beneficio = models.CharField(max_length=5, blank=True, null=True, db_column="T403codTipoBeneficio")
@@ -106,7 +107,7 @@ class DetalleLiquidacionBase(models.Model):
     volumen_agua_utilizada = models.DecimalField(max_digits=20, decimal_places=4, default=0, null=True, blank=True, db_column="T404volumenAguaUtilizada")
     variables = models.JSONField(db_column="T404variables")
     valor = models.DecimalField(max_digits=20, decimal_places=4, default=0, db_column="T404valor")
-    estado = models.IntegerField(default=1, db_column="T404estado")
+    estado = models.IntegerField(default=1, null=True, blank=True, db_column="T404estado")
     concepto = models.TextField(db_column="T404concepto")
 
     class Meta:

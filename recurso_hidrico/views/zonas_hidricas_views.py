@@ -833,22 +833,22 @@ class TipoUsoAguaView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Registro creado exitosamente'}, status=status.HTTP_201_CREATED)
+            return Response({'success': True, 'detail': 'Registro creado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
         return Response({'success': False, 'detail': 'Error al crear el registro', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
     def put(self, request, pk):
-        tipo_uso_agua = TipoUsoAgua.objects.filter(id=pk).first()
+        tipo_uso_agua = TipoUsoAgua.objects.filter(id_tipo_uso_agua=pk).first()
         if not tipo_uso_agua:
             raise NotFound('No se encontró el registro')
         
         serializer = self.serializer_class(tipo_uso_agua, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({'success': True, 'detail': 'Registro actualizado exitosamente'}, status=status.HTTP_200_OK)
+            return Response({'success': True, 'detail': 'Registro actualizado exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response({'success': False, 'detail': 'Error al actualizar el registro', 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, pk):
-        tipo_uso_agua = TipoUsoAgua.objects.filter(id=pk).first()
+        tipo_uso_agua = TipoUsoAgua.objects.filter(id_tipo_uso_agua=pk).first()
         if not tipo_uso_agua:
             raise NotFound('No se encontró el registro')
         
