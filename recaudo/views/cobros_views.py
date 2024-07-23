@@ -134,7 +134,7 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'num_resolucion': item_cartera['numresolucion'],
                 'tipo_cobro': item_cartera['tiporenta'],
                 'caudal_concesionado': item_cartera['caudalconcesionado'] if item_cartera['caudalconcesionado'] else None,
-                'tipo_agua': item_cartera['claseusoagua'] if item_cartera['claseusoagua'] else None,
+                #'tipo_agua': item_cartera['claseusoagua'] if item_cartera['claseusoagua'] else None,
                 'tipo_renta': item_cartera['tiporenta'],
             }
             deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
