@@ -363,16 +363,21 @@ class Borrar_ValoresVariables(generics.DestroyAPIView):
         
 
 class Actualizar_ValoresVariables(generics.UpdateAPIView):
-    queryset = ValoresVariables.objects.all()
     serializer_class = ValoresVariablesSerializer
     permission_classes = [IsAuthenticated, PermisoActualizarConfiguracionVariablesRecaudo]
 
-    def put(self, request, *args, **kwargs):
-        instance = self.get_object()  # Obtiene la instancia existente
-        serializer = self.get_serializer(instance, data=request.data, partial=kwargs.get('partial', False))
-        serializer.is_valid(raise_exception=True)  # Valida los datos
-        serializer.save()  # Guarda la instancia con los datos actualizados
-
+    def put(self, request, pk):
+        valores_variables = ValoresVariables.objects.filter(id_valores_variables=pk).first()
+        if not valores_variables:
+            raise NotFound('El registro no existe')
+        
+        variable = Variables.objects.filter(id_variables=valores_variables.variables.id_variables).first()
+        variable.nombre = request.data.get('nombre')
+        variable.save()
+        
+        serializer = self.serializer_class(valores_variables, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 

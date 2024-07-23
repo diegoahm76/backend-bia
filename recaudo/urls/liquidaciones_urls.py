@@ -39,6 +39,8 @@ urlpatterns = [
 
     path('liquidacion-obligacion/', views.LiquidacionObligacionCreateView.as_view(), name='liquidacion-obligacion-create'),
 
+    path('actualizar-caudal-concesionado/<int:pk>/', views.ActualizarCaudalConcesionado.as_view(), name='actualizar-caudal-concesionado'),
+
 
     
 ]
