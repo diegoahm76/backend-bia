@@ -889,4 +889,17 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
             raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
         serializer = self.serializer_class(expedientes, many=True)
         return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ActualizarCaudalConcesionado(generics.UpdateAPIView):
+
+    def put(self, request, pk):
+        data = request.data
+        expediente = Expedientes.objects.filter(pk=pk).first()
+        if not expediente.id_expediente_pimisys:
+            raise NotFound('No se encontró el expediente ingresado')
+        tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite = 'TUAIM').first()
+        tramite.t970tuacaudalconcesi = data.get('caudal_concesionado')
+        tramite.save()
+        return Response({'success': True, 'detail': 'Se actualizó el cálculo de la liquidación', 'data': {'caudal_actualizado': tramite.t970tuacaudalconcesi}}, status=status.HTTP_200_OK)
 
