@@ -1,10 +1,12 @@
 from datetime import datetime
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
+from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
-from recaudo.models.extraccion_model_recaudo import Rt970Tramite
+from recaudo.models.extraccion_model_recaudo import Rt908Liquidacion, Rt954Cobro, Rt970Tramite, Rt980Tua
 from recaudo.models.liquidaciones_models import (
     HistEstadosLiq,
     OpcionesLiquidacionBase,
@@ -883,12 +885,30 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
 class ExpedientesDeudorGetView(generics.ListAPIView):
     serializer_class = ExpedientesSerializer
 
-    def get(self, id_deudor):
+    def get(self, request, id_deudor):
+        data = []
         expedientes = Expedientes.objects.filter(id_deudor=id_deudor)
         if not expedientes:
             raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
-        serializer = self.serializer_class(expedientes, many=True)
-        return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':serializer.data}, status=status.HTTP_200_OK)
+        for expediente in expedientes:
+            liquidacion = LiquidacionesBase.objects.filter(id_expediente=expediente.id, agno=datetime.now().year).first()
+            if not liquidacion: 
+                if expediente.id_expediente_pimisys:
+                    tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite = 'TUAIM').first()
+                    tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
+                    cobro = Rt954Cobro.objects.filter(t954idcobro=tua.t980idcobro).first()
+                    if cobro.t954liquidado == 'S':
+                        liquidacion = Rt908Liquidacion.objects.filter(t908numliquidacion=cobro.t954numliquidacion, t908agno= datetime.now().year).first()
+                        if not liquidacion:
+                            data.append({'expediente': expediente.id_expediente_pimisys.t920codexpediente, 'resolucion': tramite.t970numresolperm, 'fecha_resolucion': tramite.t970fecharesperm})
+                elif expediente.id_expediente_doc:
+                    tramite = SolicitudesTramites.objects.filter(id_expediente=expediente.id_expediente_doc).first()
+                    tipo_tramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tramite.id).first()
+                    data_sasoftco = FuncionesAuxiliares.get_tramite_sasoftco(tipo_tramite)
+                    data.append({'expediente': f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}", 'resolucion': data_sasoftco['NumResol'], 'fecha_resolucion': data_sasoftco['Fecha_Resolu']})
+
+        #serializer = self.serializer_class(expedientes, many=True)
+        return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':data}, status=status.HTTP_200_OK)
     
 
 class ActualizarCaudalConcesionado(generics.UpdateAPIView):
