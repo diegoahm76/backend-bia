@@ -6,7 +6,17 @@ urlpatterns = [
         path('zona_hidrica/get/<str:pk>/', views.ZonaHidricaListView.as_view(), name='zonas-hidricas'),
         path('tipozonahidrica/get/', views.TipoZonaHidricaListView.as_view(), name='macro-cuencas'),
         path('subZonahidrica/get/<str:pk>/', views.SubZonaHidricaListView.as_view(), name='macro-cuencas'),  
-        path('cuencas/get/<int:pk>/', views.CuencasListView.as_view(), name='cuencas'), 
+
+        #Cuencas
+        path('cuencas/get/<int:pk>/', views.CuencasListView.as_view(), name='cuencas'),
+        path('cuencas/create/', views.CuencasSubZonasCreate.as_view(), name='cuencas-create'),
+        path('cuencas/delete/<int:pk>/', views.CuencasSubZonasDeleteView.as_view(), name='cuencas-delete'),
+        path('cuencas/update/<int:id_cuenca>/', views.CuencasSubZonasUpdateView.as_view(), name='cuencas-update'),
+
+
+
+
+
         path('tipoaguazonahidrica/get/', views.TipoAguaZonaHidricaListView.as_view(), name='tipo-agua-cuencas'),   
       
         path('zona_hidrica/list-create/', views.CrearZonaHidricaVista.as_view(), name='zonas-hidricas-crear'),
