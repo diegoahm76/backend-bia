@@ -9,7 +9,8 @@ from recaudo.models.cobros_models import (
 from recaudo.models.extraccion_model_recaudo import Rt25Municipio, Rt954Cobro, Rt956FuenteHid, Rt970Tramite, Rt980Tua, Rt982Tuacaptacion, RtClaseUsoAgua, T920Expediente, T971TramiteTercero, T972TramiteUbicacion, T973TramiteFteHidTra, Tercero
 from recaudo.models.liquidaciones_models import (
     Deudores,
-    Expedientes
+    Expedientes,
+    TipoRenta
 )
 from recaudo.models.procesos_models import CategoriaAtributo, EtapasProceso, TiposAtributos
 from recaudo.serializers.cobros_serializers import (
@@ -135,7 +136,7 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 'tipo_cobro': item_cartera['tiporenta'],
                 'caudal_concesionado': item_cartera['caudalconcesionado'] if item_cartera['caudalconcesionado'] else None,
                 #'tipo_agua': item_cartera['claseusoagua'] if item_cartera['claseusoagua'] else None,
-                'tipo_renta': item_cartera['tiporenta'],
+                #'tipo_renta': item_cartera['tiporenta'],
             }
             deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
             if deudor:
@@ -174,6 +175,17 @@ class VistaCarteraTuaView(generics.ListAPIView):
                     codigo_contable=cuenta_contable
                 )
                 data['codigo_contable'] = concepto.id
+
+            tipo_renta = TipoRenta.objects.filter(nombre_tipo_renta=item_cartera['tiporenta'], cod_tipo_renta = item_cartera['codtiporenta']).first()
+            if tipo_renta:
+                data['tipo_renta'] = tipo_renta.id
+            else:
+                tipo_renta = TipoRenta.objects.create(
+                    nombre_tipo_renta=item_cartera['tiporenta'],
+                    cod_tipo_renta = item_cartera['codtiporenta'],
+                    descripcion = item_cartera['descripcion']
+                )
+                data['tipo_renta'] = tipo_renta.id
                 
 
             data_list.append(data)

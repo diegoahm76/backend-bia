@@ -44,13 +44,16 @@ class CuencasSerializer(serializers.ModelSerializer):
 
 
 
-class SubZonaHidricaTuaSerializerr(serializers.ModelSerializer):
-    nombre_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
-    id_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_zona_hidrica.id_macro_cuenca.id_macro_cuenca')
-    nombre_zona_hidirca= serializers.ReadOnlyField(source='id_zona_hidrica.nombre_zona_hidrica')
+class CuencasTuaSerializerr(serializers.ModelSerializer):
+    nombre_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
+    id_zona_hidrica_macrocuenca = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.id_macro_cuenca.id_macro_cuenca')
+    nombre_zona_hidirca= serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.nombre_zona_hidrica')
+    id_sub_zona_hidrica = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_sub_zona_hidrica')
+    nombre_sub_zona_hidrica = serializers.ReadOnlyField(source='id_sub_zona_hidrica.nombre_sub_zona_hidrica')
+    codigo_rio = serializers.ReadOnlyField(source='id_sub_zona_hidrica.codigo_rio')
    
     class Meta:
-        model = SubZonaHidrica
+        model = CuencasSubZonas
         exclude = ['valor_regional_tr']
 
 

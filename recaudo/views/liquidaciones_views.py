@@ -2,11 +2,14 @@ from datetime import datetime
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
+from django.template.loader import render_to_string
+from seguridad.utils import Util
+from gestion_documental.models.expedientes_models import ArchivosDigitales
 from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
-from recaudo.models.extraccion_model_recaudo import Rt908Liquidacion, Rt954Cobro, Rt970Tramite, Rt980Tua
+from recaudo.models.extraccion_model_recaudo import Rt908Liquidacion, Rt954Cobro, Rt970Tramite, Rt980Tua, T971TramiteTercero, Tercero
 from recaudo.models.liquidaciones_models import (
     HistEstadosLiq,
     OpcionesLiquidacionBase,
@@ -19,6 +22,7 @@ from recaudo.models.liquidaciones_models import (
 from recaudo.serializers.liquidaciones_serializers import (
     HistEstadosLiqGetSerializer,
     HistEstadosLiqPostSerializer,
+    LiquidacionesExpedientePostSerializer,
     LiquidacionesTramiteAnularSerializer,
     LiquidacionesTramiteGetSerializer,
     LiquidacionesTramitePostSerializer,
@@ -764,7 +768,7 @@ class  LiquidacionPdfpruebaMiguelUpdate(generics.UpdateAPIView):
 
 class LiquidacionObligacionCreateView(generics.CreateAPIView):
     queryset = LiquidacionesBase.objects.all()
-    serializer_class = LiquidacionesTramitePostSerializer
+    serializer_class = LiquidacionesExpedientePostSerializer
     serializer_detalles_class = DetallesLiquidacionBasePostSerializer
     serializer_historico_class = HistEstadosLiqPostSerializer
     permission_classes = [IsAuthenticated]
@@ -822,6 +826,9 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         
         archivo_class = ArchivosDgitalesCreate()
         respuesta = archivo_class.crear_archivo(data_archivo, archivo_liquidacion)
+        nombres_anexos_auditoria = []
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+        nombres_anexos_auditoria.append({'NombreAnexo': archivo.nombre_de_Guardado, 'ruta_archivo': archivo.ruta_archivo.path})
 
         # Validar que la fecha de vencimiento sea 
         fecha_vencimiento = datetime.strptime(data_liquidacion['vencimiento'], "%Y-%m-%d")
@@ -837,7 +844,7 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
         if not expediente:
             raise ValidationError('El expediente seleccionado no existe')
-        data_liquidacion['id_deudor'] = expediente.id_deudor.id_deudor
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id
         data_expediente = self.obtener_resolucion(expediente)
         data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
         data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
@@ -869,6 +876,11 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         serializer_historico.is_valid(raise_exception=True)
         serializer_historico.save()
 
+        # Enviar correo
+        print(data_output)
+        correo_enviado = self.correo(expediente, data_output['agno'], nombres_anexos_auditoria)
+        print(correo_enviado)
+
         return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
 
 
@@ -880,6 +892,225 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
                 'fecha_resolucion': tramite.t970fecharesperm
             }
             return data
+        
+    def correo(self, expediente, agno, archivo):
+        template = "notificar_liquidacion.html"
+        nombre_titular = ""
+        num_expediente = ""
+        persona = None
+        if expediente.id_expediente_pimisys:
+            num_expediente = expediente.id_expediente_pimisys.t920codexpediente
+            tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite='TUAIM').first()
+            tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
+            persona = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
+            nombre_titular = persona.t03nombre
+        elif expediente.id_expediente_doc:
+            num_expediente = f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}"
+            persona = SolicitudesTramites.objects.filter(id_expediente=expediente.id_expediente_doc.id_expediente_documental).first()
+            nombre_titular = f"{persona.id_persona_titular.primer_nombre} {persona.id_persona_titular.segundo_nombre} {persona.id_persona_titular.primer_apellido} {persona.id_persona_titular.segundo_apellido}"
+        context = {
+            'nombre_titular':nombre_titular,
+            'agno': agno,
+            "expediente": num_expediente
+        }
+        print(context)
+        template = render_to_string((template), context)
+        if expediente.id_expediente_pimisys:
+            if persona.t03email:
+                print(persona.t03email)
+                email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':persona.t03email}
+                correo = Util.send_email_files(email_data, archivo)
+                print("Correo enviado")
+                return correo
+            elif persona.t03telefono:
+                sms = f'Queremos informarle que se genero la facturación del año {agno} para su expediente número {num_expediente}'
+                Util.send_sms(persona.t03telefono, sms)
+        elif expediente.id_expediente_doc:
+            if persona.id_persona_titular.email:
+                print(persona.id_persona_titular.email)
+                email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':persona.id_persona_titular.email}
+                correo = Util.send_email_files(email_data, archivo)
+                print("Correo enviado")
+                return correo
+            elif persona.id_persona_titular.telefono_celular_empresa:
+                sms = f'Queremos informarle que se genero la facturación del año {agno} para su expediente número {num_expediente}'
+                Util.send_sms(persona.id_persona_titular.telefono_celular_empresa, sms)
+        else:
+            raise ValidationError("No se puede enviar el correo porque no se encontró el correo del titular")
+
+
+class LiquidacionMasivaView(generics.CreateAPIView):
+    queryset = LiquidacionesBase.objects.all()
+    serializer_class = LiquidacionesExpedientePostSerializer
+    serializer_detalles_class = DetallesLiquidacionBasePostSerializer
+    serializer_historico_class = HistEstadosLiqPostSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data_liquidacion = request.data.get('data_liquidacion')
+        data_detalles = request.data.get('data_detalles')
+        archivo_liquidacion = request.FILES.get('archivo_liquidacion')
+        current_date = datetime.now()
+
+        if not data_liquidacion:
+            raise ValidationError('Debe enviar la información de la liquidación')
+        
+        if not archivo_liquidacion:
+            raise ValidationError('Debe enviar el archivo generado para la liquidación')
+        
+        data_liquidacion = json.loads(data_liquidacion)
+        data_detalles = json.loads(data_detalles) if data_detalles else None
+        
+        # VALIDAR QUE NO EXISTA UNA LIQUIDACIÓN PENDIENTE PARA EL MISMO TRÁMITE
+        liquidacion_pendiente = LiquidacionesBase.objects.filter(id_expediente=data_liquidacion['id_expediente'], estado='PENDIENTE', fecha_liquidacion__year=current_date.year).first()
+        if liquidacion_pendiente:
+            raise ValidationError('El trámite elegido ya tiene una liquidación actual pendiente, si desea generar otro para este trámite debe anular el anterior')
+
+        # Guardar archivo
+        # VALIDAR FORMATO ARCHIVO 
+        archivo_nombre = archivo_liquidacion.name 
+        nombre_sin_extension, extension = os.path.splitext(archivo_nombre)
+        extension_sin_punto = extension[1:] if extension.startswith('.') else extension
+        
+        formatos_tipos_medio_list = FormatosTiposMedio.objects.filter(cod_tipo_medio_doc='E').values_list(Lower('nombre'), flat=True)
+        
+        if extension_sin_punto.lower() not in list(formatos_tipos_medio_list):
+            raise ValidationError(f'El formato del documento {archivo_nombre} no se encuentra definido en el sistema')
+        
+        # CREAR ARCHIVO EN T238
+        # Obtiene el año actual para determinar la carpeta de destino
+        current_year = current_date.year
+        ruta = os.path.join("home", "BIA", "Otros", "LiquidacionesTramites", str(current_year))
+        
+        # Calcula el hash MD5 del archivo
+        md5_hash = hashlib.md5()
+        for chunk in archivo_liquidacion.chunks():
+            md5_hash.update(chunk)
+
+        # Obtiene el valor hash MD5
+        md5_value = md5_hash.hexdigest()
+
+        # Crea el archivo digital y obtiene su ID
+        data_archivo = {
+            'es_Doc_elec_archivo': True,
+            'ruta': ruta,
+            'md5_hash': md5_value  
+        }
+        
+        archivo_class = ArchivosDgitalesCreate()
+        respuesta = archivo_class.crear_archivo(data_archivo, archivo_liquidacion)
+        nombres_anexos_auditoria = []
+        archivo = ArchivosDigitales.objects.filter(id_archivo_digital=respuesta.data.get('data').get('id_archivo_digital')).first()
+        nombres_anexos_auditoria.append({'NombreAnexo': archivo.nombre_de_Guardado, 'ruta_archivo': archivo.ruta_archivo.path})
+
+        # Validar que la fecha de vencimiento sea 
+        fecha_vencimiento = datetime.strptime(data_liquidacion['vencimiento'], "%Y-%m-%d")
+        fecha_actual = datetime.now()
+        if fecha_vencimiento.date() < fecha_actual.date():
+            raise ValidationError('La fecha de vencimiento no puede ser menor a la fecha actual')
+
+        # Asociar archivo creado a liquidación
+        data_liquidacion['id_persona_liquida'] = request.user.persona.id_persona
+        data_liquidacion['id_archivo'] = respuesta.data.get('data').get('id_archivo_digital')
+        data_liquidacion['estado'] = 'PENDIENTE'
+
+        expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
+        if not expediente:
+            raise ValidationError('El expediente seleccionado no existe')
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id
+        data_expediente = self.obtener_resolucion(expediente)
+        data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
+        data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
+
+        serializer = self.serializer_class(data=data_liquidacion)
+        serializer.is_valid(raise_exception=True)
+        liquidacion_creada = serializer.save()
+
+        data_output = serializer.data
+        data_output['id_archivo_ruta'] = liquidacion_creada.id_archivo.ruta_archivo.url
+        data_output['detalles'] = []
+
+        if data_detalles:
+            for detalle in data_detalles:
+                detalle['id_liquidacion'] = liquidacion_creada.id
+                serializer_detalle = self.serializer_detalles_class(data=detalle)
+                serializer_detalle.is_valid(raise_exception=True)
+                serializer_detalle.save()
+
+                data_output['detalles'].append(serializer_detalle.data)
+
+        # Guardar historico
+        data_historico = {
+            'id_liquidacion_base': liquidacion_creada.id,
+            'estado_liq': 'PENDIENTE',
+            'fecha_estado': datetime.now()
+        }
+        serializer_historico = self.serializer_historico_class(data=data_historico)
+        serializer_historico.is_valid(raise_exception=True)
+        serializer_historico.save()
+
+        # Enviar correo
+        print(data_output)
+        correo_enviado = self.correo(expediente, data_output['agno'], nombres_anexos_auditoria)
+        print(correo_enviado)
+
+        return Response({'success': True, 'detail': 'Se ha creado la liquidación para el trámite correctamente', 'data': data_output}, status=status.HTTP_201_CREATED)
+
+
+    def obtener_resolucion(self, expediente):
+        if expediente.id_expediente_pimisys:
+            tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente).first()
+            data = {
+                'numero_resolucion': tramite.t970numresolperm,
+                'fecha_resolucion': tramite.t970fecharesperm
+            }
+            return data
+        
+    def correo(self, expediente, agno, archivo):
+        template = "notificar_liquidacion.html"
+        nombre_titular = ""
+        num_expediente = ""
+        persona = None
+        if expediente.id_expediente_pimisys:
+            num_expediente = expediente.id_expediente_pimisys.t920codexpediente
+            tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite='TUAIM').first()
+            tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
+            persona = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
+            nombre_titular = persona.t03nombre
+        elif expediente.id_expediente_doc:
+            num_expediente = f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}"
+            persona = SolicitudesTramites.objects.filter(id_expediente=expediente.id_expediente_doc.id_expediente_documental).first()
+            nombre_titular = f"{persona.id_persona_titular.primer_nombre} {persona.id_persona_titular.segundo_nombre} {persona.id_persona_titular.primer_apellido} {persona.id_persona_titular.segundo_apellido}"
+        context = {
+            'nombre_titular':nombre_titular,
+            'agno': agno,
+            "expediente": num_expediente
+        }
+        print(context)
+        template = render_to_string((template), context)
+        if expediente.id_expediente_pimisys:
+            if persona.t03email:
+                print(persona.t03email)
+                email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':persona.t03email}
+                correo = Util.send_email_files(email_data, archivo)
+                print("Correo enviado")
+                return correo
+            elif persona.t03telefono:
+                sms = f'Queremos informarle que se genero la facturación del año {agno} para su expediente número {num_expediente}'
+                Util.send_sms(persona.t03telefono, sms)
+        elif expediente.id_expediente_doc:
+            if persona.id_persona_titular.email:
+                print(persona.id_persona_titular.email)
+                email_data = {'template': template, 'email_subject': 'Respuesta PQRSDF', 'to_email':persona.id_persona_titular.email}
+                correo = Util.send_email_files(email_data, archivo)
+                print("Correo enviado")
+                return correo
+            elif persona.id_persona_titular.telefono_celular_empresa:
+                sms = f'Queremos informarle que se genero la facturación del año {agno} para su expediente número {num_expediente}'
+                Util.send_sms(persona.id_persona_titular.telefono_celular_empresa, sms)
+        else:
+            raise ValidationError("No se puede enviar el correo porque no se encontró el correo del titular")
+
 
 
 class ExpedientesDeudorGetView(generics.ListAPIView):

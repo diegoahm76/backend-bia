@@ -49,10 +49,6 @@ class SubZonaHidrica(models.Model):
     id_zona_hidrica = models.ForeignKey(ZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_ZonaHidrica")
     id_tipo_zona_hidrica = models.ForeignKey(TipoZonaHidrica, on_delete=models.CASCADE, db_column="T623Id_TipoZonaHidrica")    
     id_tipo_agua_zona_hidrica = models.ForeignKey(TipoAguaZonaHidrica,blank=True,null=True,on_delete=models.SET_NULL, db_column="T623Id_TipoAguaZonaHidrica")
-    valor_regional_tua = models.CharField(max_length=50, db_column="T623valorRegionalTua", null=True, blank=True)
-    valor_regional_tr = models.CharField(max_length=50, db_column="T623valorRegionalTr", null=True, blank=True)
-    fecha_inicio = models.DateField(null=True, blank=True, db_column="T623fechaInicio")
-    fecha_fin = models.DateField(null=True, blank=True, db_column="T623fechaFin")
 
     class Meta:
         db_table = 'T623SubZonasHidricas'
@@ -64,6 +60,10 @@ class CuencasSubZonas(models.Model):
     id_cuenca = models.AutoField(primary_key=True, db_column="T625IdCuenca")
     codigo_cuenca = models.CharField(max_length=10, db_column="T625codigoCuenca")
     nombre_cuenca = models.CharField(max_length=100, db_column="T625nombreCuenca")
+    valor_regional_tua = models.CharField(max_length=50, db_column="T625valorRegionalTua", null=True, blank=True)
+    valor_regional_tr = models.CharField(max_length=50, db_column="T625valorRegionalTr", null=True, blank=True)
+    fecha_inicio = models.DateField(null=True, blank=True, db_column="T625fechaInicio")
+    fecha_fin = models.DateField(null=True, blank=True, db_column="T625fechaFin")
     id_sub_zona_hidrica = models.ForeignKey(SubZonaHidrica, on_delete=models.CASCADE, db_column="T625Id_SubZonaHidrica")
     
     class Meta:
