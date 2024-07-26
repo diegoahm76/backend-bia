@@ -4,6 +4,7 @@ from recaudo.models.cobros_models import Cartera
 from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.planes_pagos_models import PlanPagos, ResolucionesPlanPago, PlanPagosCuotas
 from recaudo.models.facilidades_pagos_models import FacilidadesPago, DetallesFacilidadPago
+from datetime import date, datetime
 
 
 class TipoPagoSerializer(serializers.ModelSerializer):
@@ -71,15 +72,18 @@ class VisualizacionCarteraSelecionadaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cartera
-        fields = ('id','nombre','monto_inicial','inicio','dias_mora','valor_intereses')
+        fields = ('id','nombre','monto_inicial','fecha_facturacion','dias_mora','valor_intereses')
 
     def get_dias_mora(self, obj):
         detalle = DetallesFacilidadPago.objects.filter(id_cartera=obj.id).first()
 
-        if detalle:
+        if detalle and detalle.id_facilidad_pago.fecha_abono:
+            fecha_facturacion = str(obj.fecha_facturacion.year) + "-" + str(obj.fecha_facturacion.month) + "-" + str(obj.fecha_facturacion.day)
+            fecha_facturacion = datetime.strptime(fecha_facturacion, '%Y-%m-%d').date()
             fecha_abono = detalle.id_facilidad_pago.fecha_abono
-            dias_mora = (fecha_abono - obj.inicio).days
+            dias_mora = (fecha_abono - fecha_facturacion).days
             return dias_mora
+        return 0
         
     def get_valor_intereses(self, obj):
         dias_mora = self.get_dias_mora(obj)
