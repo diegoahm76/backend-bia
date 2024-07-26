@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica, CuencasSubZonas, TipoUsoAgua
-from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,SubZonaHidricaTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer, TipoUsoAguaSerializer
+from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,CuencasTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer, TipoUsoAguaSerializer
 import copy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
@@ -75,6 +75,85 @@ class CuencasListView (generics.ListCreateAPIView):
         serializer = self.serializer_class(cuencas,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
+    
+
+
+class CuencasSubZonasCreate(generics.CreateAPIView):
+    serializer_class = CuencasSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CuencasSubZonas.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data_in = request.data
+            
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            cuenca = serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            raise ValidationError(e.detail)
+        
+
+class CuencasSubZonasDeleteView(generics.DestroyAPIView):
+    serializer_class = CuencasSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data_in = request.data
+            serializer = self.serializer_class(data=data_in)
+            serializer.is_valid(raise_exception=True)
+            cuenca = serializer.save()
+
+            return Response({'success': True, 'detail': 'Registro creado exitosamente', 'data': serializer.data}, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            raise ValidationError(e.detail)
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            pk = kwargs.get('pk')
+            obj = CuencasSubZonas.objects.filter(id_cuenca=pk).first()
+            
+            if obj is None:
+                return Response({'success': False, 'detail': 'Registro no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+            
+            serializer = self.serializer_class(obj)
+            
+            obj.delete()
+            
+            return Response({
+                'success': True,
+                'detail': 'Registro eliminado exitosamente',
+                'data': serializer.data  
+            }, status=status.HTTP_204_NO_CONTENT)
+        except ValidationError as e:
+            raise ValidationError(e.detail)
+        
+
+class CuencasSubZonasUpdateView(generics.UpdateAPIView):
+    serializer_class = CuencasSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = CuencasSubZonas.objects.all()
+    lookup_field = 'id_cuenca'  
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Crear un serializer con los datos del request y el objeto existente
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Obtener el objeto actualizado después de guardar
+        updated_instance = self.get_object()
+        updated_data = self.get_serializer(updated_instance).data
+        
+        return Response({
+            "detail": "El registro se actualizó correctamente.",
+            "data": updated_data
+        }, status=status.HTTP_200_OK)
 
     
 
@@ -241,12 +320,11 @@ class EnviarCORREOView(generics.CreateAPIView):
 
 
 class SubZonaHidricaTuaListVieww(generics.ListAPIView):
-    queryset = SubZonaHidrica.objects.all()
-    serializer_class = SubZonaHidricaTuaSerializerr
+    serializer_class = CuencasTuaSerializerr
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data_rios = SubZonaHidrica.objects.all()
+        data_rios = CuencasSubZonas.objects.all()
         serializer = self.serializer_class(data_rios,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
