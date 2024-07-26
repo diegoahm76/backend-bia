@@ -1,3 +1,4 @@
+from decimal import Decimal
 from rest_framework import generics, status
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +11,7 @@ from django.db.models import Value as V
 from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
 from recaudo.models.liquidaciones_models import Deudores
-from recaudo.models.base_models import RangosEdad
+from recaudo.models.base_models import RangosEdad, TipoRenta
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
 from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.serializers.reportes_serializers import (
@@ -25,11 +26,14 @@ from recaudo.serializers.reportes_serializers import (
     RangosEdadSerializer,
     ReporteFacilidadesPagosSerializer,
     ReporteFacilidadesPagosDetalleSerializer,
+    TipoRentaSerializer,
 )
 from collections import defaultdict
 from heapq import nlargest
 from rest_framework.pagination import PageNumberPagination
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Value
 from rest_framework.views import APIView
+from django.core.cache import cache
 from django.db import models
 
 
@@ -636,61 +640,42 @@ class ConceptoContableView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Datos de Concepto Contable obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
     
-class CarteraListView(generics.ListAPIView):
-    serializer_class = CarteraSerializer
-    permission_classes = [IsAuthenticated]
+
+class TipoRentaView(generics.ListAPIView):
+    serializer_class = TipoRentaSerializer
 
     def get_queryset(self):
-        queryset = Cartera.objects.all()
-
-        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
-        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        id_rango = self.request.query_params.get('id_rango')
-
-        if fecha_facturacion_desde:
-            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
-
-        if fecha_facturacion_hasta:
-            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
-
-        if id_rango:
-            queryset = queryset.filter(id_rango=id_rango)
-
+        queryset = TipoRenta.objects.all()
         return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.serializer_class(queryset, many=True)
 
-        # Mapeo de IDs de rangos de días a nombres
-        nombres_rangos = {
-            1: "0 a 30 Dias",
-            2: "181 a 360 Dias",
-            3: "Mas 360 Dias"
-        }
-
-        # Agrupar la data por id_rango y sumar valor_sancion para cada grupo
-        grouped_data = {}
-        for key, group in groupby(serializer.data, key=itemgetter('id_rango')):
-            nombre_rango = nombres_rangos.get(key, "Desconocido")
-            total_sancion = sum(float(item['valor_sancion']) if item['valor_sancion'] is not None else 0 for item in group)
-            grouped_data[nombre_rango] = total_sancion
-
-        # Retornar la respuesta con los datos procesados
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Datos de Tipo Renta obtenidos exitosamente', 'data': serializer.data}, status=status.HTTP_200_OK)
     
 
-class ReporteGeneralCarteraDeuda(generics.ListAPIView):
+
+def calcular_valor_sancion(monto_inicial, valor_intereses):
+    monto_inicial = monto_inicial or 0
+    valor_intereses = valor_intereses or 0
+    return monto_inicial + valor_intereses
+
+
+
+
+class CarteraListView(generics.ListAPIView):
     serializer_class = CarteraSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Desactiva la paginación
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
 
         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        codigo_contable = self.request.query_params.get('codigo_contable')
         id_rango = self.request.query_params.get('id_rango')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
 
         if fecha_facturacion_desde:
             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
@@ -698,8 +683,125 @@ class ReporteGeneralCarteraDeuda(generics.ListAPIView):
         if fecha_facturacion_hasta:
             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
 
-        if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
+
+        if id_rango:
+            queryset = queryset.filter(id_rango=id_rango)
+
+        return queryset.select_related('id_rango')
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Anotar el valor_sancion calculado
+        queryset = queryset.annotate(
+            valor_sancion_calculado=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(0)),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        )
+
+        # Cachear la consulta
+        cache_key = f"cartera_list_{request.query_params}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': cached_data}, status=status.HTTP_200_OK)
+
+        # Obtener la descripción de los rangos
+        rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
+
+        # Agrupar y sumar valor_sancion por id_rango
+        grouped_data = {}
+        for cartera in queryset:
+            # Verificar si id_rango es None antes de acceder a id
+            descripcion_rango = rangos.get(cartera.id_rango.id, 'Desconocido') if cartera.id_rango else 'Desconocido'
+            
+            total_sancion = calcular_valor_sancion(cartera.monto_inicial, cartera.valor_intereses)
+
+            if descripcion_rango not in grouped_data:
+                grouped_data[descripcion_rango] = 0
+
+            grouped_data[descripcion_rango] += total_sancion
+
+        # Convertir el diccionario a una lista de diccionarios
+        result_data = [{'rango': rango, 'total_sancion': total} for rango, total in grouped_data.items()]
+
+        cache.set(cache_key, result_data, 300)  # Cachear por 5 minutos
+
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': result_data}, status=status.HTTP_200_OK)
+    
+    
+# class CarteraListView(generics.ListAPIView):
+#     serializer_class = CarteraSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         queryset = Cartera.objects.all()
+
+#         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+#         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+#         id_rango = self.request.query_params.get('id_rango')
+#         id_tipo_renta = self.request.query_params.get('id_tipo_renta')
+
+#         if fecha_facturacion_desde:
+#             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+#         if fecha_facturacion_hasta:
+#             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+#         if id_tipo_renta:
+#             queryset = queryset.filter(tipo_renta=id_tipo_renta)
+
+#         if id_rango:
+#             queryset = queryset.filter(id_rango=id_rango)
+
+#         return queryset
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+#         serializer = self.serializer_class(queryset, many=True)
+
+#         # Mapeo de IDs de rangos de días a nombres
+#         nombres_rangos = {
+#             1: "0 a 30 Dias",
+#             2: "181 a 360 Dias",
+#             3: "Mas 360 Dias"
+#         }
+
+#         # Agrupar la data por id_rango y sumar valor_sancion para cada grupo
+#         grouped_data = {}
+#         for key, group in groupby(serializer.data, key=itemgetter('id_rango')):
+#             nombre_rango = nombres_rangos.get(int(key), "Desconocido")
+#             total_sancion = sum(calcular_valor_sancion(float(item['monto_inicial']), float(item['valor_intereses']) if item['valor_intereses'] is not None else 0) for item in group)
+#             grouped_data[nombre_rango] = total_sancion
+
+#         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': grouped_data}, status=status.HTTP_200_OK)
+    
+
+
+
+class ReporteGeneralCarteraDeuda(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+    permission_classes = [IsAuthenticated]
+    
+
+    def get_queryset(self):
+        queryset = Cartera.objects.all()
+
+        fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+        fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+        id_rango = self.request.query_params.get('id_rango')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
+
+        if fecha_facturacion_desde:
+            queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+        if fecha_facturacion_hasta:
+            queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
 
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
@@ -709,23 +811,31 @@ class ReporteGeneralCarteraDeuda(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        # Obtener la suma total de valor_sancion para cada codigo_contable
-        total_por_codigo_contable = queryset.values('codigo_contable', 'codigo_contable__descripcion').annotate(total_sancion=Sum('valor_sancion'))
+        # Anotar el valor_sancion calculado
+        queryset = queryset.annotate(
+            valor_sancion_total=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(0)),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        )
 
-        # Retornar la respuesta con los datos procesados
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_codigo_contable}, status=status.HTTP_200_OK)
+        # Obtener la suma total de valor_sancion para cada tipo_renta
+        total_por_tipo_renta = queryset.values('tipo_renta', 'tipo_renta__nombre_tipo_renta','tipo_renta__descripcion').annotate(valor_sancion_total=Sum('valor_sancion_total'))
+
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': total_por_tipo_renta}, status=status.HTTP_200_OK)
         
 
 class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
     serializer_class = CarteraDeudaYEtapaSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Desactiva la paginación
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
 
         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
         id_rango = self.request.query_params.get('id_rango')
         etapa = self.request.query_params.get('etapa')
 
@@ -735,8 +845,8 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
         if fecha_facturacion_hasta:
             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
 
-        if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
 
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
@@ -745,27 +855,42 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
             queryset = queryset.filter(proceso_cartera__id_etapa=etapa).distinct()
 
         return queryset
-    
+
     def list(self, request, *args, **kwargs):
+        # Crear una clave única para la caché basada en los parámetros de consulta
+        cache_key = f"reporte_general_cartera_deuda_y_etapa_{request.query_params}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': cached_data}, status=status.HTTP_200_OK)
+
         queryset = self.get_queryset()
 
-        # Obtener la suma total de valor_sancion para cada codigo_contable, incluyendo 'codigo_contable_valor'
-        total_por_codigo_contable = queryset.values(
-            'codigo_contable', 
-            'codigo_contable__descripcion',
-            'codigo_contable__codigo_contable' 
-        ).annotate(total_sancion=Sum('valor_sancion'))
+        # Anotar el valor_sancion calculado usando la función del modelo
+        queryset = queryset.annotate(
+            valor_sancion_calculado=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(0)),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        )
 
-        # Formatear la respuesta para incluir 'codigo_contable_valor'
+        # Obtener la suma total de valor_sancion para cada tipo_renta
+        total_por_tipo_renta = queryset.values(
+            'tipo_renta', 
+            'tipo_renta__nombre_tipo_renta'
+        ).annotate(total_sancion=Sum('valor_sancion_calculado'))
+
+        # Formatear la respuesta para incluir 'tipo_renta_valor'
         response_data = [
             {
-                'codigo_contable': item['codigo_contable'],
-                'descripcion': item['codigo_contable__descripcion'],
-                'codigo_contable_valor': item['codigo_contable__codigo_contable'],
+                'tipo_renta': item['tipo_renta'],
+                'nombre_renta': item['tipo_renta__nombre_tipo_renta'],
                 'total_sancion': item['total_sancion']
             }
-            for item in total_por_codigo_contable
+            for item in total_por_tipo_renta
         ]
+
+        # Cachear los datos por 5 minutos
+        cache.set(cache_key, response_data, 300)
 
         return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': response_data}, status=status.HTTP_200_OK)
     
@@ -773,13 +898,14 @@ class ReporteGeneralCarteraDeudaYEtapa(generics.ListAPIView):
 class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
     serializer_class = CarteraSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None  # Desactiva la paginación
 
     def get_queryset(self):
         queryset = Cartera.objects.all()
 
         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
         id_rango = self.request.query_params.get('id_rango')
 
         if fecha_facturacion_desde:
@@ -788,8 +914,8 @@ class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
         if fecha_facturacion_hasta:
             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
 
-        if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
 
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
@@ -797,49 +923,68 @@ class ReporteGeneralCarteraDeudaTop(generics.ListAPIView):
         return queryset
 
     def list(self, request, *args, **kwargs):
+        # Crear una clave única para la caché basada en los parámetros de consulta
+        cache_key = f"reporte_general_cartera_deuda_top_{request.query_params}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'data': cached_data}, status=status.HTTP_200_OK)
+
         queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
 
-        # Crear un diccionario para almacenar la suma total de valor_sancion por cada codigo_contable
-        total_sancion_por_codigo_contable = defaultdict(float)
-        for data in serializer.data:
-            valor_sancion = float(data['valor_sancion']) if data['valor_sancion'] is not None else 0.0
-            total_sancion_por_codigo_contable[data['codigo_contable__descripcion']] += valor_sancion
+        queryset = queryset.annotate(
+            valor_sancion_calculado=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(0)),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        )
 
-        # Obtener los top 5 basados en la suma total de valor_sancion para cada codigo_contable
-        top_5 = nlargest(5, total_sancion_por_codigo_contable.items(), key=lambda x: x[1])
+        total_por_tipo_renta = queryset.values(
+            'tipo_renta', 
+            'tipo_renta__nombre_tipo_renta'
+        ).annotate(total_sancion=Sum('valor_sancion_calculado'))
 
-        # Convertir el resultado nuevamente en un diccionario
-        top_5_dict = {descripcion: value for descripcion, value in top_5}
+        total_por_tipo_renta_list = list(total_por_tipo_renta)
+        top_5 = nlargest(5, total_por_tipo_renta_list, key=lambda x: x['total_sancion'])
 
-        # Filtrar los datos agrupados para incluir solo los que están en el top 5
-        grouped_data_top_5 = {}
-        for key, group in groupby(serializer.data, key=itemgetter('codigo_contable__descripcion')):
-            if key in top_5_dict:
-                group_data = list(group)
-                descripcion = group_data[0]['codigo_contable__descripcion']
-                codigo_contable = group_data[0]['codigo_contable']
-                # Calcular el total_sancion solo para los datos del top 5 de cada codigo_contable
-                total_sancion_top_5 = sum(float(item['valor_sancion']) if item['valor_sancion'] is not None else 0.0 for item in group_data)
-                # Agregar la suma total de valor_sancion de los datos del top 5
-                total_sancion_total = total_sancion_por_codigo_contable[descripcion]
-                grouped_data_top_5[descripcion] = {'codigo_contable': codigo_contable, 'total_sancion': total_sancion_total}
+        top_5_dict = {item['tipo_renta__nombre_tipo_renta']: item['total_sancion'] for item in top_5}
 
-        # Retornar la respuesta con los datos procesados
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': grouped_data_top_5, 'top_5_por_codigo_contable': top_5_dict}, status=status.HTTP_200_OK)
+        grouped_data_top_5 = {
+            item['tipo_renta__nombre_tipo_renta']: {
+                'tipo_renta': item['tipo_renta'],
+                'total_sancion': item['total_sancion']
+            }
+            for item in total_por_tipo_renta_list
+            if item['tipo_renta__nombre_tipo_renta'] in top_5_dict
+        }
+
+        # Cachear los datos por 5 minutos
+        cache.set(cache_key, {
+            'top_5_por_tipo_renta': top_5_dict,
+            'detalles_por_tipo_renta': grouped_data_top_5
+        }, 300)
+
+        return Response({
+            'success': True, 
+            'detail': 'Datos de Cartera obtenidos exitosamente',
+            'data': {
+                'top_5_por_tipo_renta': top_5_dict,
+                'detalles_por_tipo_renta': grouped_data_top_5
+            }
+        }, status=status.HTTP_200_OK)
 
 
 
 class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
     serializer_class = CarteraSerializer
     permission_classes = [IsAuthenticated]
-
+    pagination_class = None 
+    
     def get_queryset(self):
         queryset = Cartera.objects.all()
 
         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
         id_rango = self.request.query_params.get('id_rango')
 
         if fecha_facturacion_desde:
@@ -848,8 +993,8 @@ class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
         if fecha_facturacion_hasta:
             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
 
-        if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
 
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
@@ -857,34 +1002,50 @@ class ReporteGeneralCarteraDeudaYEdad(generics.ListAPIView):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
+        cache_key = f"reporte_general_cartera_deuda_y_edad_{request.query_params}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_tipo_renta': cached_data}, status=status.HTTP_200_OK)
 
-        # Obtener la descripción de los rangos
+        queryset = self.get_queryset()
+
+        # Anotar el valor_sancion calculado usando la función proporcionada
+        queryset = queryset.annotate(
+            valor_sancion_calculado=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(Decimal('0'))),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        ).values(
+            'tipo_renta__descripcion',
+            'id_rango'
+        ).annotate(
+            total_sancion=Sum('valor_sancion_calculado')
+        )
+
+        # Obtener la descripción del id_rango
         rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
 
-        detalles_por_codigo_contable = {}
+        detalles_por_tipo_renta = defaultdict(lambda: defaultdict(Decimal))
 
-        # Iterar sobre los datos y agruparlos por "codigo_contable__descripcion" y "id_rango__descripcion"
-        for data in serializer.data:
-            codigo_contable = data['codigo_contable']
-            descripcion = data['codigo_contable__descripcion']
-            rango_id = data['id_rango']
-            total_sancion = float(data['valor_sancion']) if data['valor_sancion'] is not None else 0.0
+        for item in queryset:
+            tipo_renta = item['tipo_renta__descripcion']
+            id_rango = item['id_rango']
+            total_sancion = item['total_sancion']
 
-            # Obtener la descripción del rango
-            descripcion_rango = rangos.get(rango_id, 'Desconocido')
+            descripcion_rango = rangos.get(id_rango, 'Desconocido')
 
-            if descripcion not in detalles_por_codigo_contable:
-                detalles_por_codigo_contable[descripcion] = {'codigo_contable': codigo_contable}
+            detalles_por_tipo_renta[tipo_renta][descripcion_rango] += total_sancion
 
-            if descripcion_rango not in detalles_por_codigo_contable[descripcion]:
-                detalles_por_codigo_contable[descripcion][descripcion_rango] = 0
+        # Convertir detalles_por_tipo_renta a un dict estándar antes de cachear
+        detalles_por_tipo_renta = {k: dict(v) for k, v in detalles_por_tipo_renta.items()}
 
-            detalles_por_codigo_contable[descripcion][descripcion_rango] += total_sancion
+        # Cachear los datos por 5 minutos
+        cache.set(cache_key, detalles_por_tipo_renta, 300)
 
-        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_codigo_contable': detalles_por_codigo_contable}, status=status.HTTP_200_OK)
+        return Response({'success': True, 'detail': 'Datos de Cartera obtenidos exitosamente', 'detalles_por_tipo_renta': detalles_por_tipo_renta}, status=status.HTTP_200_OK)
     
+
+
 
 # class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
 #     serializer_class = CarteraSerializer
@@ -953,7 +1114,7 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
 
         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
         id_rango = self.request.query_params.get('id_rango')
 
         if fecha_facturacion_desde:
@@ -962,59 +1123,66 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
         if fecha_facturacion_hasta:
             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
 
-        if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
 
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
 
         return queryset
 
+    def calcular_valor_sancion(self, monto_inicial, valor_intereses):
+        """Calcula el valor de sanción utilizando la fórmula proporcionada."""
+        return monto_inicial + (valor_intereses or Decimal('0'))
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
 
-        # Obtener la descripción del id_rango
+        queryset = queryset.annotate(
+            valor_sancion_calculado=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(0)),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        )
+
         rangos = {rango.id: rango.descripcion for rango in RangosEdad.objects.all()}
 
-        # Crear un diccionario para almacenar la suma de total_sancion para cada combinación de codigo_contable e id_rango
-        grouped_data = defaultdict(float)
-        for item in serializer.data:
-            descripcion = item['codigo_contable__descripcion'] 
-            id_rango = item['id_rango']
-            total_sancion = float(item['valor_sancion']) if item['valor_sancion'] is not None else 0.0
-            grouped_data[(descripcion, id_rango)] += total_sancion
+        grouped_data = queryset.values(
+            'tipo_renta__descripcion',
+            'id_rango'
+        ).annotate(
+            total_sancion=Sum('valor_sancion_calculado')
+        )
 
-        # Calcular la suma total de total_sancion para cada codigo_contable
-        total_sancion_por_codigo_contable = defaultdict(float)
-        for key, value in grouped_data.items():
-            descripcion, id_rango = key
-            total_sancion_por_codigo_contable[descripcion] += value
+        total_sancion_por_tipo_renta = defaultdict(Decimal)
+        for item in grouped_data:
+            tipo_renta = item['tipo_renta__descripcion']
+            total_sancion = item['total_sancion']
+            total_sancion_por_tipo_renta[tipo_renta] += total_sancion
 
-        # Obtener los top 5 basados en la suma total de total_sancion para cada codigo_contable
-        top_5 = nlargest(5, total_sancion_por_codigo_contable.items(), key=lambda x: x[1])
+        # Obtener los top 5 basados en la suma total de total_sancion para cada tipo_renta
+        top_5 = nlargest(5, total_sancion_por_tipo_renta.items(), key=lambda x: x[1])
 
         # Convertir el resultado nuevamente en un diccionario
-        top_5_dict = {descripcion: value for descripcion, value in top_5}
+        top_5_dict = {tipo_renta: float(value) for tipo_renta, value in top_5}
 
-        # Crear un diccionario para almacenar la suma de valor_sancion por cada id_rango para cada codigo_contable del top 5
-        detalles_por_codigo_contable = defaultdict(dict)
-        for codigo_contable in top_5_dict.keys():
-            for key, value in grouped_data.items():
-                descripcion, id_rango = key
-                if descripcion == codigo_contable:
-                    if id_rango in rangos:
-                        detalles_por_codigo_contable[codigo_contable][rangos[id_rango]] = value  
+        # Crear un diccionario para almacenar la suma de valor_sancion por cada id_rango para cada tipo_renta del top 5
+        detalles_por_tipo_renta = defaultdict(dict)
+        for item in grouped_data:
+            tipo_renta = item['tipo_renta__descripcion']
+            id_rango = item['id_rango']
+            if tipo_renta in top_5_dict:
+                if id_rango in rangos:
+                    detalles_por_tipo_renta[tipo_renta][rangos[id_rango]] = float(item['total_sancion'])
 
-        # Retornar la respuesta con los datos procesados
         return Response({
             'success': True,
             'detail': 'Datos de Cartera obtenidos exitosamente',
-            'top_5_por_codigo_contable': top_5_dict,
-            'detalles_por_codigo_contable': detalles_por_codigo_contable
+            'top_5_por_tipo_renta': top_5_dict,
+            'detalles_por_tipo_renta': detalles_por_tipo_renta
         }, status=status.HTTP_200_OK)
-
-
+    
+    
 
 class CarteraDeudoresTop(generics.ListAPIView):
     serializer_class = DeudorSumSerializer
@@ -1025,7 +1193,7 @@ class CarteraDeudoresTop(generics.ListAPIView):
 
         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
-        codigo_contable = self.request.query_params.get('codigo_contable')
+        id_tipo_renta = self.request.query_params.get('id_tipo_renta')
         id_rango = self.request.query_params.get('id_rango')
 
         if fecha_facturacion_desde:
@@ -1034,19 +1202,32 @@ class CarteraDeudoresTop(generics.ListAPIView):
         if fecha_facturacion_hasta:
             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
 
-        if codigo_contable:
-            queryset = queryset.filter(codigo_contable=codigo_contable)
+        if id_tipo_renta:
+            queryset = queryset.filter(tipo_renta=id_tipo_renta)
 
         if id_rango:
             queryset = queryset.filter(id_rango=id_rango)
 
         return queryset
 
+    def calcular_valor_sancion(self, monto_inicial, valor_intereses):
+        """Calcula el valor de sanción utilizando la fórmula proporcionada."""
+        return monto_inicial + (valor_intereses or 0)
+
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        # Obtener los top 10 deudores basados en la suma total del valor_sancion
-        top_10_deudores = queryset.values('id_deudor').annotate(total_sancion=models.Sum('valor_sancion')).order_by('-total_sancion')[:10]
+        queryset = queryset.annotate(
+            valor_sancion_calculado=ExpressionWrapper(
+                F('monto_inicial') + (F('valor_intereses') or Value(0)),
+                output_field=DecimalField(max_digits=30, decimal_places=4)
+            )
+        )
+
+        # Obtener los top 10 deudores basados en la suma total del valor_sancion calculado
+        top_10_deudores = queryset.values('id_deudor').annotate(
+            total_sancion=Sum('valor_sancion_calculado')
+        ).order_by('-total_sancion')[:10]
 
         # Obtener las instancias de los deudores en el top 10
         deudores_ids = [deudor['id_deudor'] for deudor in top_10_deudores]
@@ -1055,11 +1236,12 @@ class CarteraDeudoresTop(generics.ListAPIView):
         # Crear un diccionario para mapear deudor_id a total_sancion
         deudores_total_sancion = {deudor['id_deudor']: deudor['total_sancion'] for deudor in top_10_deudores}
 
-        # Serializar los datos de los deudores
         deudores_data = []
-        for deudor in deudores_objs:
-            deudor.total_sancion = deudores_total_sancion[deudor.id]
-            deudores_data.append(DeudorSumSerializer(deudor).data)
+        for idx, deudor in enumerate(deudores_objs, start=1):
+            deudor.total_sancion = deudores_total_sancion.get(deudor.id, 0)
+            deudor_data = DeudorSumSerializer(deudor).data
+            deudor_data['ranking'] = idx
+            deudores_data.append(deudor_data)
 
         return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)
 
