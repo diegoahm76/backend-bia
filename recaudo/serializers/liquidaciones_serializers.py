@@ -210,6 +210,20 @@ class LiquidacionesTramitePostSerializer(serializers.ModelSerializer):
             'id_solicitud_tramite': {'required': True, 'allow_null': False}
         }
 
+
+class LiquidacionesExpedientePostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LiquidacionesBase
+        fields = '__all__'
+        extra_kwargs = {
+            'fecha_liquidacion': {'required': True, 'allow_null': False},
+            'vencimiento': {'required': True, 'allow_null': False},
+            'periodo_liquidacion': {'required': True, 'allow_null': False},
+            'valor': {'required': True, 'allow_null': False},
+            'estado': {'required': True, 'allow_null': False},
+            'id_expediente': {'required': True, 'allow_null': False}
+        }
+
 class LiquidacionesTramiteGetSerializer(serializers.ModelSerializer):
     id_archivo_ruta = serializers.ReadOnlyField(source='id_archivo.ruta_archivo.url', default=None)
     nombre_proyecto = serializers.ReadOnlyField(source='id_solicitud_tramite.nombre_proyecto', default=None)
