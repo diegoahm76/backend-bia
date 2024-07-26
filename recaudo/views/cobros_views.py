@@ -178,14 +178,14 @@ class VistaCarteraTuaView(generics.ListAPIView):
 
             tipo_renta = TipoRenta.objects.filter(nombre_tipo_renta=item_cartera['tiporenta'], cod_tipo_renta = item_cartera['codtiporenta']).first()
             if tipo_renta:
-                data['tipo_renta'] = tipo_renta.id
+                data['tipo_renta'] = tipo_renta.id_tipo_renta
             else:
                 tipo_renta = TipoRenta.objects.create(
                     nombre_tipo_renta=item_cartera['tiporenta'],
                     cod_tipo_renta = item_cartera['codtiporenta'],
                     descripcion = item_cartera['descripcion']
                 )
-                data['tipo_renta'] = tipo_renta.id
+                data['tipo_renta'] = tipo_renta.id_tipo_renta
                 
 
             data_list.append(data)
