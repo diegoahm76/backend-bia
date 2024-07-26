@@ -1,3 +1,4 @@
+import locale
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -1802,17 +1803,26 @@ class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
         total_obligado = sum(seguimiento.valor_obligado for seguimiento in seguimientos_poai)
 
         data.append({'total_presupuesto': total_presupuesto, 'total_registro': total_registro, 'total_disponible': total_disponible, 'total_obligado': total_obligado})
-                 
+
+        # Configurar el locale para Colombia
+        locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8')
+
         for proyecto in proyectos:
             metas = Metas.objects.filter(id_proyecto=proyecto.id_proyecto)
             valor_meta = 0
             if metas:
                 valor_meta = sum(meta.valor_meta for meta in metas)
             
+            # Convertir valor_meta a formato de moneda en pesos
+            valor_meta_pesos = locale.currency(valor_meta, grouping=True)
+            
             numero_proyecto.append(proyecto.numero_proyecto)
-            valor_proyecto.append(valor_meta)
+            valor_proyecto.append(valor_meta_pesos)
 
-        
+
+
+
+
         for programa in programas:
             metas = Metas.objects.filter(id_programa=programa.id_programa)
             valor_meta = 0

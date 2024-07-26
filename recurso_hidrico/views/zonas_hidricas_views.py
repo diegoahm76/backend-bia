@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import generics,status
 from rest_framework.permissions import IsAuthenticated
 from recurso_hidrico.models.zonas_hidricas_models import TipoAguaZonaHidrica, ZonaHidrica, MacroCuencas,TipoZonaHidrica,SubZonaHidrica, CuencasSubZonas, TipoUsoAgua
-from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,SubZonaHidricaTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer, TipoUsoAguaSerializer
+from recurso_hidrico.serializers.zonas_hidricas_serializers import SubZonaHidricaTrSerializerr,CuencasTuaSerializerr, SubZonaHidricaValorRegionalSerializer, TipoAguaZonaHidricaSerializer, ZonaHidricaSerializer, MacroCuencasSerializer,TipoZonaHidricaSerializer,SubZonaHidricaSerializer, CuencasSerializer, TipoUsoAguaSerializer
 import copy
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage
@@ -320,12 +320,11 @@ class EnviarCORREOView(generics.CreateAPIView):
 
 
 class SubZonaHidricaTuaListVieww(generics.ListAPIView):
-    queryset = SubZonaHidrica.objects.all()
-    serializer_class = SubZonaHidricaTuaSerializerr
+    serializer_class = CuencasTuaSerializerr
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data_rios = SubZonaHidrica.objects.all()
+        data_rios = CuencasSubZonas.objects.all()
         serializer = self.serializer_class(data_rios,many=True)
 
         return Response({'succes': True, 'detail':'Se encontraron los siguientes registros', 'data':serializer.data,}, status=status.HTTP_200_OK)
