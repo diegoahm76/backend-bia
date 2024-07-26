@@ -321,6 +321,7 @@ class CarteraSerializer(serializers.ModelSerializer):
     # estado = serializers.ReadOnlyField(source='id_expediente.estado',default=None)
     procesos = serializers.SerializerMethodField()
     expediente = serializers.SerializerMethodField()
+    tipo_renta = serializers.ReadOnlyField(source='tipo_renta.nombre_tipo_renta',default=None)
 
 
     def get_procesos(self, obj):
