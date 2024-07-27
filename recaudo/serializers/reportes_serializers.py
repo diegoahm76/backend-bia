@@ -2,7 +2,7 @@ from rest_framework import serializers
 from recaudo.models.cobros_models import Cartera, ConceptoContable
 from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, FacilidadesPago
-from recaudo.models.base_models import RangosEdad
+from recaudo.models.base_models import RangosEdad, TipoRenta
 from gestion_documental.models import ExpedientesDocumentales
 from recaudo.models import extraccion_model_recaudo , Rt970Tramite
 
@@ -204,6 +204,11 @@ class CarteraDeudaYEtapaSerializer(serializers.ModelSerializer):
 class ConceptoContableSerializer(serializers.ModelSerializer):
     class Meta:
         model = ConceptoContable
+        fields = '__all__'
+
+class TipoRentaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TipoRenta
         fields = '__all__'
 
 class DeudorSerializer(serializers.ModelSerializer):
