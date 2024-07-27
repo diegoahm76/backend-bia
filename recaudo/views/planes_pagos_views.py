@@ -26,6 +26,8 @@ from datetime import datetime, date, timedelta
 from seguridad.permissions.permissions_recaudo import PermisoCrearCreacionPlanPagos, PermisoCrearCreacionResolucionFacilidadPago
 from transversal.models.personas_models import Personas
 from transversal.views.alertas_views import AlertasProgramadasCreate
+from recaudo.views.facilidades_pagos_views import get_data_deudor
+from recaudo.serializers.facilidades_pagos_serializers import FacilidadesPagoSerializer
 
 class PlanPagosValidationView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
@@ -63,8 +65,6 @@ class PlanPagosResolucionValidationView(generics.RetrieveAPIView):
         plan_pago = PlanPagos.objects.filter(id_facilidad_pago=id_facilidad_pago).first()
 
         if plan_pago:
-            # raise NotFound("No existe plan de pagos relacionada con la facilidad de pagos ingresada")
-            # return Response({'success': False, 'detail': 'No existe plan de pagos para la facilidad de pago relacionada con la información dada'})
             instancia_resolucion = ResolucionUltimaPlanPagoGetView()
             resolucion = instancia_resolucion.get_ultima_resolucion(plan_pago.id)
             return resolucion
@@ -102,7 +102,193 @@ class FacilidadPagoDatosPlanView(generics.ListAPIView):
           return Response({'success': False, 'detail': 'No existe facilidad de pago relacionada con la información dada'})
         
 
+class CarteraSeleccionadaListViews(generics.ListAPIView):
+    
+    serializer_class = VisualizacionCarteraSelecionadaSerializer
 
+    def get_monto_total(self, carteras):
+        monto_total = 0
+        intereses_total = 0
+        monto_total = sum(float(cartera["monto_inicial"]) for cartera in carteras)
+        intereses_total = sum(cartera["valor_intereses"] for cartera in carteras)
+        monto_total_con_intereses = monto_total + intereses_total
+        return monto_total, intereses_total, monto_total_con_intereses
+     
+    def cartera_selecionada(self, id_facilidad_pago, fecha):
+
+        try:
+            facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+        except FacilidadesPago.DoesNotExist:
+            raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
+        
+        cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
+        ids_cartera = [int(cartera_id.id_cartera.id) for cartera_id in cartera_ids if cartera_id]
+        cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
+        obligaciones = self.serializer_class(cartera_seleccion, many=True).data
+        abono_30 = 0
+        InteresMoratorio = 0
+
+        for obligacion in obligaciones:
+            monto_inicial = round(float(obligacion["monto_inicial"]),2)
+            dias_mora = 0
+            valor_intereses = 0
+            
+            if fecha:
+                fecha_final = fecha
+                fecha_inicio_mora_str = str(obligacion["fecha_facturacion"]).split("T")[0]
+                fecha_inicio_mora = datetime.strptime(fecha_inicio_mora_str, '%Y-%m-%d').date()
+                dias_mora = (fecha_final - fecha_inicio_mora).days
+                print("dias mora = ", dias_mora)
+                dato=(round((monto_inicial + valor_intereses),2))
+                monto_total, intereses_total, _ = self.get_monto_total(obligaciones)
+
+                facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+                abono_facilidad = round(float(facilidad_pago.valor_abonado), 2)
+                saldo_capital=dato*1000-((dato/(dato+intereses_total))*abono_facilidad) 
+            
+            if dias_mora != 0:
+                valor_intereses = round(((0.12 / 360 * monto_inicial) * dias_mora),2)
+                valor_interesesdos = round(((0.12 / 360 *dias_mora ) * saldo_capital),2)
+                InteresMoratorio = round(valor_interesesdos/100, 2)
+                abono_30=monto_total-(saldo_capital/1000)
+
+            obligacion['dias_mora'] = dias_mora
+            obligacion['valor_intereses'] = valor_intereses
+            obligacion['valor_capital_intereses'] = round((monto_inicial + valor_intereses),2)
+            obligacion['InteresMoratorio_c'] = InteresMoratorio/10
+            obligacion['valor_capital_intereses_c'] = round(saldo_capital/1000,2)+ InteresMoratorio/10
+            obligacion['valor_descuento_30%'] =  round(abono_30,2)
+
+        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
+ 
+        data = {
+            'obligaciones': obligaciones,
+            'total_valor_capital': monto_total ,
+            'total_intereses': intereses_total,
+            'total_valor_capital_con_intereses': monto_total_con_intereses,
+            'total_valor_descuento_30': round(abono_30, 2),  # Incluyendo el total del valor descuento 30%
+            'InteresMoratorio':round(InteresMoratorio/10,2)
+
+        }
+        return data
+
+class CarteraSeleccionadaAListViews(generics.ListAPIView):
+    serializer_class = VisualizacionCarteraSelecionadaSerializer
+
+    def get_monto_total(self, carteras):
+        monto_total = sum(float(cartera["monto_inicial"]) for cartera in carteras)
+        intereses_total = sum(cartera["valor_intereses"] for cartera in carteras)
+        monto_total_con_intereses = monto_total + intereses_total
+        return monto_total, intereses_total, monto_total_con_intereses
+
+    def calcular_dias_mora(self, fecha_facturacion, fecha_final):
+        fecha_inicio_mora = datetime.strptime(fecha_facturacion.split("T")[0], '%Y-%m-%d').date()
+        dias_mora = (fecha_final - fecha_inicio_mora).days
+        return dias_mora
+
+    def calcular_intereses(self, monto_inicial, dias_mora):
+        valor_intereses = round((0.12 / 360 * monto_inicial) * dias_mora, 2)
+        return valor_intereses
+
+    def cartera_seleccionada(self, id_facilidad_pago, fecha):
+        try:
+            facilidad_pago = FacilidadesPago.objects.get(id=id_facilidad_pago)
+        except FacilidadesPago.DoesNotExist:
+            raise NotFound("No existe facilidad de pagos relacionada con la información ingresada")
+
+        cartera_ids = DetallesFacilidadPago.objects.filter(id_facilidad_pago=facilidad_pago.id)
+        ids_cartera = [cartera_id.id_cartera.id for cartera_id in cartera_ids]
+        cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
+        obligaciones = self.serializer_class(cartera_seleccion, many=True).data
+        interes_moratorio_total = 0
+
+        for obligacion in obligaciones:
+            monto_inicial = round(float(obligacion["monto_inicial"]), 2)
+            dias_mora = self.calcular_dias_mora(obligacion["fecha_facturacion"], fecha) if fecha else 0
+            valor_intereses = self.calcular_intereses(monto_inicial, dias_mora)
+
+            monto_total, intereses_total, _ = self.get_monto_total(obligaciones)
+            abono_facilidad = round(float(facilidad_pago.valor_abonado), 2)
+            saldo_capital = monto_inicial * 1000 - ((monto_inicial / (monto_inicial + intereses_total)) * abono_facilidad)
+
+            if dias_mora != 0:
+                interes_moratorio = round(((0.12 / 360 * dias_mora) * saldo_capital) / 100, 2)
+                interes_moratorio_total += interes_moratorio
+
+            obligacion['dias_mora'] = dias_mora
+            obligacion['valor_intereses'] = valor_intereses
+            obligacion['valor_capital_intereses'] = round(monto_inicial + valor_intereses, 2)
+            obligacion['InteresMoratorio_c'] = interes_moratorio / 10
+            obligacion['valor_capital_intereses_c'] = round(saldo_capital / 1000, 2) + interes_moratorio / 10
+
+        monto_total, intereses_total, monto_total_con_intereses = self.get_monto_total(obligaciones)
+
+        data = {
+            'obligaciones': obligaciones,
+            'total_valor_capital': monto_total,
+            'total_intereses': intereses_total,
+            'total_valor_capital_con_intereses': monto_total_con_intereses,
+            'InteresMoratorio': round(interes_moratorio_total / 10, 2)
+        }
+
+        return data
+
+
+
+class PlanPagosAmortizacionDatosView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = FacilidadesPagoSerializer
+
+    def get(self, request, id_facilidad_pago):
+        data = {}
+
+        try:
+            facilidad = FacilidadesPago.objects.get(id=id_facilidad_pago)
+            facilidad_data = self.serializer_class(facilidad).data
+        except FacilidadesPago.DoesNotExist:
+            raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
+        
+        deudor = get_data_deudor(facilidad.id_deudor.id)
+        if not deudor:
+            raise NotFound("No existe deudor con la información ingresada")
+        
+        data['id_deudor'] = deudor['id_deudor']
+        data['nombre_deudor'] = deudor['nombre_completo']
+        data['identificacion'] = deudor['numero_identificacion']
+        data['id_facilidad_pago'] = facilidad.id
+        data['valor_abonado'] = facilidad.valor_abonado
+        data['fecha_abono'] = facilidad.fecha_abono
+        data['cuotas'] = facilidad.cuotas
+        data['periodicidad'] = facilidad.periodicidad
+        data['numero_radicado'] = facilidad_data['numero_radicado']
+
+        instancia_obligaciones = CarteraSeleccionadaAListViews()
+        response_data = instancia_obligaciones.cartera_seleccionada(facilidad.id, facilidad.fecha_abono)
+        data['cartera'] = response_data
+
+        return Response({'success': True, 'data': data}, status=status.HTTP_200_OK)
+
+
+class AmortizacionPlanPagosViews(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id_facilidad_pago):
+        fecha_final_str = str(self.request.query_params.get('fecha_final', ''))
+        cuotas = int(self.request.query_params.get('cuotas', ''))
+        fecha_final = datetime.strptime(fecha_final_str, '%Y-%m-%d').date()
+
+        try:
+            facilidad = FacilidadesPago.objects.get(id=id_facilidad_pago)
+        except FacilidadesPago.DoesNotExist:
+            raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
+        
+        instancia_obligaciones = CarteraSeleccionadaListViews()
+        response_data = instancia_obligaciones.cartera_selecionada(facilidad.id, fecha_final)
+
+        if response_data:
+            return Response({'success': True, 'data': response_data}, status=status.HTTP_200_OK)
+        else:
+            raise ValidationError('El dato ingresado no es valido')
 # class CarteraSeleccionadaListViews(generics.ListAPIView):
     
 #     serializer_class = VisualizacionCarteraSelecionadaSerializer
@@ -189,7 +375,6 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
         intereses_total = 0
         monto_total = sum(float(cartera["monto_inicial"]) for cartera in carteras)
         intereses_total = sum(cartera["valor_intereses"] for cartera in carteras)
-        # print("aaaaaaaaaaaaaaaaaaaaa",monto_total,intereses_total,intereses_total+intereses_total)
         monto_total_con_intereses = monto_total + intereses_total
         return monto_total, intereses_total, monto_total_con_intereses
      
@@ -208,11 +393,14 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
         ids_cartera = [int(cartera_id.id_cartera.id) for cartera_id in cartera_ids if cartera_id]
         cartera_seleccion = Cartera.objects.filter(id__in=ids_cartera)
         obligaciones = self.serializer_class(cartera_seleccion, many=True).data
+        abono_30 = 0
+        InteresMoratorio = 0
 
         for obligacion in obligaciones:
             monto_inicial = round(float(obligacion["monto_inicial"]),2)
             dias_mora = 0
             valor_intereses = 0
+            
 
             if fecha:
                 fecha_final = fecha
