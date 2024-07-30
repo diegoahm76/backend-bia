@@ -1158,6 +1158,7 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
                                 })
                     else:
                         data.append({
+                            'tipo_renta': 'TASA DE USO DE AGUA (TUA)' if tramite.t970codtipotramite == 'TUAIM' else 'TASA RETRIBUTIVA POR CONTAMINACION HIDRICA (TRCH)',
                             'nit_titular': titular.t03nit,
                             'nombre_titular': titular.t03nombre,
                             'direccion_titular': titular.t03direccion,
@@ -1174,11 +1175,17 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
                     tipo_tramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tramite.id).first()
                     data_sasoftco = FuncionesAuxiliares.get_tramite_sasoftco(tipo_tramite)
                     data.append({
-                            'id_expediente': expediente.id,
-                            'expediente': f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}", 
-                            'resolucion': data_sasoftco['NumResol'], 
-                            'fecha_resolucion': data_sasoftco['Fecha_Resolu']
-                        })
+                        'nit_titular': tramite.id_persona_titular.numero_documento,
+                        'nombre_titular': f"{tramite.id_persona_titular.primer_nombre} {tramite.id_persona_titular.segundo_nombre} {tramite.id_persona_titular.primer_apellido} {tramite.id_persona_titular.segundo_apellido}",
+                        'direccion_titular': tramite.id_persona_titular.direccion_residencia,
+                        'telefono_titular': tramite.id_persona_titular.telefono_celular,
+                        'id_expediente': expediente.id,
+                        'expediente': f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}", 
+                        'resolucion': data_sasoftco.get('NumResol'), 
+                        'fecha_resolucion': data_sasoftco.get('Fecha_Resolu'),  
+                        'caudal_concesionado': data_sasoftco.get('Caudal_concesionado'),
+                        'predio': data_sasoftco.get('Npredio'),
+                    })
 
         #serializer = self.serializer_class(expedientes, many=True)
         return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':data}, status=status.HTTP_200_OK)

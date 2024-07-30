@@ -26,7 +26,7 @@ class Deudores(models.Model):
 class Expedientes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T407IdExpediente')
     #cod_expediente = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoExpediente')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T407Id_Deudor')
+    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T407Id_Deudor')
     #numero_resolucion = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoResolucion')
     #cod_auto = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoAuto')
     #cod_recurso = models.CharField(max_length=255, null=True, blank=True, db_column='T407codigoRecurso')
@@ -66,7 +66,7 @@ class LiquidacionesBase(models.Model):
     periodo_liquidacion = models.CharField(max_length=255, db_column="T403periodoLiquidacion")
     valor = models.DecimalField(max_digits=20, decimal_places=4, default=0, db_column="T403Valor")
     estado = models.CharField(choices=estados_liquidacion_CHOICES, max_length=10, db_column="T403estado")
-    id_deudor = models.ForeignKey(Deudores, blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Deudor")
+    id_deudor = models.ForeignKey('transversal.Personas', blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Deudor", related_name='T403Id_Deudor')
     id_expediente = models.ForeignKey(Expedientes, blank=True, null=True, on_delete=models.SET_NULL, db_column="T403Id_Expediente")
     ciclo_liquidacion = models.CharField(max_length=255, blank=True, null=True, db_column="T403cicloliquidacion")
     num_factura = models.CharField(max_length=255, blank=True, null=True, db_column="T403numFactura")
@@ -91,7 +91,7 @@ class LiquidacionesBase(models.Model):
     se_cobra = models.CharField(max_length=1, blank=True, null=True, db_column="T403seCobra")
     fecha_en_firme = models.DateTimeField(null=True, blank=True, db_column="T403fechaEnFirme")
     nnum_origen_liq = models.IntegerField(blank=True, null=True, db_column="T403NnumOrigenLiq")
-    id_persona_liquida = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, blank=True, null=True, db_column="T403Id_PersonaLiquida")
+    id_persona_liquida = models.ForeignKey('transversal.Personas', on_delete=models.SET_NULL, blank=True, null=True, db_column="T403Id_PersonaLiquida", related_name='T403Id_PersonaLiquida')
 
     class Meta:
         db_table = "T403LiquidacionesBase"
