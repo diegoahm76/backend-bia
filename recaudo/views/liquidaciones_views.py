@@ -46,6 +46,7 @@ from django.db.models.functions import Lower
 from django.shortcuts import render
 from docxtpl import DocxTemplate
 from django.conf import settings
+from django.http import FileResponse
 import calendar
 import json
 import hashlib
@@ -371,6 +372,25 @@ class LiquidacionTramiteGetView(generics.ListAPIView):
         serializer_liquidacion = self.serializer_class(liquidacion)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente liquidación', 'data': serializer_liquidacion.data}, status=status.HTTP_200_OK)
+
+class LiquidacionTramiteGetDocumentView(generics.ListAPIView):
+    serializer_class = LiquidacionesTramiteGetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        numero_documento = request.query_params.get('numero_documento')
+        ref_pago = request.query_params.get('ref_pago')
+
+        liquidacion = LiquidacionesBase.objects.filter(id_deudor__numero_documento=numero_documento, num_factura=ref_pago).first()
+        if not liquidacion or not liquidacion.id_archivo:
+            raise NotFound('No se encontró el documento con los datos ingresados')
+        
+        response = FileResponse(liquidacion.id_archivo, filename=f'Liquidacion_{ref_pago}', as_attachment=True)
+
+        return response
+
+        # response = redirect(os.path.join(settings.MEDIA_URL, (pk +'.xml')))
+        # return response
 
 class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
     serializer_class = LiquidacionesTramiteAnularSerializer
