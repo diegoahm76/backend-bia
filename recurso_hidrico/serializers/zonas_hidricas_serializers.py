@@ -73,6 +73,9 @@ class SubZonaHidricaValorRegionalSerializer(serializers.ModelSerializer):
         fields = ['valor_regional_tr','valor_regional_tua', 'fecha_inicio', 'fecha_fin']
 
 class TipoUsoAguaSerializer(serializers.ModelSerializer):
+    sub_zona_hidrica = serializers.ReadOnlyField(source='id_sub_zona_hidrica.nombre_sub_zona_hidrica')
+    zona_hidrica = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.nombre_zona_hidrica')
+    macro_cuenca = serializers.ReadOnlyField(source='id_sub_zona_hidrica.id_zona_hidrica.id_macro_cuenca.nombre_macro_cuenca')
     class Meta:
         model = TipoUsoAgua
         fields = '__all__'

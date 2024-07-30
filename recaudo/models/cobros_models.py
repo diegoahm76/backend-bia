@@ -7,7 +7,7 @@ from recaudo.models.extraccion_model_recaudo import RtClaseUsoAgua
 
 class DocumentosCobro(models.Model):
     id = models.AutoField(primary_key=True, db_column='T405IdDocumentoCobro')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T405Id_Deudor')
+    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T405Id_Deudor')
     fecha_cobro = models.DateField(db_column='T405fechaCobro')
     vencimiento = models.DateField(db_column='T405vencimiento')
     valor_deuda = models.FloatField(default=0, db_column='T405valorDeuda')
@@ -67,7 +67,7 @@ class Cartera(models.Model):
     tipo_cobro = models.CharField(max_length=255, db_column='T413tipoCobro')
     caudal_concesionado = models.CharField(max_length=255, null=True, blank=True, db_column='T413caudalConcesionado')
     tipo_agua = models.ForeignKey(RtClaseUsoAgua, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_ClaseUsoAgua')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T413Id_Deudor')
+    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T413Id_Deudor')
     id_documento_cobro = models.ForeignKey(DocumentosCobro, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_DocumentoCobro')
     id_expediente = models.ForeignKey(Expedientes, on_delete=models.CASCADE, db_column='T413Id_Expediente')
     tipo_renta = models.ForeignKey(TipoRenta, on_delete=models.SET_NULL, null=True, blank=True, db_column='T413Id_TipoRenta')

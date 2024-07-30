@@ -1,4 +1,3 @@
-import locale
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -1764,7 +1763,7 @@ class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
 
     def get_tablero_control(self, id_plan, fecha_inicio, fecha_fin):
 
-        data, numero_programa, valor_programa, numero_proyecto, valor_proyecto = [], [], [], [], []
+        data, numero_programa, valor_programa, numero_proyecto, valor_proyecto, valor_ejecutado_proyecto = [], [], [], [], [], []
 
         try:
             plan = Planes.objects.get(id_plan=id_plan)
@@ -1804,24 +1803,19 @@ class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
 
         data.append({'total_presupuesto': total_presupuesto, 'total_registro': total_registro, 'total_disponible': total_disponible, 'total_obligado': total_obligado})
 
-        # Configurar el locale para Colombia
-        locale.setlocale(locale.LC_ALL, 'es_CO.UTF-8')
-
         for proyecto in proyectos:
             metas = Metas.objects.filter(id_proyecto=proyecto.id_proyecto)
             valor_meta = 0
             if metas:
                 valor_meta = sum(meta.valor_meta for meta in metas)
-            
-            # Convertir valor_meta a formato de moneda en pesos
-            valor_meta_pesos = locale.currency(valor_meta, grouping=True)
-            
+
+            seguimiento = SeguimientoPOAI.objects.filter(id_producto__id_proyecto=proyecto.id_proyecto)
+            valor_ejecutado = 0
+            if seguimiento:
+                valor_ejecutado = sum(seguimiento.valor_rp for seguimiento in seguimiento)
             numero_proyecto.append(proyecto.numero_proyecto)
-            valor_proyecto.append(valor_meta_pesos)
-
-
-
-
+            valor_proyecto.append(valor_meta)
+            valor_ejecutado_proyecto.append(valor_ejecutado)
 
         for programa in programas:
             metas = Metas.objects.filter(id_programa=programa.id_programa)
@@ -1833,7 +1827,7 @@ class TableroControlPOAIGeneralGrafica(generics.ListAPIView):
             valor_programa.append(valor_meta)
         
         data_programas = {'numero_programa': numero_programa, 'valor': valor_programa}
-        data_proyectos = {'numero_proyecto': numero_proyecto, 'valor': valor_proyecto}
+        data_proyectos = {'numero_proyecto': numero_proyecto, 'valor': valor_proyecto, 'valor2': valor_ejecutado_proyecto}
         
         data.append(data_programas)
         data.append(data_proyectos)

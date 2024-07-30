@@ -4,12 +4,13 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
 from django.template.loader import render_to_string
 from seguridad.utils import Util
+from rest_framework.views import APIView
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
-from recaudo.models.extraccion_model_recaudo import Rt908Liquidacion, Rt954Cobro, Rt970Tramite, Rt980Tua, T971TramiteTercero, Tercero
+from recaudo.models.extraccion_model_recaudo import Rt908Liquidacion, Rt954Cobro, Rt970Tramite, Rt980Tua, Rt985Tr, T971TramiteTercero, Tercero
 from recaudo.models.liquidaciones_models import (
     HistEstadosLiq,
     OpcionesLiquidacionBase,
@@ -46,6 +47,7 @@ from django.db.models.functions import Lower
 from django.shortcuts import render
 from docxtpl import DocxTemplate
 from django.conf import settings
+from django.http import FileResponse
 import calendar
 import json
 import hashlib
@@ -371,6 +373,25 @@ class LiquidacionTramiteGetView(generics.ListAPIView):
         serializer_liquidacion = self.serializer_class(liquidacion)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente liquidación', 'data': serializer_liquidacion.data}, status=status.HTTP_200_OK)
+
+class LiquidacionTramiteGetDocumentView(APIView):
+    def get(self, request):
+        numero_documento = request.query_params.get('numero_documento', '')
+        ref_pago = request.query_params.get('ref_pago', '')
+
+        if numero_documento == '' or ref_pago == '':
+            raise ValidationError('Debe ingresar los parámetros de búsqueda')
+
+        liquidacion = LiquidacionesBase.objects.filter(id_deudor__numero_documento=numero_documento, num_factura=ref_pago, anulado=None).first()
+        if not liquidacion or not liquidacion.id_archivo:
+            raise NotFound('No se encontró el documento con los datos ingresados')
+        
+        if liquidacion.estado != 'PENDIENTE':
+            raise ValidationError('La factura ya no se encuentra pendiente para pago')
+        
+        response = FileResponse(liquidacion.id_archivo.ruta_archivo, filename=f'Liquidacion_{ref_pago}.{liquidacion.id_archivo.formato}', as_attachment=True)
+
+        return response
 
 class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
     serializer_class = LiquidacionesTramiteAnularSerializer
@@ -1125,18 +1146,67 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
             liquidacion = LiquidacionesBase.objects.filter(id_expediente=expediente.id, agno=datetime.now().year).first()
             if not liquidacion: 
                 if expediente.id_expediente_pimisys:
-                    tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite = 'TUAIM').first()
-                    tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite).first()
-                    cobro = Rt954Cobro.objects.filter(t954idcobro=tua.t980idcobro).first()
-                    if cobro.t954liquidado == 'S':
-                        liquidacion = Rt908Liquidacion.objects.filter(t908numliquidacion=cobro.t954numliquidacion, t908agno= datetime.now().year).first()
-                        if not liquidacion:
-                            data.append({'expediente': expediente.id_expediente_pimisys.t920codexpediente, 'resolucion': tramite.t970numresolperm, 'fecha_resolucion': tramite.t970fecharesperm})
+                    tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite__in = ['TUAIM', 'TRIM']).first()
+                    tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
+                    titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
+                    if not tramite:
+                        raise ValidationError('No se encontró el trámite para el expediente') 
+                    tua = None
+                    tr = None
+                    id_cobro = None
+                    if tramite.t970codtipotramite == 'TUAIM':         
+                        tua = Rt980Tua.objects.filter(t980idtramite=tramite.t970idtramite, t980agno = datetime.now().year).first()
+                        id_cobro = tua.t980idcobro if tua else None
+                    else: 
+                        tr = Rt985Tr.objects.filter(t985idtramite=tramite.t970idtramite, t985agno = datetime.now().year).first()
+                        id_cobro = tr.t985idcobro if tr else None
+                    cobro = Rt954Cobro.objects.filter(t954idcobro=id_cobro).first()
+                    if cobro:
+                        if cobro.t954liquidado == 'S':
+                            liquidacion = Rt908Liquidacion.objects.filter(t908numliquidacion=cobro.t954numliquidacion, t908agno= datetime.now().year).first()
+                            if not liquidacion:
+                                data.append({
+                                    'nit_titular': titular.t03nit,
+                                    'nombre_titular': titular.t03nombre,
+                                    'direccion_titular': titular.t03direccion,
+                                    'telefono_titular': titular.t03telefono,
+                                    'id_expediente': expediente.id,
+                                    'expediente': expediente.id_expediente_pimisys.t920codexpediente, 
+                                    'resolucion': tramite.t970numresolperm, 
+                                    'fecha_resolucion': tramite.t970fecharesperm,
+                                    'caudal_concesionado': tramite.t970tuacaudalconcesi,
+                                    'predio': tramite.t970tuapredio,
+                                })
+                    else:
+                        data.append({
+                            'tipo_renta': 'TASA DE USO DE AGUA (TUA)' if tramite.t970codtipotramite == 'TUAIM' else 'TASA RETRIBUTIVA POR CONTAMINACION HIDRICA (TRCH)',
+                            'nit_titular': titular.t03nit,
+                            'nombre_titular': titular.t03nombre,
+                            'direccion_titular': titular.t03direccion,
+                            'telefono_titular': titular.t03telefono,
+                            'id_expediente': expediente.id,
+                            'expediente': expediente.id_expediente_pimisys.t920codexpediente, 
+                            'resolucion': tramite.t970numresolperm, 
+                            'fecha_resolucion': tramite.t970fecharesperm,
+                            'caudal_concesionado': tramite.t970tuacaudalconcesi,
+                            'predio': tramite.t970tuapredio,
+                        })
                 elif expediente.id_expediente_doc:
                     tramite = SolicitudesTramites.objects.filter(id_expediente=expediente.id_expediente_doc).first()
                     tipo_tramite = PermisosAmbSolicitudesTramite.objects.filter(id_solicitud_tramite=tramite.id).first()
                     data_sasoftco = FuncionesAuxiliares.get_tramite_sasoftco(tipo_tramite)
-                    data.append({'expediente': f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}", 'resolucion': data_sasoftco['NumResol'], 'fecha_resolucion': data_sasoftco['Fecha_Resolu']})
+                    data.append({
+                        'nit_titular': tramite.id_persona_titular.numero_documento,
+                        'nombre_titular': f"{tramite.id_persona_titular.primer_nombre} {tramite.id_persona_titular.segundo_nombre} {tramite.id_persona_titular.primer_apellido} {tramite.id_persona_titular.segundo_apellido}",
+                        'direccion_titular': tramite.id_persona_titular.direccion_residencia,
+                        'telefono_titular': tramite.id_persona_titular.telefono_celular,
+                        'id_expediente': expediente.id,
+                        'expediente': f"{expediente.id_expediente_doc.codigo_exp_und_serie_subserie}-{expediente.id_expediente_doc.codigo_exp_Agno}-{expediente.id_expediente_doc.codigo_exp_consec_por_agno}", 
+                        'resolucion': data_sasoftco.get('NumResol'), 
+                        'fecha_resolucion': data_sasoftco.get('Fecha_Resolu'),  
+                        'caudal_concesionado': data_sasoftco.get('Caudal_concesionado'),
+                        'predio': data_sasoftco.get('Npredio'),
+                    })
 
         #serializer = self.serializer_class(expedientes, many=True)
         return Response({'success': True, 'detail':'Se muestra los expedientes del deudor', 'data':data}, status=status.HTTP_200_OK)
