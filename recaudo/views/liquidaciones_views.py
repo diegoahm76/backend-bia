@@ -4,6 +4,7 @@ from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCr
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
 from django.template.loader import render_to_string
 from seguridad.utils import Util
+from rest_framework.views import APIView
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
 from recaudo.models.base_models import (
@@ -373,24 +374,24 @@ class LiquidacionTramiteGetView(generics.ListAPIView):
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente liquidación', 'data': serializer_liquidacion.data}, status=status.HTTP_200_OK)
 
-class LiquidacionTramiteGetDocumentView(generics.ListAPIView):
-    serializer_class = LiquidacionesTramiteGetSerializer
-    permission_classes = [IsAuthenticated]
-
+class LiquidacionTramiteGetDocumentView(APIView):
     def get(self, request):
-        numero_documento = request.query_params.get('numero_documento')
-        ref_pago = request.query_params.get('ref_pago')
+        numero_documento = request.query_params.get('numero_documento', '')
+        ref_pago = request.query_params.get('ref_pago', '')
 
-        liquidacion = LiquidacionesBase.objects.filter(id_deudor__numero_documento=numero_documento, num_factura=ref_pago).first()
+        if numero_documento == '' or ref_pago == '':
+            raise ValidationError('Debe ingresar los parámetros de búsqueda')
+
+        liquidacion = LiquidacionesBase.objects.filter(id_deudor__numero_documento=numero_documento, num_factura=ref_pago, anulado=None).first()
         if not liquidacion or not liquidacion.id_archivo:
             raise NotFound('No se encontró el documento con los datos ingresados')
         
-        response = FileResponse(liquidacion.id_archivo, filename=f'Liquidacion_{ref_pago}', as_attachment=True)
+        if liquidacion.estado != 'PENDIENTE':
+            raise ValidationError('La factura ya no se encuentra pendiente para pago')
+        
+        response = FileResponse(liquidacion.id_archivo.ruta_archivo, filename=f'Liquidacion_{ref_pago}.{liquidacion.id_archivo.formato}', as_attachment=True)
 
         return response
-
-        # response = redirect(os.path.join(settings.MEDIA_URL, (pk +'.xml')))
-        # return response
 
 class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
     serializer_class = LiquidacionesTramiteAnularSerializer

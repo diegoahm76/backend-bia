@@ -22,7 +22,7 @@ urlpatterns = [
 
     path('liquidacion-tramite/', views.LiquidacionTramiteCreateView.as_view(), name='liquidacion-tramite-create'),
     path('liquidacion-tramite/get/<str:id_liquidacion_base>/', views.LiquidacionTramiteGetView.as_view(), name='liquidacion-tramite-get'),
-    path('liquidacion-tramite/get/document/', views.LiquidacionTramiteGetDocumentView.as_view(), name='liquidacion-tramite-get-document'),
+    path('liquidacion-tramite/get-document/', views.LiquidacionTramiteGetDocumentView.as_view(), name='liquidacion-tramite-get-document'),
     path('liquidacion-tramite/anular/<str:id_liquidacion_base>/', views.LiquidacionesTramiteAnularView.as_view(), name='liquidacion-tramite-anular'),
     path('historico/liquidacion-tramite/get/', views.HistLiquidacionTramiteGetView.as_view(), name='hist-liquidacion-tramite-get'),
 
