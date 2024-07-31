@@ -42,6 +42,8 @@ urlpatterns = [
 
     path('actualizar-caudal-concesionado/<int:pk>/', views.ActualizarCaudalConcesionado.as_view(), name='actualizar-caudal-concesionado'),
 
+    path('obtener-contribuyentes/', views.ObtenerContribuyentes.as_view(), name='obtener-contribuyentes'),
+
 
     
 ]

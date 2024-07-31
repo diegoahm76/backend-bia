@@ -1,6 +1,7 @@
 from datetime import datetime
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from transversal.models.personas_models import Personas
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
 from django.template.loader import render_to_string
 from seguridad.utils import Util
@@ -36,7 +37,9 @@ from recaudo.serializers.liquidaciones_serializers import (
     DetallesLiquidacionBaseSerializer,
     DetallesLiquidacionBasePostSerializer,
     ExpedientesSerializer,
-    CalculosLiquidacionBaseSerializer
+    CalculosLiquidacionBaseSerializer,
+    DeudoresGetSerializer
+    
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
@@ -123,14 +126,12 @@ class EliminarOpcionesLiquidacionBaseView(generics.GenericAPIView):
 
 
 class DeudoresView(generics.GenericAPIView):
-    queryset = Deudores.objects.all()
-    serializer_class = DeudoresSerializer
     #permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+        personas = Personas.objects.filter(cartera__isnull=False).distinct()
+        serializer = DeudoresSerializer(personas, many=True)
+        return Response({'success': True, 'detail':'Se muestra la lista de contribuyentes', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 
 class DeudoresIdentificacionView(generics.GenericAPIView):
@@ -865,7 +866,7 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
         if not expediente:
             raise ValidationError('El expediente seleccionado no existe')
-        data_liquidacion['id_deudor'] = expediente.id_deudor.id
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id_persona
         data_expediente = self.obtener_resolucion(expediente)
         data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
         data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
@@ -1224,3 +1225,21 @@ class ActualizarCaudalConcesionado(generics.UpdateAPIView):
         tramite.save()
         return Response({'success': True, 'detail': 'Se actualizó el cálculo de la liquidación', 'data': {'caudal_actualizado': tramite.t970tuacaudalconcesi}}, status=status.HTTP_200_OK)
 
+
+
+class ObtenerContribuyentes(generics.ListAPIView):
+ 
+    def get(self, request):
+        personas = Personas.objects.filter(expedientes__isnull=False).distinct()
+        serializer = DeudoresGetSerializer(personas, many=True)
+        return Response({'success': True, 'detail':'Se muestra la lista de contribuyentes', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ObtenerLiquidacionesBase(generics.ListAPIView):
+    serializer_class = LiquidacionesBaseSerializer
+
+    def get(self, request):
+        expedientes = request.data.get('expedientes')
+        liquidaciones = LiquidacionesBase.objects.filter(id_expediente__in=expedientes, agno=datetime.now().year-1)
+        serializer = self.serializer_class(liquidaciones, many=True)
+        return Response({'success': True, 'detail':'Se muestra la lista de liquidaciones', 'data':serializer.data}, status=status.HTTP_200_OK)

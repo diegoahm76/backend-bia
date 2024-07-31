@@ -26,6 +26,9 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.pagination import LimitOffsetPagination
 
+from transversal.models.base_models import Municipio, TipoDocumento
+from transversal.models.personas_models import Personas
+
 
 class CarteraGeneralView(generics.ListAPIView):
     queryset = Cartera.objects.all()
@@ -72,7 +75,6 @@ class CarteraDeudoresView(generics.ListAPIView):
     
 
 class VistaCarteraTuaView(generics.ListAPIView):
-    #queryset = VistaCarteraTua.objects.only('fecha', 'cod_cia', 'tipo_renta', 'cuenta_contable', 'nit', 'nombre_deudor', 'fecha_fac', 'fecha_notificacion', 'fecha_en_firme', 'corte_desde', 'corte_hasta', 'num_factura', 'num_liquidacion', 'periodo', 'agno', 'expediente', 'num_resolucion', 'recurso', 'doc_auto', 'saldo_capital', 'saldo_intereses', 'dias_mora')
     serializer_class = CarteraPostSerializer
     pagination_class = LimitOffsetPagination
     page_size = 10
@@ -138,15 +140,54 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 #'tipo_agua': item_cartera['claseusoagua'] if item_cartera['claseusoagua'] else None,
                 #'tipo_renta': item_cartera['tiporenta'],
             }
-            deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
+            #deudor = Deudores.objects.filter(id_persona_deudor_pymisis__t03nit=item_cartera['nit']).first()
+            deudor = Personas.objects.filter(numero_documento=item_cartera['nit']).first()
             if deudor:
-                data['id_deudor'] = deudor.id
+                data['id_deudor'] = deudor.id_persona
             else:
                 tercero = Tercero.objects.filter(t03nit=item_cartera['nit']).first()
-                deudor = Deudores.objects.create(
-                    id_persona_deudor_pymisis=tercero
+                tipo_doc = None
+                tipo_persona = None
+                razon_social = None
+                nombre_comercial = None
+                # if tercero.t03codtipodocumid == 31:
+                #     tipo_doc = TipoDocumento.objects.filter(cod_tipo_documento='NT').first()
+                #     tipo_persona = 'J'
+                #     razon_social = tercero.t03nombre
+                #     nombre_comercial = tercero.t03nombre
+                if tercero.t03codtipodocumid == 13:
+                    tipo_doc = TipoDocumento.objects.filter(cod_tipo_documento='CC').first()
+                    tipo_persona = 'N'
+                else:
+                    tipo_doc = TipoDocumento.objects.filter(cod_tipo_documento='NT').first()
+                    tipo_persona = 'J'
+                    razon_social = tercero.t03nombre
+                    nombre_comercial = tercero.t03nombre
+
+                municipio = Municipio.objects.filter(cod_municipio=tercero.t03codmpio).first()
+                deudor = Personas.objects.create(
+                    tipo_documento=tipo_doc,
+                    numero_documento=tercero.t03nit,
+                    tipo_persona=tipo_persona,
+                    primer_nombre=tercero.t03primernombre if tercero.t03primernombre else None,
+                    segundo_nombre=tercero.t03segundonombre if tercero.t03segundonombre else None,
+                    primer_apellido=tercero.t03primerapellido if tercero.t03primerapellido else None,
+                    segundo_apellido=tercero.t03segundoapellido if tercero.t03segundoapellido else None,
+                    razon_social=razon_social,
+                    nombre_comercial=nombre_comercial,
+                    direccion_residencia = tercero.t03direccion if tercero.t03direccion else None,
+                    telefono_celular = tercero.t03telefono if tercero.t03telefono else None,
+                    municipio_residencia = municipio if municipio else None,
+                    email = tercero.t03email if tercero.t03email else None,
+                    acepta_notificacion_sms = True,
+                    acepta_notificacion_email = True
                 )
-                data['id_deudor'] = deudor.id
+                data['id_deudor'] = deudor.id_persona
+                # tercero = Tercero.objects.filter(t03nit=item_cartera['nit']).first()
+                # deudor = Deudores.objects.create(
+                #     id_persona_deudor_pymisis=tercero
+                # )
+                # data['id_deudor'] = deudor.id
 
             expediente = Expedientes.objects.filter(id_expediente_pimisys__t920codexpediente=item_cartera['expediente']).first()
             if expediente:
