@@ -8,6 +8,7 @@ from django.db.models import Q, F, Sum
 from itertools import groupby
 from operator import itemgetter
 from django.db.models import Value as V
+from transversal.models.personas_models import Personas
 from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
 from recaudo.models.liquidaciones_models import Deudores
@@ -20,9 +21,10 @@ from recaudo.serializers.reportes_serializers import (
     CarteraGeneralDetalleSerializer,
     CarteraEdadesSerializer,
     CarteraSerializer,
+    CarteraSumSerializer,
     ConceptoContableSerializer,
     DeudorSerializer,
-    DeudorSumSerializer,
+    # DeudorSumSerializer,
     RangosEdadSerializer,
     ReporteFacilidadesPagosSerializer,
     ReporteFacilidadesPagosDetalleSerializer,
@@ -1183,9 +1185,8 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
         }, status=status.HTTP_200_OK)
     
     
-
 class CarteraDeudoresTop(generics.ListAPIView):
-    serializer_class = DeudorSumSerializer
+    serializer_class = CarteraSumSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -1229,19 +1230,81 @@ class CarteraDeudoresTop(generics.ListAPIView):
             total_sancion=Sum('valor_sancion_calculado')
         ).order_by('-total_sancion')[:10]
 
-        # Obtener las instancias de los deudores en el top 10
         deudores_ids = [deudor['id_deudor'] for deudor in top_10_deudores]
-        deudores_objs = Deudores.objects.filter(id__in=deudores_ids)
+        deudores_objs = Personas.objects.filter(id_persona__in=deudores_ids)  
 
         # Crear un diccionario para mapear deudor_id a total_sancion
         deudores_total_sancion = {deudor['id_deudor']: deudor['total_sancion'] for deudor in top_10_deudores}
 
         deudores_data = []
         for idx, deudor in enumerate(deudores_objs, start=1):
-            deudor.total_sancion = deudores_total_sancion.get(deudor.id, 0)
-            deudor_data = DeudorSumSerializer(deudor).data
+            deudor.total_sancion = deudores_total_sancion.get(deudor.id_persona, 0) 
+            deudor_data = CarteraSumSerializer(deudor).data
             deudor_data['ranking'] = idx
             deudores_data.append(deudor_data)
 
         return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)
+
+
+
+# class CarteraDeudoresTop(generics.ListAPIView):
+#     serializer_class = DeudorSumSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         queryset = Cartera.objects.all()
+
+#         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+#         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+#         id_tipo_renta = self.request.query_params.get('id_tipo_renta')
+#         id_rango = self.request.query_params.get('id_rango')
+
+#         if fecha_facturacion_desde:
+#             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+#         if fecha_facturacion_hasta:
+#             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+#         if id_tipo_renta:
+#             queryset = queryset.filter(tipo_renta=id_tipo_renta)
+
+#         if id_rango:
+#             queryset = queryset.filter(id_rango=id_rango)
+
+#         return queryset
+
+#     def calcular_valor_sancion(self, monto_inicial, valor_intereses):
+#         """Calcula el valor de sanción utilizando la fórmula proporcionada."""
+#         return monto_inicial + (valor_intereses or 0)
+
+#     def list(self, request, *args, **kwargs):
+#         queryset = self.get_queryset()
+
+#         queryset = queryset.annotate(
+#             valor_sancion_calculado=ExpressionWrapper(
+#                 F('monto_inicial') + (F('valor_intereses') or Value(0)),
+#                 output_field=DecimalField(max_digits=30, decimal_places=4)
+#             )
+#         )
+
+#         # Obtener los top 10 deudores basados en la suma total del valor_sancion calculado
+#         top_10_deudores = queryset.values('id_deudor').annotate(
+#             total_sancion=Sum('valor_sancion_calculado')
+#         ).order_by('-total_sancion')[:10]
+
+#         # Obtener las instancias de los deudores en el top 10
+#         deudores_ids = [deudor['id_deudor'] for deudor in top_10_deudores]
+#         deudores_objs = Deudores.objects.filter(id__in=deudores_ids)
+
+#         # Crear un diccionario para mapear deudor_id a total_sancion
+#         deudores_total_sancion = {deudor['id_deudor']: deudor['total_sancion'] for deudor in top_10_deudores}
+
+#         deudores_data = []
+#         for idx, deudor in enumerate(deudores_objs, start=1):
+#             deudor.total_sancion = deudores_total_sancion.get(deudor.id, 0)
+#             deudor_data = DeudorSumSerializer(deudor).data
+#             deudor_data['ranking'] = idx
+#             deudores_data.append(deudor_data)
+
+#         return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)
 
