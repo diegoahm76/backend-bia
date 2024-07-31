@@ -5,6 +5,7 @@ from transversal.models.personas_models import Personas
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
 from django.template.loader import render_to_string
 from seguridad.utils import Util
+from rest_framework.views import APIView
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
 from recaudo.models.base_models import (
@@ -49,6 +50,7 @@ from django.db.models.functions import Lower
 from django.shortcuts import render
 from docxtpl import DocxTemplate
 from django.conf import settings
+from django.http import FileResponse
 import calendar
 import json
 import hashlib
@@ -372,6 +374,25 @@ class LiquidacionTramiteGetView(generics.ListAPIView):
         serializer_liquidacion = self.serializer_class(liquidacion)
 
         return Response({'success': True, 'detail': 'Se encontró la siguiente liquidación', 'data': serializer_liquidacion.data}, status=status.HTTP_200_OK)
+
+class LiquidacionTramiteGetDocumentView(APIView):
+    def get(self, request):
+        numero_documento = request.query_params.get('numero_documento', '')
+        ref_pago = request.query_params.get('ref_pago', '')
+
+        if numero_documento == '' or ref_pago == '':
+            raise ValidationError('Debe ingresar los parámetros de búsqueda')
+
+        liquidacion = LiquidacionesBase.objects.filter(id_deudor__numero_documento=numero_documento, num_factura=ref_pago, anulado=None).first()
+        if not liquidacion or not liquidacion.id_archivo:
+            raise NotFound('No se encontró el documento con los datos ingresados')
+        
+        if liquidacion.estado != 'PENDIENTE':
+            raise ValidationError('La factura ya no se encuentra pendiente para pago')
+        
+        response = FileResponse(liquidacion.id_archivo.ruta_archivo, filename=f'Liquidacion_{ref_pago}.{liquidacion.id_archivo.formato}', as_attachment=True)
+
+        return response
 
 class LiquidacionesTramiteAnularView(generics.UpdateAPIView):
     serializer_class = LiquidacionesTramiteAnularSerializer
