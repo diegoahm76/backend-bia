@@ -866,7 +866,7 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
         if not expediente:
             raise ValidationError('El expediente seleccionado no existe')
-        data_liquidacion['id_deudor'] = expediente.id_deudor.id
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id_persona
         data_expediente = self.obtener_resolucion(expediente)
         data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
         data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
