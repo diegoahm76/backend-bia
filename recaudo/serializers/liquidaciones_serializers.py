@@ -217,7 +217,7 @@ class ExpedientesSerializer(serializers.ModelSerializer):
 
 
 class LiquidacionesBaseSerializer(serializers.ModelSerializer):
-    id_deudor = DeudoresSerializer(many=False)
+    id_deudor = DeudoresGetSerializer(many=False)
     id_expediente = ExpedientesSerializer(many=False)
     detalles = DetallesLiquidacionBaseSerializer(many=True)
 

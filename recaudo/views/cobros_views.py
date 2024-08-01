@@ -150,6 +150,10 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 tipo_persona = None
                 razon_social = None
                 nombre_comercial = None
+                primer_nombre = None
+                segundo_nombre = None
+                primer_apellido = None
+                segundo_apellido = None
                 # if tercero.t03codtipodocumid == 31:
                 #     tipo_doc = TipoDocumento.objects.filter(cod_tipo_documento='NT').first()
                 #     tipo_persona = 'J'
@@ -158,6 +162,10 @@ class VistaCarteraTuaView(generics.ListAPIView):
                 if tercero.t03codtipodocumid == 13:
                     tipo_doc = TipoDocumento.objects.filter(cod_tipo_documento='CC').first()
                     tipo_persona = 'N'
+                    primer_nombre = tercero.t03primernombre if tercero.t03primernombre else None
+                    segundo_nombre = tercero.t03segundonombre if tercero.t03segundonombre else None
+                    primer_apellido = tercero.t03primerapellido if tercero.t03primerapellido else None
+                    segundo_apellido = tercero.t03segundoapellido if tercero.t03segundoapellido else None
                 else:
                     tipo_doc = TipoDocumento.objects.filter(cod_tipo_documento='NT').first()
                     tipo_persona = 'J'
@@ -169,14 +177,14 @@ class VistaCarteraTuaView(generics.ListAPIView):
                     tipo_documento=tipo_doc,
                     numero_documento=tercero.t03nit,
                     tipo_persona=tipo_persona,
-                    primer_nombre=tercero.t03primernombre if tercero.t03primernombre else None,
-                    segundo_nombre=tercero.t03segundonombre if tercero.t03segundonombre else None,
-                    primer_apellido=tercero.t03primerapellido if tercero.t03primerapellido else None,
-                    segundo_apellido=tercero.t03segundoapellido if tercero.t03segundoapellido else None,
+                    primer_nombre=primer_nombre,
+                    segundo_nombre=segundo_nombre,
+                    primer_apellido=primer_apellido,
+                    segundo_apellido=segundo_apellido,
                     razon_social=razon_social,
                     nombre_comercial=nombre_comercial,
                     direccion_residencia = tercero.t03direccion if tercero.t03direccion else None,
-                    telefono_celular = tercero.t03telefono if tercero.t03telefono else None,
+                    telefono_celular = tercero.t03telefono if len(tercero.t03telefono) < 16 else None,
                     municipio_residencia = municipio if municipio else None,
                     email = tercero.t03email if tercero.t03email else None,
                     acepta_notificacion_sms = True,
