@@ -82,7 +82,7 @@ class LiquidacionesBase(models.Model):
     valor_pagado = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True, db_column='T403ValorPagado')
     valor_prescripcion = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True, db_column='T403valorPrescripcion')
     anulado = models.CharField(max_length=1, blank=True, null=True, db_column="T403Anulado")
-    num_resolucion = models.IntegerField(blank=True, null=True, db_column="T403numResolucion")
+    num_resolucion = models.CharField(max_length=255, blank=True, null=True, db_column="T403numResolucion")
     fecha_resolucion = models.DateTimeField(null=True, blank=True, db_column="T403fechaResolucion")
     cod_origen_liq = models.CharField(max_length=1, blank=True, null=True, db_column="T403codOrigenLiq")
     observacion = models.CharField(max_length=255, blank=True, null=True, db_column="T403Observacion")
