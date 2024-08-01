@@ -28,7 +28,7 @@ urlpatterns = [
 
     path('expedientes/', views.ExpedientesView.as_view(), name='expedientes-todos'),
     path('expedientes/<int:pk>/', views.ExpedienteEspecificoView.as_view(), name='obtener-expediente'),
-    path('expedientes-deudor/get/<int:id_deudor>/', views.ExpedientesDeudorGetView.as_view(), name='expedientes-deudor'),
+    path('expedientes-deudor/get/<int:id_deudor>/', views.ExpedientesDeudorGetVieew.as_view(), name='expedientes-deudor'),
 
     path('calculos/', views.CalculosLiquidacionBaseView.as_view(), name='calculos-liquidacion'),
 
@@ -43,6 +43,8 @@ urlpatterns = [
     path('actualizar-caudal-concesionado/<int:pk>/', views.ActualizarCaudalConcesionado.as_view(), name='actualizar-caudal-concesionado'),
 
     path('obtener-contribuyentes/', views.ObtenerContribuyentes.as_view(), name='obtener-contribuyentes'),
+
+    path('obetener-obligaciones-deudor/<int:id_deudor>/', views.ObtenerCarteraByDeudor.as_view(), name='obtener-obligaciones-deudor'),
 
 
     
