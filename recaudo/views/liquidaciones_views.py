@@ -1,6 +1,7 @@
 from datetime import datetime
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from recaudo.models.cobros_models import Cartera
 from transversal.models.personas_models import Personas
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
 from django.template.loader import render_to_string
@@ -8,6 +9,7 @@ from seguridad.utils import Util
 from rest_framework.views import APIView
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
+from recaudo.serializers.facilidades_pagos_serializers import CarteraSerializer
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
@@ -1135,7 +1137,7 @@ class LiquidacionMasivaView(generics.CreateAPIView):
 
 
 
-class ExpedientesDeudorGetView(generics.ListAPIView):
+class ExpedientesDeudorGetVieew(generics.ListAPIView):
     serializer_class = ExpedientesSerializer
 
     def get(self, request, id_deudor):
@@ -1143,11 +1145,14 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
         expedientes = Expedientes.objects.filter(id_deudor=id_deudor)
         if not expedientes:
             raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
+        
         for expediente in expedientes:
             liquidacion = LiquidacionesBase.objects.filter(id_expediente=expediente.id, agno=datetime.now().year).first()
             if not liquidacion: 
                 if expediente.id_expediente_pimisys:
                     tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite__in = ['TUAIM', 'TRIM']).first()
+                    if not tramite:
+                        continue
                     tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
                     titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
                     if not tramite:
@@ -1243,3 +1248,27 @@ class ObtenerLiquidacionesBase(generics.ListAPIView):
         liquidaciones = LiquidacionesBase.objects.filter(id_expediente__in=expedientes, agno=datetime.now().year-1)
         serializer = self.serializer_class(liquidaciones, many=True)
         return Response({'success': True, 'detail':'Se muestra la lista de liquidaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ObtenerCarteraByDeudor(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get(self, request, id_deudor):
+        deudor = Personas.objects.filter(id_persona=id_deudor).first()
+        carteras = Cartera.objects.filter(id_deudor=id_deudor)
+        monto_total = sum(cartera.monto_inicial for cartera in carteras)
+        intereses_total = sum(cartera.valor_intereses for cartera in carteras)
+        monto_total_con_intereses  = monto_total + intereses_total
+
+        serializer = self.serializer_class(carteras, many=True)
+        data = {
+            'id_deudor': deudor.id_persona,
+            'nombre_completo': f"{deudor.primer_nombre} {deudor.segundo_nombre} {deudor.primer_apellido} {deudor.segundo_apellido}" if deudor.tipo_persona == 'NATURAL' else deudor.razon_social,
+            'numero_identificacion': deudor.numero_documento,
+            'email': deudor.email,
+            'obligaciones': serializer.data,
+            'monto_total': monto_total,
+            'intereses_total': intereses_total,
+            'monto_total_con_intereses': monto_total_con_intereses,
+        }
+        return Response({'success': True, 'detail':'Se muestra el listado de obligaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
