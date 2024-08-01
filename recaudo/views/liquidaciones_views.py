@@ -130,7 +130,7 @@ class DeudoresView(generics.GenericAPIView):
 
     def get(self, request):
         personas = Personas.objects.filter(cartera__isnull=False).distinct()
-        serializer = DeudoresSerializer(personas, many=True)
+        serializer = DeudoresGetSerializer(personas, many=True)
         return Response({'success': True, 'detail':'Se muestra la lista de contribuyentes', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 
