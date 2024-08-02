@@ -561,8 +561,17 @@ def liquidacionPdf(request, pk):
             liquidaciondos += valorPagar
     totalliquidacion = liquidacionuno + liquidaciondos
 
-    nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres is not None else ''
-    apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos is not None else ''
+    # nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres is not None else ''
+    # apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos is not None else ''
+
+    nombre_persona_titular = ""
+    if liquidacion.id_deudor.tipo_persona == 'J':
+        nombre_persona_titular = liquidacion.id_deudor.razon_social
+    else:
+        nombre_list = [liquidacion.id_deudor.primer_nombre, liquidacion.id_deudor.segundo_nombre,
+                        liquidacion.id_deudor.primer_apellido, liquidacion.id_deudor.segundo_apellido]
+        nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+        nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
 
     context = {
         'rp': liquidacion.id, #referencia pago
@@ -571,11 +580,11 @@ def liquidacionPdf(request, pk):
         'ley': ley.ley if ley.ley is not None else '',
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'anio': anio,
-        'cedula': liquidacion.id_deudor.identificacion,
-        'titular': nombres + ' ' + apellidos,
+        'cedula': liquidacion.id_deudor.numero_documento,
+        'titular': nombre_persona_titular,
         'representante_legal': '',
-        'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
-        'telefono': liquidacion.id_deudor.telefono,
+        'direccion': liquidacion.id_deudor.direccion_residencia.upper(),
+        'telefono': liquidacion.id_deudor.telefono_celular,
         'expediente': liquidacion.id_expediente.cod_expediente,
         'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
         'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
@@ -635,8 +644,18 @@ class liquidacionPdfpruebaMigueluno(generics.ListAPIView):
         info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
 
         # Calcular los datos necesarios
-        nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres else ''
-        apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos else ''
+        # nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres else ''
+        # apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos else ''
+
+        nombre_persona_titular = ""
+        if liquidacion.id_deudor.tipo_persona == 'J':
+            nombre_persona_titular = liquidacion.id_deudor.razon_social
+        else:
+            nombre_list = [liquidacion.id_deudor.primer_nombre, liquidacion.id_deudor.segundo_nombre,
+                            liquidacion.id_deudor.primer_apellido, liquidacion.id_deudor.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+
         anio = liquidacion.fecha_liquidacion.year
         tua = info.calculos['tarifa_tasa']
         caudalc = float(info.calculos['caudal_consecionado'])
@@ -667,11 +686,11 @@ class liquidacionPdfpruebaMigueluno(generics.ListAPIView):
             'ley': ley.ley if ley.ley else '',
             'fecha_impresion': liquidacion.fecha_liquidacion,
             'anio': anio,
-            'cedula': liquidacion.id_deudor.identificacion,
-            'titular': nombres + ' ' + apellidos,
+            'cedula': liquidacion.id_deudor.numero_documento,
+            'titular': nombre_persona_titular,
             'representante_legal': '',
-            'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
-            'telefono': liquidacion.id_deudor.telefono,
+            'direccion': liquidacion.id_deudor.direccion_residencia.upper(),
+            'telefono': liquidacion.id_deudor.telefono_celular,
             'expediente': liquidacion.id_expediente.cod_expediente,
             'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
             'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
@@ -724,6 +743,15 @@ def liquidacionPdfpruebaMigueldos(request, pk):
     liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
     info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
 
+    nombre_persona_titular = ""
+    if liquidacion.id_deudor.tipo_persona == 'J':
+        nombre_persona_titular = liquidacion.id_deudor.razon_social
+    else:
+        nombre_list = [liquidacion.id_deudor.primer_nombre, liquidacion.id_deudor.segundo_nombre,
+                        liquidacion.id_deudor.primer_apellido, liquidacion.id_deudor.segundo_apellido]
+        nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+        nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+
     context = {
         'rp': liquidacion.id,
         'limite_pago': liquidacion.vencimiento,
@@ -731,11 +759,11 @@ def liquidacionPdfpruebaMigueldos(request, pk):
         'ley': ley.ley if ley.ley is not None else '',
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'anio': liquidacion.fecha_liquidacion.year,
-        'cedula': liquidacion.id_deudor.identificacion,
-        'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
+        'cedula': liquidacion.id_deudor.numero_documento,
+        'titular': nombre_persona_titular.upper(),
         'representante_legal': '',
-        'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
-        'telefono': liquidacion.id_deudor.telefono,
+        'direccion': liquidacion.id_deudor.direccion_residencia.upper(),
+        'telefono': liquidacion.id_deudor.telefono_celular,
         'expediente': liquidacion.id_expediente.cod_expediente,
         'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
         'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
