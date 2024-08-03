@@ -1,7 +1,10 @@
 import math
 import json
 import os
-
+from dotenv import load_dotenv
+import pymssql
+from datetime import datetime
+import psycopg2
 import requests
 from almacen.models.bienes_models import CatalogoBienes, EstadosArticulo, MetodosValoracionArticulos, TiposActivo, TiposDepreciacionActivos
 from rest_framework import generics, status
@@ -1356,6 +1359,40 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, PermisoCrearEntradaAlmacen]
 
 
+    def datos_pymisis(self):
+    
+        try: 
+            # Intentar establecer la conexión MS SQL Server
+            conn_mssql = pymssql.connect(
+                server = os.environ['MS_SQL_SERVER_HOST'],
+                user = os.environ['MS_SQL_SERVER_USER'],
+                password = os.environ['MS_SQL_SERVER_PASSWORD'],
+                database = os.environ['MS_SQL_SERVER_DB'])
+            print("Conexión MS SQL Server exitosa!")
+
+            cursor = conn_mssql.cursor()
+
+            # Consultar los datos de la tabla T53ASIENTOPROCESO
+            select_query_53 = """ SELECT 
+                    T53Agno,T53CodProceso,T53CodGrupoArt,T53CodConcepto,T53Consecutivo,T53CodCta,T53CodCentro,T53Nit,T53Referencia,T53Detalle
+                    T53CodTipoDocCruce,T53NumeroDocCruce,T53ValorBase,T53ValorDebito,T53ValorCredito
+                FROM T53ASIENTOPROCESO """
+                
+            cursor.execute(select_query_53)
+            columns = [col[0] for col in cursor.description]
+            column_data_53 = cursor.fetchall()
+            results_almacen= []
+            for row in column_data_53:
+                results_almacen.append(dict(zip(columns,row)))
+            print(results_almacen)
+
+        except Exception as e:
+            # Manejar errores de conexión
+            print("Error de conexión MS SQL Server:", e)
+            return None, None, None
+        
+
+
     def guardar_movimiento(self, request):
         headers = {'Content-Type': 'text/xml'}
         target_url = 'http://svrprueba/PIMIPYG/T85DOCUMENTO.asmx?op=iSave'
@@ -1422,6 +1459,8 @@ class CreateEntradaandItemsEntrada(generics.CreateAPIView):
 
         # Llamamos a la función para "guardar el movimiento"
         self.guardar_movimiento(request)
+
+        self.datos_pymisis()
 
         # VALIDACION QUE EN EL CAMPO CANTIDAD INGRESE POR LO MENOS UN ELEMENTO
         cantidad_list = [item['cantidad'] for item in items_entrada if item['cantidad'] == None or item['cantidad'] == "" or item['cantidad'] < 1]
