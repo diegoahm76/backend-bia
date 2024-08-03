@@ -5,6 +5,7 @@ from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, Facil
 from recaudo.models.base_models import RangosEdad, TipoRenta
 from gestion_documental.models import ExpedientesDocumentales
 from recaudo.models import extraccion_model_recaudo , Rt970Tramite
+from transversal.models.personas_models import Personas, UnidadesOrganizacionales
 
 
 
@@ -218,25 +219,26 @@ class DeudorSerializer(serializers.ModelSerializer):
 
 
 class CarteraSumSerializer(serializers.ModelSerializer):
-    total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
-    identificacion = serializers.SerializerMethodField()
+    # total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
     nombres = serializers.SerializerMethodField()
+    # tipo_documento = serializers.ReadOnlyField(source='id_deudor.tipo_documento')
+    # numero_documento = serializers.ReadOnlyField(source='id_deudor.numero_documento')
     telefono = serializers.SerializerMethodField()
     direccion = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
-    fecha_nacimiento = serializers.SerializerMethodField()
 
     class Meta:
-        model = Cartera
-        fields = '__all__'
+        model = Personas
+        fields = ( 'nombres', 'tipo_documento', 'numero_documento', 'telefono', 'direccion','email')
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['total_sancion'] = instance.total_sancion
-        return representation
+    # def total_sancion(self, instance):
+    #     representation = super().to_representation(instance)
+    #     representation['total_sancion'] = instance.calcular_valor_total()
+    #     return representation
 
     def get_nombres(self, obj):
-        persona = obj.id_deudor
+        
+        persona = obj
         if persona:
             if persona.razon_social:
                 return persona.razon_social
@@ -247,38 +249,39 @@ class CarteraSumSerializer(serializers.ModelSerializer):
                     persona.primer_apellido,
                     persona.segundo_apellido
                 ]))
-                return nombres
-        return None
-
-    def get_identificacion(self, obj):
-        persona = obj.id_deudor
-        if persona:
-            return persona.numero_documento
+                return nombres.strip() if nombres else None
         return None
 
     def get_telefono(self, obj):
-        persona = obj.id_deudor
+        persona = obj
         if persona:
-            return persona.telefono_celular or persona.telefono_empresa or persona.telefono_celular_empresa
+            telefonos = [
+                persona.telefono_fijo_residencial,
+                persona.telefono_celular,
+                persona.telefono_empresa,
+                persona.telefono_celular_empresa,
+                persona.telefono_empresa_2
+            ]
+            telefonos_filtrados = [tel for tel in telefonos if tel]
+            return ' & '.join(telefonos_filtrados) if telefonos_filtrados else None
         return None
 
     def get_direccion(self, obj):
-        persona = obj.id_deudor
+        persona = obj
         if persona:
             return persona.direccion_residencia or persona.direccion_laboral or persona.direccion_notificaciones
         return None
 
     def get_email(self, obj):
-        persona = obj.id_deudor
+        persona = obj
         if persona:
             return persona.email or persona.email_empresarial
         return None
 
-    def get_fecha_nacimiento(self, obj):
-        persona = obj.id_deudor
-        if persona:
-            return persona.fecha_nacimiento
-        return None
+
+
+
+
 
 # class DeudorSumSerializer(serializers.ModelSerializer):
 #     total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
