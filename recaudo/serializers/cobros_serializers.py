@@ -23,22 +23,22 @@ class CarteraSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def get_nombres(self, obj):    
-        if obj.id_deudor.id_persona_deudor:
-            if obj.id_deudor.id_persona_deudor.razon_social:
-                nombre_completo = obj.id_deudor.id_persona_deudor.razon_social
+        if obj.id_deudor:
+            if obj.id_deudor.razon_social:
+                nombre_completo = obj.id_deudor.razon_social
             else:
-                nombre_completo = ' '.join(filter(None, [obj.id_deudor.id_persona_deudor.primer_nombre, obj.id_deudor.id_persona_deudor.segundo_nombre, obj.id_deudor.id_persona_deudor.primer_apellido, obj.id_deudor.id_persona_deudor.segundo_apellido]))
+                nombre_completo = ' '.join(filter(None, [obj.id_deudor.primer_nombre, obj.id_deudor.segundo_nombre, obj.id_deudor.primer_apellido, obj.id_deudor.segundo_apellido]))
             return nombre_completo
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
+        # elif obj.id_deudor.id_persona_deudor_pymisis:
+        #     return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
         else:
             return None
     
     def get_identificacion(self, obj):
-        if obj.id_deudor.id_persona_deudor:
-            return obj.id_deudor.id_persona_deudor.numero_documento
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        if obj.id_deudor:
+            return obj.id_deudor.numero_documento
+        # elif obj.id_deudor.id_persona_deudor_pymisis:
+        #     return obj.id_deudor.id_persona_deudor_pymisis.t03nit
         else:
             return None
 
@@ -68,7 +68,7 @@ class TipoRentaSerializer(serializers.ModelSerializer):
 
 
 class CarteraGeneralSerializer(serializers.ModelSerializer):
-    id_deudor = DeudorSerializer(many=False)
+    # id_deudor = DeudorSerializer(many=False)
     id_rango = RangosEdadSerializer(many=False)
     proceso_cartera = serializers.SerializerMethodField()
     fecha_facturacion = serializers.DateTimeField(format='%Y-%m-%d %H:%M:%S', required=False, allow_null=True)
@@ -92,22 +92,22 @@ class CarteraGeneralSerializer(serializers.ModelSerializer):
         return serializer.data
     
     def get_nombre_deudor(self, obj):
-        if obj.id_deudor.id_persona_deudor:
-            if obj.id_deudor.id_persona_deudor.razon_social:
-                nombre_completo = obj.id_deudor.id_persona_deudor.razon_social
+        if obj.id_deudor:
+            if obj.id_deudor.razon_social:
+                nombre_completo = obj.id_deudor.razon_social
             else:
-                nombre_completo = ' '.join(filter(None, [obj.id_deudor.id_persona_deudor.primer_nombre, obj.id_deudor.id_persona_deudor.segundo_nombre, obj.id_deudor.id_persona_deudor.primer_apellido, obj.id_deudor.id_persona_deudor.segundo_apellido]))
+                nombre_completo = ' '.join(filter(None, [obj.id_deudor.primer_nombre, obj.id_deudor.segundo_nombre, obj.id_deudor.primer_apellido, obj.id_deudor.segundo_apellido]))
             return nombre_completo
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
+        # elif obj.id_deudor.id_persona_deudor_pymisis:
+        #     return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
         else:
             return None
         
     def get_identificacion(self, obj):
-        if obj.id_deudor.id_persona_deudor:
-            return obj.id_deudor.id_persona_deudor.numero_documento
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
+        if obj.id_deudor:
+            return obj.id_deudor.numero_documento
+        # elif obj.id_deudor.id_persona_deudor_pymisis:
+        #     return obj.id_deudor.id_persona_deudor_pymisis.t03nit
         else:
             return None
         

@@ -5,6 +5,7 @@ from recaudo.models.facilidades_pagos_models import DetallesFacilidadPago, Facil
 from recaudo.models.base_models import RangosEdad, TipoRenta
 from gestion_documental.models import ExpedientesDocumentales
 from recaudo.models import extraccion_model_recaudo , Rt970Tramite
+from transversal.models.personas_models import Personas, UnidadesOrganizacionales
 
 
 
@@ -216,79 +217,145 @@ class DeudorSerializer(serializers.ModelSerializer):
         model = Deudores
         fields = '__all__'
 
-class DeudorSumSerializer(serializers.ModelSerializer):
-    total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
-    identificacion = serializers.SerializerMethodField()
+
+class CarteraSumSerializer(serializers.ModelSerializer):
+    # total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
     nombres = serializers.SerializerMethodField()
+    # tipo_documento = serializers.ReadOnlyField(source='id_deudor.tipo_documento')
+    # numero_documento = serializers.ReadOnlyField(source='id_deudor.numero_documento')
     telefono = serializers.SerializerMethodField()
     direccion = serializers.SerializerMethodField()
     email = serializers.SerializerMethodField()
-    fecha_nacimiento = serializers.SerializerMethodField()
-
 
     class Meta:
-        model = Deudores
-        fields = '__all__'
+        model = Personas
+        fields = ( 'nombres', 'tipo_documento', 'numero_documento', 'telefono', 'direccion','email')
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['total_sancion'] = instance.total_sancion
-        return representation
-    
+    # def total_sancion(self, instance):
+    #     representation = super().to_representation(instance)
+    #     representation['total_sancion'] = instance.calcular_valor_total()
+    #     return representation
+
     def get_nombres(self, obj):
-        if obj.id_persona_deudor:
-            if obj.id_persona_deudor.razon_social:
-                nombre_completo = obj.id_persona_deudor.razon_social
+        
+        persona = obj
+        if persona:
+            if persona.razon_social:
+                return persona.razon_social
             else:
-                nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
-            return nombre_completo
-        elif obj.id_persona_deudor_pymisis:
-            return f"{obj.id_persona_deudor_pymisis.t03nombre}"
-        else:
-            return None
+                nombres = ' '.join(filter(None, [
+                    persona.primer_nombre,
+                    persona.segundo_nombre,
+                    persona.primer_apellido,
+                    persona.segundo_apellido
+                ]))
+                return nombres.strip() if nombres else None
+        return None
 
-    def get_identificacion(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.numero_documento
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03nit
-        else:
-            return None
-        
     def get_telefono(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.telefono_celular
-        elif obj.id_persona_deudor:
-            return obj.id_persona_deudor.telefono_empresa
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03telefono
-        else:
-            return None
-        
+        persona = obj
+        if persona:
+            telefonos = [
+                persona.telefono_fijo_residencial,
+                persona.telefono_celular,
+                persona.telefono_empresa,
+                persona.telefono_celular_empresa,
+                persona.telefono_empresa_2
+            ]
+            telefonos_filtrados = [tel for tel in telefonos if tel]
+            return ' & '.join(telefonos_filtrados) if telefonos_filtrados else None
+        return None
+
     def get_direccion(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.direccion_residencia
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03direccion
-        else:
-            return None
-        
+        persona = obj
+        if persona:
+            return persona.direccion_residencia or persona.direccion_laboral or persona.direccion_notificaciones
+        return None
+
     def get_email(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.email
-        elif obj.id_persona_deudor:
-            return obj.id_persona_deudor.email_empresarial
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03email
-        else:
-            return None
+        persona = obj
+        if persona:
+            return persona.email or persona.email_empresarial
+        return None
+
+
+
+
+
+
+# class DeudorSumSerializer(serializers.ModelSerializer):
+#     total_sancion = serializers.DecimalField(max_digits=30, decimal_places=2)
+#     identificacion = serializers.SerializerMethodField()
+#     nombres = serializers.SerializerMethodField()
+#     telefono = serializers.SerializerMethodField()
+#     direccion = serializers.SerializerMethodField()
+#     email = serializers.SerializerMethodField()
+#     fecha_nacimiento = serializers.SerializerMethodField()
+
+
+#     class Meta:
+#         model = Deudores
+#         fields = '__all__'
+
+#     def to_representation(self, instance):
+#         representation = super().to_representation(instance)
+#         representation['total_sancion'] = instance.total_sancion
+#         return representation
+    
+#     def get_nombres(self, obj):
+#         if obj.id_persona_deudor:
+#             if obj.id_persona_deudor.razon_social:
+#                 nombre_completo = obj.id_persona_deudor.razon_social
+#             else:
+#                 nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
+#             return nombre_completo
+#         elif obj.id_persona_deudor_pymisis:
+#             return f"{obj.id_persona_deudor_pymisis.t03nombre}"
+#         else:
+#             return None
+
+#     def get_identificacion(self, obj):
+#         if obj.id_persona_deudor:
+#             return obj.id_persona_deudor.numero_documento
+#         elif obj.id_persona_deudor_pymisis:
+#             return obj.id_persona_deudor_pymisis.t03nit
+#         else:
+#             return None
         
-    def get_fecha_nacimiento(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.fecha_nacimiento
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03fechanacimiento
-        else:
-            return None
+#     def get_telefono(self, obj):
+#         if obj.id_persona_deudor:
+#             return obj.id_persona_deudor.telefono_celular
+#         elif obj.id_persona_deudor:
+#             return obj.id_persona_deudor.telefono_empresa
+#         elif obj.id_persona_deudor_pymisis:
+#             return obj.id_persona_deudor_pymisis.t03telefono
+#         else:
+#             return None
+        
+#     def get_direccion(self, obj):
+#         if obj.id_persona_deudor:
+#             return obj.id_persona_deudor.direccion_residencia
+#         elif obj.id_persona_deudor_pymisis:
+#             return obj.id_persona_deudor_pymisis.t03direccion
+#         else:
+#             return None
+        
+#     def get_email(self, obj):
+#         if obj.id_persona_deudor:
+#             return obj.id_persona_deudor.email
+#         elif obj.id_persona_deudor:
+#             return obj.id_persona_deudor.email_empresarial
+#         elif obj.id_persona_deudor_pymisis:
+#             return obj.id_persona_deudor_pymisis.t03email
+#         else:
+#             return None
+        
+#     def get_fecha_nacimiento(self, obj):
+#         if obj.id_persona_deudor:
+#             return obj.id_persona_deudor.fecha_nacimiento
+#         elif obj.id_persona_deudor_pymisis:
+#             return obj.id_persona_deudor_pymisis.t03fechanacimiento
+#         else:
+#             return None
     
     

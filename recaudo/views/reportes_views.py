@@ -8,6 +8,7 @@ from django.db.models import Q, F, Sum
 from itertools import groupby
 from operator import itemgetter
 from django.db.models import Value as V
+from transversal.models.personas_models import Personas
 from django.db.models.functions import Concat
 from datetime import datetime, timezone, timedelta
 from recaudo.models.liquidaciones_models import Deudores
@@ -20,9 +21,10 @@ from recaudo.serializers.reportes_serializers import (
     CarteraGeneralDetalleSerializer,
     CarteraEdadesSerializer,
     CarteraSerializer,
+    CarteraSumSerializer,
     ConceptoContableSerializer,
     DeudorSerializer,
-    DeudorSumSerializer,
+    # DeudorSumSerializer,
     RangosEdadSerializer,
     ReporteFacilidadesPagosSerializer,
     ReporteFacilidadesPagosDetalleSerializer,
@@ -1182,10 +1184,82 @@ class ReporteGeneralCarteraDeudaYEdadTop(generics.ListAPIView):
             'detalles_por_tipo_renta': detalles_por_tipo_renta
         }, status=status.HTTP_200_OK)
     
-    
+# from django.db.models.functions import Coalesce
+
+# class CarteraDeudoresTop(generics.ListAPIView):
+#     serializer_class = CarteraSumSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         queryset = Cartera.objects.all()
+
+#         fecha_facturacion_desde = self.request.query_params.get('fecha_facturacion_desde')
+#         fecha_facturacion_hasta = self.request.query_params.get('fecha_facturacion_hasta')
+#         id_tipo_renta = self.request.query_params.get('id_tipo_renta')
+#         id_rango = self.request.query_params.get('id_rango')
+
+#         if fecha_facturacion_desde:
+#             queryset = queryset.filter(fecha_facturacion__gte=fecha_facturacion_desde)
+
+#         if fecha_facturacion_hasta:
+#             queryset = queryset.filter(fecha_facturacion__lte=fecha_facturacion_hasta)
+
+#         if id_tipo_renta:
+#             queryset = queryset.filter(tipo_renta=id_tipo_renta)
+
+#         if id_rango:
+#             queryset = queryset.filter(id_rango=id_rango)
+
+#         return queryset
+
+#     def calcular_valor_sancion(self, monto_inicial, valor_intereses):
+#         """Calcula el valor de sanción utilizando la fórmula proporcionada."""
+#         return monto_inicial + (valor_intereses or 0)
+
+#     def list(self, request, *args, **kwargs):
+#         cache_key = 'top_10_deudores'
+#         cached_data = cache.get(cache_key)
+
+#         if cached_data:
+#             return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': cached_data}, status=status.HTTP_200_OK)
+
+#         queryset = self.get_queryset()
+
+#         queryset = queryset.select_related('id_deudor')
+
+#         queryset = queryset.annotate(
+#             valor_sancion_calculado=ExpressionWrapper(
+#                 F('monto_inicial') + Coalesce(F('valor_intereses'), Value(0)),
+#                 output_field=DecimalField(max_digits=30, decimal_places=4)
+#             )
+#         )
+
+#         # Obtener los top 10 deudores basados en la suma total del valor_sancion calculado
+#         top_10_deudores = queryset.values('id_deudor').annotate(
+#             total_sancion=Sum('valor_sancion_calculado')
+#         ).order_by('-total_sancion')[:10]
+
+#         deudores_ids = [deudor['id_deudor'] for deudor in top_10_deudores]
+#         deudores_objs = queryset.filter(id_deudor__in=deudores_ids)
+
+#         # Crear un diccionario para mapear deudor_id a total_sancion
+#         deudores_total_sancion = {deudor['id_deudor']: deudor['total_sancion'] for deudor in top_10_deudores}
+
+#         deudores_data = []
+#         for idx, deudor in enumerate(deudores_objs, start=1):
+#             deudor.total_sancion = deudores_total_sancion.get(deudor.id_deudor, 0)
+#             deudor_data = CarteraSumSerializer(deudor).data
+#             deudor_data['ranking'] = idx
+#             deudores_data.append(deudor_data)
+
+#         # Guardar los datos en el caché por un periodo específico, p.ej., 1 hora (3600 segundos)
+#         cache.set(cache_key, deudores_data, timeout=3600)
+
+#         return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)
+
 
 class CarteraDeudoresTop(generics.ListAPIView):
-    serializer_class = DeudorSumSerializer
+    serializer_class = CarteraSumSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -1210,9 +1284,9 @@ class CarteraDeudoresTop(generics.ListAPIView):
 
         return queryset
 
-    def calcular_valor_sancion(self, monto_inicial, valor_intereses):
-        """Calcula el valor de sanción utilizando la fórmula proporcionada."""
-        return monto_inicial + (valor_intereses or 0)
+    # def calcular_valor_sancion(self, monto_inicial, valor_intereses):
+    #     """Calcula el valor de sanción utilizando la fórmula proporcionada."""
+    #     return monto_inicial + (valor_intereses or 0)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -1231,17 +1305,19 @@ class CarteraDeudoresTop(generics.ListAPIView):
 
         # Obtener las instancias de los deudores en el top 10
         deudores_ids = [deudor['id_deudor'] for deudor in top_10_deudores]
-        deudores_objs = Deudores.objects.filter(id__in=deudores_ids)
+        deudores_objs = Personas.objects.filter(id_persona__in=deudores_ids)
 
         # Crear un diccionario para mapear deudor_id a total_sancion
         deudores_total_sancion = {deudor['id_deudor']: deudor['total_sancion'] for deudor in top_10_deudores}
 
         deudores_data = []
-        for idx, deudor in enumerate(deudores_objs, start=1):
-            deudor.total_sancion = deudores_total_sancion.get(deudor.id, 0)
-            deudor_data = DeudorSumSerializer(deudor).data
-            deudor_data['ranking'] = idx
+        for deudor in top_10_deudores:
+
+            persona = deudores_objs.filter(id_persona = deudor['id_deudor']).first()
+            deudor_data = CarteraSumSerializer(persona).data
+            deudor_data.update(deudor)
             deudores_data.append(deudor_data)
+
 
         return Response({'success': True, 'detail': 'Datos de deudores obtenidos exitosamente', 'top_10_deudores': deudores_data}, status=status.HTTP_200_OK)
 

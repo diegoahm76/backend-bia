@@ -1,12 +1,15 @@
 from datetime import datetime
 from gestion_documental.models.trd_models import FormatosTiposMedio
 from gestion_documental.views.archivos_digitales_views import ArchivosDgitalesCreate
+from recaudo.models.cobros_models import Cartera
+from transversal.models.personas_models import Personas
 from recurso_hidrico.views.zonas_hidricas_views import FuncionesAuxiliares
 from django.template.loader import render_to_string
 from seguridad.utils import Util
 from rest_framework.views import APIView
 from gestion_documental.models.expedientes_models import ArchivosDigitales
 from tramites.models.tramites_models import SolicitudesTramites, PermisosAmbSolicitudesTramite
+from recaudo.serializers.facilidades_pagos_serializers import CarteraSerializer
 from recaudo.models.base_models import (
     LeyesLiquidacion
 )
@@ -36,7 +39,9 @@ from recaudo.serializers.liquidaciones_serializers import (
     DetallesLiquidacionBaseSerializer,
     DetallesLiquidacionBasePostSerializer,
     ExpedientesSerializer,
-    CalculosLiquidacionBaseSerializer
+    CalculosLiquidacionBaseSerializer,
+    DeudoresGetSerializer
+    
 )
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
@@ -123,14 +128,12 @@ class EliminarOpcionesLiquidacionBaseView(generics.GenericAPIView):
 
 
 class DeudoresView(generics.GenericAPIView):
-    queryset = Deudores.objects.all()
-    serializer_class = DeudoresSerializer
     #permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response({'success': True, 'data': serializer.data}, status=status.HTTP_200_OK)
+        personas = Personas.objects.filter(cartera__isnull=False).distinct()
+        serializer = DeudoresGetSerializer(personas, many=True)
+        return Response({'success': True, 'detail':'Se muestra la lista de contribuyentes', 'data':serializer.data}, status=status.HTTP_200_OK)
 
 
 class DeudoresIdentificacionView(generics.GenericAPIView):
@@ -558,8 +561,17 @@ def liquidacionPdf(request, pk):
             liquidaciondos += valorPagar
     totalliquidacion = liquidacionuno + liquidaciondos
 
-    nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres is not None else ''
-    apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos is not None else ''
+    # nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres is not None else ''
+    # apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos is not None else ''
+
+    nombre_persona_titular = ""
+    if liquidacion.id_deudor.tipo_persona == 'J':
+        nombre_persona_titular = liquidacion.id_deudor.razon_social
+    else:
+        nombre_list = [liquidacion.id_deudor.primer_nombre, liquidacion.id_deudor.segundo_nombre,
+                        liquidacion.id_deudor.primer_apellido, liquidacion.id_deudor.segundo_apellido]
+        nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+        nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
 
     context = {
         'rp': liquidacion.id, #referencia pago
@@ -568,11 +580,11 @@ def liquidacionPdf(request, pk):
         'ley': ley.ley if ley.ley is not None else '',
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'anio': anio,
-        'cedula': liquidacion.id_deudor.identificacion,
-        'titular': nombres + ' ' + apellidos,
+        'cedula': liquidacion.id_deudor.numero_documento,
+        'titular': nombre_persona_titular,
         'representante_legal': '',
-        'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
-        'telefono': liquidacion.id_deudor.telefono,
+        'direccion': liquidacion.id_deudor.direccion_residencia.upper(),
+        'telefono': liquidacion.id_deudor.telefono_celular,
         'expediente': liquidacion.id_expediente.cod_expediente,
         'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
         'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
@@ -632,8 +644,18 @@ class liquidacionPdfpruebaMigueluno(generics.ListAPIView):
         info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
 
         # Calcular los datos necesarios
-        nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres else ''
-        apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos else ''
+        # nombres = liquidacion.id_deudor.nombres.upper() if liquidacion.id_deudor.nombres else ''
+        # apellidos = liquidacion.id_deudor.apellidos.upper() if liquidacion.id_deudor.apellidos else ''
+
+        nombre_persona_titular = ""
+        if liquidacion.id_deudor.tipo_persona == 'J':
+            nombre_persona_titular = liquidacion.id_deudor.razon_social
+        else:
+            nombre_list = [liquidacion.id_deudor.primer_nombre, liquidacion.id_deudor.segundo_nombre,
+                            liquidacion.id_deudor.primer_apellido, liquidacion.id_deudor.segundo_apellido]
+            nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+            nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+
         anio = liquidacion.fecha_liquidacion.year
         tua = info.calculos['tarifa_tasa']
         caudalc = float(info.calculos['caudal_consecionado'])
@@ -664,11 +686,11 @@ class liquidacionPdfpruebaMigueluno(generics.ListAPIView):
             'ley': ley.ley if ley.ley else '',
             'fecha_impresion': liquidacion.fecha_liquidacion,
             'anio': anio,
-            'cedula': liquidacion.id_deudor.identificacion,
-            'titular': nombres + ' ' + apellidos,
+            'cedula': liquidacion.id_deudor.numero_documento,
+            'titular': nombre_persona_titular,
             'representante_legal': '',
-            'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
-            'telefono': liquidacion.id_deudor.telefono,
+            'direccion': liquidacion.id_deudor.direccion_residencia.upper(),
+            'telefono': liquidacion.id_deudor.telefono_celular,
             'expediente': liquidacion.id_expediente.cod_expediente,
             'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
             'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
@@ -721,6 +743,15 @@ def liquidacionPdfpruebaMigueldos(request, pk):
     liquidacion = LiquidacionesBase.objects.filter(pk=pk).get()
     info = CalculosLiquidacionBase.objects.filter(id_liquidacion=liquidacion.id).get()
 
+    nombre_persona_titular = ""
+    if liquidacion.id_deudor.tipo_persona == 'J':
+        nombre_persona_titular = liquidacion.id_deudor.razon_social
+    else:
+        nombre_list = [liquidacion.id_deudor.primer_nombre, liquidacion.id_deudor.segundo_nombre,
+                        liquidacion.id_deudor.primer_apellido, liquidacion.id_deudor.segundo_apellido]
+        nombre_persona_titular = ' '.join(item for item in nombre_list if item is not None)
+        nombre_persona_titular = nombre_persona_titular if nombre_persona_titular != "" else None
+
     context = {
         'rp': liquidacion.id,
         'limite_pago': liquidacion.vencimiento,
@@ -728,11 +759,11 @@ def liquidacionPdfpruebaMigueldos(request, pk):
         'ley': ley.ley if ley.ley is not None else '',
         'fecha_impresion': liquidacion.fecha_liquidacion,
         'anio': liquidacion.fecha_liquidacion.year,
-        'cedula': liquidacion.id_deudor.identificacion,
-        'titular': liquidacion.id_deudor.nombres.upper() + ' ' + liquidacion.id_deudor.apellidos.upper(),
+        'cedula': liquidacion.id_deudor.numero_documento,
+        'titular': nombre_persona_titular.upper(),
         'representante_legal': '',
-        'direccion': liquidacion.id_deudor.ubicacion_id.nombre.upper(),
-        'telefono': liquidacion.id_deudor.telefono,
+        'direccion': liquidacion.id_deudor.direccion_residencia.upper(),
+        'telefono': liquidacion.id_deudor.telefono_celular,
         'expediente': liquidacion.id_expediente.cod_expediente,
         'exp_resolucion': liquidacion.id_expediente.numero_resolucion,
         'nombre_fuente': str(info.calculos['nombre_fuente']).upper(),
@@ -865,7 +896,7 @@ class LiquidacionObligacionCreateView(generics.CreateAPIView):
         expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
         if not expediente:
             raise ValidationError('El expediente seleccionado no existe')
-        data_liquidacion['id_deudor'] = expediente.id_deudor.id
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id_persona
         data_expediente = self.obtener_resolucion(expediente)
         data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
         data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
@@ -1038,7 +1069,7 @@ class LiquidacionMasivaView(generics.CreateAPIView):
         expediente = Expedientes.objects.filter(pk=data_liquidacion['id_expediente']).first()
         if not expediente:
             raise ValidationError('El expediente seleccionado no existe')
-        data_liquidacion['id_deudor'] = expediente.id_deudor.id
+        data_liquidacion['id_deudor'] = expediente.id_deudor.id_persona
         data_expediente = self.obtener_resolucion(expediente)
         data_liquidacion['num_resolucion'] = data_expediente['numero_resolucion']
         data_liquidacion['agno_resolucion'] = data_expediente['fecha_resolucion']
@@ -1134,7 +1165,7 @@ class LiquidacionMasivaView(generics.CreateAPIView):
 
 
 
-class ExpedientesDeudorGetView(generics.ListAPIView):
+class ExpedientesDeudorGetVieew(generics.ListAPIView):
     serializer_class = ExpedientesSerializer
 
     def get(self, request, id_deudor):
@@ -1142,11 +1173,14 @@ class ExpedientesDeudorGetView(generics.ListAPIView):
         expedientes = Expedientes.objects.filter(id_deudor=id_deudor)
         if not expedientes:
             raise NotFound('No se encontró ningún registro en expedientes con el parámetro ingresado')
+        
         for expediente in expedientes:
             liquidacion = LiquidacionesBase.objects.filter(id_expediente=expediente.id, agno=datetime.now().year).first()
             if not liquidacion: 
                 if expediente.id_expediente_pimisys:
                     tramite = Rt970Tramite.objects.filter(t970codexpediente=expediente.id_expediente_pimisys.t920codexpediente, t970codtipotramite__in = ['TUAIM', 'TRIM']).first()
+                    if not tramite:
+                        continue
                     tramite_tercero = T971TramiteTercero.objects.filter(t971idtramite=tramite.t970idtramite).first()
                     titular = Tercero.objects.filter(t03nit=tramite_tercero.t971nit).first()
                     if not tramite:
@@ -1224,3 +1258,45 @@ class ActualizarCaudalConcesionado(generics.UpdateAPIView):
         tramite.save()
         return Response({'success': True, 'detail': 'Se actualizó el cálculo de la liquidación', 'data': {'caudal_actualizado': tramite.t970tuacaudalconcesi}}, status=status.HTTP_200_OK)
 
+
+
+class ObtenerContribuyentes(generics.ListAPIView):
+ 
+    def get(self, request):
+        personas = Personas.objects.filter(expedientes__isnull=False).distinct()
+        serializer = DeudoresGetSerializer(personas, many=True)
+        return Response({'success': True, 'detail':'Se muestra la lista de contribuyentes', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ObtenerLiquidacionesBase(generics.ListAPIView):
+    serializer_class = LiquidacionesBaseSerializer
+
+    def get(self, request):
+        expedientes = request.data.get('expedientes')
+        liquidaciones = LiquidacionesBase.objects.filter(id_expediente__in=expedientes, agno=datetime.now().year-1)
+        serializer = self.serializer_class(liquidaciones, many=True)
+        return Response({'success': True, 'detail':'Se muestra la lista de liquidaciones', 'data':serializer.data}, status=status.HTTP_200_OK)
+    
+
+class ObtenerCarteraByDeudor(generics.ListAPIView):
+    serializer_class = CarteraSerializer
+
+    def get(self, request, id_deudor):
+        deudor = Personas.objects.filter(id_persona=id_deudor).first()
+        carteras = Cartera.objects.filter(id_deudor=id_deudor)
+        monto_total = sum(cartera.monto_inicial for cartera in carteras)
+        intereses_total = sum(cartera.valor_intereses for cartera in carteras)
+        monto_total_con_intereses  = monto_total + intereses_total
+
+        serializer = self.serializer_class(carteras, many=True)
+        data = {
+            'id_deudor': deudor.id_persona,
+            'nombre_completo': f"{deudor.primer_nombre} {deudor.segundo_nombre} {deudor.primer_apellido} {deudor.segundo_apellido}" if deudor.tipo_persona == 'NATURAL' else deudor.razon_social,
+            'numero_identificacion': deudor.numero_documento,
+            'email': deudor.email,
+            'obligaciones': serializer.data,
+            'monto_total': monto_total,
+            'intereses_total': intereses_total,
+            'monto_total_con_intereses': monto_total_con_intereses,
+        }
+        return Response({'success': True, 'detail':'Se muestra el listado de obligaciones', 'data':serializer.data}, status=status.HTTP_200_OK)

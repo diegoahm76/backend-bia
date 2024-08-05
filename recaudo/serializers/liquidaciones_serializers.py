@@ -13,6 +13,7 @@ from recaudo.models.cobros_models import (
     Cartera,
     ConceptoContable
 )
+from transversal.models.personas_models import Personas
 
 class OpcionesLiquidacionBaseSerializer(serializers.ModelSerializer):
     usada = serializers.SerializerMethodField()
@@ -150,7 +151,40 @@ class DeudoresSerializer(serializers.ModelSerializer):
     #         })
 
     #     return liquidacion_data
+
+class DeudoresGetSerializer(serializers.ModelSerializer):
+    identificacion = serializers.SerializerMethodField()
+    nombres = serializers.SerializerMethodField()
+    telefono = serializers.SerializerMethodField()
+    direccion = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    fecha_nacimiento = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Personas
+        fields = ('id_persona', 'identificacion', 'nombres', 'telefono', 'direccion', 'email','fecha_nacimiento')
+
+    def get_nombres(self, obj):
+        if obj.razon_social:
+            nombre_completo = obj.razon_social
+        else:
+            nombre_completo = ' '.join(filter(None, [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]))
+        return nombre_completo
     
+    def get_identificacion(self, obj):
+        return obj.numero_documento
+    
+    def get_telefono(self, obj):
+        return obj.telefono_celular
+    
+    def get_direccion(self, obj):
+        return obj.direccion_residencia
+    
+    def get_fecha_nacimiento(self, obj):
+        return obj.fecha_nacimiento
+    
+    def get_email(self, obj):
+        return obj.email
     
 
 
@@ -183,13 +217,13 @@ class ExpedientesSerializer(serializers.ModelSerializer):
 
 
 class LiquidacionesBaseSerializer(serializers.ModelSerializer):
-    id_deudor = DeudoresSerializer(many=False)
+    id_deudor = DeudoresGetSerializer(many=False)
     id_expediente = ExpedientesSerializer(many=False)
     detalles = DetallesLiquidacionBaseSerializer(many=True)
 
     class Meta:
         model = LiquidacionesBase
-        fields = ('id', 'id_deudor', 'id_expediente', 'fecha_liquidacion', 'vencimiento', 'periodo_liquidacion', 'valor', 'estado', 'detalles', 'ciclo_liquidacion')
+        fields = '__all__'
 
 
 class LiquidacionesBasePostSerializer(serializers.ModelSerializer):
@@ -304,3 +338,4 @@ class CalculosLiquidacionBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CalculosLiquidacionBase
         fields = '__all__'
+
