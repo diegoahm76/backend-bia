@@ -400,7 +400,7 @@ class CarteraSeleccionadaListViews(generics.ListAPIView):
         if not facilidad_pago:
             raise NotFound("No existe facilidad de pagos relacionada con la informacion ingresada")
 
-        deudor = Deudores.objects.get(id=facilidad_pago.id_deudor.id)
+        deudor = Personas.objects.get(id_persona=facilidad_pago.id_deudor.id_persona)
 
         if not deudor:
             raise NotFound("No existe deudor con la informacion ingresada")

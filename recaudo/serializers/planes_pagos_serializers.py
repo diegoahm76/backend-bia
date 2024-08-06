@@ -42,7 +42,7 @@ class ResolucionesPlanPagoGetSerializer(serializers.ModelSerializer):
 class FacilidadPagoDatosPlanSerializer(serializers.ModelSerializer):
     porcentaje_abonado = serializers.SerializerMethodField()
     nombre_deudor = serializers.SerializerMethodField()
-    identificacion = serializers.ReadOnlyField(source='id_deudor.identificacion',default=None)
+    identificacion = serializers.ReadOnlyField(source='id_deudor.numero_documento',default=None)
 
     class Meta:
         model = FacilidadesPago
@@ -63,7 +63,11 @@ class FacilidadPagoDatosPlanSerializer(serializers.ModelSerializer):
         return float("{:.2f}".format(porcentaje_abonado))
     
     def get_nombre_deudor(self, obj):
-        return f"{obj.id_deudor.nombres} {obj.id_deudor.apellidos}"
+        if obj.razon_social:
+            nombre_completo = obj.razon_social
+        else:
+            nombre_completo = ' '.join(filter(None, [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]))
+        return nombre_completo
         
 
 class VisualizacionCarteraSelecionadaSerializer(serializers.ModelSerializer):

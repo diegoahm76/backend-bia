@@ -1,14 +1,13 @@
 from django.db import models
 from gestion_documental.models.radicados_models import T262Radicados
 from recaudo.models.base_models import TipoActuacion
-from recaudo.models.liquidaciones_models import Deudores
 from recaudo.models.procesos_models import Bienes
 from recaudo.models.garantias_models import RolesGarantias
 
 
 class FacilidadesPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T426IdFacilidadPago')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T426Id_Deudor')
+    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Deudor')
     id_tipo_actuacion = models.ForeignKey(TipoActuacion, on_delete=models.CASCADE, db_column='T426Id_TipoActuacion')
     fecha_generacion = models.DateTimeField(auto_now_add=True, db_column='T426fechaGeneracion')
     periodicidad = models.IntegerField(db_column='T426periodicidad')

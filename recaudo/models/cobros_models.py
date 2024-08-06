@@ -1,5 +1,5 @@
 from django.db import models
-from recaudo.models.liquidaciones_models import LiquidacionesBase, Deudores, Expedientes
+from recaudo.models.liquidaciones_models import LiquidacionesBase, Expedientes
 from recaudo.models.planes_pagos_models import TasasInteres
 from recaudo.models.base_models import RangosEdad, TipoRenta
 from recaudo.models.extraccion_model_recaudo import RtClaseUsoAgua
