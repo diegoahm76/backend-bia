@@ -15,7 +15,7 @@ from recaudo.models.facilidades_pagos_models import (
 )
 from recaudo.models.planes_pagos_models import PlanPagos
 from recaudo.models.base_models import TiposBien, TipoActuacion
-from recaudo.models.cobros_models import Deudores, Cartera
+from recaudo.models.cobros_models import Cartera
 from recaudo.models.procesos_models import Procesos
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import Municipio
