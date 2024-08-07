@@ -7,7 +7,7 @@ from recaudo.models.garantias_models import RolesGarantias
 
 class FacilidadesPago(models.Model):
     id = models.AutoField(primary_key=True, db_column='T426IdFacilidadPago')
-    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Deudor')
+    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_deudor', db_column='T426Id_Deudor')
     id_tipo_actuacion = models.ForeignKey(TipoActuacion, on_delete=models.CASCADE, db_column='T426Id_TipoActuacion')
     fecha_generacion = models.DateTimeField(auto_now_add=True, db_column='T426fechaGeneracion')
     periodicidad = models.IntegerField(db_column='T426periodicidad')
@@ -18,7 +18,7 @@ class FacilidadesPago(models.Model):
     fecha_abono = models.DateField(db_column='T426fechaAbono')
     documento_no_enajenacion = models.ForeignKey('gestion_documental.ArchivosDigitales', on_delete=models.CASCADE, db_column='T426documentoNoEnajenacion')
     observaciones = models.TextField(db_column='T426observaciones')
-    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T426Id_Funcionario')
+    id_funcionario = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, related_name='persona_funcionario', db_column='T426Id_Funcionario')
     notificaciones = models.BooleanField(db_column='T426notificaciones')
     id_radicado = models.ForeignKey(T262Radicados, null=True, blank=True, on_delete=models.SET_NULL, db_column='T426Id_Radicado')
 
