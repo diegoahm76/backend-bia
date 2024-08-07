@@ -12,7 +12,6 @@ from recaudo.models.base_models import (
 from recaudo.models.cobros_models import (
     DocumentosCobro,
     DetalleDocumentosCobro,
-    Deudores,
     Cartera,
     ConceptoContable
 )
@@ -61,7 +60,6 @@ admin.site.register(TipoRenta),
 #Cobros
 admin.site.register(DocumentosCobro),
 admin.site.register(DetalleDocumentosCobro),
-admin.site.register(Deudores),
 admin.site.register(Expedientes),
 admin.site.register(Cartera),
 admin.site.register(ConceptoContable),

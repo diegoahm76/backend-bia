@@ -1,11 +1,10 @@
 from django.db import models
 from recaudo.models.base_models import TiposBien
-from recaudo.models.liquidaciones_models import Deudores
 
 
 class Bienes(models.Model):
     id = models.AutoField(primary_key=True, db_column='T416IdBien')
-    id_deudor = models.ForeignKey(Deudores, on_delete=models.CASCADE, db_column='T416Id_Deudor')
+    id_deudor = models.ForeignKey('transversal.Personas', on_delete=models.CASCADE, db_column='T416Id_Deudor')
     descripcion = models.CharField(max_length=255, db_column='T416descripcion')
     direccion = models.CharField(max_length=255, db_column='T416direccion')
     id_tipo_bien = models.ForeignKey(TiposBien, on_delete=models.CASCADE, db_column='T416Id_TipoBien')

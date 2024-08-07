@@ -15,7 +15,7 @@ from recaudo.models.facilidades_pagos_models import (
 )
 from recaudo.models.planes_pagos_models import PlanPagos
 from recaudo.models.base_models import TiposBien, TipoActuacion
-from recaudo.models.cobros_models import Deudores, Cartera
+from recaudo.models.cobros_models import Cartera
 from recaudo.models.procesos_models import Procesos
 from transversal.models.personas_models import Personas
 from transversal.models.base_models import Municipio
@@ -91,71 +91,27 @@ class CumplimientoRequisitosGetSerializer (serializers.ModelSerializer):
 
 
 class DeudorDatosSerializer(serializers.ModelSerializer):
-    identificacion = serializers.SerializerMethodField()
+    id = serializers.ReadOnlyField(source='id_persona', default=None)
+    identificacion = serializers.ReadOnlyField(source='numero_documento', default=None)
     nombre_completo = serializers.SerializerMethodField()
-    email = serializers.SerializerMethodField()
-    direccion_notificaciones = serializers.SerializerMethodField()
-    telefono_celular = serializers.SerializerMethodField()
-    ciudad = serializers.SerializerMethodField()
-
+    ciudad = serializers.ReadOnlyField(source='municipio_residencia.nombre', default=None)
     class Meta:
-        model = Deudores
+        model = Personas
         fields = ('id', 'identificacion', 'nombre_completo', 'email', 'direccion_notificaciones', 'telefono_celular', 'ciudad')
 
-    def get_identificacion(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.numero_documento
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03nit
-        else:
-            return None
 
     def get_nombre_completo(self, obj):
-        if obj.id_persona_deudor:
-            if obj.id_persona_deudor.razon_social:
-                nombre_completo = obj.id_persona_deudor.razon_social
+        if obj.id_persona:
+            if obj.razon_social:
+                nombre_completo = obj.razon_social
             else:
-                nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
+                nombre_completo = ' '.join(filter(None, [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]))
             return nombre_completo
-        elif obj.id_persona_deudor_pymisis:
-            return f"{obj.id_persona_deudor_pymisis.t03nombre}"
-        else:
-            return None
-    
-    def get_email(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.email
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03email
+        # elif obj.id_persona_deudor_pymisis:
+        #     return f"{obj.id_persona_deudor_pymisis.t03nombre}"
         else:
             return None
         
-    def get_direccion_notificaciones(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.direccion_notificaciones
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03direccion
-        else:
-            return None
-        
-    def get_telefono_celular(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.telefono_celular
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03telefono
-        else:
-            return None
-        
-    def get_ciudad(self, obj):
-        if obj.id_persona_deudor:
-            ubicacion = Municipio.objects.filter(cod_municipio=obj.id_persona_deudor.municipio_residencia.cod_municipio).first()
-            return ubicacion.nombre
-        elif obj.id_persona_deudor_pymisis:
-            ubicacion = Municipio.objects.filter(cod_municipio=obj.id_persona_deudor_pymisis.t03codmpio).first()
-            return ubicacion.nombre
-        else:
-            return None
-
 
 class FacilidadesPagoSerializer(serializers.ModelSerializer):
     numero_radicado = serializers.SerializerMethodField()
@@ -180,36 +136,23 @@ class FacilidadesPagoSerializer(serializers.ModelSerializer):
 
 
 class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
-    identificacion = serializers.SerializerMethodField()
+    identificacion = serializers.ReadOnlyField(source='id_deudor.numero_documento', default=None)
     nombre_de_usuario = serializers.SerializerMethodField()
     nombre_funcionario = serializers.SerializerMethodField()
     id_facilidad = serializers.ReadOnlyField(source='id', default=None)
     tiene_plan_pago = serializers.SerializerMethodField()
-    id_persona = serializers.SerializerMethodField()
     numero_radicado = serializers.SerializerMethodField()
 
-    def get_identificacion(self, obj):
-        if obj.id_deudor.id_persona_deudor:
-            return obj.id_deudor.id_persona_deudor.numero_documento
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            return obj.id_deudor.id_persona_deudor_pymisis.t03nit
-        else:
-            return None
-
     def get_nombre_de_usuario(self, obj):
-        if obj.id_deudor.id_persona_deudor:
-            if obj.id_deudor.id_persona_deudor.razon_social:
-                nombre_completo = obj.id_deudor.id_persona_deudor.razon_social
-            else:
-                nombre_completo = ' '.join(filter(None, [obj.id_deudor.id_persona_deudor.primer_nombre, obj.id_deudor.id_persona_deudor.segundo_nombre, obj.id_deudor.id_persona_deudor.primer_apellido, obj.id_deudor.id_persona_deudor.segundo_apellido]))
-            return nombre_completo
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            return f"{obj.id_deudor.id_persona_deudor_pymisis.t03nombre}"
+        if obj.id_deudor.razon_social:
+            nombre_completo = obj.id_deudor.razon_social
         else:
-            return None
+            nombre_completo = ' '.join(filter(None, [obj.id_deudor.primer_nombre, obj.id_deudor.segundo_nombre, obj.id_deudor.primer_apellido, obj.id_deudor.segundo_apellido]))
+        return nombre_completo
 
-    def get_nombre_funcionario(self, obj):      
-        return f"{obj.id_funcionario.primer_nombre} {obj.id_funcionario.primer_apellido}"
+    def get_nombre_funcionario(self, obj):
+        nombre_completo = ' '.join(filter(None, [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]))
+        return nombre_completo
     
     def get_tiene_plan_pago(self, obj):
         tiene_plan_pago = False
@@ -217,27 +160,13 @@ class ListadoFacilidadesPagoSerializer(serializers.ModelSerializer):
             tiene_plan_pago = True
         return tiene_plan_pago
     
-    def get_id_persona(self, obj):
-        if obj.id_deudor.id_persona_deudor:
-            persona = Personas.objects.filter(numero_documento=obj.id_deudor.id_persona_deudor.numero_documento).first()
-        elif obj.id_deudor.id_persona_deudor_pymisis:
-            persona = Personas.objects.filter(numero_documento=obj.id_deudor.id_persona_deudor_pymisis.t03nit).first()
-        else:
-            persona = None
-        if persona:
-            id_persona = persona.id_persona
-        else:
-            id_persona = None
-        return id_persona
-    
     def get_numero_radicado(self,obj):
         cadena = ""
         if obj.id_radicado:
             cadena= str(obj.id_radicado.prefijo_radicado)+'-'+str(obj.id_radicado.agno_radicado)+'-'+str(obj.id_radicado.nro_radicado)
             return cadena
         return 'SIN RADICAR'
-    
-    
+      
     class Meta:
         model = FacilidadesPago
         fields = ('id_facilidad','nombre_de_usuario','identificacion','numero_radicado','fecha_generacion','nombre_funcionario', 'id_persona','tiene_plan_pago')
@@ -345,8 +274,6 @@ class CarteraSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-
 class ConsultaCarteraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cartera
@@ -355,68 +282,25 @@ class ConsultaCarteraSerializer(serializers.ModelSerializer):
 
 class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     nombre_contribuyente = serializers.SerializerMethodField()
-    identificacion = serializers.SerializerMethodField()
-    email = serializers.SerializerMethodField()
-    telefono = serializers.SerializerMethodField()
-    direccion = serializers.SerializerMethodField()
+    identificacion = serializers.ReadOnlyField(source='numero_documento',default=None)
     obligaciones = serializers.SerializerMethodField()
     monto_total = serializers.SerializerMethodField()
     monto_total_con_intereses = serializers.SerializerMethodField()
 
     class Meta:
-        model = Deudores
-        fields = ('id','nombre_contribuyente','identificacion', 'obligaciones', 'monto_total', 'monto_total_con_intereses','email','telefono','direccion')
+        model = Personas
+        fields = ('id_persona','nombre_contribuyente','identificacion', 'obligaciones', 'monto_total', 'monto_total_con_intereses','email','telefono_celular','direccion_residencia')
 
     def get_nombre_contribuyente(self, obj):
-        if obj.id_persona_deudor:
-            if obj.id_persona_deudor.razon_social:
-                nombre_completo = obj.id_persona_deudor.razon_social
-            else:
-                nombre_completo = ' '.join(filter(None, [obj.id_persona_deudor.primer_nombre, obj.id_persona_deudor.segundo_nombre, obj.id_persona_deudor.primer_apellido, obj.id_persona_deudor.segundo_apellido]))
-            return nombre_completo
-        elif obj.id_persona_deudor_pymisis:
-            return f"{obj.id_persona_deudor_pymisis.t03nombre}"
+        if obj.razon_social:
+            nombre_completo = obj.razon_social
         else:
-            return None
-    
-    def get_identificacion(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.numero_documento
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03nit
-        else:
-            return None
+            nombre_completo = ' '.join(filter(None, [obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido]))
+        return nombre_completo
         
-    def get_telefeno(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.telefono_celular
-        elif obj.id_persona_deudor:
-            return obj.id_persona_deudor.telefono_empresa
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03telefono
-        else:
-            return None
-        
-    def get_direccion(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.direccion_residencia
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03direccion
-        else:
-            return None
-        
-    def get_email(self, obj):
-        if obj.id_persona_deudor:
-            return obj.id_persona_deudor.email
-        elif obj.id_persona_deudor:
-            return obj.id_persona_deudor.email_empresarial
-        elif obj.id_persona_deudor_pymisis:
-            return obj.id_persona_deudor_pymisis.t03email
-        else:
-            return None
         
     def get_obligaciones(self, obj):
-        cartera = Cartera.objects.filter(id_deudor=obj.id)
+        cartera = Cartera.objects.filter(id_deudor=obj.id_persona)
         if cartera:
             return True
         else:
@@ -424,14 +308,14 @@ class ListadoDeudoresUltSerializer(serializers.ModelSerializer):
     
     def get_monto_total(self, obj):
         monto_total = Decimal('0.0')
-        cartera = Cartera.objects.filter(id_deudor=obj.id)
+        cartera = Cartera.objects.filter(id_deudor=obj.id_persona)
         for item in cartera:
             monto_total += item.monto_inicial if item.monto_inicial else Decimal('0.0')
         return monto_total
 
     def get_monto_total_con_intereses(self, obj):
         monto_total = Decimal('0.0')
-        cartera = Cartera.objects.filter(id_deudor=obj.id)
+        cartera = Cartera.objects.filter(id_deudor=obj.id_persona)
         for item in cartera:
             monto_inicial = item.monto_inicial if item.monto_inicial else Decimal('0.0')
             valor_intereses = item.valor_intereses if item.valor_intereses else Decimal('0.0')
